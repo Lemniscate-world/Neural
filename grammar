@@ -1,0 +1,19 @@
+// Définition de la grammaire pour la déclaration d'un modèle
+model_declaration:
+    'network' model_name '{' 'input' ':' input_shape 'layers' ':' layer_list 'loss' ':' loss_function 'optimizer' ':' optimizer_function '}';
+
+model_name: ID
+input_shape: '(' INT ',' INT ',' INT ')'
+layer_list: layer+
+layer: conv2d_layer | dense_layer | output_layer
+
+conv2d_layer: 'Conv2D' '(' 'filters' '=' INT ',' 'kernel_size' '=' '(' INT ',' INT ')' ',' 'activation' '=' STRING ')'
+dense_layer: 'Dense' '(' 'units' '=' INT ',' 'activation' '=' STRING ')'
+output_layer: 'Output' '(' 'units' '=' INT ',' 'activation' '=' STRING ')'
+
+loss_function: STRING
+optimizer_function: STRING
+
+ID: [a-zA-Z_][a-zA-Z0-9_]*
+INT: [0-9]+
+STRING: '"' .*? '"'
