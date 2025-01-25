@@ -1,0 +1,115 @@
+network GAN {
+  # Sub-components
+  generator: {
+    input: latent_dim(100)
+    layers:
+      Dense(256, activation="leaky_relu")
+      Conv2DTranspose(128, kernel=(3,3), stride=2)
+      Output(units=784, activation="tanh")
+  }
+
+  discriminator: {
+    input: (28, 28, 1)
+    layers:
+      Conv2D(64, kernel=(3,3), activation="leaky_relu")
+      Flatten()
+      Output(units=1, activation="sigmoid")
+  }
+
+  # Training logic
+  train {
+    loop epochs(1000) {
+      batch real_data in MNIST {
+        # Update discriminator
+        noise = sample_noise(batch_size)
+        fake_images = generator(noise)
+        d_loss = discriminator.train_on_batch([real_data, fake_images], labels=[1, 0])
+
+        # Update generator
+        g_loss = generator.train_on_batch(noise, labels=1)
+      }
+    }
+  }
+}
+
+Shape Inference & Validation
+Automatic tensor shape propagation with compile-time error checking.
+
+network CNN {
+  input: (28, 28, 1)
+  layers:
+    Conv2D(filters=32, kernel=(3,3))  # Output shape inferred as (26,26,32)
+    MaxPooling2D(pool_size=(2,2))     # Output: (13,13,32)
+    Flatten()                         # Output: (5408)
+    Dense(10)                         # Error: Incompatible shape (5408 → 10)
+}
+
+Math Integration
+Native tensor operations and auto-differentiation:
+layer CustomAttention {
+  forward(query, key, value) {
+    scores = softmax(query @ key.T / sqrt(d_k))
+    return scores @ value
+  }
+  # Auto-derivative for backward pass
+}
+
+Hyperparameter Tuning
+Built-in grid/Random search:
+hyperparams {
+  learning_rate: [0.1, 0.01, 0.001]
+  batch_size: [32, 64]
+}
+
+experiment {
+  grid_search over hyperparams {
+    train Model on MNIST {
+      epochs: 10
+      metrics: [accuracy, f1_score]
+    }
+  }
+}
+
+Hardware Acceleration
+Target-specific compilation flags:
+compile Model {
+  target: tpu  # Options: cpu, cuda, tpu
+  precision: float16
+  optimizations: [fusion, mem_reuse]
+}
+
+Interoperability
+Export to ONNX/PyTorch and inline Python:
+export Model to onnx {
+  file: "model.onnx"
+}
+
+using python {
+  np = import("numpy")
+  plt.plot(np.log(loss_history))
+}
+
+Example: MNIST Classifier
+network MNISTClassifier {
+  input: (28, 28, 1)
+  layers:
+    Conv2D(filters=32, kernel=(3,3), activation="relu")
+    MaxPooling2D(pool_size=(2,2))
+    Flatten()
+    Dense(128, activation="relu")
+    Dropout(0.5)
+    Output(10, activation="softmax")
+
+  compile {
+    loss: "cross_entropy"
+    optimizer: "adam"
+    metrics: [accuracy]
+  }
+
+  train {
+    data: MNIST
+    epochs: 10
+    batch_size: 32
+    checkpoint: "mnist_model.nl"
+  }
+}

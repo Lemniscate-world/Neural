@@ -1,4 +1,3 @@
-// Définition de la grammaire pour la déclaration d'un modèle
 model_declaration:
     'network' model_name '{' 'input' ':' input_shape 'layers' ':' layer_list 'loss' ':' loss_function 'optimizer' ':' optimizer_function '}';
 
