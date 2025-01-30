@@ -1,18 +1,20 @@
 01/25 Grammar, Parser
 
-28 01 25
+30 01 25
 
 - Add more layer types to grammar(Dropout, Flatten, LSTM)
-
-
+- What is shape propagation? (Answered)
+- What Lexer Does Lark Use ? (Answered)
+- Added Shape Validation Function (propagate_shape)
 - Add Custom activations to grammar (LeakyReLU, Swish)
 - Add training configurations to grammar (epochs, batch_size)
+(Done)
 
 
 - Expand grammar to support GANs/Transformers
 - Add shape validation rules
-
-
+- Add more layers types to the shape propagation system and the grammar.
+- Make a dictionary of layers disponible in the grammar and in  the shape propagation system
 - Add recurrent/attention layers to parser.py
 - Implement tensor shape propagation for parser.py
 - Implement Better error messages with Lark's Diagnostics for parser.py

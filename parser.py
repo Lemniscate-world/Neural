@@ -57,6 +57,7 @@ class ModelTransformer(lark.Transformer):
     def layers(self, items):
         return items
 
+
 # Exemple de code à analyser
 code = """
 network MyModel {
@@ -76,6 +77,18 @@ transformer = ModelTransformer()
 model_data = transformer.transform(tree)
 
 print(model_data)
+
+def propagate_shape(input_shape, layer):
+    if layer['type'] == 'Conv2D':
+        filters = layer['filters']
+        kernel_h, kernel_w = layer['kernel_size']
+        h, w, _ = input_shape
+        return (h - kernel_h + 1, w - kernel_w + 1, filters)
+    elif layer['type'] == 'Flatten':
+        return (np.prod(input_shape),)
+    elif layer['type'] == 'Dense':
+        return (layer['units'],)
+
 
 def generate_tensorflow_code(model_data):
     model_code = "import tensorflow as tf\n"
