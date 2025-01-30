@@ -12,10 +12,12 @@
 - Adding and Extending generate_code function to support backend (TensorFlow) and Training Configuration (Epochs, Batch Size)
 - Understanding tf.keras.Sequential()
 - Added Documentation (Differences between Neural and Tensorflow/Pytorch)
+- Added Test Docs
 (Done)
 
 - Add backend logic for pytorch
 - Implement other backends features and sources
+- Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.
 
 - Expand grammar to support GANs/Transformers
 - Add shape validation rules
