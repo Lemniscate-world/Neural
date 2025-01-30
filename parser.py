@@ -90,19 +90,27 @@ def propagate_shape(input_shape, layer):
         return (layer['units'],)
 
 
-def generate_tensorflow_code(model_data):
-    model_code = "import tensorflow as tf\n"
-    model_code += "model = tf.keras.Sequential([\n"
-    for layer in model_data['layers']:
-        if layer['type'] == 'Conv2D':
-            model_code += f"    tf.keras.layers.Conv2D({layer['filters']}, {layer['kernel_size']}, activation={layer['activation']}),\n"
-        elif layer['type'] == 'Dense':
-            model_code += f"    tf.keras.layers.Dense({layer['units']}, activation={layer['activation']}),\n"
-        elif layer['type'] == 'Output':
-            model_code += f"    tf.keras.layers.Dense({layer['units']}, activation={layer['activation']})\n"
-    model_code += "])\n"
-    model_code += f"model.compile(optimizer={model_data['optimizer']['value']}, loss={model_data['loss']['value']})\n"
-    return model_code
+def generate_code(model_data, backend="tensorflow"):
+    if backend == "tensorflow":
+        code = "import tensorflow as tf\n"
+        code += "model = tf.keras.Sequential([\n"
+        for layer in model_data['layers']:
+            if layer['type'] == 'Conv2D':
+                code += f"    tf.keras.layers.Conv2D({layer['filters']}, {layer['kernel_size']}, activation='{layer['activation']}'),\n"
+            elif layer['type'] == 'Dense':
+                code += f"    tf.keras.layers.Dense({layer['units']}, activation='{layer['activation']}'),\n"
+            elif layer['type'] == 'Flatten':
+                code += "    tf.keras.layers.Flatten(),\n"
+            elif layer['type'] == 'Dropout':
+                code += f"    tf.keras.layers.Dropout({layer['rate']}),\n"
+        code += "])\n"
+        code += f"model.compile(optimizer='{model_data['optimizer']['value']}', loss='{model_data['loss']['value']}')\n"
+        if 'training_config' in model_data:
+            code += f"model.fit(data, epochs={model_data['training_config']['epochs']}, batch_size={model_data['training_config']['batch_size']})\n"
+        return code
+    elif backend == "pytorch":
+        # Add PyTorch code generation logic here
+        pass
 
-tensorflow_code = generate_tensorflow_code(model_data)
+switch_code = generate_code(model_data)
 print(tensorflow_code)

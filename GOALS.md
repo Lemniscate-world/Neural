@@ -8,8 +8,14 @@
 - Added Shape Validation Function (propagate_shape)
 - Add Custom activations to grammar (LeakyReLU, Swish)
 - Add training configurations to grammar (epochs, batch_size)
+- What is Code Generation ? (Answered)
+- Adding and Extending generate_code function to support backend (TensorFlow) and Training Configuration (Epochs, Batch Size)
+- Understanding tf.keras.Sequential()
+- Added Documentation (Differences between Neural and Tensorflow/Pytorch)
 (Done)
 
+- Add backend logic for pytorch
+- Implement other backends features and sources
 
 - Expand grammar to support GANs/Transformers
 - Add shape validation rules
