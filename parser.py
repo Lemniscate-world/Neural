@@ -1,4 +1,5 @@
 import lark
+import numpy as np
 
 grammar = r"""
     network: "network" NAME "{" input_layer layers output_layer loss optimizer training_config? "}"
@@ -58,7 +59,7 @@ class ModelTransformer(lark.Transformer):
         return items
 
 
-# Exemple de code à analyser
+# Example code
 code = """
 network MyModel {
     input: (28, 28, 1)
@@ -71,12 +72,6 @@ network MyModel {
 }
 """
 
-# Analyser et transformer
-tree = parser.parse(code)
-transformer = ModelTransformer()
-model_data = transformer.transform(tree)
-
-print(model_data)
 
 def propagate_shape(input_shape, layer):
     if layer['type'] == 'Conv2D':
@@ -109,8 +104,51 @@ def generate_code(model_data, backend="tensorflow"):
             code += f"model.fit(data, epochs={model_data['training_config']['epochs']}, batch_size={model_data['training_config']['batch_size']})\n"
         return code
     elif backend == "pytorch":
-        # Add PyTorch code generation logic here
-        pass
+        # PyTorch code generation logic 
+        code = "import torch\n"
+        code += "class Model(torch.nn.Module):\n"
+        code += "    def __init__(self):\n"
+        code += "        super(Model, self).__init__()\n"
+        input_shape = model_data['input']['shape']
+        for layer in model_data['layers']:
+            output_shape = propagate_shape(input_shape, layer)
+            if layer['type'] == 'Conv2D':
+                code += f"        self.conv = torch.nn.Conv2d({input_shape[2]}, {layer['filters']}, {layer['kernel_size']}, padding=1)\n"
+                code += f"        self.relu = torch.nn.ReLU()\n"
+                input_shape = output_shape
+                code += f"        self.pool = torch.nn.MaxPool2d({layer['kernel_size']})\n"
+            elif layer['type'] == 'Flatten':
+                code += "        self.flatten = torch.nn.Flatten()\n"
+                input_shape = output_shape
+                code += f"        self.fc = torch.nn.Linear({np.prod(input_shape)}, {layer['units']})\n"
+                code += f"        self.relu = torch.nn.ReLU()\n"
+                input_shape = output_shape
+                code += f"        self.softmax = torch.nn.Softmax(dim=1)\n"
+                code += f"    def forward(self, x):\n"
+                code += f"        x = self.conv(x)\n"
+                code += f"        x = self.relu(x)\n"
+                code += f"        x = self.pool(x)\n"
+                code += f"        x = self.flatten(x)\n"
+                code += f"        x = self.fc(x)\n"
+                code += f"        x = self.relu(x)\n"
+                code += f"        x = self.softmax(x)\n"
+                code += f"        return x\n"
+        code += "model = Model()\n"
+        code += f"model.to('{backend}')')\n"
+        code += f"loss_fn = torch.nn.CrossEntropyLoss()\n"
+        code += f"optimizer = torch.optim.{model_data['optimizer']['value']}()\n"
 
-switch_code = generate_code(model_data)
-print(tensorflow_code)
+        if 'training_config' in model_data:
+            code += f"for epoch in range({model_data['training_config']['epochs']}):\n"
+            code += "    for batch_idx, (data, target) in enumerate(data):\n"
+            code += "        optimizer.zero_grad()\n"
+            code += "        output = model(data)\n"
+            code += "        loss = loss_fn(output, target)\n"
+            code += "        loss.backward()\n"
+            code += "        optimizer.step()\n"
+            code += "print('Finished Training')"
+        return code
+    else:
+        raise ValueError("Unsupported backend")
+    return code
+

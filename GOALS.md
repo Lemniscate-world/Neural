@@ -15,14 +15,23 @@
 - Added Test Docs
 (Done)
 
-- Add backend logic for pytorch
+31 01 25
+- Added backend logic for pytorch
+- Added error handling for backend logic supplier (generate_code)
+- Understanding deeply ModelTransformer
+- What is lark.Transformer? (Answered)
+- Test on Case1.py
+(Done)
+
 - Implement other backends features and sources
 - Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.
-
+- Add MIT LICENSE
 - Expand grammar to support GANs/Transformers
 - Add shape validation rules
 - Add more layers types to the shape propagation system and the grammar.
 - Make a dictionary of layers disponible in the grammar and in  the shape propagation system
+- Pytorch COnversion to Tensorflow for MVP
+- Advanced for other versions
 - Add recurrent/attention layers to parser.py
 - Implement tensor shape propagation for parser.py
 - Implement Better error messages with Lark's Diagnostics for parser.py
