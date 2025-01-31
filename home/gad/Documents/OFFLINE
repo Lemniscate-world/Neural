@@ -1,0 +1,10 @@
+import sys
+import os
+
+# Add the parent directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import lark
+from parser import parser, ModelTransformer, propagate_shape, generate_code
+
+# ... rest of your code remains the same
