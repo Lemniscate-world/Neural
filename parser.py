@@ -54,6 +54,8 @@ class ModelTransformer(lark.Transformer):
             }
     
     def conv2d_layer(self, items):
+        # Debug Print
+        print("conv2D items:", items)
         """
         Parses and processes a Conv2D layer configuration from the parsed items.
 
@@ -72,11 +74,18 @@ class ModelTransformer(lark.Transformer):
               'kernel_size': A tuple containing the height and width of the kernel for the Conv2D layer.
               'activation': The activation function for the Conv2D layer.
         """
+
+        # Parse items properly - items should be [filters, kernel_h, kernel_w, activation]
+        filters = int(str(items[0]))
+        kernel_h = int(str(items[1]))
+        kernel_w = int(str(items[2]))
+        activation = str(items[3]).strip('"')
+        
         return {
             'type': 'Conv2D',
-            'filters': int(items[0]),
-            'kernel_size': (int(items[1]), int(items[2])),
-            'activation': items[3].strip('"')
+            'filters': filters,
+            'kernel_size': (kernel_h, kernel_w),
+            'activation': activation
         }
     
     def dense_layer(self, items):
@@ -87,8 +96,26 @@ class ModelTransformer(lark.Transformer):
             }
     
     def output_layer(self, items):
+        """
+        Parses and processes the configuration of an output layer in a neural network.
+
+        Parameters:
+        items (list): A list containing the parsed information for the output layer.
+                      The list should contain two elements:
+                      - The number of units for the output layer.
+                      - The activation function for the output layer as a string.
+
+        Returns:
+        dict: A dictionary containing the following keys:
+              'type': The type of the layer, which is 'Output'.
+              'shape': A tuple representing the shape of the output data, containing the number of units.
+              'units': The number of units for the output layer.
+              'activation': The activation function for the output layer.
+        """
+        units = int(items[0])
         return {
                 'type': 'Output',
+                'shape': (units,),  # Output shape is a tuple with the number of units
                 'units': int(items[0]),
                 'activation': items[1].strip('"')
             }
@@ -155,8 +182,8 @@ class ModelTransformer(lark.Transformer):
         input_shape = items[1]['shape']  # Input layer configuration
         layers = items[2]['layers']  # Layers configuration
         output_shape = items[3]['shape']  # Output layer configuration
-        loss = items[4]['loss']      # Loss function
-        optimizer = items[5]['optimizer']  # Optimizer
+        loss = items[4]      # Loss function
+        optimizer = items[5]  # Optimizer
         training_config = items[6] if len(items) > 6 else {}  # Training configuration (optional)
         
         return {
@@ -183,30 +210,42 @@ network MyModel {
 
 
 def propagate_shape(input_shape, layer):
-    """
-    Propagates the shape of the input through a given layer.
-
-    Parameters:
-    input_shape (tuple): The shape of the input data. For a Conv2D layer, it should be (height, width, channels).
-                         For a Dense layer, it should be (units,). For a Flatten layer, it should be the shape after
-                         the previous layer.
-    layer (dict): A dictionary representing the layer. It should contain the 'type' key, which can be one of 'Conv2D',
-                  'Flatten', or 'Dense'. For 'Conv2D' layers, it should also contain 'filters' and 'kernel_size' keys.
-                  For 'Dense' layers, it should contain 'units' key.
-
-    Returns:
-    tuple: The shape of the output data after passing through the given layer. For a Conv2D layer, it will be
-           (height, width, filters). For a Flatten layer, it will be (units,). For a Dense layer, it will be (units,).
-    """
+    # Debug Print
+    print("Layer Received:", layer)
+    print("Input shape", input_shape)
+    """Propagates shapes through network layers"""
+    if not isinstance(layer, dict):
+        raise TypeError(f"Layer must be a dictionary, got {type(layer)}")
+        
+    if 'type' not in layer:
+        raise KeyError("Layer dictionary must contain 'type' key")
+        
     if layer['type'] == 'Conv2D':
+        # Validate Conv2D parameters
+        required_keys = ['filters', 'kernel_size']
+        for key in required_keys:
+            if key not in layer:
+                raise KeyError(f"Conv2D layer missing required parameter: {key}")
+                
         filters = layer['filters']
         kernel_h, kernel_w = layer['kernel_size']
+        
+        if len(input_shape) != 3:
+            raise ValueError(f"Conv2D requires 3D input shape (h,w,c), got {input_shape}")
+            
         h, w, _ = input_shape
         return (h - kernel_h + 1, w - kernel_w + 1, filters)
+        
     elif layer['type'] == 'Flatten':
         return (np.prod(input_shape),)
+        
     elif layer['type'] == 'Dense':
+        if 'units' not in layer:
+            raise KeyError("Dense layer missing required parameter: units")
         return (layer['units'],)
+        
+    else:
+        raise ValueError(f"Unsupported layer type: {layer['type']}")
 
 
 def generate_code(model_data, backend="tensorflow"):

@@ -26,12 +26,13 @@ network MyModel {
 """
 
 tree = parser.parse(test_code)
+print("Parsed tree: ", tree) # Debug Print
 transformer = ModelTransformer()
 model_data = transformer.transform(tree)
 print("Transformed data: ", model_data) # Debug Print
 
 # Validate shapes
-input_shape = model_data['input']['shape']
+input_shape = model_data['input_shape']
 for layer in model_data['layers']:
     input_shape = propagate_shape(input_shape, layer)
     print(f"Layer {layer['type']} output shape: {input_shape}")
