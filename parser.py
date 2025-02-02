@@ -26,15 +26,36 @@ grammar = r"""
 parser = lark.Lark(grammar, start='network')
 
 class ModelTransformer(lark.Transformer):
-    def network(self, items):
+    def layer(self, items, children):
+        """
+        Convert layer Tree node to dictionary.
+
+        Parameters:
+        items (list): A list of Tree nodes representing the layer components. Each Tree node contains information about a specific layer attribute.
+
+        Returns:
+        dict: A dictionary containing the layer's type, parameters, name, input, layers, output, loss, and optimizer.
+              The dictionary has the following structure:
+              {
+                  'type': str,  # The type of the layer (e.g., Conv2D, Dense, Output, Dropout, Flatten)
+                  'params': list,  # A list of Tree nodes representing the parameters of the layer
+                  'name': str,  # The name of the layer
+                  'input': list,  # A list of Tree nodes representing the input of the layer
+                  'layers': list,  # A list of Tree nodes representing the layers
+                  'output': list,  # A list of Tree nodes representing the output of the layer
+                  'loss': str,  # The loss function used for the layer
+                  'optimizer': str  # The optimizer used for the layer
+              }
+        """
         return {
-            'type': 'Network',
-            'name': items[0],
-            'input': items[1],
-            'layers': items[2],
-            'output': items[3],
-            'loss': items[4],
-            'optimizer': items[5]
+            'type': items[0].children[0].value,
+            'params': items[0].children[1:],
+            'name': items[1].children[0].value,
+            'input': items[2].children[1:],
+            'layers': items[3].children[1:],
+            'output': items[4].children[1:],
+            'loss': items[5].children[0].value,
+            'optimizer': items[6].children[0].value
         }
     
     def input_layer(self, items):
@@ -74,6 +95,21 @@ network MyModel {
 
 
 def propagate_shape(input_shape, layer):
+    """
+    Propagates the shape of the input through a given layer.
+
+    Parameters:
+    input_shape (tuple): The shape of the input data. For a Conv2D layer, it should be (height, width, channels).
+                         For a Dense layer, it should be (units,). For a Flatten layer, it should be the shape after
+                         the previous layer.
+    layer (dict): A dictionary representing the layer. It should contain the 'type' key, which can be one of 'Conv2D',
+                  'Flatten', or 'Dense'. For 'Conv2D' layers, it should also contain 'filters' and 'kernel_size' keys.
+                  For 'Dense' layers, it should contain 'units' key.
+
+    Returns:
+    tuple: The shape of the output data after passing through the given layer. For a Conv2D layer, it will be
+           (height, width, filters). For a Flatten layer, it will be (units,). For a Dense layer, it will be (units,).
+    """
     if layer['type'] == 'Conv2D':
         filters = layer['filters']
         kernel_h, kernel_w = layer['kernel_size']

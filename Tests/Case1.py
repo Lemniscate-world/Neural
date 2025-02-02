@@ -28,6 +28,7 @@ network MyModel {
 tree = parser.parse(test_code)
 transformer = ModelTransformer()
 model_data = transformer.transform(tree)
+print("Transformed data: ", model_data) # Debug Print
 
 # Validate shapes
 input_shape = model_data['input']['shape']
