@@ -125,16 +125,48 @@ class ModelTransformer(lark.Transformer):
             'batch_size': int(items[0]['batch_size']) if 'batch_size' in items[0] else None
         }
     
-    def network(self, items):
-        return {
-            'input_shape': tuple(items[0]['input_shape']),
-            'layers': [self.layer(layer) for layer in items[0]['layers']],
-            'output_shape': items[0]['output_shape'],
-            'loss': self.loss(items[0]['loss']),
-            'optimizer': self.optimizer(items[0]['optimizer']),
-            'training_config': self.training_config(items[0]['train'])
-        }
+    def shape(self, items):
+        return tuple(items)
 
+    def network(self, items):
+        """
+        Parses and processes the network configuration from the parsed items.
+
+        Parameters:
+        items (list): A list containing the parsed information for the network.
+                    The list should contain the following elements in order:
+                    - The name of the network (ignored).
+                    - The input layer configuration.
+                    - The layers configuration.
+                    - The output layer configuration.
+                    - The loss function.
+                    - The optimizer.
+                    - The training configuration (optional).
+
+        Returns:
+        dict: A dictionary containing the following keys:
+            - 'input_shape': A tuple representing the shape of the input data.
+            - 'layers': A list of dictionaries, each representing a layer in the network.
+            - 'output_shape': A tuple representing the shape of the output data.
+            - 'loss': A dictionary containing the loss function for the network.
+            - 'optimizer': A dictionary containing the optimizer for the network.
+            - 'training_config': A dictionary containing the training configuration for the network.
+        """
+        input_shape = items[1]['shape']  # Input layer configuration
+        layers = items[2]['layers']  # Layers configuration
+        output_shape = items[3]['shape']  # Output layer configuration
+        loss = items[4]['loss']      # Loss function
+        optimizer = items[5]['optimizer']  # Optimizer
+        training_config = items[6] if len(items) > 6 else {}  # Training configuration (optional)
+        
+        return {
+            'input_shape': input_shape,
+            'layers': layers,
+            'output_shape': output_shape,
+            'loss': loss,
+            'optimizer': optimizer,
+            'training_config': training_config
+        }
 
 # Example code
 code = """
