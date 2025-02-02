@@ -49,8 +49,11 @@ class ModelTransformer(lark.Transformer):
         }
     
     def input_layer(self, items):
-        return {'type': 'Input',
-                'shape': tuple(items)
+        # Convert tokens to integers
+        shape = tuple((str(items)) for item in items)
+        return {
+            'type': 'Input',
+            'shape': shape,
             }
     
     def conv2d_layer(self, items):
@@ -134,7 +137,7 @@ class ModelTransformer(lark.Transformer):
     def layers(self, items):
         return {
             'type': 'Layers',
-            'layers': items
+            'layers': [items['params'] if 'params' in items else items for items in items]  
         }
     
     def dropout_layer(self, items):
@@ -213,6 +216,13 @@ def propagate_shape(input_shape, layer):
     # Debug Print
     print("Layer Received:", layer)
     print("Input shape", input_shape)
+
+    # Convert input shape tokens to integers if necessary
+    if any(isinstance(x, lark.Token) for x in input_shape):
+        input_shape = tuple(int(x.value) for x in input_shape)
+
+    print(f"Processing shape {input_shape} for layer {layer}")
+
     """Propagates shapes through network layers"""
     if not isinstance(layer, dict):
         raise TypeError(f"Layer must be a dictionary, got {type(layer)}")
@@ -233,7 +243,7 @@ def propagate_shape(input_shape, layer):
         if len(input_shape) != 3:
             raise ValueError(f"Conv2D requires 3D input shape (h,w,c), got {input_shape}")
             
-        h, w, _ = input_shape
+        h, w, _ = str(input_shape)
         return (h - kernel_h + 1, w - kernel_w + 1, filters)
         
     elif layer['type'] == 'Flatten':

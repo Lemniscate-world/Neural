@@ -31,6 +31,10 @@ transformer = ModelTransformer()
 model_data = transformer.transform(tree)
 print("Transformed data: ", model_data) # Debug Print
 
+# Debug prints
+print("Input shape:", model_data['input_shape'])
+print("First layer:", model_data['layers'][0])
+
 # Validate shapes
 input_shape = model_data['input_shape']
 for layer in model_data['layers']:
