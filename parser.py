@@ -26,58 +26,114 @@ grammar = r"""
 parser = lark.Lark(grammar, start='network')
 
 class ModelTransformer(lark.Transformer):
-    def layer(self, items, children):
+    def layer(self, items):
         """
-        Convert layer Tree node to dictionary.
+        Process a layer in the neural network model.
+
+        This method extracts information about a single layer from the parsed items
+        and returns a dictionary containing the layer's type and parameters.
 
         Parameters:
-        items (list): A list of Tree nodes representing the layer components. Each Tree node contains information about a specific layer attribute.
+        items (list): A list containing the parsed information for the layer.
+                      The first item is expected to be a dictionary with layer information.
 
         Returns:
-        dict: A dictionary containing the layer's type, parameters, name, input, layers, output, loss, and optimizer.
-              The dictionary has the following structure:
-              {
-                  'type': str,  # The type of the layer (e.g., Conv2D, Dense, Output, Dropout, Flatten)
-                  'params': list,  # A list of Tree nodes representing the parameters of the layer
-                  'name': str,  # The name of the layer
-                  'input': list,  # A list of Tree nodes representing the input of the layer
-                  'layers': list,  # A list of Tree nodes representing the layers
-                  'output': list,  # A list of Tree nodes representing the output of the layer
-                  'loss': str,  # The loss function used for the layer
-                  'optimizer': str  # The optimizer used for the layer
-              }
+        dict: A dictionary containing two keys:
+              'type': The type of the layer (e.g., 'Conv2D', 'Dense', etc.)
+              'params': A dictionary containing all the parameters for the layer
         """
+        layer_info = items[0]  # The first item should be the layer information
         return {
-            'type': items[0].children[0].value,
-            'params': items[0].children[1:],
-            'name': items[1].children[0].value,
-            'input': items[2].children[1:],
-            'layers': items[3].children[1:],
-            'output': items[4].children[1:],
-            'loss': items[5].children[0].value,
-            'optimizer': items[6].children[0].value
+            'type': layer_info['type'],
+            'params': layer_info
         }
     
     def input_layer(self, items):
-        return {'type': 'Input', 'shape': tuple(items)}
+        return {'type': 'Input',
+                'shape': tuple(items)
+            }
     
     def conv2d_layer(self, items):
-        return {'type': 'Conv2D', 'filters': items[0], 'kernel_size': (items[1], items[2]), 'activation': items[3]}
+        """
+        Parses and processes a Conv2D layer configuration from the parsed items.
+
+        Parameters:
+        items (list): A list containing the parsed information for the Conv2D layer.
+                      The list should contain four elements:
+                      - The number of filters for the Conv2D layer.
+                      - The height of the kernel for the Conv2D layer.
+                      - The width of the kernel for the Conv2D layer.
+                      - The activation function for the Conv2D layer as a string.
+
+        Returns:
+        dict: A dictionary containing the following keys:
+              'type': The type of the layer, which is 'Conv2D'.
+              'filters': The number of filters for the Conv2D layer.
+              'kernel_size': A tuple containing the height and width of the kernel for the Conv2D layer.
+              'activation': The activation function for the Conv2D layer.
+        """
+        return {
+            'type': 'Conv2D',
+            'filters': int(items[0]),
+            'kernel_size': (int(items[1]), int(items[2])),
+            'activation': items[3].strip('"')
+        }
     
     def dense_layer(self, items):
-        return {'type': 'Dense', 'units': items[0], 'activation': items[1]}
+        return {
+                'type': 'Dense',
+                'units': int(items[0]),
+                'activation': items[1].strip('"')
+            }
     
     def output_layer(self, items):
-        return {'type': 'Output', 'units': items[0], 'activation': items[1]}
+        return {
+                'type': 'Output',
+                'units': int(items[0]),
+                'activation': items[1].strip('"')
+            }
     
     def loss(self, items):
-        return {'type': 'Loss', 'value': items[0]}
+        return {
+            'type': 'Loss',
+            'value': items[0]
+        }
     
     def optimizer(self, items):
-        return {'type': 'Optimizer', 'value': items[0]}
+        return {'type': 'Optimizer',
+                'value': items[0]
+            }
     
     def layers(self, items):
-        return items
+        return {
+            'type': 'Layers',
+            'layers': items
+        }
+    
+    def dropout_layer(self, items):
+        return {
+            'type': 'Dropout',
+            'rate': float(items[0])
+        }
+    
+    def flatten_layer(self, items):
+        return {'type': 'Flatten'}
+    
+    def training_config(self, items):
+        return {
+            'epochs': int(items[0]['epochs']) if 'epochs' in items[0] else None,
+            'batch_size': int(items[0]['batch_size']) if 'batch_size' in items[0] else None
+        }
+    
+    def network(self, items):
+        return {
+            'input_shape': tuple(items[0]['input_shape']),
+            'layers': [self.layer(layer) for layer in items[0]['layers']],
+            'output_shape': items[0]['output_shape'],
+            'loss': self.loss(items[0]['loss']),
+            'optimizer': self.optimizer(items[0]['optimizer']),
+            'training_config': self.training_config(items[0]['train'])
+        }
 
 
 # Example code
@@ -122,6 +178,25 @@ def propagate_shape(input_shape, layer):
 
 
 def generate_code(model_data, backend="tensorflow"):
+    """
+    This function generates code for creating and training a neural network model based on the given model data and backend.
+
+    Parameters:
+    model_data (dict): A dictionary containing the model configuration and data. It should have the following keys:
+                       - 'input': A dictionary containing the input shape of the model. It should have a 'shape' key.
+                       - 'layers': A list of dictionaries, each representing a layer in the model. Each layer dictionary should have a 'type' key.
+                       - 'loss': A dictionary containing the loss function for the model. It should have a 'value' key.
+                       - 'optimizer': A dictionary containing the optimizer for the model. It should have a 'value' key.
+                       - 'training_config' (optional): A dictionary containing the training configuration for the model. It should have 'epochs' and 'batch_size' keys.
+
+    backend (str): The backend framework to use for generating the code. It can be either 'tensorflow' or 'pytorch'.
+
+    Returns:
+    str: The generated code for creating and training the neural network model based on the given model data and backend.
+
+    Raises:
+    ValueError: If the specified backend is not supported.
+    """
     if backend == "tensorflow":
         code = "import tensorflow as tf\n"
         code += "model = tf.keras.Sequential([\n"
