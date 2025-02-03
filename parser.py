@@ -5,12 +5,13 @@ grammar = r"""
     network: "network" NAME "{" input_layer layers output_layer loss optimizer training_config? "}"
     input_layer: "input:" "(" INT "," INT "," INT ")"
     layers: "layers:" layer+
-    layer: conv2d_layer | dense_layer | output_layer | dropout_layer | flatten_layer
+    layer: conv2d_layer | dense_layer | output_layer | dropout_layer | flatten_layer | max_pooling2d_layer
     conv2d_layer: "Conv2D(" "filters=" INT "," "kernel_size=(" INT "," INT ")," "activation=" ESCAPED_STRING ")"
     dense_layer: "Dense(" "units=" INT "," "activation=" ESCAPED_STRING ")"
     output_layer: "Output(" "units=" INT "," "activation=" ESCAPED_STRING ")"
     dropout_layer: "Dropout(" "rate=" FLOAT ")"
     flatten_layer: "Flatten()"
+    max_pooling2d_layer: "MaxPooling2D(" "pool_size=(" INT "," INT "))"
     training_config: "train" "{" ("epochs:" INT)? ("batch_size:" INT)?  "}"
     loss: "loss:" ESCAPED_STRING
     optimizer: "optimizer:" ESCAPED_STRING
