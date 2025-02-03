@@ -259,6 +259,28 @@ def propagate_shape(input_shape, layer):
         # Simple shape calculation without padding
         return (h - kernel_h + 1, w - kernel_w + 1, filters)
 
+    elif layer['type'] == 'MaxPooling2D':
+        # For MaxPooling2D, it ensures the correct parameters are provided 
+        # and calculates how the input shape changes after applying max pooling.
+        # Validate MaxPooling parameters
+        required_keys = ['pool_size']
+        for key in required_keys:
+            if key not in layer:
+                raise KeyError(f"MaxPooling2D layer missing required parameter: {key}")
+        
+        pool_h, pool_w = layer['pool_size']
+
+        if len(input_shape) != 3:
+            raise ValueError(f"MaxPooling2D requires 3D input shape (h,w,c), got {input_shape}")
+        
+        h, w, c = input_shape
+        return (h // pool_h, w // pool_w, c)
+
+    elif layer['type'] == 'Output':
+        if 'units' not in layer:
+            raise KeyError("Output layer missing required parameter: units")
+        return (layer['units'],)
+
     elif layer['type'] == 'Flatten':
         return (np.prod(input_shape),)
 
