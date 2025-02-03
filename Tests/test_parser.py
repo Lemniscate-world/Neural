@@ -26,5 +26,5 @@ def test_parser():
     transformer = ModelTransformer()
     model_data = transformer.transform(tree)
     assert model_data["name"] == "MyModel"
-    assert model_data["input"]["shape"] == (28, 28, 1)
+    assert model_data["input_shape"] == (28, 28, 1)
     assert len(model_data["layers"]) == 4
