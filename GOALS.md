@@ -34,6 +34,12 @@
 
 - TESTING THE MVP and debugging (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.)
 - Write more test cases for edge cases
+- Add more test cases for edge cases and custom layers.
+
+Integrate continuous integration (CI) for automated testing.
+
+Write documentation for users and contributors.
+
 - Expand grammar to support GANs/Transformers
 - Add shape validation rules
 - Is my grammar good for a mvp ?
