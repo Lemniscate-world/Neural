@@ -32,7 +32,6 @@
 - I'm modifying the layer method (ModelTransformer) to extract the layer type from the Tree nodes correctly. Instead of accessing the data attribute directly, I can use the children attribute to retrieve the layer type. (parser.py)
 (Done)
 
-- Implement other backends features and sources
 - Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.
 - Add MIT LICENSE
 - Expand grammar to support GANs/Transformers
