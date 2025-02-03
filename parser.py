@@ -146,7 +146,7 @@ class ModelTransformer(lark.Transformer):
     def layers(self, items):
         return {
             'type': 'Layers',
-            'layers': [items['params'] if 'params' in items else items for items in items]  
+            'layers': [self.layer(item) if isinstance(item, lark.Tree) else item for item in items]
         }
     
     def dropout_layer(self, items):
@@ -160,6 +160,7 @@ class ModelTransformer(lark.Transformer):
     
     def training_config(self, items):
         return {
+            'type': 'TrainingConfig',
             'epochs': int(items[0]['epochs']) if 'epochs' in items[0] else None,
             'batch_size': int(items[0]['batch_size']) if 'batch_size' in items[0] else None
         }
@@ -174,29 +175,6 @@ class ModelTransformer(lark.Transformer):
         }
 
     def network(self, items):
-        """
-        Parses and processes the network configuration from the parsed items.
-
-        Parameters:
-        items (list): A list containing the parsed information for the network.
-                    The list should contain the following elements in order:
-                    - The name of the network (ignored).
-                    - The input layer configuration.
-                    - The layers configuration.
-                    - The output layer configuration.
-                    - The loss function.
-                    - The optimizer.
-                    - The training configuration (optional).
-
-        Returns:
-        dict: A dictionary containing the following keys:
-            - 'input_shape': A tuple representing the shape of the input data.
-            - 'layers': A list of dictionaries, each representing a layer in the network.
-            - 'output_shape': A tuple representing the shape of the output data.
-            - 'loss': A dictionary containing the loss function for the network.
-            - 'optimizer': A dictionary containing the optimizer for the network.
-            - 'training_config': A dictionary containing the training configuration for the network.
-        """
         name = str(items[0])
         input_shape = items[1]['shape']  # Input layer configuration
         layers = items[2]['layers']  # Layers configuration
@@ -206,7 +184,6 @@ class ModelTransformer(lark.Transformer):
         loss = items[-2]      # Loss function
         optimizer = items[-1]  # Optimizer
         training_config = items[6] if len(items) > 6 else {}  # Training configuration (optional)
-        
         return {
             'name': name,
             'input_shape': input_shape,
