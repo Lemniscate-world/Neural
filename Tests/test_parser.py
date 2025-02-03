@@ -5,7 +5,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from parser import propagate_shape
+from parser import propagate_shape, parser, ModelTransformer
 
 
 def test_parser():
