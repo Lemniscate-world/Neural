@@ -49,8 +49,8 @@ class ModelTransformer(lark.Transformer):
         }
     
     def input_layer(self, items):
-        # Convert tokens to integers
-        shape = tuple((str(items)) for item in items)
+        # Convert tokens to integers explicitly
+        shape = tuple(int(str(item)) for item in items)
         return {
             'type': 'Input',
             'shape': shape,
@@ -217,9 +217,14 @@ def propagate_shape(input_shape, layer):
     print("Layer Received:", layer)
     print("Input shape", input_shape)
 
-    # Convert input shape tokens to integers if necessary
-    if any(isinstance(x, lark.Token) for x in input_shape):
-        input_shape = tuple(int(x.value) for x in input_shape)
+    # Handle input shape conversion
+    if isinstance(input_shape, tuple) and len(input_shape) > 0:
+        if isinstance(input_shape[0], str):
+            # Handle string tuple format
+            input_shape = tuple(int(str(x).strip("[]'")) for x in input_shape)
+        elif isinstance(input_shape[0], lark.Token):
+            # Handle Token tuple format
+            input_shape = tuple(int(x.value) for x in input_shape)
 
     print(f"Processing shape {input_shape} for layer {layer}")
 
@@ -243,7 +248,8 @@ def propagate_shape(input_shape, layer):
         if len(input_shape) != 3:
             raise ValueError(f"Conv2D requires 3D input shape (h,w,c), got {input_shape}")
             
-        h, w, _ = str(input_shape)
+        h, w, c = str(input_shape)
+        # Simple shape calculation without padding
         return (h - kernel_h + 1, w - kernel_w + 1, filters)
         
     elif layer['type'] == 'Flatten':
@@ -253,6 +259,9 @@ def propagate_shape(input_shape, layer):
         if 'units' not in layer:
             raise KeyError("Dense layer missing required parameter: units")
         return (layer['units'],)
+    
+    elif layer['type'] == 'Dropout':
+        return input_shape
         
     else:
         raise ValueError(f"Unsupported layer type: {layer['type']}")
