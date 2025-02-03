@@ -178,8 +178,11 @@ class ModelTransformer(lark.Transformer):
         name = str(items[0])
         input_shape = items[1]['shape']  # Input layer configuration
         layers = items[2]['layers']  # Layers configuration
-        output_shape = items[3]['shape']  # Output layer configuration
-        output_layer = next(layer for layer in reversed(layers) if layer['type'] == 'Output')
+        # Find the output layer, or use a default if not found
+        output_layer = items[3] if items[3]['type'] == 'Output' else {'type': 'Output', 'units': 1, 'activation': 'linear'}
+        output_layer = next((layer for layer in reversed(layers) if layer['type'] == 'Output'), None)
+        if output_layer is None:
+            raise ValueError("No Output layer found in the network configuration.")
         output_shape = output_layer['shape'] if 'shape' in output_layer else (output_layer['params']['units'],)
         loss = items[-2]      # Loss function
         optimizer = items[-1]  # Optimizer
@@ -188,6 +191,7 @@ class ModelTransformer(lark.Transformer):
             'name': name,
             'input_shape': input_shape,
             'layers': layers,
+            'output_layer': output_layer,
             'output_shape': output_shape,
             'loss': loss,
             'optimizer': optimizer,
