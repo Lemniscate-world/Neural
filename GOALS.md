@@ -32,10 +32,14 @@
 - I'm modifying the layer method (ModelTransformer) to extract the layer type from the Tree nodes correctly. Instead of accessing the data attribute directly, I can use the children attribute to retrieve the layer type. (parser.py)
 (Done)
 
-- Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.
-- Add MIT LICENSE
+- TESTING THE MVP and debugging (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.)
+- Write more test cases for edge cases
 - Expand grammar to support GANs/Transformers
 - Add shape validation rules
+- Is my grammar good for a mvp ?
+- What should be done for mvp ?
+- Other interesting backend features
+- Testing and debugging for faster performance - Adding some advantages of traditional backends and frameworks
 - Add more layers types to the shape propagation system and the grammar.
 - Make a dictionary of layers disponible in the grammar and in  the shape propagation system
 - Pytorch COnversion to Tensorflow for MVP
