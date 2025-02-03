@@ -252,70 +252,92 @@ def propagate_shape(input_shape, layer):
     KeyError: If the layer dictionary is missing required keys.
     ValueError: If the layer type is unsupported or if the input shape is invalid for the given layer type.
     """
-    # Debug Print
-    print("Layer Received:", layer)
-    print("Input shape", input_shape)
-    print(f"Processing shape {input_shape} for layer {layer}")
-
+    # Defensive type checking
     if not isinstance(layer, dict):
         raise TypeError(f"Layer must be a dictionary, got {type(layer)}")
 
-    if 'type' not in layer:
-        raise KeyError("Layer dictionary must contain 'type' key")
+    # Extract actual layer type, handling nested dictionary case
+    layer_type = layer['type'] if isinstance(layer['type'], str) else layer['type']['type']
 
-    if layer['type'] == 'Conv2D':
-        # Validate Conv2D parameters
-        required_keys = ['filters', 'kernel_size']
-        for key in required_keys:
-            if key not in layer:
-                raise KeyError(f"Conv2D layer missing required parameter: {key}")
+    print("Layer Type:", layer_type)
+    print("Input Shape:", input_shape)
+    print("Full Layer:", layer)
 
-        filters = layer['filters']
-        kernel_h, kernel_w = layer['kernel_size']
-
+    # Helper to check input shape is 3D for convolution and pooling layers
+    def check_3d_input(layer_type):
         if len(input_shape) != 3:
-            raise ValueError(f"Conv2D requires 3D input shape (h,w,c), got {input_shape}")
+            raise ValueError(f"{layer_type} requires 3D input shape (h,w,c), got {input_shape}")
+        return input_shape[0], input_shape[1], input_shape[2]
 
-        h, w, c = input_shape
-        # Simple shape calculation without padding
+    if layer_type == 'Conv2D':
+        # Handle both direct and nested dictionary cases for layer parameters
+        if isinstance(layer['type'], dict):
+            filters = layer['type']['filters']
+            kernel_size = layer['type']['kernel_size']
+        else:
+            filters = layer.get('filters')
+            kernel_size = layer.get('kernel_size')
+
+        h, w, c = check_3d_input('Conv2D')
+        
+        # Validate required parameters
+        if filters is None or kernel_size is None:
+            raise KeyError("Conv2D layer missing required parameters")
+
+        kernel_h, kernel_w = kernel_size
+
+        # Simple shape calculation without padding (assuming valid padding)
         return (h - kernel_h + 1, w - kernel_w + 1, filters)
 
-    elif layer['type'] == 'MaxPooling2D':
-        # For MaxPooling2D, it ensures the correct parameters are provided 
-        # and calculates how the input shape changes after applying max pooling.
-        # Validate MaxPooling parameters
-        required_keys = ['pool_size']
-        for key in required_keys:
-            if key not in layer:
-                raise KeyError(f"MaxPooling2D layer missing required parameter: {key}")
+    elif layer_type == 'MaxPooling2D':
+        h, w, c = check_3d_input('MaxPooling2D')
         
-        pool_h, pool_w = layer['pool_size']
-
-        if len(input_shape) != 3:
-            raise ValueError(f"MaxPooling2D requires 3D input shape (h,w,c), got {input_shape}")
+        # Handle both direct and nested dictionary cases for pool_size
+        if isinstance(layer['type'], dict):
+            pool_size = layer['type']['pool_size']
+        else:
+            pool_size = layer.get('pool_size')
         
-        h, w, c = input_shape
+        # Validate required parameters
+        if pool_size is None:
+            raise KeyError("MaxPooling2D layer missing pool_size parameter")
+        
+        pool_h, pool_w = pool_size
         return (h // pool_h, w // pool_w, c)
 
-    elif layer['type'] == 'Output':
-        if 'units' not in layer:
-            raise KeyError("Output layer missing required parameter: units")
-        return (layer['units'],)
-
-    elif layer['type'] == 'Flatten':
+    elif layer_type == 'Flatten':
+        # Flatten converts multi-dimensional input to 1D
         return (np.prod(input_shape),)
 
-    elif layer['type'] == 'Dense':
-        if 'units' not in layer:
-            raise KeyError("Dense layer missing required parameter: units")
-        return (layer['units'],)
+    elif layer_type == 'Dense':
+        # Handle both direct and nested dictionary cases for units
+        if isinstance(layer['type'], dict):
+            units = layer['type'].get('units')
+        else:
+            units = layer.get('units')
 
-    elif layer['type'] == 'Dropout':
+        # Validate required parameters
+        if units is None:
+            raise KeyError("Dense layer missing units parameter")
+        return (units,)
+
+    elif layer_type == 'Dropout':
+        # Dropout doesn't change the shape
         return input_shape
 
-    else:
-        raise ValueError(f"Unsupported layer type: {layer['type']}")
+    elif layer_type == 'Output':
+        # Handle both direct and nested dictionary cases for units
+        if isinstance(layer['type'], dict):
+            units = layer['type'].get('units')
+        else:
+            units = layer.get('units')
 
+        if units is None:
+            raise KeyError("Output layer missing units parameter")
+        return (units,)
+
+    else:
+        raise ValueError(f"Unsupported layer type: {layer_type}") 
 
 def generate_code(model_data, backend="tensorflow"):
     """
