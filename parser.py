@@ -217,15 +217,6 @@ def propagate_shape(input_shape, layer):
     print("Layer Received:", layer)
     print("Input shape", input_shape)
 
-    # Handle input shape conversion
-    if isinstance(input_shape, tuple) and len(input_shape) > 0:
-        if isinstance(input_shape[0], str):
-            # Handle string tuple format
-            input_shape = tuple(int(str(x).strip("[]'")) for x in input_shape)
-        elif isinstance(input_shape[0], lark.Token):
-            # Handle Token tuple format
-            input_shape = tuple(int(x.value) for x in input_shape)
-
     print(f"Processing shape {input_shape} for layer {layer}")
 
     """Propagates shapes through network layers"""
@@ -248,7 +239,7 @@ def propagate_shape(input_shape, layer):
         if len(input_shape) != 3:
             raise ValueError(f"Conv2D requires 3D input shape (h,w,c), got {input_shape}")
             
-        h, w, c = str(input_shape)
+        h, w, c = input_shape
         # Simple shape calculation without padding
         return (h - kernel_h + 1, w - kernel_w + 1, filters)
         
