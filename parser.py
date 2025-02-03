@@ -11,7 +11,7 @@ grammar = r"""
     output_layer: "Output(" "units=" INT "," "activation=" ESCAPED_STRING ")"
     dropout_layer: "Dropout(" "rate=" FLOAT ")"
     flatten_layer: "Flatten()"
-    max_pooling2d_layer: "MaxPooling2D(" "pool_size=(" INT "," INT "))"
+    max_pooling2d_layer: "MaxPooling2D(" "pool_size=(" INT "," INT ")" ")"
     training_config: "train" "{" ("epochs:" INT)? ("batch_size:" INT)?  "}"
     loss: "loss:" ESCAPED_STRING
     optimizer: "optimizer:" ESCAPED_STRING
@@ -44,10 +44,18 @@ class ModelTransformer(lark.Transformer):
               'params': A dictionary containing all the parameters for the layer
         """
         layer_info = items[0]  # The first item should be the layer information
-        return {
-            'type': layer_info['type'],
-            'params': layer_info
-        }
+        if isinstance(layer_info, lark.Tree):
+        # If it's a Tree, the type is in the data attribute
+            return {
+                'type': layer_info.data,
+                'params': layer_info.children[0] if layer_info.children else {}
+            }
+        else:
+        # If it's not a Tree, the type is in the first item
+            return {
+                'type': items[0],
+                'params': items[1] if len(items) > 1 else {}
+            }
     
     def input_layer(self, items):
         # Convert tokens to integers explicitly
@@ -159,6 +167,12 @@ class ModelTransformer(lark.Transformer):
     def shape(self, items):
         return tuple(items)
 
+    def max_pooling2d_layer(self, items):
+        return {
+            'type': 'MaxPooling2D',
+            'pool_size': (int((items[0]), int(items[1])))
+        }
+
     def network(self, items):
         """
         Parses and processes the network configuration from the parsed items.
@@ -183,14 +197,18 @@ class ModelTransformer(lark.Transformer):
             - 'optimizer': A dictionary containing the optimizer for the network.
             - 'training_config': A dictionary containing the training configuration for the network.
         """
+        name = str(items[0])
         input_shape = items[1]['shape']  # Input layer configuration
         layers = items[2]['layers']  # Layers configuration
         output_shape = items[3]['shape']  # Output layer configuration
-        loss = items[4]      # Loss function
-        optimizer = items[5]  # Optimizer
+        output_layer = next(layer for layer in reversed(layers) if layer['type'] == 'Output')
+        output_shape = output_layer['shape'] if 'shape' in output_layer else (output_layer['params']['units'],)
+        loss = items[-2]      # Loss function
+        optimizer = items[-1]  # Optimizer
         training_config = items[6] if len(items) > 6 else {}  # Training configuration (optional)
         
         return {
+            'name': name,
             'input_shape': input_shape,
             'layers': layers,
             'output_shape': output_shape,

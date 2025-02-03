@@ -27,4 +27,12 @@ def test_parser():
     model_data = transformer.transform(tree)
     assert model_data["name"] == "MyModel"
     assert model_data["input_shape"] == (28, 28, 1)
-    assert len(model_data["layers"]) == 4
+    assert len(model_data["layers"]) == 5  # Now including MaxPooling2D
+    assert model_data["layers"][0]["type"] == "Conv2D"
+    assert model_data["layers"][1]["type"] == "MaxPooling2D"
+    assert model_data["layers"][2]["type"] == "Flatten"
+    assert model_data["layers"][3]["type"] == "Dense"
+    assert model_data["layers"][4]["type"] == "Output"
+    assert model_data["output_shape"] == (10,)
+    assert model_data["loss"]["value"] == '"categorical_crossentropy"'
+    assert model_data["optimizer"]["value"] == '"adam"'
