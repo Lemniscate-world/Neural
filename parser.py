@@ -178,15 +178,36 @@ class ModelTransformer(lark.Transformer):
         name = str(items[0])
         input_shape = items[1]['shape']  # Input layer configuration
         layers = items[2]['layers']  # Layers configuration
-        # Find the output layer, or use a default if not found
-        output_layer = items[3] if items[3]['type'] == 'Output' else {'type': 'Output', 'units': 1, 'activation': 'linear'}
-        output_layer = next((layer for layer in reversed(layers) if layer['type'] == 'Output'), None)
+        # Use the separate output layer if provided
+        output_layer = next((item for item in items if isinstance(item, dict) and item.get('type') == 'Output'), None)
+        
+        # If no explicit output layer was found, check if there's an output layer in the layers
         if output_layer is None:
-            raise ValueError("No Output layer found in the network configuration.")
-        output_shape = output_layer['shape'] if 'shape' in output_layer else (output_layer['params']['units'],)
-        loss = items[-2]      # Loss function
-        optimizer = items[-1]  # Optimizer
-        training_config = items[6] if len(items) > 6 else {}  # Training configuration (optional)
+            output_layer = next((layer for layer in reversed(layers) if layer['type'] == 'Output'), None)
+        
+        # If still no output layer, use a default
+        if output_layer is None:
+            output_layer = {
+                'type': 'Output', 
+                'units': 1, 
+                'activation': 'linear'
+            }
+        
+        # Determine output shape
+        if 'shape' in output_layer:
+            output_shape = output_layer['shape']
+        elif 'units' in output_layer:
+            output_shape = (output_layer['units'],)
+        else:
+            output_shape = (1,)
+        
+        # Find loss and optimizer
+        loss = next((item for item in items if isinstance(item, dict) and item.get('type') == 'Loss'), None)
+        optimizer = next((item for item in items if isinstance(item, dict) and item.get('type') == 'Optimizer'), None)
+        
+        # Find training config (if exists)
+        training_config = next((item for item in items if isinstance(item, dict) and item.get('type') == 'TrainingConfig'), {})
+        
         return {
             'name': name,
             'input_shape': input_shape,
