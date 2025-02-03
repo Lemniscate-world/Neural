@@ -213,47 +213,63 @@ network MyModel {
 
 
 def propagate_shape(input_shape, layer):
+    """
+    Propagates the input shape through a neural network layer to calculate the output shape.
+
+    This function determines the output shape of a layer given its input shape and layer configuration.
+    It supports Conv2D, Flatten, Dense, and Dropout layers.
+
+    Parameters:
+    input_shape (tuple): The shape of the input to the layer. For Conv2D, it should be a 3-tuple (height, width, channels).
+    layer (dict): A dictionary containing the layer configuration. Must include a 'type' key specifying the layer type.
+
+    Returns:
+    tuple: The output shape of the layer after processing the input.
+
+    Raises:
+    TypeError: If the layer parameter is not a dictionary.
+    KeyError: If the layer dictionary is missing required keys.
+    ValueError: If the layer type is unsupported or if the input shape is invalid for the given layer type.
+    """
     # Debug Print
     print("Layer Received:", layer)
     print("Input shape", input_shape)
-
     print(f"Processing shape {input_shape} for layer {layer}")
 
-    """Propagates shapes through network layers"""
     if not isinstance(layer, dict):
         raise TypeError(f"Layer must be a dictionary, got {type(layer)}")
-        
+
     if 'type' not in layer:
         raise KeyError("Layer dictionary must contain 'type' key")
-        
+
     if layer['type'] == 'Conv2D':
         # Validate Conv2D parameters
         required_keys = ['filters', 'kernel_size']
         for key in required_keys:
             if key not in layer:
                 raise KeyError(f"Conv2D layer missing required parameter: {key}")
-                
+
         filters = layer['filters']
         kernel_h, kernel_w = layer['kernel_size']
-        
+
         if len(input_shape) != 3:
             raise ValueError(f"Conv2D requires 3D input shape (h,w,c), got {input_shape}")
-            
+
         h, w, c = input_shape
         # Simple shape calculation without padding
         return (h - kernel_h + 1, w - kernel_w + 1, filters)
-        
+
     elif layer['type'] == 'Flatten':
         return (np.prod(input_shape),)
-        
+
     elif layer['type'] == 'Dense':
         if 'units' not in layer:
             raise KeyError("Dense layer missing required parameter: units")
         return (layer['units'],)
-    
+
     elif layer['type'] == 'Dropout':
         return input_shape
-        
+
     else:
         raise ValueError(f"Unsupported layer type: {layer['type']}")
 
@@ -291,10 +307,19 @@ def generate_code(model_data, backend="tensorflow"):
             elif layer['type'] == 'Dropout':
                 code += f"    tf.keras.layers.Dropout({layer['rate']}),\n"
         code += "])\n"
-        code += f"model.compile(optimizer='{model_data['optimizer']['value']}', loss='{model_data['loss']['value']}')\n"
-        if 'training_config' in model_data:
-            code += f"model.fit(data, epochs={model_data['training_config']['epochs']}, batch_size={model_data['training_config']['batch_size']})\n"
+
+        # Remove quotes from optimizer and loss values
+        optimizer = str(model_data['optimizer']['value']).strip('"')
+        loss = str(model_data['loss']['value']).strip('"')
+        code += f"model.compile(loss='{loss}', optimizer='{optimizer}')\n"
+
+        # Extract training configuration
+        if 'training' in model_data and model_data['training_config']:
+            epochs = model_data['training_config'].get('epochs', 10) # Default to 10 epochs
+            batch_size = model_data['training_config'].get('batch_size', 32) # Default to batch size of 32
+            code += f"model.fit(data, epochs={epochs}, batch_size={batch_size})\n"
         return code
+
     elif backend == "pytorch":
         # PyTorch code generation logic 
         code = "import torch\n"
