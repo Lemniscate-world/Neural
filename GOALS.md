@@ -33,6 +33,18 @@
 (Done)
 - TESTING THE MVP and debugging (1) (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.) (Done)
 
+04 02 25
+How can i enhance shape validation and propagation ?
+How can i enhance Code Gneration ?
+How can i enhance the plugin system ?
+How can i enhance the training configuration ?
+How can i make neural the less boilerplate possible ?
+How can i enhance my grammar ?
+Create requirements.txt
+Write full neural language syntax documentation
+Create requirements-dev.txt
+Make neural generate research paper on model i'm using or training with benchmarks and stats etc in the IDE + visualizer
+
 Performance Optimization Features
   - Automatic Mixed Precision (Train models using mixed float16 and float32 precision to reduce memory usage and speed up training.)
   - Just-In-Time (JIT) Compilation (Compile models and training loops at runtime for optimized execution.)
