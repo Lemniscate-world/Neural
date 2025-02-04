@@ -648,6 +648,7 @@ def generate_code(model_data, backend="tensorflow"):
         code += "    def __init__(self):\n"
         code += "        super(Model, self).__init__()\n"
         input_shape = model_data['input']['shape']
+        model_layers = []
         for layer in model_data['layers']:
             output_shape = propagate_shape(input_shape, layer)
             if layer['type'] == 'Conv2D':
@@ -671,6 +672,11 @@ def generate_code(model_data, backend="tensorflow"):
                 code += f"        x = self.relu(x)\n"
                 code += f"        x = self.softmax(x)\n"
                 code += f"        return x\n"
+            elif layer["type"] == "QuantumLayer":
+                # Instantiate the QuantumLayer with chosen hyperparameters.
+                model_layers.append("QuantumLayer(n_qubits=4, n_layers=2, n_features=128)")
+            elif layer["type"] == "DynamicLayer":
+                model_layers.append("DynamicLayer(threshold=0.5, branch1_units=64, branch2_units=32)")
         code += "model = Model().to(device)\n"
         code += f"model.to('{backend}')')\n"
         code += f"loss_fn = torch.nn.CrossEntropyLoss()\n"
