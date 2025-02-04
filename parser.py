@@ -2,7 +2,7 @@ import lark
 import numpy as np
 
 grammar = r"""
-    network: "network" NAME "{" input_layer layers output_layer loss optimizer training_config? "}"
+    network: "network" NAME "{" input_layer layers loss optimizer training_config? "}"
     input_layer: "input:" "(" INT "," INT "," INT ")"
     layers: "layers:" layer+
     layer: conv2d_layer | dense_layer | output_layer | dropout_layer | flatten_layer | max_pooling2d_layer
