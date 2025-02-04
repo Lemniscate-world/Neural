@@ -545,15 +545,54 @@ class QuantumLayer(nn.Module):
         # Stack all outputs into a batch tensor.
         return torch.stack(outputs)
 
-# Example usage:
-if __name__ == "__main__":
-    # Create a QuantumLayer with 4 qubits, 2 variational layers, mapping to 8 features.
-    quantum_layer = QuantumLayer(n_qubits=4, n_layers=2, n_features=8)
-    # Create a dummy input: batch of 3 samples, each with 4 features.
-    dummy_input = torch.randn(3, 4)
-    output = quantum_layer(dummy_input)
-    print("QuantumLayer output shape:", output.shape)
+class DynamicLayer(nn.Module):
+    def __init__(self, threshold=1.0, branch1_units=64, branch2_units=32):
+        """
+        threshold: A value used to decide which branch to activate.
+        branch1_units: Number of output features for branch 1.
+        branch2_units: Number of output features for branch 2.
+        """
+        super(DynamicLayer, self).__init__()
+        self.threshold = threshold
 
+        # Define two branches as simple feedforward layers.
+        self.branch1 = nn.Sequential(
+            nn.Linear(128, branch1_units),
+            nn.ReLU()
+        )
+        self.branch2 = nn.Sequential(
+            nn.Linear(128, branch2_units),
+            nn.ReLU()
+        )
+        # Final layer to map the branch outputs to a common dimension.
+        # Here we choose the maximum of branch outputs as the final dimension.
+        self.final_dim = max(branch1_units, branch2_units)
+        self.final_layer = nn.Linear(self.final_dim, 128)
+
+    def forward(self, x):
+        """
+        x: Expected shape (batch_size, 128)
+        Decision logic: if the mean absolute value of the sample is greater than threshold,
+        use branch1; otherwise, use branch2.
+        """
+        # Compute a simple statistic per sample
+        branch_outputs = []
+        for sample in x:
+            if sample.abs().mean() > self.threshold:
+                out = self.branch1(sample)
+            else:
+                out = self.branch2(sample)
+            branch_outputs.append(out)
+        # Stack outputs into a batch tensor
+        branch_outputs = torch.stack(branch_outputs)
+        # If branch outputs have different dimensions, we pad the smaller ones (for demonstration)
+        if branch_outputs.shape[1] != self.final_dim:
+            # A simple padding example (in practice, better design the branches to output the same dims)
+            padded = torch.zeros(x.size(0), self.final_dim, device=x.device)
+            padded[:, :branch_outputs.shape[1]] = branch_outputs
+            branch_outputs = padded
+        # Pass through a final mapping
+        return self.final_layer(branch_outputs)
 
 
 def generate_code(model_data, backend="tensorflow"):
