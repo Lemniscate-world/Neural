@@ -34,11 +34,15 @@
 - TESTING THE MVP and debugging (1) (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.) (Done)
 
 04 02 25
-GPU-optimized inference
+- GPU-optimized inference
   To make Neural a high-performance framework, we will:
 ✅ Implement GPU acceleration using CUDA & TensorRT (for NVIDIA GPUs)
 ✅ Support multi-backend inference (CPU, GPU, and possibly future hardware like TPUs)
 ✅ Introduce automatic device selection based on available hardware
+- Create very basic deepseek model with neural and even finetune to showcase neural functionalities.
+
+
+
 
 How can i enhance shape validation and propagation ?
 How can i enhance Code Gneration ?
