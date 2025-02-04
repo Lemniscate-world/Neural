@@ -46,9 +46,9 @@ def test_layer_parsing(code, expected):
     # The first layer should match expected
     assert model_data['layers'][0] == expected
 @pytest.mark.parametrize("filename, expected_type", [
-    ("deepseek.neural", "model"),
-    ("deepseek.nr", "model"),
-    ("deepseek_research.rnr", "research"),
+    ("deepseek1984.neural", "model"),
+    ("deepseek1984.nr", "model"),
+    ("deepseek1984_research.rnr", "research"),
 ])
 def test_file_parsing(filename, expected_type):
     file_type, content = load_file(filename)
