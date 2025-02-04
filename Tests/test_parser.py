@@ -1,14 +1,12 @@
 import os
 import sys
+import pytest
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from parser import propagate_shape, parser, ModelTransformer
-
-import pytest
-from parser import parser, ModelTransformer
+from parser import propagate_shape, parser, ModelTransformer, load_file
 
 @pytest.mark.parametrize("code, expected", [
     # Basic Layers
@@ -47,3 +45,19 @@ def test_layer_parsing(code, expected):
     
     # The first layer should match expected
     assert model_data["layers"][0] == expected
+
+@pytest.mark.parametrize("filename, expected_type", [
+    ("deepseek.neural", "model"),
+    ("deepseek.nr", "model"),
+    ("deepseek_research.rnr", "research"),
+])
+def test_file_parsing(filename, expected_type):
+    file_type, content = load_file(filename)
+    assert file_type == expected_type
+
+    tree = parser.parse(content)
+    transformer = ModelTransformer()
+    result = transformer.transform(tree)
+
+    assert result["type"] == expected_type
+    print(f"Successfully parsed {filename} as {expected_type}!")

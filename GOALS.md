@@ -46,7 +46,9 @@
 
 
 
-
+- Create a memory file to resume for neural
+- Create a standalone interpreter for neural
+- Ability to load models and parses them into different backends  
 - Add Multi GPU training
 - Optimize for low-latency real-time inference
 - Create my own neural machine learning model based on graph theory, with benchmarks and research papers wto showcase neural functionalities.
@@ -57,6 +59,9 @@
 - My own model form y MWI Qubits simulator
 - For high frequency trading too
 - For BloomDb branch (probabilistic and fuzzy data sets)
+- Refactor my code (1)
+- Create a model made of some models definitions by combining their .neural and .nr files
+- Make  a no-code interface for neural
 
 How can i enhance shape validation and propagation ?
 How can i enhance Code Generation ?

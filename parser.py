@@ -1,5 +1,6 @@
 import lark
 import numpy as np
+import os
 from plugins import LAYER_PLUGINS
 
 
@@ -61,6 +62,10 @@ grammar = r"""
     # Execution Configurations
     execution_config: "execution" "{" "device:" ESCAPED_STRING "}"
 
+    # Research .rnr Files Configurations
+    research: "research" NAME "{" metrics references? "}"
+    metrics: "metrics" "{" ("accuracy:" FLOAT)? ("loss:" FLOAT)? ("precision:" FLOAT)? ("recall:" FLOAT)? "}"
+    references: "references" "{" ("paper:" ESCAPED_STRING)+ "}"
 
     %import common.CNAME -> NAME
     %import common.INT
@@ -334,6 +339,7 @@ class ModelTransformer(lark.Transformer):
         # If no training configuration is found, default values will be used.
 
         return {
+            'type': 'Model',
             'name': name,
             'input_shape': input_shape,
             'layers': layers,
@@ -345,19 +351,14 @@ class ModelTransformer(lark.Transformer):
             'execution_config': execution_config
         }
 
-# Example code
-code = """
-network MyModel {
-    input: (28, 28, 1)
-    layers:
-        Conv2D(filters=32, kernel_size=(3, 3), activation="relu")
-        Dense(units=128, activation="relu")
-        Output(units=10, activation="softmax")
-    loss: "categorical_crossentropy"
-    optimizer: "adam"
-}
-"""
-
+    def research(self,items):
+        return{
+            "type": "research",
+            "name": str(items[0]),
+            "metrics": items[1],
+            "references": items[2] if len(items) > 2 else None
+            
+        }
 
 def propagate_shape(input_shape, layer):
     """
@@ -561,3 +562,21 @@ def generate_code(model_data, backend="tensorflow"):
         raise ValueError("Unsupported backend")
     return code
 
+def load_file(filename):
+    """ Reads and categorizes Neural files based on extensions """
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f"File {filename} not found.")
+
+    file_ext = os.path.splitext(filename)[-1].lower()
+
+    with open(filename, "r") as f:
+        content = f.read()
+
+    if file_ext in [".neural", ".nr"]:
+        print(f"✅ Loading Model Definition from {filename}...")
+        return "model", content
+    elif file_ext == ".rnr":
+        print(f"✅ Loading Research Report from {filename}...")
+        return "research", content
+    else:
+        raise ValueError(f"Unsupported file extension: {file_ext}")
