@@ -51,7 +51,7 @@ grammar = r"""
     embedding_layer: "Embedding(" "input_dim=" INT "," "output_dim=" INT ")"
     
     # Special Layers
-    quantum_layer: "QuantumLayer()"
+    quantum_layer: "QuantumLayer(" "loss=" ESCAPED_STRING "," "optimizer=" ESCAPED_STRING ")"
     dynamic_layer: "DynamicLayer()"
 
     # Training Configurations
@@ -249,13 +249,13 @@ class ModelTransformer(lark.Transformer):
         }
     
 
-    def batch_norm_layer(self, _):
+    def batch_norm_layer(self, items):
         return {'type': 'BatchNormalization'}
 
-    def layer_norm_layer(self, _):
+    def layer_norm_layer(self, items):
         return {'type': 'LayerNormalization'}
 
-    def instance_norm_layer(self, _):
+    def instance_norm_layer(self, items):
         return {'type': 'InstanceNormalization'}
 
     def group_norm_layer(self, items):
@@ -264,34 +264,36 @@ class ModelTransformer(lark.Transformer):
     def recurrent_layer(self, items):
         return {'type': items[0], 'units': int(items[1])}
 
-    def attention_layer(self, _):
+    def attention_layer(self, items):
         return {'type': 'Attention'}
 
     def transformer_layer(self, items):
         return {'type': 'TransformerEncoder', 'num_heads': int(items[0]), 'ff_dim': int(items[1])}
 
-    def residual_layer(self, _):
+    def residual_layer(self, items):
         return {'type': 'ResidualConnection'}
 
-    def inception_layer(self, _):
+    def inception_layer(self, items):
         return {'type': 'InceptionModule'}
 
-    def capsule_layer(self, _):
+    def capsule_layer(self, items):
         return {'type': 'CapsuleLayer'}
 
-    def squeeze_excitation_layer(self, _):
+    def squeeze_excitation_layer(self, items):
         return {'type': 'SqueezeExcitation'}
 
-    def graph_conv_layer(self, _):
+    def graph_conv_layer(self, items):
         return {'type': 'GraphConv'}
 
     def embedding_layer(self, items):
         return {'type': 'Embedding', 'input_dim': int(items[0]), 'output_dim': int(items[1])}
 
-    def quantum_layer(self, _):
-        return {'type': 'QuantumLayer'}
+    def quantum_layer(self, items):
+        return {
+            'type': 'QuantumLayer'
+            }
 
-    def dynamic_layer(self, _):
+    def dynamic_layer(self, items):
         return {'type': 'DynamicLayer'}
 
     def network(self, items):

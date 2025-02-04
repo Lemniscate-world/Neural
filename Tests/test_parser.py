@@ -35,11 +35,15 @@ from parser import propagate_shape, parser, ModelTransformer, load_file
     ("InceptionModule()", {'type': 'InceptionModule'}),
     ("CapsuleLayer()", {'type': 'CapsuleLayer'}),
     ("GraphConv()", {'type': 'GraphConv'}),
-    ("QuantumLayer()", {'type': 'QuantumLayer'}),
+    ("QuantumLayer(loss=mse, optimizer=adam)", {'type': 'QuantumLayer'}),
     ("DynamicLayer()", {'type': 'DynamicLayer'}),
 ])
 def test_layer_parsing(code, expected):
+
     tree = parser.parse("network TestModel { input: (28,28,1) layers: " + code + " loss: 'mse' optimizer: 'adam' }")
+    # Debug Print
+    print(tree.pretty())
+    
     transformer = ModelTransformer()
     model_data = transformer.transform(tree)
     
