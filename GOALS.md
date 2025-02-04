@@ -178,7 +178,9 @@ Such as non-local blocks or axial attention for handling long-range dependencies
 
 
 
-
+Add GPU-optimized inference
+🔹 Implement symbolic shape inference
+🔹 Enable multi-backend support (TensorFlow, PyTorch, JAX)
 
 - Write more test cases for edge cases
 - Add more test cases for edge cases and custom layers.
