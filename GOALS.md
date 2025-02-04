@@ -42,14 +42,13 @@
 - Implement ONNX export for deployment
 - Add visualizer
 - Make neural generate research paper (No AI) on model i'm using or training with benchmarks and stats etc in the its IDE + visualizer and interactive solver and nodes explorers with details
+- Create very basic deepseek model with neural and even fine-tune to showcase all neural functionalities.and in the same time testing if they are working.
+
+
+
+
 - Add Multi GPU training
 - Optimize for low-latency real-time inference
-
-
-
-
-
-- Create very basic deepseek model with neural and even fine-tune to showcase neural functionalities.
 - Create my own neural machine learning model based on graph theory, with benchmarks and research papers wto showcase neural functionalities.
 - Create model for autoevolving music with neural
 - Add custom graph-based debugging
