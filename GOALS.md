@@ -33,6 +33,30 @@
 (Done)
 - TESTING THE MVP and debugging (1) (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.) (Done)
 
+Performance Optimization Features
+  - Automatic Mixed Precision (Train models using mixed float16 and float32 precision to reduce memory usage and speed up training.)
+  - Just-In-Time (JIT) Compilation (Compile models and training loops at runtime for optimized execution.)
+  - Kernel Fusion (Combine multiple operations into a single kernel to reduce memory bandwidth and improve performance.)
+
+Advanced Model Design Features 
+  -  Neural Architecture Search (NAS) (Automatically search for the best model architecture for a given task.)
+  -  Dynamic Computation Graphs (Allow models to change their architecture dynamically during training or inference.)
+  -  Symbolic Shape Inference (Infer tensor shapes symbolically, even for dynamic models.)
+
+Deployment and Production Features
+- Export models to TensorFlow, PyTorch, ONNX, Core ML, TensorRT, and more with a single command.
+- Optimize models for low-latency, real-time inference on edge devices.
+- Provide tools for interactive debugging of models (e.g., tensor values, gradients).
+- Visual Model Editor
+- Automatically search for the best hyperparameters (e.g., learning rate, batch size).
+- A repository of pre-trained models that users can easily import and fine-tune.
+- Support for quantum neural networks and hybrid classical-quantum models. ++++++
+
+
+
+
+
+
 - Write more test cases for edge cases
 - Add more test cases for edge cases and custom layers.
 
