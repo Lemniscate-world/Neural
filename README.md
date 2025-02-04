@@ -1,4 +1,3 @@
-```markdown
 # Neural: A Neural Network Programming Language
 
 Neural is a domain-specific language (DSL) designed for defining, training, and deploying neural networks. With an intuitive syntax and powerful abstractions, Neural makes it easy to experiment with complex architectures like CNNs, RNNs, GANs, and Transformers.
