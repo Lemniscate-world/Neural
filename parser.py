@@ -16,6 +16,9 @@ grammar = r"""
          | residual_layer | inception_layer | capsule_layer | squeeze_excitation_layer 
          | graph_conv_layer | embedding_layer | quantum_layer | dynamic_layer
 
+    # Output layer
+    output_layer: "Output(" "units=" INT "," "activation=" ESCAPED_STRING ")"
+         
     # Convolutional Layers
     conv2d_layer: "Conv2D(" "filters=" INT "," "kernel_size=(" INT "," INT ")," "activation=" ESCAPED_STRING ")"
     max_pooling2d_layer: "MaxPooling2D(" "pool_size" "=" "(" INT "," INT ")" ")"
@@ -54,6 +57,10 @@ grammar = r"""
     training_config: "train" "{" ("epochs:" INT)? ("batch_size:" INT)?  "}"
     loss: "loss:" ESCAPED_STRING
     optimizer: "optimizer:" ESCAPED_STRING
+
+    # Execution Configurations
+    execution_config: "execution" "{" "device:" ESCAPED_STRING "}"
+
 
     %import common.CNAME -> NAME
     %import common.INT
@@ -316,6 +323,16 @@ class ModelTransformer(lark.Transformer):
         # Find training config (if exists)
         training_config = next((item for item in items if isinstance(item, dict) and item.get('type') == 'TrainingConfig'), {})
         
+        # Find Execution config (if exists)
+        execution_config = next((item for item in items if isinstance(item, dict) and item.get('type') == 'ExecutionConfig'), {})
+        
+        # Construct the neural network configuration dictionary
+        # This includes the name, input shape, layers, output layer, output shape, loss, optimizer, and training configuration
+        # If execution configuration is provided, it will be included as well.
+        # If no explicit output layer was found, it will be added to the layers list.
+        # If no loss or optimizer is found, default values will be used.
+        # If no training configuration is found, default values will be used.
+
         return {
             'name': name,
             'input_shape': input_shape,
@@ -324,7 +341,8 @@ class ModelTransformer(lark.Transformer):
             'output_shape': output_shape,
             'loss': loss,
             'optimizer': optimizer,
-            'training_config': training_config
+            'training_config': training_config,
+            'execution_config': execution_config
         }
 
 # Example code
