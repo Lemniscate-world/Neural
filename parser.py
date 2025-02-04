@@ -1,6 +1,10 @@
 import lark
 import numpy as np
 import os
+import torch
+import torch.nn as nn
+import pennylane as qml
+from pennylane import numpy as pnp
 from plugins import LAYER_PLUGINS
 
 
