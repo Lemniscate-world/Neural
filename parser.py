@@ -86,46 +86,50 @@ parser = lark.Lark(grammar, start='network', parser='lalr')
 class ModelTransformer(lark.Transformer):
     def layer(self, items):
         """
-        Process a layer in the neural network model.
+                Process a layer in the neural network model.
 
-        This method extracts information about a single layer from the parsed items
-        and returns a dictionary containing the layer's type and parameters.
+                This method extracts information about a single layer from the parsed items
+                and returns a dictionary containing the layer's type and parameters.
 
-        Parameters:
-        items (list): A list containing the parsed information for the layer.
-                      The first item is expected to be a dictionary with layer information.
+                Parameters:
+                items (list): A list containing the parsed information for the layer.
+                            The first item is expected to be a dictionary with layer information.
 
-        Returns:
-        dict: A dictionary containing two keys:
-              'type': The type of the layer (e.g., 'Conv2D', 'Dense', etc.)
-              'params': A dictionary containing all the parameters for the layer
+                Returns:
+                dict: A dictionary containing two keys:
+                    'type': The type of the layer (e.g., 'Conv2D', 'Dense', etc.)
+                    'params': A dictionary containing all the parameters for the layer
         """
-        layer_type = items[0]
+        layer_info = items[0]  # Extract first item (which should be the layer type)
 
-        # Check if the layer exists in the plugin registry
+        # Ensure `layer_info` is a dictionary and contains 'type'
+        if isinstance(layer_info, dict):
+            layer_type = layer_info.get("type")  # Extract the layer type (string)
+        elif isinstance(layer_info, lark.Tree):
+            layer_type = layer_info.data  # Extract type from Tree structure
+        else:
+            layer_type = str(layer_info)  # Fallback: Convert to string if it's neither
+
+        # Check if the extracted layer type exists in the plugin registry
         if layer_type in LAYER_PLUGINS:
-            return LAYER_PLUGINS[layer_type](items[1:])
+            return LAYER_PLUGINS[layer_type](items[1:])  # Pass remaining parameters
 
-            
-        layer_info = items[0]  # The first item should be the layer information
-        
+        # If it's a dictionary with a "type" key, return as is
         if isinstance(layer_info, dict) and "type" in layer_info:
             return layer_info
-        
+
+        # If it's a lark Tree, extract parameters
         if isinstance(layer_info, lark.Tree):
-        # If it's a Tree, the type is in the data attribute
             return {
-                'type': layer_info.data,
+                'type': layer_type,
                 'params': layer_info.children[0] if layer_info.children else {}
             }
-        else:
-        # If it's not a Tree, the type is in the first item
-            return {
-                'type': items[0],
-                'params': items[1] if len(items) > 1 else {}
-            }
-        
-        return {"type": layer_type, "params": items[1:] if len(items) > 1 else {}}
+
+        # If it's neither a dictionary nor a Tree, assume it's a simple type
+        return {
+            'type': layer_type,
+            'params': items[1] if len(items) > 1 else {}
+        }
 
     
     def input_layer(self, items):
