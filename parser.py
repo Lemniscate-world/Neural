@@ -541,10 +541,11 @@ def generate_code(model_data, backend="tensorflow"):
                 code += f"        x = self.relu(x)\n"
                 code += f"        x = self.softmax(x)\n"
                 code += f"        return x\n"
-        code += "model = Model()\n"
+        code += "model = Model().to(device)\n"
         code += f"model.to('{backend}')')\n"
         code += f"loss_fn = torch.nn.CrossEntropyLoss()\n"
         code += f"optimizer = torch.optim.{model_data['optimizer']['value']}()\n"
+
 
         if 'training_config' in model_data:
             code += f"for epoch in range({model_data['training_config']['epochs']}):\n"
