@@ -40,6 +40,7 @@ from parser import propagate_shape, parser, ModelTransformer, load_file
 ])
 def test_layer_parsing(code, expected):
     tree = parser.parse(f'network TestModel {{ input: (28,28,1) layers: {code} loss: "mse" optimizer: "adam" }}')
+    transformer = ModelTransformer()
     model_data = transformer.transform(tree)
     # The first layer should match expected
     assert model_data['layers'][0] == expected
