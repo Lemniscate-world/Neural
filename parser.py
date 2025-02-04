@@ -55,7 +55,7 @@ grammar = r"""
     embedding_layer: "Embedding(" "input_dim=" INT "," "output_dim=" INT ")"
     
     # Special Layers
-    quantum_layer: "QuantumLayer(" "loss=" ESCAPED_STRING "," "optimizer=" ESCAPED_STRING ")"
+    quantum_layer: "QuantumLayer()"
     dynamic_layer: "DynamicLayer()"
 
     # Training Configurations
