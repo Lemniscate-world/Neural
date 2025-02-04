@@ -468,6 +468,90 @@ def propagate_shape(input_shape, layer):
     else:
         raise ValueError(f"Unsupported layer type: {layer_type}") 
 
+
+import torch
+import torch.nn as nn
+import pennylane as qml
+from pennylane import numpy as pnp
+
+class QuantumLayer(nn.Module):
+    def __init__(self, n_qubits, n_layers, n_features):
+        """
+        n_qubits: Number of quantum bits to use.
+        n_layers: Number of variational layers in the quantum circuit.
+        n_features: Dimension of the input features per sample.
+        """
+        super(QuantumLayer, self).__init__()
+        self.n_qubits = n_qubits
+        self.n_layers = n_layers
+
+        # Define a quantum device on the CPU or GPU via PennyLane's default.qubit device.
+        self.dev = qml.device("default.qubit", wires=n_qubits)
+
+        # The total number of parameters in the variational circuit.
+        self.weight_shapes = {"weights": (n_layers, n_qubits, 3)}
+
+        # Create a QNode that wraps our quantum circuit.
+        @qml.qnode(self.dev, interface="torch")
+        def circuit(inputs, weights):
+            # Encode classical data into the quantum state.
+            # For simplicity, we embed each feature onto a qubit using an RY gate.
+            for i in range(self.n_qubits):
+                if i < len(inputs):
+                    qml.RY(inputs[i], wires=i)
+                else:
+                    qml.RY(0.0, wires=i)
+
+            # Apply a variational circuit (multiple layers of rotations).
+            for layer in range(self.n_layers):
+                for qubit in range(self.n_qubits):
+                    qml.RX(weights[layer, qubit, 0], wires=qubit)
+                    qml.RY(weights[layer, qubit, 1], wires=qubit)
+                    qml.RZ(weights[layer, qubit, 2], wires=qubit)
+                # Entangle adjacent qubits with CNOTs
+                for qubit in range(self.n_qubits - 1):
+                    qml.CNOT(wires=[qubit, qubit + 1])
+                # Optionally, add a CNOT from the last to the first qubit to create a ring entanglement.
+                qml.CNOT(wires=[self.n_qubits - 1, 0])
+
+            # Measure expectation values on each qubit.
+            return [qml.expval(qml.PauliZ(wires=i)) for i in range(self.n_qubits)]
+
+        # Register the quantum circuit as a torch parameter.
+        self.weights = nn.Parameter(torch.randn(self.weight_shapes["weights"]))
+
+        # Save the QNode function
+        self.circuit = circuit
+
+        # A final linear layer to map the quantum outputs to the desired feature size.
+        self.fc = nn.Linear(n_qubits, n_features)
+
+    def forward(self, x):
+        # x is expected to be of shape (batch_size, n_features_in)
+        # We will process each sample individually.
+        outputs = []
+        for sample in x:
+            # For each sample, convert it to a 1D tensor (if not already).
+            sample = sample.flatten()
+            # Run the quantum circuit on the sample with current weights.
+            q_out = self.circuit(sample, self.weights)
+            q_out = torch.stack(q_out)  # Convert list to tensor.
+            # Map the quantum outputs to desired features.
+            outputs.append(self.fc(q_out))
+        # Stack all outputs into a batch tensor.
+        return torch.stack(outputs)
+
+# Example usage:
+if __name__ == "__main__":
+    # Create a QuantumLayer with 4 qubits, 2 variational layers, mapping to 8 features.
+    quantum_layer = QuantumLayer(n_qubits=4, n_layers=2, n_features=8)
+    # Create a dummy input: batch of 3 samples, each with 4 features.
+    dummy_input = torch.randn(3, 4)
+    output = quantum_layer(dummy_input)
+    print("QuantumLayer output shape:", output.shape)
+
+
+
 def generate_code(model_data, backend="tensorflow"):
     """
     This function generates code for creating and training a neural network model based on the given model data and backend.
