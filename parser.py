@@ -11,7 +11,7 @@ grammar = r"""
     output_layer: "Output(" "units=" INT "," "activation=" ESCAPED_STRING ")"
     dropout_layer: "Dropout(" "rate=" FLOAT ")"
     flatten_layer: "Flatten()"
-    max_pooling2d_layer: "MaxPooling2D(" "pool_size=(" INT "," INT ")" ")"
+    max_pooling2d_layer: "MaxPooling2D(" "pool_size" "=" "(" INT "," INT ")" ")"
     training_config: "train" "{" ("epochs:" INT)? ("batch_size:" INT)?  "}"
     loss: "loss:" ESCAPED_STRING
     optimizer: "optimizer:" ESCAPED_STRING
@@ -171,7 +171,7 @@ class ModelTransformer(lark.Transformer):
     def max_pooling2d_layer(self, items):
         return {
             'type': 'MaxPooling2D',
-            'pool_size': (int((items[0]), int(items[1])))
+            'pool_size': (int(items[0].value), int(items[1].value))
         }
 
     def network(self, items):
