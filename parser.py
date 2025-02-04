@@ -88,8 +88,7 @@ class ModelTransformer(lark.Transformer):
         if layer_type in LAYER_PLUGINS:
             return LAYER_PLUGINS[layer_type](items[1:])
 
-        return {"type": layer_type, "params": items[1:] if len(items) > 1 else {}}
-
+            
         layer_info = items[0]  # The first item should be the layer information
         
         if isinstance(layer_info, dict) and "type" in layer_info:
@@ -107,6 +106,9 @@ class ModelTransformer(lark.Transformer):
                 'type': items[0],
                 'params': items[1] if len(items) > 1 else {}
             }
+        
+        return {"type": layer_type, "params": items[1:] if len(items) > 1 else {}}
+
     
     def input_layer(self, items):
         # Convert tokens to integers explicitly
