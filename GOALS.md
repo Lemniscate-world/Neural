@@ -39,9 +39,22 @@
 ✅ Implement GPU acceleration using CUDA & TensorRT (for NVIDIA GPUs)
 ✅ Support multi-backend inference (CPU, GPU, and possibly future hardware like TPUs)
 ✅ Introduce automatic device selection based on available hardware
+- Implement ONNX export for deployment
+- Add visualizer
+- Make neural generate research paper (No AI) on model i'm using or training with benchmarks and stats etc in the its IDE + visualizer and interactive solver and nodes explorers with details
+- Add Multi GPU training
+- Optimize for low-latency real-time inference
+
+
+
+
+
 - Create very basic deepseek model with neural and even fine-tune to showcase neural functionalities.
 - Create my own neural machine learning model based on graph theory, with benchmarks and research papers wto showcase neural functionalities.
 - Create model for autoevolving music with neural
+- Add custom graph-based debugging
+- Implement hyperparameter tuning visualization
+- Live tracking of training progress
 - My own model form y MWI Qubits simulator
 - For high frequency trading too
 - For BloomDb branch (probabilistic and fuzzy data sets)
@@ -55,7 +68,7 @@ How can i enhance my grammar ?
 Create requirements.txt
 Write full neural language syntax documentation
 Create requirements-dev.txt
-Make neural generate research paper on model i'm using or training with benchmarks and stats etc in the IDE + visualizer
+
 
 Performance Optimization Features
   - Automatic Mixed Precision (Train models using mixed float16 and float32 precision to reduce memory usage and speed up training.)
