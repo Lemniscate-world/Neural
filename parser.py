@@ -44,6 +44,10 @@ class ModelTransformer(lark.Transformer):
               'params': A dictionary containing all the parameters for the layer
         """
         layer_info = items[0]  # The first item should be the layer information
+        
+        if isinstance(layer_info, dict) and "type" in layer_info:
+            return layer_info
+        
         if isinstance(layer_info, lark.Tree):
         # If it's a Tree, the type is in the data attribute
             return {
