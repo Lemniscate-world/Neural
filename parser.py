@@ -151,8 +151,10 @@ class ModelTransformer(lark.Transformer):
                 parsed_layers.append(layer_data)
             else:
                 parsed_layers.append(item)
-        return {'type': 'Layers', 'layers': parsed_layers}
-
+        return {
+            'type': 'Layers',
+            'layers': parsed_layers
+        }
     
     def dropout_layer(self, items):
         return {
