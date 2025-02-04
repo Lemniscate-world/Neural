@@ -2,7 +2,6 @@ import lark
 import numpy as np
 import os
 import torch
-import torch.nn as nn
 import pennylane as qml
 from pennylane import numpy as pnp
 from plugins import LAYER_PLUGINS
@@ -472,11 +471,6 @@ def propagate_shape(input_shape, layer):
     else:
         raise ValueError(f"Unsupported layer type: {layer_type}") 
 
-
-import torch
-import torch.nn as nn
-import pennylane as qml
-from pennylane import numpy as pnp
 
 class QuantumLayer(nn.Module):
     def __init__(self, n_qubits, n_layers, n_features):
