@@ -40,7 +40,7 @@ grammar = r"""
     flatten_layer: "Flatten()"
     
     # Recurrent Layers
-    recurrent_layer: ("LSTM" | "GRU" | "SimpleRNN") "(" "units=" INT ")"
+    recurrent_layer: ( "LSTM" | "GRU" | "SimpleRNN") "(" "units=" INT ")"
 
     # Attention & Transformer
     attention_layer: "Attention()"
@@ -270,7 +270,10 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'GroupNormalization', 'groups': int(items[0])}
 
     def recurrent_layer(self, items):
-        return {'type': items[0], 'units': int(items[1])}
+        return {
+            'type': items[0],
+            'units': int(items[1])
+        }
 
     def attention_layer(self, items):
         return {'type': 'Attention'}
