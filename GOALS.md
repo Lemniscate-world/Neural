@@ -45,7 +45,7 @@
 - Create very basic deepseek model with neural and even fine-tune to showcase all neural functionalities.and in the same time testing if they are working.
 
 
-
+- Creating executable neural files
 - Create a memory file to resume for neural
 - Create a standalone interpreter for neural
 - Ability to load models and parses them into different backends  
