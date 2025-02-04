@@ -144,10 +144,15 @@ class ModelTransformer(lark.Transformer):
             }
     
     def layers(self, items):
-        return {
-            'type': 'Layers',
-            'layers': [self.layer(item) if isinstance(item, lark.Tree) else item for item in items]
-        }
+        parsed_layers = []
+        for item in items:
+            if isinstance(item, lark.Tree):
+                layer_data = self.layer(item)
+                parsed_layers.append(layer_data)
+            else:
+                parsed_layers.append(item)
+        return {'type': 'Layers', 'layers': parsed_layers}
+
     
     def dropout_layer(self, items):
         return {

@@ -23,8 +23,10 @@ def test_parser():
     }
     """
     tree = parser.parse(code)
+    print(tree.pretty())
     transformer = ModelTransformer()
     model_data = transformer.transform(tree)
+    print(model_data)
     assert model_data["name"] == "MyModel"
     assert model_data["input_shape"] == (28, 28, 1)
     assert len(model_data["layers"]) == 5  # Now including MaxPooling2D
