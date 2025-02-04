@@ -39,13 +39,15 @@
 ✅ Implement GPU acceleration using CUDA & TensorRT (for NVIDIA GPUs)
 ✅ Support multi-backend inference (CPU, GPU, and possibly future hardware like TPUs)
 ✅ Introduce automatic device selection based on available hardware
-- Create very basic deepseek model with neural and even finetune to showcase neural functionalities.
-
-
-
+- Create very basic deepseek model with neural and even fine-tune to showcase neural functionalities.
+- Create my own neural machine learning model based on graph theory, with benchmarks and research papers wto showcase neural functionalities.
+- Create model for autoevolving music with neural
+- My own model form y MWI Qubits simulator
+- For high frequency trading too
+- For BloomDb branch (probabilistic and fuzzy data sets)
 
 How can i enhance shape validation and propagation ?
-How can i enhance Code Gneration ?
+How can i enhance Code Generation ?
 How can i enhance the plugin system ?
 How can i enhance the training configuration ?
 How can i make neural the less boilerplate possible ?
