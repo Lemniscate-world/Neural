@@ -11,11 +11,11 @@ from parser import propagate_shape, parser, ModelTransformer, load_file
 @pytest.mark.parametrize("code, expected", [
     # Basic Layers
     ("Dense(units=128, activation='relu')", {'type': 'Dense', 'units': 128, 'activation': 'relu'}),
-    ("Conv2D(filters=64, kernel_size=(3,3), activation='sigmoid')", 
+    ("Conv2D(filters=64, kernel_size=(3,3), activation='sigmoid')",
         {'type': 'Conv2D', 'filters': 64, 'kernel_size': (3,3), 'activation': 'sigmoid'}),
     ("MaxPooling2D(pool_size=(2,2))", {'type': 'MaxPooling2D', 'pool_size': (2,2)}),
     ("Dropout(rate=0.2)", {'type': 'Dropout', 'rate': 0.2}),
-    
+
     # Normalization
     ("BatchNormalization()", {'type': 'BatchNormalization'}),
     ("LayerNormalization()", {'type': 'LayerNormalization'}),
@@ -39,17 +39,10 @@ from parser import propagate_shape, parser, ModelTransformer, load_file
     ("DynamicLayer()", {'type': 'DynamicLayer'}),
 ])
 def test_layer_parsing(code, expected):
-
-    tree = parser.parse(f"network TestModel {{ input: (28,28,1) layers: {code} loss: 'mse' optimizer: 'adam' }}")
-    # Debug Print
-    print(tree.pretty())
-    
-    transformer = ModelTransformer()
+    tree = parser.parse(f'network TestModel {{ input: (28,28,1) layers: {code} loss: "mse" optimizer: "adam" }}')
     model_data = transformer.transform(tree)
-    
     # The first layer should match expected
-    assert model_data["layers"][0] == expected
-
+    assert model_data['layers'][0] == expected
 @pytest.mark.parametrize("filename, expected_type", [
     ("deepseek.neural", "model"),
     ("deepseek.nr", "model"),
