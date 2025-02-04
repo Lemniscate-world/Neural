@@ -3,15 +3,52 @@ import numpy as np
 
 grammar = r"""
     network: "network" NAME "{" input_layer layers loss optimizer training_config? "}"
+    
     input_layer: "input:" "(" INT "," INT "," INT ")"
+    
     layers: "layers:" layer+
-    layer: conv2d_layer | dense_layer | output_layer | dropout_layer | flatten_layer | max_pooling2d_layer
+    
+    layer: conv2d_layer | max_pooling2d_layer | dropout_layer | flatten_layer | dense_layer | output_layer 
+         | batch_norm_layer | layer_norm_layer | instance_norm_layer | group_norm_layer 
+         | recurrent_layer | attention_layer | transformer_layer 
+         | residual_layer | inception_layer | capsule_layer | squeeze_excitation_layer 
+         | graph_conv_layer | embedding_layer | quantum_layer | dynamic_layer
+
+    # Convolutional Layers
     conv2d_layer: "Conv2D(" "filters=" INT "," "kernel_size=(" INT "," INT ")," "activation=" ESCAPED_STRING ")"
-    dense_layer: "Dense(" "units=" INT "," "activation=" ESCAPED_STRING ")"
-    output_layer: "Output(" "units=" INT "," "activation=" ESCAPED_STRING ")"
-    dropout_layer: "Dropout(" "rate=" FLOAT ")"
-    flatten_layer: "Flatten()"
     max_pooling2d_layer: "MaxPooling2D(" "pool_size" "=" "(" INT "," INT ")" ")"
+    
+    # Regularization & Normalization
+    dropout_layer: "Dropout(" "rate=" FLOAT ")"
+    batch_norm_layer: "BatchNormalization()"
+    layer_norm_layer: "LayerNormalization()"
+    instance_norm_layer: "InstanceNormalization()"
+    group_norm_layer: "GroupNormalization(groups=" INT ")"
+
+    # Fully Connected & Flatten
+    dense_layer: "Dense(" "units=" INT "," "activation=" ESCAPED_STRING ")"
+    flatten_layer: "Flatten()"
+    
+    # Recurrent Layers
+    recurrent_layer: ("LSTM" | "GRU" | "SimpleRNN") "(" "units=" INT ")"
+
+    # Attention & Transformer
+    attention_layer: "Attention()"
+    transformer_layer: "TransformerEncoder(" "num_heads=" INT "," "ff_dim=" INT ")"
+
+    # Advanced & Research Layers
+    residual_layer: "ResidualConnection()"
+    inception_layer: "InceptionModule()"
+    capsule_layer: "CapsuleLayer()"
+    squeeze_excitation_layer: "SqueezeExcitation()"
+    graph_conv_layer: "GraphConv()"
+    embedding_layer: "Embedding(" "input_dim=" INT "," "output_dim=" INT ")"
+    
+    # Special Layers
+    quantum_layer: "QuantumLayer()"
+    dynamic_layer: "DynamicLayer()"
+
+    # Training Configurations
     training_config: "train" "{" ("epochs:" INT)? ("batch_size:" INT)?  "}"
     loss: "loss:" ESCAPED_STRING
     optimizer: "optimizer:" ESCAPED_STRING
@@ -23,6 +60,7 @@ grammar = r"""
     %import common.WS
     %ignore WS
 """
+
 
 parser = lark.Lark(grammar, start='network')
 
@@ -184,6 +222,52 @@ class ModelTransformer(lark.Transformer):
             'type': 'MaxPooling2D',
             'pool_size': (int(items[0].value), int(items[1].value))
         }
+    
+
+    def batch_norm_layer(self, _):
+        return {'type': 'BatchNormalization'}
+
+    def layer_norm_layer(self, _):
+        return {'type': 'LayerNormalization'}
+
+    def instance_norm_layer(self, _):
+        return {'type': 'InstanceNormalization'}
+
+    def group_norm_layer(self, items):
+        return {'type': 'GroupNormalization', 'groups': int(items[0])}
+
+    def recurrent_layer(self, items):
+        return {'type': items[0], 'units': int(items[1])}
+
+    def attention_layer(self, _):
+        return {'type': 'Attention'}
+
+    def transformer_layer(self, items):
+        return {'type': 'TransformerEncoder', 'num_heads': int(items[0]), 'ff_dim': int(items[1])}
+
+    def residual_layer(self, _):
+        return {'type': 'ResidualConnection'}
+
+    def inception_layer(self, _):
+        return {'type': 'InceptionModule'}
+
+    def capsule_layer(self, _):
+        return {'type': 'CapsuleLayer'}
+
+    def squeeze_excitation_layer(self, _):
+        return {'type': 'SqueezeExcitation'}
+
+    def graph_conv_layer(self, _):
+        return {'type': 'GraphConv'}
+
+    def embedding_layer(self, items):
+        return {'type': 'Embedding', 'input_dim': int(items[0]), 'output_dim': int(items[1])}
+
+    def quantum_layer(self, _):
+        return {'type': 'QuantumLayer'}
+
+    def dynamic_layer(self, _):
+        return {'type': 'DynamicLayer'}
 
     def network(self, items):
         name = str(items[0])
