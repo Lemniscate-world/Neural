@@ -62,7 +62,8 @@ grammar = r"""
 """
 
 
-parser = lark.Lark(grammar, start='network')
+parser = lark.Lark(grammar, start='network', parser='lalr')
+
 
 class ModelTransformer(lark.Transformer):
     def layer(self, items):
@@ -81,6 +82,14 @@ class ModelTransformer(lark.Transformer):
               'type': The type of the layer (e.g., 'Conv2D', 'Dense', etc.)
               'params': A dictionary containing all the parameters for the layer
         """
+        layer_type = items[0]
+
+        # Check if the layer exists in the plugin registry
+        if layer_type in LAYER_PLUGINS:
+            return LAYER_PLUGINS[layer_type](items[1:])
+
+        return {"type": layer_type, "params": items[1:] if len(items) > 1 else {}}
+
         layer_info = items[0]  # The first item should be the layer information
         
         if isinstance(layer_info, dict) and "type" in layer_info:
