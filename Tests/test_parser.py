@@ -11,8 +11,8 @@ from parser import propagate_shape, parser, ModelTransformer, load_file
 
 @pytest.mark.parametrize("code, expected", [
     # Basic Layers
-    ("Dense(units=128, activation='relu')", {'type': 'Dense', 'units': 128, 'activation': 'relu'}),
-    ("Conv2D(filters=64, kernel_size=(3,3), activation='sigmoid')",
+    ('Dense(units=128, activation="relu")', {'type': 'Dense', 'units': 128, 'activation': 'relu'}),
+    ('Conv2D(filters=64, kernel_size=(3,3), activation="sigmoid")',
         {'type': 'Conv2D', 'filters': 64, 'kernel_size': (3,3), 'activation': 'sigmoid'}),
     ("MaxPooling2D(pool_size=(2,2))", {'type': 'MaxPooling2D', 'pool_size': (2,2)}),
     ("Dropout(rate=0.2)", {'type': 'Dropout', 'rate': 0.2}),
