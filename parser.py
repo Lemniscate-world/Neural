@@ -1,5 +1,7 @@
 import lark
 import numpy as np
+from plugins import LAYER_PLUGINS
+
 
 grammar = r"""
     network: "network" NAME "{" input_layer layers loss optimizer training_config? "}"
