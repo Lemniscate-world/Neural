@@ -31,8 +31,8 @@
 - Understanding dictionaries properly.
 - I'm modifying the layer method (ModelTransformer) to extract the layer type from the Tree nodes correctly. Instead of accessing the data attribute directly, I can use the children attribute to retrieve the layer type. (parser.py)
 (Done)
+- TESTING THE MVP and debugging (1) (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.) (Done)
 
-- TESTING THE MVP and debugging (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.)
 - Write more test cases for edge cases
 - Add more test cases for edge cases and custom layers.
 
@@ -54,6 +54,8 @@ Write documentation for users and contributors.
 - Implement tensor shape propagation for parser.py
 - Implement Better error messages with Lark's Diagnostics for parser.py
   
+- TESTING THE MVP and debugging (2) (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.) 
+
 - Code Generation
   - Add PyTorch/JAX backends
   - ONNX export scaffolding
