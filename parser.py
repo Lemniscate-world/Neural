@@ -327,40 +327,63 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'GroupNormalization', 'groups': int(items[0])}
 
     #### Recurrent Layers ###################################
-
+    
+    
     def recurrent_layer(self, items):
         """
-        Processes a recurrent layer. Expects:
-        - items[0]: A token (or string) representing the layer type.
-        - items[1]: The 'units' (INT).
-        - Additional parameters may follow depending on the layer type.
+        Process a recurrent layer definition and return a dictionary containing its parameters.
         
-        Returns a dictionary with the appropriate keys.
+        Expected minimal signature:
+        [<TYPE token>, <INT token>]
+        For additional parameters, they appear at fixed positions.
         """
 
-        def _get_value(items, idx, conv=lambda x: x, default=None):
-            """Helper to safely extract and convert a value from items."""
-            return conv(items[idx]) if len(items) > idx else default
-        # Convert the token to string (e.g. "LSTM", "GRU", etc.)
-        layer_type = str(items[0])
-        # Basic units (if provided)
+    def _get_value(items, idx, conv=lambda x: x, default=None):
+        """Safely extract and convert the value at index idx from items.
+        
+        If the item has a .value attribute (as tokens do), use it; otherwise, use str(item).
+        """
+        try:
+            token = items[idx]
+            val = token.value if hasattr(token, "value") else str(token)
+            return conv(val)
+        except (IndexError, ValueError):
+            return default
+
+
+        # Extract the layer type as a string.
+        if hasattr(items[0], "value"):
+            layer_type = str(items[0].value)
+        elif isinstance(items[0], lark.Tree):
+            # Map tree data to uppercase; adjust as needed.
+            mapping = {
+                "lstm_layer": "LSTM",
+                "gru_layer": "GRU",
+                "simplernn_layer": "SimpleRNN",
+                "simplernncell_layer": "SimpleRNNCell",
+                "grucell_layer": "GRUCell",
+                "lstmcell_layer": "LSTMCell",
+                "cudnnlstm_layer": "CuDNNLSTM",
+                "cudnngru_layer": "CuDNNGRU",
+                "cudnnsimplernn_layer": "CuDNNSimpleRNN",
+                "rnn_layer": "RNN",
+            }
+            layer_type = mapping.get(items[0].data, items[0].data)
+        else:
+            layer_type = str(items[0])
+        
+        # For basic units, extract from index 1.
         units = _get_value(items, 1, int, None)
         
-        # --- Category 1: Common recurrent layers with return_sequences at index 2 ---
-        common_layers = {
-            "LSTM", "GRU", "SimpleRNN", "CuDNNLSTM", "CuDNNGRU", "CuDNNSimpleRNN", "RNN"
-        }
-        # --- Category 2: Recurrent cell variants with return_sequences at index 3 ---
-        cell_layers = {"SimpleRNNCell", "GRUCell", "LSTMCell"}
-        # --- Category 3: Dropout wrappers; expect return_sequences at index 2 and dropout at index 3 ---
+        # Group similar layer types:
+        basic = {"LSTM", "GRU", "SimpleRNN", "CuDNNLSTM", "CuDNNGRU", "CuDNNSimpleRNN", "RNN"}
+        cell_variants = {"SimpleRNNCell", "GRUCell", "LSTMCell"}
         dropout_wrappers = {"SimpleRNNDropoutWrapper", "GRUDropoutWrapper", "LSTMDropoutWrapper",
                             "GRUCellDropoutWrapper", "LSTMCellDropoutWrapper"}
-        # --- Category 4: Projection layers; expect projection_size at index 2 ---
-        projection_layers = {"BasicLSTMCellWithProjection", "BasicGRUCellWithProjection",
-                            "BasicRNNCellWithProjection", "BasicRNNCellWithInputProjection",
-                            "GRUCellWithInputProjection"}
-        # --- Category 5: Peephole/Projection combinations ---
-        peephole_projection_layers = {
+        projection = {"BasicLSTMCellWithProjection", "BasicGRUCellWithProjection",
+                    "BasicRNNCellWithProjection", "BasicRNNCellWithInputProjection",
+                    "GRUCellWithInputProjection"}
+        complex_variants = {
             "BasicRNNCellWithInputProjectionAndPeephole",
             "BasicRNNCellWithInputProjectionAndPeepholeAndProjection",
             "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSize",
@@ -368,56 +391,46 @@ class ModelTransformer(lark.Transformer):
             "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSizeAndNumLayersAndDropout",
             "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSizeAndNumLayersAndDropoutAndkernel_initializer"
         }
-        # --- Category 6: Basic recurrent cells ---
-        basic_cells = {"BasicLSTMCell", "BasicGRUCell", "BasicLSTMCellWithPeephole",
-                    "BasicRNNCell", "BasicRNNCellWithPeephole"}
+        basic_cells = {"BasicLSTMCell", "BasicGRUCell", "BasicRNNCell", "BasicLSTMCellWithPeephole", "BasicRNNCellWithPeephole"}
         
-        # --- Category 7: Attention wrappers (handle any that start with "AttentionWrapper") ---
-        if layer_type.startswith("AttentionWrapper"):
-            # A simplified treatment: assume at least:
-            # items[1]: attention_layer (to be processed via self.layer_norm_layer)
-            # items[2]: attention_layer_size (INT)
-            # items[3]: attention_type token (optional, default "bahdanau")
-            return {
-                "type": layer_type,
-                "attention_layer": self.layer_norm_layer(items[1]),
-                "attention_layer_size": int(items[2]),
-                "attention_type": _get_value(items, 3, lambda x: x.value, "bahdanau")
-            }
+        # Helper: if minimal (only two items), then return basic result.
+        if len(items) == 2:
+            return {"type": layer_type, "units": units}
         
-        # --- Process each category ---
-        if layer_type in common_layers:
-            # Return sequences flag expected at index 2.
-            return {
-                "type": layer_type,
-                "units": units,
-                "return_sequences": _get_value(items, 2, lambda x: x, False)
-            }
-        elif layer_type in cell_layers:
-            # Return sequences flag expected at index 3.
-            return {
-                "type": layer_type,
-                "units": units,
-                "return_sequences": _get_value(items, 3, lambda x: x, False)
-            }
+        # For layers in 'basic' group: expect an optional return_sequences flag at index 2.
+        if layer_type in basic:
+            # Only add return_sequences if provided.
+            if len(items) >= 3:
+                return_seq = _get_value(items, 2, lambda x: x, False)
+                return {"type": layer_type, "units": units, "return_sequences": return_seq}
+            else:
+                return {"type": layer_type, "units": units}
+        
+        # For cell variants: expect return_sequences at index 3.
+        elif layer_type in cell_variants:
+            if len(items) >= 4:
+                return_seq = _get_value(items, 3, lambda x: x, False)
+                return {"type": layer_type, "units": units, "return_sequences": return_seq}
+            else:
+                return {"type": layer_type, "units": units}
+        
+        # For dropout wrappers: expect return_sequences at index 2 and dropout (float) at index 3.
         elif layer_type in dropout_wrappers:
-            # Return sequences at index 2, dropout value (float) at index 3.
-            return {
-                "type": layer_type,
-                "units": units,
-                "return_sequences": _get_value(items, 2, lambda x: x, False),
-                "dropout": _get_value(items, 3, float, None)
-            }
-        elif layer_type in projection_layers:
-            # Expect projection_size at index 2.
-            return {
-                "type": layer_type,
-                "units": units,
-                "projection_size": _get_value(items, 2, int, None)
-            }
-        elif layer_type in peephole_projection_layers:
-            # Expect a sequence of parameters: projection_size (idx 2), hidden_size (idx 3),
-            # num_layers (idx 4), dropout (idx 5), kernel_initializer (idx 6)
+            if len(items) >= 4:
+                return_seq = _get_value(items, 2, lambda x: x, False)
+                dropout = _get_value(items, 3, float, None)
+                return {"type": layer_type, "units": units, "return_sequences": return_seq, "dropout": dropout}
+            else:
+                return {"type": layer_type, "units": units}
+        
+        # For projection variants: expect projection_size at index 2.
+        elif layer_type in projection:
+            projection_size = _get_value(items, 2, int, None)
+            return {"type": layer_type, "units": units, "projection_size": projection_size}
+        
+        # For complex variants: expect projection_size (idx2), hidden_size (idx3), num_layers (idx4),
+        # dropout (idx5), kernel_initializer (idx6)
+        elif layer_type in complex_variants:
             result = {"type": layer_type, "units": units}
             result["projection_size"] = _get_value(items, 2, int, None)
             result["hidden_size"] = _get_value(items, 3, int, None)
@@ -425,11 +438,28 @@ class ModelTransformer(lark.Transformer):
             result["dropout"] = _get_value(items, 5, float, None)
             result["kernel_initializer"] = _get_value(items, 6, lambda x: x.value, None)
             return result
+        
+        # For Attention wrappers (special-case):
+        elif layer_type.startswith("AttentionWrapper"):
+            # For simplicity, assume:
+            # items[1]: attention_layer (processed via self.layer_norm_layer)
+            # items[2]: attention_layer_size (INT)
+            # items[3]: attention_type (optional; if not present, default to "bahdanau")
+            attn_type = _get_value(items, 3, lambda x: x.value if hasattr(x, "value") else x, "bahdanau")
+            return {
+                "type": layer_type,
+                "attention_layer": self.layer_norm_layer(items[1]),
+                "attention_layer_size": _get_value(items, 2, int, None),
+                "attention_type": attn_type
+            }
+        
+        # For basic cells:
         elif layer_type in basic_cells:
             return {"type": layer_type, "units": units}
         
-        # --- Fallback ---
-        return {"type": layer_type, "units": units}
+        # Fallback: return basic info.
+        else:
+            return {"type": layer_type, "units": units}
 
     #### Recurrent Layers #################################
 
@@ -878,6 +908,7 @@ def load_file(filename):
         print(f"✅ Loading Model Definition from {filename}...")
         return "model", content
     elif file_ext == ".rnr":
+        tree = parser.parse(content, start="research")
         print(f"✅ Loading Research Report from {filename}...")
         return "research", content
     else:
