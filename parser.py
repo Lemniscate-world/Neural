@@ -95,9 +95,7 @@ grammar = r"""
     execution_config: "execution" "{" "device:" ESCAPED_STRING "}"
 
     # Research .rnr Files Configurations
-    research: "research" NAME "{" research_content "}"
-    research_content: (research_section)+
-    research_section: "title:" ESCAPED_STRING | "abstract:" ESCAPED_STRING | "results:" ESCAPED_STRING
+    research: "research" NAME "{" metrics references? "}"
     metrics: "metrics" "{" ("accuracy:" FLOAT)? ("loss:" FLOAT)? ("precision:" FLOAT)? ("recall:" FLOAT)? "}"
     references: "references" "{" ("paper:" ESCAPED_STRING)+ "}"
 
@@ -113,6 +111,8 @@ grammar = r"""
 
 
 parser = lark.Lark(grammar, start='network', parser='lalr')
+# Creating a separate parser instance for research files
+research_parser = lark.Lark(grammar, start='research', parser='lalr')
 
 
 class ModelTransformer(lark.Transformer):
@@ -915,7 +915,7 @@ def load_file(filename):
         return "model", parser.parse(content, start="network")  # Explicit start
     elif file_ext == ".rnr":
         print(f"✅ Loading Research Report from {filename}...")
-        return "research", parser.parse(content, start="research")  # Correct start rule
+        return "research", research_parser.parse(content, start="research")  # Correct start rule
     else:
         raise ValueError(f"Unsupported file extension: {file_ext}")
 
