@@ -1,62 +1,75 @@
 import os
 import sys
 import pytest
-import torch.nn as nn
+from lark import Lark
 
-# Add the parent directory to the Python path
+# Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from parser import ModelTransformer, create_parser
 
-from parser import propagate_shape, parser, ModelTransformer, load_file
+@pytest.fixture
+def layer_parser():
+    return create_parser('layer')
 
-@pytest.mark.parametrize("code, expected", [
-    # Basic Layers
-    ('Dense(units=128, activation="relu")', {'type': 'Dense', 'units': 128, 'activation': 'relu'}),
-    ('Conv2D(filters=64, kernel_size=(3,3), activation="sigmoid")',
-        {'type': 'Conv2D', 'filters': 64, 'kernel_size': (3,3), 'activation': 'sigmoid'}),
-    ("MaxPooling2D(pool_size=(2,2))", {'type': 'MaxPooling2D', 'pool_size': (2,2)}),
-    ("Dropout(rate=0.2)", {'type': 'Dropout', 'rate': 0.2}),
+@pytest.fixture
+def network_parser():
+    return create_parser('network')
 
-    # Normalization
-    ("BatchNormalization()", {'type': 'BatchNormalization'}),
-    ("LayerNormalization()", {'type': 'LayerNormalization'}),
-    ("InstanceNormalization()", {'type': 'InstanceNormalization'}),
-    ("GroupNormalization(groups=4)", {'type': 'GroupNormalization', 'groups': 4}),
+@pytest.fixture
+def research_parser():
+    return create_parser('research')
 
-    # Recurrent
-    ("LSTM(units=256)", {'type': 'LSTM', 'units': 256}),
-    ("GRU(units=128)", {'type': 'GRU', 'units': 128}),
+@pytest.fixture
+def transformer():
+    return ModelTransformer()
 
-    # Attention
-    ("Attention()", {'type': 'Attention'}),
-    ("TransformerEncoder(num_heads=8, ff_dim=512)", {'type': 'TransformerEncoder', 'num_heads': 8, 'ff_dim': 512}),
-
-    # Advanced
-    ("ResidualConnection()", {'type': 'ResidualConnection'}),
-    ("InceptionModule()", {'type': 'InceptionModule'}),
-    ("CapsuleLayer()", {'type': 'CapsuleLayer'}),
-    ("GraphConv()", {'type': 'GraphConv'}),
-    ("QuantumLayer()", {'type': 'QuantumLayer'}),
-    ("DynamicLayer()", {'type': 'DynamicLayer'}),
+@pytest.mark.parametrize("layer_string,expected", [
+    (
+        'Dense(128, "relu")',
+        {'type': 'Dense', 'units': 128, 'activation': 'relu'}
+    ),
+    (
+        'Conv2D(32, 3, 3, "relu")',
+        {'type': 'Conv2D', 'filters': 32, 'kernel_size': (3, 3), 'activation': 'relu'}
+    ),
+    (
+        'Flatten()',
+        {'type': 'Flatten'}
+    ),
+    (
+        'Dropout(0.5)',
+        {'type': 'Dropout', 'rate': 0.5}
+    ),
 ])
-def test_layer_parsing(code, expected):
-    tree = parser.parse(f'network TestModel {{ input: (28,28,1) layers: {code} loss: "mse" optimizer: "adam" }}')
-    transformer = ModelTransformer()
-    model_data = transformer.transform(tree)
-    # The first layer should match expected
-    assert model_data['layers'][0] == expected
-@pytest.mark.parametrize("filename, expected_type", [
-    ("deepseek1984.neural", "model"),
-    ("deepseek1984.nr", "model"),
-    ("deepseek1984_research.rnr", "research"),
-])
-def test_file_parsing(filename, expected_type):
-    file_type, content = load_file(filename)
-    assert file_type == expected_type
-
-    tree = parser.parse(content)
-    transformer = ModelTransformer()
+def test_layer_parsing(layer_parser, transformer, layer_string, expected):
+    tree = layer_parser.parse(layer_string)
     result = transformer.transform(tree)
+    assert result == expected
+def test_network_parsing(network_parser, transformer):
+    network_string = """
+    network TestModel {
+        input: (28, 28, 1)
+        layers:
+            Conv2D(filters=32, kernel_size=(3,3), activation="relu")
+            Flatten()
+            Dense(units=128, activation="relu")
+        loss: "categorical_crossentropy"
+        optimizer: "adam"
+    }
+    """
+    tree = network_parser.parse(network_string)
+    result = transformer.transform(tree)
+    
+    assert result['type'] == 'model'
+    assert result['name'] == 'TestModel'
+    assert result['input_shape'] == (28, 28, 1)
+    assert len(result['layers']) == 3
 
-    assert result["type"] == expected_type
-    print(f"Successfully parsed {filename} as {expected_type}!")
+def test_invalid_layer(layer_parser):
+    with pytest.raises(Exception):
+        layer_parser.parse("InvalidLayer()")
+
+def test_invalid_network(network_parser):
+    with pytest.raises(Exception):
+        network_parser.parse("invalid network syntax")

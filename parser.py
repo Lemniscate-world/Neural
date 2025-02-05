@@ -14,9 +14,22 @@ def create_parser(start_rule='network'):
 
         ?start: network | layer | research  # Allow parsing either networks or research files
 
+        # File type rules
+        neural_file: network
+        nr_file: network
+        rnr_file: research
+
+        # Layer parameter styles
+        ?param_style1: named_params    // Dense(units=128, activation="relu")
+                    | ordered_params   // Dense(128, "relu")
+        
+        named_params: NAME "=" value ("," NAME "=" value)*
+        ordered_params: value ("," value)*
+        value: INT | FLOAT | ESCAPED_STRING | tuple
+        tuple: "(" value ("," value)* ")"
 
         # Top-level network definition - defines the structure of an entire neural network
-        network: "network" NAME "{" input_layer layers loss optimizer config* "}"
+        network: "network" NAME "{" input_layer layers loss optimizer [training_config] "}"
 
         # Configuration can be either training-related or execution-related
         config: training_config | execution_config
@@ -53,17 +66,14 @@ def create_parser(start_rule='network'):
         activation_param: "activation=" ESCAPED_STRING
             
         # Convolutional layer parameters
-        conv2d_layer: "Conv2D(" filters_param "," kernel_param "," activation_param ")"
-        filters_param: "filters=" INT
-        kernel_param: "kernel_size=" "(" INT "," INT ")"
-        
+        conv2d_layer: "Conv2D(" param_style1 ")"
+
         # Pooling layer parameters
         max_pooling2d_layer: "MaxPooling2D(" pool_param ")"
         pool_param: "pool_size=" "(" INT "," INT ")"
         
         # Dropout layer for regularization
-        dropout_layer: "Dropout(" rate_param ")"
-        rate_param: "rate=" FLOAT
+        dropout_layer: "Dropout(" param_style1 ")"
         
         # Normalization layers
         norm_layer: batch_norm_layer
@@ -78,9 +88,9 @@ def create_parser(start_rule='network'):
         groups_param: "groups=" INT
 
         # Basic layer types
-        dense_layer: "Dense(" units_param "," activation_param ")"
+        dense_layer: "Dense(" param_style1 ")"
         flatten_layer: "Flatten(" ")"
-        
+
         # Recurrent layers section - includes all RNN variants
         recurrent_layer: lstm_layer
                     | gru_layer
@@ -287,11 +297,19 @@ class ModelTransformer(lark.Transformer):
 
 
     def dense_layer(self, items):
-        return {
-            "type": "Dense",
-            "units": int(self.extract_value(items[0])),
-            "activation": self.extract_value(items[1]).strip('"')
-        }
+        params = items[0]
+        if isinstance(params, dict):
+            return {
+                'type': 'Dense',
+                'units': int(params['units']),
+                'activation': params['activation'].strip('"')
+            }
+        else:
+            return {
+                'type': 'Dense', 
+                'units': int(params[0]),
+                'activation': params[1].strip('"')
+            }
     
     def conv2d_layer(self, items):
         # items: [filters_param, kernel_param, activation_param]
@@ -728,6 +746,16 @@ class ModelTransformer(lark.Transformer):
     def paper_param(self, items):
         return {'paper': items[0].strip('"')}
 
+    def param_style1(self, items):
+        """Handle both named and ordered parameters"""
+        if isinstance(items[0], dict):
+            # Named parameters
+            return items[0]
+        else:
+            # Ordered parameters 
+            return items
+
+
 def propagate_shape(input_shape, layer):
     """
     Propagates the input shape through a neural network layer to calculate the output shape.
@@ -1055,10 +1083,17 @@ def generate_code(model_data, backend="tensorflow"):
     return code
 
 def load_file(filename):
-    with open(filename, 'r') as file:
-        content = file.read()
-    
-    if filename.endswith('.rnr'):
-        return "research", content
+    """Load and parse neural network or research files"""
+    with open(filename, 'r') as f:
+        content = f.read()
+        
+    if filename.endswith('.neural'):
+        parser = create_parser('neural_file')
+    elif filename.endswith('.nr'):
+        parser = create_parser('nr_file') 
+    elif filename.endswith('.rnr'):
+        parser = create_parser('rnr_file')
     else:
-        return "model", content
+        raise ValueError(f"Unsupported file type: {filename}")
+        
+    return parser.parse(content)
