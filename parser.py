@@ -1,4 +1,5 @@
 import lark
+from lark import Tree
 import numpy as np
 import os
 import torch
@@ -27,8 +28,8 @@ grammar = r"""
     number_or_none: INT | "None"
 
     # Layers section - contains all layer definitions separated by newlines
-    layers: "layers:" _NL+ layer (_NL+ layer)* 
-    
+    layers: "layers:" _NL* layer (_NL+ layer)* _NL*
+
     # All possible layer types that can be used in the network
     layer: conv2d_layer              # Convolutional layers
          | max_pooling2d_layer       # Pooling layers
@@ -53,33 +54,33 @@ grammar = r"""
          | dynamic_layer         # Dynamic/adaptive layers
 
     # Output layer parameters
-    output_layer: "Output" "(" units_param "," activation_param ")"
+    output_layer: "Output(" units_param "," activation_param ")"
     units_param: "units=" INT
     activation_param: "activation=" ESCAPED_STRING
          
     # Convolutional layer parameters
-    conv2d_layer: "Conv2D" "(" filters_param "," kernel_param "," activation_param ")"
+    conv2d_layer: "Conv2D(" filters_param "," kernel_param "," activation_param ")"
     filters_param: "filters=" INT
     kernel_param: "kernel_size=" "(" INT "," INT ")"
     
     # Pooling layer parameters
-    max_pooling2d_layer: "MaxPooling2D" "(" pool_param ")"
+    max_pooling2d_layer: "MaxPooling2D(" pool_param ")"
     pool_param: "pool_size=" "(" INT "," INT ")"
     
     # Dropout layer for regularization
-    dropout_layer: "Dropout" "(" rate_param ")"
+    dropout_layer: "Dropout(" rate_param ")"
     rate_param: "rate=" FLOAT
     
     # Normalization layers
-    batch_norm_layer: "BatchNormalization" "(" ")"
-    layer_norm_layer: "LayerNormalization" "(" ")"
-    instance_norm_layer: "InstanceNormalization" "(" ")"
-    group_norm_layer: "GroupNormalization" "(" groups_param ")"
+    batch_norm_layer: "BatchNormalization(" ")"
+    layer_norm_layer: "LayerNormalization(" ")"
+    instance_norm_layer: "InstanceNormalization(" ")"
+    group_norm_layer: "GroupNormalization(" groups_param ")"
     groups_param: "groups=" INT
 
     # Basic layer types
-    dense_layer: "Dense" "(" units_param "," activation_param ")"
-    flatten_layer: "Flatten" "(" ")"
+    dense_layer: "Dense(" units_param "," activation_param ")"
+    flatten_layer: "Flatten(" ")"
     
     # Recurrent layers section - includes all RNN variants
     recurrent_layer: lstm_layer
@@ -95,14 +96,14 @@ grammar = r"""
     # Different types of RNN layers with optional return sequences parameter
     lstm_layer: "LSTM(" "units=" INT ")"   -> lstm
     gru_layer: "GRU(" "units=" INT ")"     -> gru
-    simple_rnn_layer: "SimpleRNN" "(" units_param ["," return_sequences_param] ")"
-    cudnn_lstm_layer: "CuDNNLSTM" "(" units_param ["," return_sequences_param] ")"
-    cudnn_gru_layer: "CuDNNGRU" "(" units_param ["," return_sequences_param] ")"
+    simple_rnn_layer: "SimpleRNN(" units_param ["," return_sequences_param] ")"
+    cudnn_lstm_layer: "CuDNNLSTM(" units_param ["," return_sequences_param] ")"
+    cudnn_gru_layer: "CuDNNGRU(" units_param ["," return_sequences_param] ")"
 
     # RNN cell variants - single-step RNN computations
-    rnn_cell_layer: "RNNCell" "(" INT ")"
-    lstm_cell_layer: "LSTMCell" "(" INT ")"
-    gru_cell_layer: "GRUCell" "(" INT ")"
+    rnn_cell_layer: "RNNCell(" INT ")"
+    lstm_cell_layer: "LSTMCell(" INT ")"
+    gru_cell_layer: "GRUCell(" INT ")"
 
     # Dropout wrapper layers for RNNs
     dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
@@ -163,6 +164,7 @@ grammar = r"""
 
     # Import common tokens from Lark
     %import common.NEWLINE -> _NL        # Newline characters
+    %import common.CNAME -> TRANSFORMERENCODER
     %import common.WS_INLINE             # Inline whitespace
     %import common.BOOL                  # Boolean values
     %import common.CNAME -> NAME         # Names/identifiers
@@ -237,46 +239,29 @@ class ModelTransformer(lark.Transformer):
 
     
     def conv2d_layer(self, items):
-        # Debug Print
-        print("conv2D items:", items)
-        """
-        Parses and processes a Conv2D layer configuration from the parsed items.
-
-        Parameters:
-        items (list): A list containing the parsed information for the Conv2D layer.
-                      The list should contain four elements:
-                      - The number of filters for the Conv2D layer.
-                      - The height of the kernel for the Conv2D layer.
-                      - The width of the kernel for the Conv2D layer.
-                      - The activation function for the Conv2D layer as a string.
-
-        Returns:
-        dict: A dictionary containing the following keys:
-              'type': The type of the layer, which is 'Conv2D'.
-              'filters': The number of filters for the Conv2D layer.
-              'kernel_size': A tuple containing the height and width of the kernel for the Conv2D layer.
-              'activation': The activation function for the Conv2D layer.
-        """
-
-        # Parse items properly - items should be [filters, kernel_h, kernel_w, activation]
-        filters = int(str(items[0]))
-        kernel_h = int(str(items[1]))
-        kernel_w = int(str(items[2]))
-        activation = str(items[3]).strip('"')
-        
         return {
-            'type': 'Conv2D',
-            'filters': filters,
-            'kernel_size': (kernel_h, kernel_w),
-            'activation': activation
+            "type": "Conv2D",
+            "filters": int(self.extract_value(items[0])),
+            "kernel_size": (
+                int(self.extract_value(items[1])),
+                int(self.extract_value(items[2]))
+            ),
+            "activation": str(self.extract_value(items[3]))
         }
     
+    def extract_value(self, item):
+        """ Extracts the actual value from a Lark Tree node or Token. """
+        if isinstance(item, Tree) and item.children:
+            return self.extract_value(item.children[0])  # Recursively get the value
+        return item  # Return the value directly if not a Tree
+
+
     def dense_layer(self, items):
         return {
-                'type': 'Dense',
-                'units': int(items[0]),
-                'activation': items[1].strip('"')
-            }
+            "type": "Dense",
+            "units": int(self.extract_value(items[0])),
+            "activation": str(self.extract_value(items[1]))
+        }
     
     def output_layer(self, items):
         """
@@ -329,8 +314,8 @@ class ModelTransformer(lark.Transformer):
     
     def dropout_layer(self, items):
         return {
-            'type': 'Dropout',
-            'rate': float(items[0])
+            "type": "Dropout",
+            "rate": float(self.extract_value(items[0]))
         }
     
     def flatten_layer(self, items):
@@ -567,10 +552,25 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'DynamicLayer'}
     
     def lstm_layer(self, items):
-        return {"type": "LSTM", "units": int(items[0])}
+        return {
+            "type": "LSTM",
+            "units": int(self.extract_value(items[0])),
+            "return_sequences": self.extract_value(items[1]) if len(items) > 1 else False
+        }
 
     def gru_layer(self, items):
-        return {"type": "GRU", "units": int(items[0])}
+        return {
+            "type": "GRU",
+            "units": int(self.extract_value(items[0])),
+            "return_sequences": self.extract_value(items[1]) if len(items) > 1 else False
+        }
+    
+    def transformer_layer(self, items):
+        return {
+            "type": "TransformerEncoder",
+            "num_heads": int(self.extract_value(items[0])),
+            "ff_dim": int(self.extract_value(items[1]))
+        }
 
     def network(self, items):
         name = str(items[0])
@@ -971,37 +971,12 @@ def generate_code(model_data, backend="tensorflow"):
     return code
 
 def load_file(filename):
-    """
-    Reads a file and categorizes it as a model definition file or a research file based on its extension.
-    
-    Parameters:
-        filename (str): Path to the file.
-        
-    Returns:
-        tuple: A tuple (file_type, content_or_tree) where:
-            - file_type is either "model" or "research".
-            - For model files (.neural or .nr), content_or_tree is the file content string.
-            - For research files (.rnr), content_or_tree is the parsed tree using the research parser.
-    
-    Raises:
-        FileNotFoundError: If the file does not exist.
-        ValueError: If the file extension is unsupported.
-    """
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f"File {filename} not found.")
-    
-    file_ext = os.path.splitext(filename)[-1].lower()
     with open(filename, "r") as f:
         content = f.read()
     
-    if file_ext in [".neural", ".nr"]:
-        print(f"✅ Loading Model Definition from {filename}...")
-        # For model files, return the content string (parsing will be done later with the model parser)
-        return "model", content
-    elif file_ext == ".rnr":
-        print(f"✅ Loading Research Report from {filename}...")
-        # For research files, use the research parser to immediately parse the content.
-        tree = research_parser.parse(content)
-        return "research", tree
+    if filename.endswith(".rnr"):
+        return "research", parser.parse(content, start="research")
+    elif filename.endswith(".neural") or filename.endswith(".nr"):
+        return "model", parser.parse(content, start="network")
     else:
-        raise ValueError(f"Unsupported file extension: {file_ext}")
+        raise ValueError(f"Unknown file type: {filename}")
