@@ -292,10 +292,17 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'GroupNormalization', 'groups': int(items[0])}
 
     def recurrent_layer(self, items):
-        return {
-            'type': str(items[0]),
-            'units': int(items[1])
-        }
+
+        if items[0].type == "LSTM":
+            return {
+                'type': 'LSTM',
+                'units': int(items[0].value)
+            }
+        elif items[0].type == "GRU":
+            return {
+                'type': 'GRU',
+                'units': int(items[0].value)
+            }
 
     def attention_layer(self, items):
         return {'type': 'Attention'}
@@ -367,9 +374,9 @@ class ModelTransformer(lark.Transformer):
         for conf in items[5:]:
             # We'll assume training_config returns a dict with type "TrainingConfig"
             # and execution_config returns a dict with type "ExecutionConfig"
-            if conf.get("type") == "TrainingConfig":
+            if conf == "TrainingConfig":
                 training_config = conf
-            elif conf.get("type") == "ExecutionConfig":
+            elif conf == "ExecutionConfig":
                 execution_config = conf
 
         # Construct the neural network configuration dictionary
@@ -380,7 +387,7 @@ class ModelTransformer(lark.Transformer):
         # If no training configuration is found, default values will be used.
 
         return {
-            'type': 'Model',
+            'type': 'model',
             'name': name,
             'input_shape': input_shape,
             'layers': layers,
