@@ -20,6 +20,18 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         lark.Lark: A Lark parser object configured with the defined grammar.
     """
     grammar = r"""
+
+         # Import common tokens from Lark
+        %import common.NEWLINE -> _NL        # Newline characters
+        %import common.CNAME -> TRANSFORMERENCODER
+        %import common.WS_INLINE             # Inline whitespace
+        %import common.BOOL                  # Boolean values
+        %import common.CNAME -> NAME         # Names/identifiers
+        %import common.INT                   # Integer numbers
+        %import common.FLOAT                 # Floating point numbers
+        %import common.ESCAPED_STRING        # Quoted strings
+        %import common.WS                    # All whitespace
+        %ignore WS   
         ?start: network | layer | research  # Allow parsing either networks or research files
 
         # File type rules
@@ -27,16 +39,16 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         nr_file: network
         rnr_file: research
 
+        # Parameter styles
+        named_params: NAME "=" value ("," NAME "=" value)*
+        ordered_params: value ("," value)* 
+        named_rate: "rate=" FLOAT
+        value: INT | FLOAT | ESCAPED_STRING | tuple
+        tuple: "(" WS_INLINE* INT WS_INLINE* "," WS_INLINE* INT WS_INLINE* ")"
+
         # Layer parameter styles
         ?param_style1: named_params    // Dense(units=128, activation="relu")
                     | ordered_params   // Dense(128, "relu")
-
-        # Parameter styles
-        named_params: NAME "=" value ("," NAME "=" value)*
-        ordered_params: value ("," value)*
-        named_rate: "rate=" FLOAT
-        value: INT | FLOAT | ESCAPED_STRING | tuple
-        tuple: "(" INT "," INT ")"
 
         # Top-level network definition - defines the structure of an entire neural network
         network: "network" NAME "{" input_layer layers loss optimizer [training_config] "}"
@@ -79,9 +91,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         # Pooling layer parameters
         max_pooling2d_layer: "MaxPooling2D(" named_params ")" # Changed to named params, was pool_param
         pool_param: "pool_size=" tuple # Removed, using named_params directly in max_pooling2d_layer
-        named_params: NAME "=" value ("," NAME "=" value)*
-        value: INT | FLOAT | ESCAPED_STRING | tuple
-        tuple: "(" _WS_INLINE* INT _WS_INLINE* "," _WS_INLINE* INT _WS_INLINE* ")"
 
         # Dropout layer for regularization
         dropout_layer: "Dropout(" (named_rate | FLOAT) ")"
@@ -197,18 +206,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         references: "references" "{" paper_param+ "}"
         paper_param: "paper:" ESCAPED_STRING
 
-
-        # Import common tokens from Lark
-        %import common.NEWLINE -> _NL        # Newline characters
-        %import common.CNAME -> TRANSFORMERENCODER
-        %import common.WS_INLINE             # Inline whitespace
-        %import common.BOOL                  # Boolean values
-        %import common.CNAME -> NAME         # Names/identifiers
-        %import common.INT                   # Integer numbers
-        %import common.FLOAT                 # Floating point numbers
-        %import common.ESCAPED_STRING        # Quoted strings
-        %import common.WS                    # All whitespace
-        %ignore WS                          # Ignore whitespace in processing
     """
     return lark.Lark(grammar, start=[start_rule], parser='lalr')
 
