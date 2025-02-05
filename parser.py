@@ -218,52 +218,14 @@ class ModelTransformer(lark.Transformer):
     Transforms the parsed tree into a structured dictionary representing the neural network model.
     """
     def layer(self, items: List[Any]) -> Dict[str, Any]:
-        """
-        Process a layer in the neural network model.
+        """Process a layer in the neural network model."""
+        layer_info = items[0].data # Get layer type from Tree data
+        params = {}
+        if items[0].children: # Get params from Tree children
+            params = items[0].children[0] # Parameters are in the first child
 
-        Parameters:
-            items (list): A list containing the parsed information for the layer.
-                          The first item is expected to be a dictionary with layer information.
-
-        Returns:
-            dict: A dictionary containing the layer's type and parameters.
-        """
-        if not items:
-            raise ValueError("Layer definition is incomplete.")
-
-        layer_info = items[0]  # Extract first item (which should be the layer type)
-        layer_params = items[1:] if len(items) > 1 else []
-
-        if isinstance(layer_info, lark.Tree):
-            layer_type_name = layer_info.data
-        elif isinstance(layer_info, Token):
-            layer_type_name = layer_info.type # Or layer_info.value if you need the literal string
-        elif isinstance(layer_info, str):
-            layer_type_name = layer_info
-        else:
-            raise TypeError(f"Unexpected layer info type: {type(layer_info)}")
-
-
-        layer_type = str(layer_type_name)
-
-        # Check if the extracted layer type exists in the plugin registry (if needed)
-        # if layer_type in LAYER_PLUGINS: # LAYER_PLUGINS is not used in the current transformer logic
-        #     return LAYER_PLUGINS[layer_type](items[1:])  # Pass remaining parameters
-
-
-        # If it's a dictionary with a "type" key, return as is
-        if isinstance(layer_info, dict) and "type" in layer_info:
-            return layer_info
-
-        # If it's a lark Tree, extract parameters
-        if isinstance(layer_info, lark.Tree):
-            params = layer_info.children[0] if layer_info.children else {}
-            return {'type': layer_type, 'params': params}
-
-        # If it's neither a dictionary nor a Tree, assume it's a simple type
-        params = layer_params[0] if layer_params else {}
+        layer_type = str(layer_info)
         return {'type': layer_type, 'params': params}
-
 
     def visit_layer(self, tree: Tree) -> Dict[str, Any]:
         """Visits a layer tree node and processes its children."""
@@ -327,15 +289,14 @@ class ModelTransformer(lark.Transformer):
         """Processes the dense layer definition."""
         params = {}
         if items:
-            if isinstance(items[0], dict): # Named
+            if isinstance(items[0], dict): # Named params - CONDITION IS FALSE! items[0] is a Tree, not dict
                 params = items[0]
-            elif isinstance(items[0], list): # Ordered
+            elif isinstance(items[0], list): # Ordered params - CONDITION IS FALSE! items[0] is a Tree, not list
                 ordered_vals = items[0]
                 if len(ordered_vals) >= 2:
                     params['units'] = ordered_vals[0]
                     params['activation'] = ordered_vals[1]
         return {'type': 'Dense', 'params': params}
-   
 
     def output_layer(self, items: List[Any]) -> Dict[str, Any]:
         """Processes the output layer definition."""
