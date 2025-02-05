@@ -52,8 +52,8 @@ grammar = r"""
                | rnn_cell_layer | lstm_cell_layer | gru_cell_layer
                | dropout_wrapper_layer
 
-    lstm_layer: "LSTM" "(" INT ("," return_sequences)? ")"
-    gru_layer: "GRU" "(" INT ("," return_sequences)? ")"
+    lstm_layer: "LSTM" "(" "units=" INT ("," return_sequences)? ")"
+    gru_layer: "GRU" "(" "units=" INT ("," return_sequences)? ")"
     simple_rnn_layer: "SimpleRNN" "(" INT ("," return_sequences)? ")"
     cudnn_lstm_layer: "CuDNNLSTM" "(" INT ("," return_sequences)? ")"
     cudnn_gru_layer: "CuDNNGRU" "(" INT ("," return_sequences)? ")"
