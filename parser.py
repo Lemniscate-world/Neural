@@ -47,7 +47,17 @@ grammar = r"""
     flatten_layer: "Flatten()"
     
     # Recurrent Layers
-    recurrent_layer: ("LSTM" | "GRU" ) "(" "units=" INT ")"
+    lstm_layer: "LSTM(" "units=" INT ")"
+    gru_layer: "GRU(" "units=" INT ")"
+    vanila_rnn_layer: "RNN(" "units=" INT ")"
+    gated_recurrent_unit_layer: "GRUCell(" "units=" INT ")"
+    long_short_term_memory_layer: "LSTMCell(" "units=" INT ")"
+    dynamic_rnn_layer: "DynamicRNN(" "units=" INT ")"
+    transformer_encoder_layer: "TransformerEncoderLayer(" "d_model=" INT "," "nhead=" INT ")"
+    transformer_decoder_layer: "TransformerDecoderLayer(" "d_model=" INT "," "nhead=" INT ")"
+    transformer_multihead_attention_layer: "MultiheadAttention(" "d_model=" INT "," "nhead=" INT ")"
+    recurrent_layer: TYPE "(" "units=" INT ")"
+    TYPE: "LSTM" | "GRU"
 
     # Attention & Transformer
     attention_layer: "Attention()"
@@ -78,13 +88,13 @@ grammar = r"""
     metrics: "metrics" "{" ("accuracy:" FLOAT)? ("loss:" FLOAT)? ("precision:" FLOAT)? ("recall:" FLOAT)? "}"
     references: "references" "{" ("paper:" ESCAPED_STRING)+ "}"
 
-
     %import common.CNAME -> NAME
     %import common.INT
     %import common.FLOAT
     %import common.ESCAPED_STRING
     %import common.WS
     %ignore WS
+
 """
 
 
@@ -304,18 +314,14 @@ class ModelTransformer(lark.Transformer):
     def group_norm_layer(self, items):
         return {'type': 'GroupNormalization', 'groups': int(items[0])}
 
+    
     def recurrent_layer(self, items):
+    # items[0] will be a Token of type TYPE (with value "LSTM" or "GRU")
+    # items[1] will be the INT token for the units.
+        layer_type = str(items[0])  # Convert the token to a string.
+        units = int(items[1])
+        return {"type": layer_type, "units": units}
 
-        if items[0].type == "LSTM":
-            return {
-                'type': 'LSTM',
-                'units': int(items[0].value)
-            }
-        elif items[0].type == "GRU":
-            return {
-                'type': 'GRU',
-                'units': int(items[0].value)
-            }
 
     def attention_layer(self, items):
         return {'type': 'Attention'}
