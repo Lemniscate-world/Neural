@@ -577,12 +577,12 @@ class ModelTransformer(lark.Transformer):
             return_sequences = False
         return {"type": "GRU", "units": units, "return_sequences": return_sequences}
     
-        def transformer_layer(self, items):
-            return {
-                "type": "TransformerEncoder",
-                "num_heads": int(self.extract_value(items[0])),
-                "ff_dim": int(self.extract_value(items[1]))
-            }
+    def transformer_layer(self, items):
+        return {
+            "type": "TransformerEncoder",
+            "num_heads": int(self.extract_value(items[0])),
+            "ff_dim": int(self.extract_value(items[1]))
+        }
 
     def extract_value(self, item):
         """Recursively extract the actual value from a token or Tree.
