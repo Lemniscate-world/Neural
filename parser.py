@@ -267,6 +267,19 @@ class ModelTransformer(lark.Transformer):
             val = str(item)
             if val == "None":
                 result.append(None)
+            elif val.isdigit() or (val.startswith("-") and val[1:].isdigit()):
+                result.append(int(val))
+            elif val.isdigit():
+                result.append(int(val))
+            elif val.startswith("[") and val.endswith("]"):
+                result.append(self.shape(val[1:-1].split(", ")))  # Recursive call for nested lists
+            elif val.startswith("<") and val.endswith(">"):
+                result.append(self.shape(val[1:-1].split(", ")))  # Recursive call for nested sets
+            elif val.startswith("(") and val.endswith(")"):
+                result.append(self.shape(val[1:-1].split(", ")))  # Recursive call for nested tuples
+            elif val.startswith("{") and val.endswith("}"):
+                result.append(self.shape(val[1:-1].split(", ")))  # Recursive call for nested dictionaries
+                # Note: This assumes that the items in the dictionary are always simple types (not nested dictionaries)
             else:
                 result.append(val)
         return tuple(result)
