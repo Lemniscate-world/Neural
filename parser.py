@@ -709,7 +709,7 @@ def load_file(filename):
         raise FileNotFoundError(f"File {filename} not found.")
 
     file_ext = os.path.splitext(filename)[-1].lower()
-
+    
     with open(filename, "r") as f:
         content = f.read()
 
@@ -718,6 +718,9 @@ def load_file(filename):
         return "model", content
     elif file_ext == ".rnr":
         print(f"✅ Loading Research Report from {filename}...")
+        tree = parser.parse(content, start="research")
         return "research", content
     else:
         raise ValueError(f"Unsupported file extension: {file_ext}")
+
+        
