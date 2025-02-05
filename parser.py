@@ -289,13 +289,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': layer_type, **params}
 
 
-    def input_layer(self, items: List[Tuple[Union[int, None], ...]]) -> Dict[str, Any]:
-        """Processes the input layer definition."""
-        if not items:
-            raise ValueError("Input layer definition is missing shape.")
-        shape = items[0]
-        if not isinstance(shape, tuple):
-            raise TypeError(f"Expected tuple for input shape, got {type(shape)}")
+    def input_layer(self, items):
+        shape = tuple(items[0])
         return {'type': 'Input', 'shape': shape}
 
     def conv2d_layer(self, items):
@@ -427,10 +422,9 @@ class ModelTransformer(lark.Transformer):
         """Processes the instance normalization layer definition."""
         return {'type': 'InstanceNormalization', 'params': {}} # Ensure 'params' is always present
 
-    def group_norm_layer(self, items: List[Dict[str, int]]) -> Dict[str, Union[str, int]]: # Expecting List[Dict]
-        """Processes the group normalization layer definition."""
-        params = items[0] if items else {} # items[0] is now the params dict
-        return {"type": "GroupNormalization", "params": params}
+    def group_norm_layer(self, items):
+        params = items[0]
+        return {'type': 'GroupNormalization', 'params': params}
 
     def lstm_layer(self, items):
         params = items[0]
@@ -662,65 +656,13 @@ class ModelTransformer(lark.Transformer):
         # print(f"Visited items in ordered_params: {visited_items}") # REMOVE this line
         return items # Just return the items as they are already transformed in 'value'
 
-    def value(self, items: List[Any]) -> Union[int, float, str, Tuple[int, int]]:
-        """Processes a value, determining its type (INT, FLOAT, STRING, TUPLE)."""
-        print("\n--- value ---") # Added print statement
-        print(f"Items received in value: {items}") # Added print statement
-        item = items[0] # Get the first item
+    def value(self, items):
+        if isinstance(items[0], Tree) and items[0].data == 'tuple':
+            return self.visit(items[0])
+        return super().value(items)
 
-        if isinstance(item, Token):
-            token = item
-            if token.type == 'INT':
-                print(f"Token type: INT, Value: {token.value}") # Added print statement
-                return int(token.value)
-            elif token.type == 'FLOAT':
-                print(f"Token type: FLOAT, Value: {token.value}") # Added print statement
-                return float(token.value)
-            elif token.type == 'ESCAPED_STRING':
-                print(f"Token type: ESCAPED_STRING, Value: {token.value}") # Added print statement
-                return token.value[1:-1]  # Remove quotes
-            elif token.type == 'tuple': # Handle tuple TOKEN
-                print(f"Token type: tuple, Value: {token.value}") # Added print statement
-                tuple_content = token.value[1:-1] # Remove parentheses
-                tuple_values = [v.strip() for v in tuple_content.split(',')]
-                if len(tuple_values) == 2:
-                    try:
-                        tuple_result = (int(tuple_values[0]), int(tuple_values[1]))
-                        print(f"Parsed tuple: {tuple_result}") # Added print statement
-                        return tuple_result
-                    except ValueError:
-                        raise ValueError(f"Invalid tuple values: {token.value}. Must be integers.")
-                else:
-                    raise ValueError(f"Invalid tuple format: {token.value}. Expected (INT, INT).")
-            else:
-                print(f"Token type: Other, Value: {token.value}, Type: {token.type}") # Added print statement
-                return token.value
-
-        elif isinstance(item, Tree) and item.data == 'tuple': # Handle tuple TREE
-            print(f"Item type: Tuple Tree, Data: {item.data}, Children: {item.children}") # Added print statement
-            # Process children of tuple TREE, which should be INT tokens
-            if len(item.children) == 3 and isinstance(item.children[0], Token) and item.children[0].type == '(' and \
-               isinstance(item.children[1], Token) and item.children[1].type == 'INT' and \
-               isinstance(item.children[2], Token) and item.children[2].type == 'INT': # Basic check
-                 try:
-                     tuple_result = (int(item.children[1].value), int(item.children[2].value))
-                     print(f"Parsed tuple from tree: {tuple_result}") # Added print statement
-                     return tuple_result
-                 except ValueError:
-                     raise ValueError(f"Invalid tuple values in tree: {item}. Must be integers.")
-            else:
-                raise ValueError(f"Invalid tuple tree format: {item}. Expected (INT, INT).")
-        else:
-            raise TypeError(f"Unexpected item type in value: {type(item)}, item: {item}") # More informative error
-    def tuple(self, items: List[Token]) -> Tuple[int, int]:
-        """Processes tuple values, ensuring they are integers."""
-        if len(items) == 2:
-            try:
-                return (int(items[0]), int(items[1]))
-            except ValueError as e:
-                raise ValueError(f"Tuple values must be integers: {e}") from e
-        else:
-            raise ValueError("Tuple must contain exactly two integer values.")
+    def tuple(self, items):
+        return (int(items[1].value), int(items[3].value))
 
     def named_return_sequences(self, items: List[Any]) -> Dict[str, bool]:
         return {'return_sequences': self.visit(items[2])}
@@ -765,10 +707,8 @@ class ModelTransformer(lark.Transformer):
 
     def dropout_layer(self, items):
         if isinstance(items[0], (int, float)):
-            params = {'rate': items[0]}
-        else:
-            params = items[0]
-        return {'type': 'Dropout', 'params': params}
+            return {'type': 'Dropout', 'params': {'rate': items[0]}}
+        return {'type': 'Dropout', 'params': items[0]}
 
     # Add methods for Output layer parameters
     def units_param(self, items):
