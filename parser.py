@@ -1,5 +1,5 @@
 import lark
-from lark import Tree
+from lark import Tree, Transformer, Token
 import numpy as np
 import os
 import torch
@@ -94,8 +94,8 @@ grammar = r"""
                    | dropout_wrapper_layer
 
     # Different types of RNN layers with optional return sequences parameter
-    lstm_layer: "LSTM(" "units=" INT ")"   -> lstm
-    gru_layer: "GRU(" "units=" INT ")"     -> gru
+    lstm_layer: "LSTM(" "units=" INT ["," "return_sequences=" return_sequences] ")"
+    gru_layer: "GRU(" "units=" INT ["," "return_sequences=" return_sequences] ")"
     simple_rnn_layer: "SimpleRNN(" units_param ["," return_sequences_param] ")"
     cudnn_lstm_layer: "CuDNNLSTM(" units_param ["," return_sequences_param] ")"
     cudnn_gru_layer: "CuDNNGRU(" units_param ["," return_sequences_param] ")"
@@ -249,21 +249,20 @@ class ModelTransformer(lark.Transformer):
         }
     
 
+    
     def extract_value(self, item):
-        """Recursively extract the actual value from a token or Tree.
-        If the item is a Tree with children, return the extraction of its first child;
-        otherwise, return item.value if available, or the item itself as string.
-        """
-        if isinstance(item, Tree):
-            # Recursively extract the first child's value
+        """Recursively extract a value from a Token or Tree."""
+        if isinstance(item, Token):
+            return item.value
+        elif isinstance(item, Tree):
+            # If the tree has children, return the value from the first child.
             if item.children:
                 return self.extract_value(item.children[0])
             else:
                 return ""
-        elif hasattr(item, "value"):
-            return item.value
         else:
             return str(item)
+
 
 
     def dense_layer(self, items):
@@ -568,6 +567,17 @@ class ModelTransformer(lark.Transformer):
     def dynamic_layer(self, items):
         return {'type': 'DynamicLayer'}
     
+    def lstm_layer(self, items):
+        # items[0] is the INT token for units.
+        # Optional items[1] is the return_sequences token.
+        units = int(self.extract_value(items[0]))
+        if len(items) > 1:
+            rs = self.extract_value(items[1]).lower()
+            return_sequences = (rs == "true")
+        else:
+            return_sequences = False
+        return {"type": "LSTM", "units": units, "return_sequences": return_sequences}
+
     def gru_layer(self, items):
         units = int(self.extract_value(items[0]))
         if len(items) > 1:
@@ -576,30 +586,12 @@ class ModelTransformer(lark.Transformer):
         else:
             return_sequences = False
         return {"type": "GRU", "units": units, "return_sequences": return_sequences}
-    
     def transformer_layer(self, items):
         return {
             "type": "TransformerEncoder",
             "num_heads": int(self.extract_value(items[0])),
             "ff_dim": int(self.extract_value(items[1]))
         }
-
-    def extract_value(self, item):
-        """Recursively extract the actual value from a token or Tree.
-        If the item is a Tree with children, return the extraction of its first child;
-        otherwise, return item.value if available, or the item itself as string.
-        """
-        if isinstance(item, Tree):
-            # Recursively extract the first child's value
-            if item.children:
-                return self.extract_value(item.children[0])
-            else:
-                return ""
-        elif hasattr(item, "value"):
-            return item.value
-        else:
-            return str(item)
-
 
     def network(self, items):
         name = str(items[0])
