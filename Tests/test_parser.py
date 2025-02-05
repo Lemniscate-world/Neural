@@ -295,3 +295,7 @@ def test_invalid_network(network_parser):
 def test_invalid_research(research_parser):
     with pytest.raises(exceptions.UnexpectedCharacters): # More specific exception
         research_parser.parse("research { invalid metrics }") # Invalid metrics block syntax
+
+def test_invalid_layer(layer_parser):
+    with pytest.raises(exceptions.UnexpectedCharacters):  # Changed exception type
+        layer_parser.parse("InvalidLayer()")
