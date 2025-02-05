@@ -139,12 +139,12 @@ class ModelTransformer(lark.Transformer):
 
     
     def input_layer(self, items):
-        # Convert tokens to integers explicitly
-        shape = tuple(int(str(item)) for item in items)
+    # items[0] is the result from the 'shape' rule, a tuple.
         return {
             'type': 'Input',
-            'shape': shape,
-            }
+            'shape': items[0]
+        }
+
     
     def conv2d_layer(self, items):
         # Debug Print
