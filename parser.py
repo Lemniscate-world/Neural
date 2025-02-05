@@ -7,11 +7,19 @@ import torch.nn as nn
 import pennylane as qml
 from pennylane import numpy as pnp
 from plugins import LAYER_PLUGINS
+from typing import Any, Dict, List, Tuple, Union, Optional
 
-def create_parser(start_rule='network'):
+def create_parser(start_rule: str = 'network') -> lark.Lark:
+    """
+    Creates a Lark parser for neural network configuration files.
 
+    Args:
+        start_rule (str): The starting rule for the parser. Defaults to 'network'.
+
+    Returns:
+        lark.Lark: A Lark parser object configured with the defined grammar.
+    """
     grammar = r"""
-
         ?start: network | layer | research  # Allow parsing either networks or research files
 
         # File type rules
@@ -22,18 +30,20 @@ def create_parser(start_rule='network'):
         # Layer parameter styles
         ?param_style1: named_params    // Dense(units=128, activation="relu")
                     | ordered_params   // Dense(128, "relu")
-        
+
+        # Parameter styles
         named_params: NAME "=" value ("," NAME "=" value)*
         ordered_params: value ("," value)*
+        named_rate: "rate=" FLOAT
         value: INT | FLOAT | ESCAPED_STRING | tuple
-        tuple: "(" value ("," value)* ")"
+        tuple: "(" INT "," INT ")"
 
         # Top-level network definition - defines the structure of an entire neural network
         network: "network" NAME "{" input_layer layers loss optimizer [training_config] "}"
 
         # Configuration can be either training-related or execution-related
         config: training_config | execution_config
-        
+
         # Input layer definition - specifies the shape of input data
         input_layer: "input:" "(" shape ")"
         # Shape can contain multiple dimensions, each being a number or None
@@ -45,41 +55,39 @@ def create_parser(start_rule='network'):
         layers: "layers:" _NL* layer (_NL+ layer)* _NL*
 
         # All possible layer types that can be used in the network
-        ?layer: basic_layer
-            | recurrent_layer
-            | advanced_layer
+        ?layer: basic_layer  | recurrent_layer | advanced_layer
 
 
         # Basic layers group
-        basic_layer: conv2d_layer
-                | max_pooling2d_layer
-                | dropout_layer
-                | flatten_layer
-                | dense_layer
-                | output_layer
-                | norm_layer
-        
-        
+        ?basic_layer: conv2d_layer
+                    | max_pooling2d_layer
+                    | dropout_layer
+                    | flatten_layer
+                    | dense_layer
+                    | output_layer
+                    | norm_layer
+
+
         # Output layer parameters
         output_layer: "Output(" units_param "," activation_param ")"
         units_param: "units=" INT
         activation_param: "activation=" ESCAPED_STRING
-            
+
         # Convolutional layer parameters
-        conv2d_layer: "Conv2D(" param_style1 ")"
+        conv2d_layer: "Conv2D(" (named_params | ordered_params) ")"
 
         # Pooling layer parameters
         max_pooling2d_layer: "MaxPooling2D(" pool_param ")"
         pool_param: "pool_size=" "(" INT "," INT ")"
-        
+
         # Dropout layer for regularization
-        dropout_layer: "Dropout(" param_style1 ")"
-        
+        dropout_layer: "Dropout(" (named_rate | FLOAT) ")"
+
         # Normalization layers
-        norm_layer: batch_norm_layer
-                | layer_norm_layer
-                | instance_norm_layer
-                | group_norm_layer
+        ?norm_layer: batch_norm_layer
+                    | layer_norm_layer
+                    | instance_norm_layer
+                    | group_norm_layer
 
         batch_norm_layer: "BatchNormalization(" ")"
         layer_norm_layer: "LayerNormalization(" ")"
@@ -88,19 +96,19 @@ def create_parser(start_rule='network'):
         groups_param: "groups=" INT
 
         # Basic layer types
-        dense_layer: "Dense(" param_style1 ")"
+        dense_layer: "Dense(" (named_params | ordered_params) ")"
         flatten_layer: "Flatten(" ")"
 
         # Recurrent layers section - includes all RNN variants
-        recurrent_layer: lstm_layer
-                    | gru_layer
-                    | simple_rnn_layer
-                    | cudnn_lstm_layer
-                    | cudnn_gru_layer
-                    | rnn_cell_layer
-                    | lstm_cell_layer
-                    | gru_cell_layer
-                    | dropout_wrapper_layer
+        ?recurrent_layer: lstm_layer
+                        | gru_layer
+                        | simple_rnn_layer
+                        | cudnn_lstm_layer
+                        | cudnn_gru_layer
+                        | rnn_cell_layer
+                        | lstm_cell_layer
+                        | gru_cell_layer
+                        | dropout_wrapper_layer
 
         # Different types of RNN layers with optional return sequences parameter
         lstm_layer: "LSTM(" "units=" INT ["," "return_sequences=" return_sequences] ")"
@@ -110,33 +118,33 @@ def create_parser(start_rule='network'):
         cudnn_gru_layer: "CuDNNGRU(" units_param ["," return_sequences_param] ")"
 
         # RNN cell variants - single-step RNN computations
-        rnn_cell_layer: "RNNCell(" INT ")"
-        lstm_cell_layer: "LSTMCell(" INT ")"
-        gru_cell_layer: "GRUCell(" INT ")"
+        rnn_cell_layer: "RNNCell(" units_param ")"
+        lstm_cell_layer: "LSTMCell(" units_param ")"
+        gru_cell_layer: "GRUCell(" units_param ")"
 
         # Dropout wrapper layers for RNNs
         dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
-        simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" INT "," dropout_param ")"
-        gru_dropout: "GRUDropoutWrapper" "(" INT "," dropout_param ")"
-        lstm_dropout: "LSTMDropoutWrapper" "(" INT "," dropout_param ")"
+        simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" units_param "," dropout_param ")"
+        gru_dropout: "GRUDropoutWrapper" "(" units_param "," dropout_param ")"
+        lstm_dropout: "LSTMDropoutWrapper" "(" units_param "," dropout_param ")"
         dropout_param: "dropout=" FLOAT
-        
+
         # Return sequences parameter for RNN layers
         return_sequences_param: "return_sequences=" return_sequences
         return_sequences: "true" -> true
                     | "false" -> false
 
         # Advanced layers group
-        advanced_layer: attention_layer
-                    | transformer_layer
-                    | residual_layer
-                    | inception_layer
-                    | capsule_layer
-                    | squeeze_excitation_layer
-                    | graph_conv_layer
-                    | embedding_layer
-                    | quantum_layer
-                    | dynamic_layer
+        ?advanced_layer: attention_layer
+                        | transformer_layer
+                        | residual_layer
+                        | inception_layer
+                        | capsule_layer
+                        | squeeze_excitation_layer
+                        | graph_conv_layer
+                        | embedding_layer
+                        | quantum_layer
+                        | dynamic_layer
 
         # Attention and transformer mechanisms
         attention_layer: "Attention" "(" ")"
@@ -153,7 +161,7 @@ def create_parser(start_rule='network'):
         embedding_layer: "Embedding" "(" input_dim_param "," output_dim_param ")"
         input_dim_param: "input_dim=" INT
         output_dim_param: "output_dim=" INT
-        
+
         # Special purpose layers
         quantum_layer: "QuantumLayer" "(" ")"
         dynamic_layer: "DynamicLayer" "(" ")"
@@ -162,7 +170,7 @@ def create_parser(start_rule='network'):
         training_config: "train" "{" [epochs_param] [batch_size_param] "}"
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" INT
-        
+
         # Loss and optimizer specifications
         loss: "loss:" ESCAPED_STRING
         optimizer: "optimizer:" ESCAPED_STRING
@@ -174,14 +182,14 @@ def create_parser(start_rule='network'):
         # Research-specific configurations
         research: "research" "{" [research_params] "}"
         research_params: (metrics | references)*
-        
+
         # Metrics tracking
         metrics: "metrics" "{" [accuracy_param] [loss_param] [precision_param] [recall_param] "}"
         accuracy_param: "accuracy:" FLOAT
         loss_param: "loss:" FLOAT
         precision_param: "precision:" FLOAT
         recall_param: "recall:" FLOAT
-        
+
         # Paper references
         references: "references" "{" paper_param+ "}"
         paper_param: "paper:" ESCAPED_STRING
@@ -206,35 +214,42 @@ layer_parser = create_parser('layer')
 research_parser = create_parser('research')
 
 class ModelTransformer(lark.Transformer):
-    def layer(self, items):
+    """
+    Transforms the parsed tree into a structured dictionary representing the neural network model.
+    """
+    def layer(self, items: List[Any]) -> Dict[str, Any]:
         """
-                Process a layer in the neural network model.
+        Process a layer in the neural network model.
 
-                This method extracts information about a single layer from the parsed items
-                and returns a dictionary containing the layer's type and parameters.
+        Parameters:
+            items (list): A list containing the parsed information for the layer.
+                          The first item is expected to be a dictionary with layer information.
 
-                Parameters:
-                items (list): A list containing the parsed information for the layer.
-                            The first item is expected to be a dictionary with layer information.
-
-                Returns:
-                dict: A dictionary containing two keys:
-                    'type': The type of the layer (e.g., 'Conv2D', 'Dense', etc.)
-                    'params': A dictionary containing all the parameters for the layer
+        Returns:
+            dict: A dictionary containing the layer's type and parameters.
         """
+        if not items:
+            raise ValueError("Layer definition is incomplete.")
+
         layer_info = items[0]  # Extract first item (which should be the layer type)
+        layer_params = items[1:] if len(items) > 1 else []
 
-        # Ensure `layer_info` is a dictionary and contains 'type'
-        if isinstance(layer_info, dict):
-            layer_type = layer_info.get("type")  # Extract the layer type (string)
-        elif isinstance(layer_info, lark.Tree):
-            layer_type = layer_info.data  # Extract type from Tree structure
+        if isinstance(layer_info, lark.Tree):
+            layer_type_name = layer_info.data
+        elif isinstance(layer_info, Token):
+            layer_type_name = layer_info.type # Or layer_info.value if you need the literal string
+        elif isinstance(layer_info, str):
+            layer_type_name = layer_info
         else:
-            layer_type = str(layer_info)  # Fallback: Convert to string if it's neither
+            raise TypeError(f"Unexpected layer info type: {type(layer_info)}")
 
-        # Check if the extracted layer type exists in the plugin registry
-        if layer_type in LAYER_PLUGINS:
-            return LAYER_PLUGINS[layer_type](items[1:])  # Pass remaining parameters
+
+        layer_type = str(layer_type_name)
+
+        # Check if the extracted layer type exists in the plugin registry (if needed)
+        # if layer_type in LAYER_PLUGINS: # LAYER_PLUGINS is not used in the current transformer logic
+        #     return LAYER_PLUGINS[layer_type](items[1:])  # Pass remaining parameters
+
 
         # If it's a dictionary with a "type" key, return as is
         if isinstance(layer_info, dict) and "type" in layer_info:
@@ -242,858 +257,1372 @@ class ModelTransformer(lark.Transformer):
 
         # If it's a lark Tree, extract parameters
         if isinstance(layer_info, lark.Tree):
-            return {
-                'type': layer_type,
-                'params': layer_info.children[0] if layer_info.children else {}
-            }
+            params = layer_info.children[0] if layer_info.children else {}
+            return {'type': layer_type, 'params': params}
 
         # If it's neither a dictionary nor a Tree, assume it's a simple type
-        return {
-            'type': layer_type,
-            'params': items[1] if len(items) > 1 else {}
-        }
+        params = layer_params[0] if layer_params else {}
+        return {'type': layer_type, 'params': params}
 
-    def visit_layer(self, tree):
-        layer_type = tree.children[0].value
-        params = {}
-        for param in tree.children[1:]:
-            key, value = param.children
-            params[key] = self.visit(value)
-        
-        if layer_type in ['LSTM', 'GRU']:
-            if 'units' in params:
+
+    def visit_layer(self, tree: Tree) -> Dict[str, Any]:
+        """Visits a layer tree node and processes its children."""
+        layer_type_token = tree.children[0]
+        if not isinstance(layer_type_token, Token):
+            raise TypeError(f"Expected Token for layer type, got {type(layer_type_token)}")
+        layer_type = layer_type_token.value
+        params: Dict[str, Any] = {}
+        for param_tree in tree.children[1:]:
+            if not isinstance(param_tree, Tree) or len(param_tree.children) != 2:
+                continue # or raise error, depending on how strict you want to be
+            key_token, value_tree = param_tree.children
+            if not isinstance(key_token, Token):
+                continue # or raise error
+            key = key_token.value
+            params[key] = self.visit(value_tree)
+
+        if layer_type in ['LSTM', 'GRU'] and 'units' in params:
+            try:
                 params['units'] = int(params['units'])
-        
+            except ValueError:
+                print(f"Warning: Could not convert 'units' to int for {layer_type} layer.")
+
         return {'type': layer_type, **params}
-        
-    def input_layer(self, items):
-    # items[0] is the result from the 'shape' rule, a tuple.
-        return {
-            'type': 'Input',
-            'shape': items[0]
-        }
-
-    def conv2d_layer(self, items):
-        return {
-            "type": "Conv2D",
-            "filters": int(self.extract_value(items[0])),
-            "kernel_size": (
-                int(self.extract_value(items[1])),
-                int(self.extract_value(items[2]))
-            ),
-            "activation": self.extract_value(items[3]).strip('"')
-        }
-    
-    def extract_value(self, item):
-        """Recursively extract a value from a Token or Tree."""
-        if isinstance(item, Tree):
-            if item.children:
-                return self.extract_value(item.children[0])
-            return ""
-        elif isinstance(item, Token):
-            return item.value
-        else:
-            return str(item)
 
 
-    def dense_layer(self, items):
-        params = items[0]
-        if isinstance(params, dict):
+    def input_layer(self, items: List[Tuple[Union[int, None], ...]]) -> Dict[str, Any]:
+        """Processes the input layer definition."""
+        if not items:
+            raise ValueError("Input layer definition is missing shape.")
+        shape = items[0]
+        if not isinstance(shape, tuple):
+            raise TypeError(f"Expected tuple for input shape, got {type(shape)}")
+        return {'type': 'Input', 'shape': shape}
+
+
+    def conv2d_layer(self, items: List[Union[Dict[str, Any], List[Any]]]) -> Dict[str, Any]:
+        """Processes the convolutional 2D layer definition."""
+        if not items:
+            raise ValueError("Conv2D layer definition is incomplete.")
+
+        if isinstance(items[0], dict):  # Named params
+            params = items[0]
+            if not all(k in params for k in ('filters', 'kernel_size', 'activation')):
+                raise ValueError("Conv2D layer named parameters incomplete.")
+            try:
+                kernel_size = params['kernel_size']
+                if not isinstance(kernel_size, tuple) or len(kernel_size) != 2:
+                    raise TypeError(f"Kernel size must be a tuple of two ints, got {kernel_size}")
+                filters = int(params['filters'])
+                kernel_h, kernel_w = map(int, kernel_size) # Ensure kernel sizes are int
+                activation = params['activation'].strip('"')
+                return {
+                    'type': 'Conv2D',
+                    'filters': filters,
+                    'kernel_size': (kernel_h, kernel_w),
+                    'activation': activation
+                }
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"Invalid Conv2D parameters: {e}") from e
+        else:  # Ordered params
+            if len(items) < 4:
+                raise ValueError("Conv2D layer ordered parameters incomplete.")
+            try:
+                filters = int(str(items[0]))
+                kernel_h = int(str(items[1]))
+                kernel_w = int(str(items[2]))
+                activation = str(items[3]).strip('"')
+                return {
+                    'type': 'Conv2D',
+                    'filters': filters,
+                    'kernel_size': (kernel_h, kernel_w),
+                    'activation': activation
+                }
+            except ValueError as e:
+                raise ValueError(f"Invalid Conv2D parameters: {e}") from e
+
+    def extract_value(self, token: Union[Token, List[Token]]) -> str:
+        """Safely extracts the value from a token or list of tokens."""
+        if isinstance(token, list) and len(token) == 1:
+            token = token[0]
+        if isinstance(token, Token):
+            return token.value.strip('"')
+        raise TypeError(f"Expected Token, got {type(token)}")
+
+
+    def dense_layer(self, items: List[Union[Dict[str, Any], List[Any]]]) -> Dict[str, Any]:
+        """Processes the dense layer definition."""
+        if not items:
+            raise ValueError("Dense layer definition is incomplete.")
+
+        if isinstance(items[0], dict):  # Named params
+            params = items[0]
+            if not all(k in params for k in ('units', 'activation')):
+                raise ValueError("Dense layer named parameters incomplete.")
+            try:
+                units = int(params['units'])
+                activation = params['activation'].strip('"')
+                return {
+                    'type': 'Dense',
+                    'units': units,
+                    'activation': activation
+                }
+            except ValueError as e:
+                raise ValueError(f"Invalid Dense parameters: {e}") from e
+        else:  # Ordered params
+            if len(items) < 2:
+                raise ValueError("Dense layer ordered parameters incomplete.")
+            try:
+                units = int(str(items[0]))
+                activation = str(items[1]).strip('"')
+                return {
+                    'type': 'Dense',
+                    'units': units,
+                    'activation': activation
+                }
+            except ValueError as e:
+                raise ValueError(f"Invalid Dense parameters: {e}") from e
+
+
+    def output_layer(self, items: List[Token]) -> Dict[str, Any]:
+        """Processes the output layer definition."""
+        if len(items) != 2:
+            raise ValueError("Output layer must have exactly two parameters (units, activation).")
+        try:
+            units = int(self.extract_value(items[0]))
+            activation = self.extract_value(items[1])
             return {
-                'type': 'Dense',
-                'units': int(params['units']),
-                'activation': params['activation'].strip('"')
-            }
-        else:
-            return {
-                'type': 'Dense', 
-                'units': int(params[0]),
-                'activation': params[1].strip('"')
-            }
-    
-    def conv2d_layer(self, items):
-        # items: [filters_param, kernel_param, activation_param]
-        filters = int(self.extract_value(items[0]))
-        # kernel_param is a Tree with two children
-        kernel_tree = items[1]
-        kernel_h = int(self.extract_value(kernel_tree.children[0]))
-        kernel_w = int(self.extract_value(kernel_tree.children[1]))
-        activation = self.extract_value(items[2]).strip('"')
-        return {"type": "Conv2D", "filters": filters, "kernel_size": (kernel_h, kernel_w), "activation": activation}
-
-    def output_layer(self, items):
-        """
-        Parses and processes the configuration of an output layer in a neural network.
-
-        Parameters:
-        items (list): A list containing the parsed information for the output layer.
-                      The list should contain two elements:
-                      - The number of units for the output layer.
-                      - The activation function for the output layer as a string.
-
-        Returns:
-        dict: A dictionary containing the following keys:
-              'type': The type of the layer, which is 'Output'.
-              'shape': A tuple representing the shape of the output data, containing the number of units.
-              'units': The number of units for the output layer.
-              'activation': The activation function for the output layer.
-        """
-        units = int(items[0])
-        return {
                 'type': 'Output',
                 'shape': (units,),  # Output shape is a tuple with the number of units
-                'units': int(items[0]),
-                'activation': items[1].strip('"')
+                'units': units,
+                'activation': activation
             }
-    
-    def loss(self, items):
+        except ValueError as e:
+            raise ValueError(f"Invalid Output layer parameters: {e}") from e
+
+
+    def loss(self, items: List[Token]) -> Dict[str, str]:
+        """Processes the loss function definition."""
+        if not items:
+            raise ValueError("Loss definition is missing.")
         return {
             'type': 'Loss',
-            'value': items[0]
+            'value': self.extract_value(items[0])
         }
-    
-    def optimizer(self, items):
+
+    def optimizer(self, items: List[Token]) -> Dict[str, str]:
+        """Processes the optimizer definition."""
+        if not items:
+            raise ValueError("Optimizer definition is missing.")
         return {'type': 'Optimizer',
-                'value': items[0]
+                'value': self.extract_value(items[0])
             }
-    
-    def layers(self, items):
-        parsed_layers = []
+
+    def layers(self, items: List[Any]) -> Dict[str, List[Dict[str, Any]]]:
+        """Processes the layers section."""
+        parsed_layers: List[Dict[str, Any]] = []
         for item in items:
             if isinstance(item, lark.Tree):
-                layer_data = self.layer(item)
+                layer_data = self.layer(item.children) # Correctly process Tree items
                 parsed_layers.append(layer_data)
+            elif isinstance(item, dict):
+                parsed_layers.append(item) # Already processed layer
             else:
-                parsed_layers.append(item)
+                continue # or handle unexpected item type, maybe raise an error
+
         return {
             'type': 'Layers',
             'layers': parsed_layers
         }
-    
-    def dropout_layer(self, items):
-        return {
-            "type": "Dropout",
-            "rate": float(self.extract_value(items[0]))
-        }
 
-    
-    def flatten_layer(self, items):
+
+    def dropout_layer(self, items: List[Union[Dict[str, float], Token]]) -> Dict[str, Union[str, float]]:
+        """Processes the dropout layer definition."""
+        if not items:
+            raise ValueError("Dropout layer definition is incomplete.")
+
+        if isinstance(items[0], dict):  # Named params
+            params = items[0]
+            if 'rate' not in params:
+                raise ValueError("Dropout layer named parameters missing 'rate'.")
+            try:
+                rate = float(params['rate'])
+            except ValueError as e:
+                raise ValueError(f"Invalid Dropout rate: {e}") from e
+        else:  # Direct float value
+            try:
+                rate = float(str(items[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid Dropout rate: {e}") from e
+        return {'type': 'Dropout', 'rate': rate}
+
+
+    def flatten_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes the flatten layer definition."""
         return {'type': 'Flatten'}
-    
-    def training_config(self, items):
-        return {
-            'type': 'TrainingConfig',
-            'epochs': int(items[0]['epochs']) if 'epochs' in items[0] else None,
-            'batch_size': int(items[0]['batch_size']) if 'batch_size' in items[0] else None
-        }
-    
-    def shape(self, items):
+
+    def training_config(self, items: List[Dict[str, int]]) -> Dict[str, Any]:
+        """Processes the training configuration block."""
+        config: Dict[str, Any] = {'type': 'TrainingConfig'}
+        if items:
+            params = items[0]
+            if 'epochs' in params:
+                try:
+                    config['epochs'] = int(params['epochs'])
+                except ValueError:
+                    print("Warning: Invalid epoch value, defaulting to None.")
+            if 'batch_size' in params:
+                try:
+                    config['batch_size'] = int(params['batch_size'])
+                except ValueError:
+                    print("Warning: Invalid batch_size value, defaulting to None.")
+        return config
+
+
+    def shape(self, items: List[Token]) -> Tuple[Optional[int], ...]:
         """
-        Convert the list of tokens (or strings) into a tuple.
-        If a token equals "None", convert it to Python's None.
-        Otherwise, convert to integer.
+        Convert the list of tokens into a tuple representing shape.
+        Handles 'None' for variable dimensions and converts integers.
         """
-        result = []
+        shape_list: List[Optional[int]] = []
         for item in items:
-            # item is a Token, so convert it to a string.
-            val = str(item)
-            if val == "None":
-                result.append(None)
-            elif val.isdigit() or (val.startswith("-") and val[1:].isdigit()):
-                result.append(int(val))
-            elif val.isdigit():
-                result.append(int(val))
-            elif val.startswith("[") and val.endswith("]"):
-                result.append(self.shape(val[1:-1].split(", ")))  # Recursive call for nested lists
-            elif val.startswith("<") and val.endswith(">"):
-                result.append(self.shape(val[1:-1].split(", ")))  # Recursive call for nested sets
-            elif val.startswith("(") and val.endswith(")"):
-                result.append(self.shape(val[1:-1].split(", ")))  # Recursive call for nested tuples
-            elif val.startswith("{") and val.endswith("}"):
-                result.append(self.shape(val[1:-1].split(", ")))  # Recursive call for nested dictionaries
-                # Note: This assumes that the items in the dictionary are always simple types (not nested dictionaries)
+            val_str = str(item)
+            if val_str == "None":
+                shape_list.append(None)
             else:
-                result.append(val)
-        return tuple(result)
+                try:
+                    shape_list.append(int(val_str))
+                except ValueError:
+                    raise ValueError(f"Invalid shape dimension: {val_str}. Must be an integer or 'None'.")
+        return tuple(shape_list)
 
 
-    def max_pooling2d_layer(self, items):
-        # items: [pool_param]
-        pool_tree = items[0]
-        pool_h = int(self.extract_value(pool_tree.children[0]))
-        pool_w = int(self.extract_value(pool_tree.children[1]))
-        return {"type": "MaxPooling2D", "pool_size": (pool_h, pool_w)}
+    def max_pooling2d_layer(self, items: List[Tree]) -> Dict[str, Union[str, Tuple[int, int]]]:
+        """Processes the max pooling 2D layer definition."""
+        if not items:
+            raise ValueError("MaxPooling2D layer definition is incomplete.")
+        pool_param_tree = items[0]
+        if pool_param_tree.data != 'pool_param' or len(pool_param_tree.children) != 2:
+            raise ValueError("Invalid MaxPooling2D pool parameter format.")
+        try:
+            pool_h = int(self.extract_value(pool_param_tree.children[0]))
+            pool_w = int(self.extract_value(pool_param_tree.children[1]))
+            return {"type": "MaxPooling2D", "pool_size": (pool_h, pool_w)}
+        except ValueError as e:
+            raise ValueError(f"Invalid MaxPooling2D pool size: {e}") from e
 
-    
 
-    def batch_norm_layer(self, items):
+    def batch_norm_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes the batch normalization layer definition."""
         return {'type': 'BatchNormalization'}
 
-    def layer_norm_layer(self, items):
+    def layer_norm_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes the layer normalization layer definition."""
         return {'type': 'LayerNormalization'}
 
-    def instance_norm_layer(self, items):
+    def instance_norm_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes the instance normalization layer definition."""
         return {'type': 'InstanceNormalization'}
 
-    def group_norm_layer(self, items):
-        return {
-            "type": "GroupNormalization",
-            "groups": int(self.extract_value(items[0]))
-        }
-
-    #### Recurrent Layers ###################################
-    
-    
-    def recurrent_layer(self, items):
-        """
-        Process a recurrent layer definition and return a dictionary containing its parameters.
-        
-        Expected minimal signature:
-        [<TYPE token>, <INT token>]
-        For additional parameters, they appear at fixed positions.
-        """
+    def group_norm_layer(self, items: List[Tree]) -> Dict[str, Union[str, int]]:
+        """Processes the group normalization layer definition."""
+        if not items:
+            raise ValueError("GroupNormalization layer definition is incomplete.")
+        groups_param_tree = items[0]
+        if groups_param_tree.data != 'groups_param' or len(groups_param_tree.children) != 1:
+            raise ValueError("Invalid GroupNormalization groups parameter format.")
+        try:
+            groups = int(self.extract_value(groups_param_tree.children[0]))
+            return {"type": "GroupNormalization", "groups": groups}
+        except ValueError as e:
+            raise ValueError(f"Invalid GroupNormalization groups: {e}") from e
 
 
+    def lstm_layer(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes LSTM layer definition."""
+        params: Dict[str, Any] = {"type": "LSTM"}
+        if not items:
+            raise ValueError("LSTM layer definition requires 'units' parameter.")
 
-        def _get_value(items, idx, conv=lambda x: x, default=None):
-            """Safely extract and convert the value at index idx from items.
-            
-            If the item has a .value attribute (as tokens do), use it; otherwise, use str(item).
-            """
+        try:
+            params["units"] = int(self.extract_value(items[0]))
+        except ValueError as e:
+            raise ValueError(f"Invalid LSTM units parameter: {e}") from e
+
+        if len(items) > 1:
+            params["return_sequences"] = items[1] # Already transformed to bool in grammar
+
+        return params
+
+    def gru_layer(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes GRU layer definition."""
+        params: Dict[str, Any] = {"type": "GRU"}
+        if not items:
+            raise ValueError("GRU layer definition requires 'units' parameter.")
+        try:
+            params["units"] = int(self.extract_value(items[0]))
+        except ValueError as e:
+            raise ValueError(f"Invalid GRU units parameter: {e}") from e
+
+        if len(items) > 1:
+            params["return_sequences"] = items[1] # Already transformed to bool in grammar
+        return params
+
+    def simple_rnn_layer(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes SimpleRNN layer definition."""
+        params: Dict[str, Any] = {"type": "SimpleRNN"}
+        if not items:
+            raise ValueError("SimpleRNN layer definition requires 'units' parameter.")
+        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
             try:
-                token = items[idx]
-                val = token.value if hasattr(token, "value") else str(token)
-                return conv(val)
-            except (IndexError, ValueError):
-                return default
-        
-        # Extract the number of units from the items.
-        units = _get_value(items, 1, int, None)
-
-        # Extract the layer type as a string.
-        if hasattr(items[0], "value"):
-            layer_type = str(items[0].value)
-        elif isinstance(items[0], lark.Tree):
-            # Map tree data to uppercase; adjust as needed.
-            mapping = {
-                "lstm_layer": "LSTM",
-                "gru_layer": "GRU",
-                "simplernn_layer": "SimpleRNN",
-                "simplernncell_layer": "SimpleRNNCell",
-                "grucell_layer": "GRUCell",
-                "lstmcell_layer": "LSTMCell",
-                "cudnnlstm_layer": "CuDNNLSTM",
-                "cudnngru_layer": "CuDNNGRU",
-                "cudnnsimplernn_layer": "CuDNNSimpleRNN",
-                "rnn_layer": "RNN",
-            }
-            layer_type = mapping.get(items[0].data, items[0].data)
+                params["units"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid SimpleRNN units parameter: {e}") from e
         else:
-            layer_type = str(items[0])
-        
-        # For basic units, extract from index 1.
-        units = _get_value(items, 1, int, None)
-        
-        # Group similar layer types:
-        basic = {"LSTM", "GRU", "SimpleRNN", "CuDNNLSTM", "CuDNNGRU", "CuDNNSimpleRNN", "RNN"}
-        cell_variants = {"SimpleRNNCell", "GRUCell", "LSTMCell"}
-        dropout_wrappers = {"SimpleRNNDropoutWrapper", "GRUDropoutWrapper", "LSTMDropoutWrapper",
-                            "GRUCellDropoutWrapper", "LSTMCellDropoutWrapper"}
-        projection = {"BasicLSTMCellWithProjection", "BasicGRUCellWithProjection",
-                    "BasicRNNCellWithProjection", "BasicRNNCellWithInputProjection",
-                    "GRUCellWithInputProjection"}
-        complex_variants = {
-            "BasicRNNCellWithInputProjectionAndPeephole",
-            "BasicRNNCellWithInputProjectionAndPeepholeAndProjection",
-            "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSize",
-            "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSizeAndNumLayers",
-            "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSizeAndNumLayersAndDropout",
-            "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSizeAndNumLayersAndDropoutAndkernel_initializer"
-        }
-        basic_cells = {"BasicLSTMCell", "BasicGRUCell", "BasicRNNCell", "BasicLSTMCellWithPeephole", "BasicRNNCellWithPeephole"}
-        
-        # Helper: if minimal (only two items), then return basic result.
-        if len(items) == 2:
-            return {"type": layer_type, "units": units}
-        
-        # For layers in 'basic' group: expect an optional return_sequences flag at index 2.
-        if layer_type in basic:
-            # Only add return_sequences if provided.
-            if len(items) >= 3:
-                return_seq = _get_value(items, 2, lambda x: x, False)
-                return {"type": layer_type, "units": units, "return_sequences": return_seq}
-            else:
-                return {"type": layer_type, "units": units}
-        
-        # For cell variants: expect return_sequences at index 3.
-        elif layer_type in cell_variants:
-            if len(items) >= 4:
-                return_seq = _get_value(items, 3, lambda x: x, False)
-                return {"type": layer_type, "units": units, "return_sequences": return_seq}
-            else:
-                return {"type": layer_type, "units": units}
-        
-        # For dropout wrappers: expect return_sequences at index 2 and dropout (float) at index 3.
-        elif layer_type in dropout_wrappers:
-            if len(items) >= 4:
-                return_seq = _get_value(items, 2, lambda x: x, False)
-                dropout = _get_value(items, 3, float, None)
-                return {"type": layer_type, "units": units, "return_sequences": return_seq, "dropout": dropout}
-            else:
-                return {"type": layer_type, "units": units}
-        
-        # For projection variants: expect projection_size at index 2.
-        elif layer_type in projection:
-            projection_size = _get_value(items, 2, int, None)
-            return {"type": layer_type, "units": units, "projection_size": projection_size}
-        
-        # For complex variants: expect projection_size (idx2), hidden_size (idx3), num_layers (idx4),
-        # dropout (idx5), kernel_initializer (idx6)
-        elif layer_type in complex_variants:
-            result = {"type": layer_type, "units": units}
-            result["projection_size"] = _get_value(items, 2, int, None)
-            result["hidden_size"] = _get_value(items, 3, int, None)
-            result["num_layers"] = _get_value(items, 4, int, None)
-            result["dropout"] = _get_value(items, 5, float, None)
-            result["kernel_initializer"] = _get_value(items, 6, lambda x: x.value, None)
-            return result
-        
-        # For Attention wrappers (special-case):
-        elif layer_type.startswith("AttentionWrapper"):
-            # For simplicity, assume:
-            # items[1]: attention_layer (processed via self.layer_norm_layer)
-            # items[2]: attention_layer_size (INT)
-            # items[3]: attention_type (optional; if not present, default to "bahdanau")
-            attn_type = _get_value(items, 3, lambda x: x.value if hasattr(x, "value") else x, "bahdanau")
-            return {
-                "type": layer_type,
-                "attention_layer": self.layer_norm_layer(items[1]),
-                "attention_layer_size": _get_value(items, 2, int, None),
-                "attention_type": attn_type
-            }
-        
-        # For basic cells:
-        elif layer_type in basic_cells:
-            return {"type": layer_type, "units": units}
-        
-        # Fallback: return basic info.
+            raise ValueError("Invalid SimpleRNN units parameter format.")
+
+        if len(items) > 1:
+            params["return_sequences"] = items[1] # Already transformed to bool in grammar
+        return params
+
+    def cudnn_lstm_layer(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes CuDNNLSTM layer definition."""
+        params: Dict[str, Any] = {"type": "CuDNNLSTM"}
+        if not items:
+            raise ValueError("CuDNNLSTM layer definition requires 'units' parameter.")
+
+        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
+            try:
+                params["units"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid CuDNNLSTM units parameter: {e}") from e
         else:
-            return {"type": layer_type, "units": units}
+            raise ValueError("Invalid CuDNNLSTM units parameter format.")
 
-    #### Recurrent Layers #################################
+        if len(items) > 1:
+            params["return_sequences"] = items[1] # Already transformed to bool in grammar
+        return params
 
 
-    def attention_layer(self, items):
+    def cudnn_gru_layer(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes CuDNNGRU layer definition."""
+        params: Dict[str, Any] = {"type": "CuDNNGRU"}
+        if not items:
+            raise ValueError("CuDNNGRU layer definition requires 'units' parameter.")
+
+        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
+            try:
+                params["units"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid CuDNNGRU units parameter: {e}") from e
+        else:
+            raise ValueError("Invalid CuDNNGRU units parameter format.")
+
+        if len(items) > 1:
+            params["return_sequences"] = items[1] # Already transformed to bool in grammar
+        return params
+
+    def rnn_cell_layer(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes RNNCell layer definition."""
+        params: Dict[str, Any] = {"type": "RNNCell"}
+        if not items:
+            raise ValueError("RNNCell layer definition requires 'units' parameter.")
+
+        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
+            try:
+                params["units"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid RNNCell units parameter: {e}") from e
+        else:
+            raise ValueError("Invalid RNNCell units parameter format.")
+        return params
+
+    def lstm_cell_layer(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes LSTMCell layer definition."""
+        params: Dict[str, Any] = {"type": "LSTMCell"}
+        if not items:
+            raise ValueError("LSTMCell layer definition requires 'units' parameter.")
+        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
+            try:
+                params["units"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid LSTMCell units parameter: {e}") from e
+        else:
+            raise ValueError("Invalid LSTMCell units parameter format.")
+        return params
+
+    def gru_cell_layer(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes GRUCell layer definition."""
+        params: Dict[str, Any] = {"type": "GRUCell"}
+        if not items:
+            raise ValueError("GRUCell layer definition requires 'units' parameter.")
+        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
+            try:
+                params["units"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid GRUCell units parameter: {e}") from e
+        else:
+            raise ValueError("Invalid GRUCell units parameter format.")
+        return params
+
+
+    def simple_rnn_dropout(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes SimpleRNNDropoutWrapper layer definition."""
+        params: Dict[str, Any] = {"type": "SimpleRNNDropoutWrapper"}
+       
+        if len(items):
+            raise ValueError("SimpleRNNDropoutWrapper layer definition requires 'units' and 'dropout' parameters.")
+
+        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
+            try:
+                params["units"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid SimpleRNNDropoutWrapper units parameter: {e}") from e
+        else:
+            raise ValueError("Invalid SimpleRNNDropoutWrapper units parameter format.")
+
+        if isinstance(items[1], Tree) and items[1].data == 'dropout_param' and len(items[1].children) == 1:
+            try:
+                params["dropout"] = float(self.extract_value(items[1].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid SimpleRNNDropoutWrapper dropout parameter: {e}") from e
+        else:
+            raise ValueError("Invalid SimpleRNNDropoutWrapper dropout parameter format.")
+        return params
+
+    def gru_dropout(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes GRUDropoutWrapper layer definition."""
+        params: Dict[str, Any] = {"type": "GRUDropoutWrapper"}
+        if len(items) != 2:
+            raise ValueError("GRUDropoutWrapper layer definition requires 'units' and 'dropout' parameters.")
+
+        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
+            try:
+                params["units"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid GRUDropoutWrapper units parameter: {e}") from e
+        else:
+            raise ValueError("Invalid GRUDropoutWrapper units parameter format.")
+
+        if isinstance(items[1], Tree) and items[1].data == 'dropout_param' and len(items[1].children) == 1:
+            try:
+                params["dropout"] = float(self.extract_value(items[1].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid GRUDropoutWrapper dropout parameter: {e}") from e
+        else:
+            raise ValueError("Invalid GRUDropoutWrapper dropout parameter format.")
+        return params
+
+    def lstm_dropout(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes LSTMDropoutWrapper layer definition."""
+        params: Dict[str, Any] = {"type": "LSTMDropoutWrapper"}
+        if len(items) != 2:
+            raise ValueError("LSTMDropoutWrapper layer definition requires 'units' and 'dropout' parameters.")
+
+        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
+            try:
+                params["units"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid LSTMDropoutWrapper units parameter: {e}") from e
+        else:
+            raise ValueError("Invalid LSTMDropoutWrapper units parameter format.")
+
+        if isinstance(items[1], Tree) and items[1].data == 'dropout_param' and len(items[1].children) == 1:
+            try:
+                params["dropout"] = float(self.extract_value(items[1].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid LSTMDropoutWrapper dropout parameter: {e}") from e
+        else:
+            raise ValueError("Invalid LSTMDropoutWrapper dropout parameter format.")
+        return params
+
+
+    #### Advanced Layers #################################
+
+    def attention_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes Attention layer definition."""
         return {'type': 'Attention'}
 
-    def transformer_layer(self, items):
-        return {'type': 'TransformerEncoder', 'num_heads': int(items[0]), 'ff_dim': int(items[1])}
+    def transformer_layer(self, items: List[Tree]) -> Dict[str, Union[str, int]]:
+        """Processes TransformerEncoder layer definition."""
+        if len(items) != 2:
+            raise ValueError("TransformerEncoder layer definition requires 'num_heads' and 'ff_dim' parameters.")
 
-    def residual_layer(self, items):
+        params: Dict[str, Union[str, int]] = {"type": "TransformerEncoder"}
+
+        if isinstance(items[0], Tree) and items[0].data == 'heads_param' and len(items[0].children) == 1:
+            try:
+                params["num_heads"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid TransformerEncoder num_heads parameter: {e}") from e
+        else:
+            raise ValueError("Invalid TransformerEncoder num_heads parameter format.")
+
+        if isinstance(items[1], Tree) and items[1].data == 'dim_param' and len(items[1].children) == 1:
+            try:
+                params["ff_dim"] = int(self.extract_value(items[1].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid TransformerEncoder ff_dim parameter: {e}") from e
+        else:
+            raise ValueError("Invalid TransformerEncoder ff_dim parameter format.")
+        return params
+
+    def residual_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes ResidualConnection layer definition."""
         return {'type': 'ResidualConnection'}
 
-    def inception_layer(self, items):
+    def inception_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes InceptionModule layer definition."""
         return {'type': 'InceptionModule'}
 
-    def capsule_layer(self, items):
+    def capsule_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes CapsuleLayer layer definition."""
         return {'type': 'CapsuleLayer'}
 
-    def squeeze_excitation_layer(self, items):
+    def squeeze_excitation_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes SqueezeExcitation layer definition."""
         return {'type': 'SqueezeExcitation'}
 
-    def graph_conv_layer(self, items):
+    def graph_conv_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes GraphConv layer definition."""
         return {'type': 'GraphConv'}
 
-    def embedding_layer(self, items):
-        return {'type': 'Embedding', 'input_dim': int(items[0]), 'output_dim': int(items[1])}
+    def embedding_layer(self, items: List[Tree]) -> Dict[str, Union[str, int]]:
+        """Processes Embedding layer definition."""
+        if len(items) != 2:
+            raise ValueError("Embedding layer definition requires 'input_dim' and 'output_dim' parameters.")
+        params: Dict[str, Union[str, int]] = {"type": "Embedding"}
 
-    def quantum_layer(self, items):
-        return {
-            'type': 'QuantumLayer'
-            }
+        if isinstance(items[0], Tree) and items[0].data == 'input_dim_param' and len(items[0].children) == 1:
+            try:
+                params["input_dim"] = int(self.extract_value(items[0].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid Embedding input_dim parameter: {e}") from e
+        else:
+            raise ValueError("Invalid Embedding input_dim parameter format.")
 
-    def dynamic_layer(self, items):
+        if isinstance(items[1], Tree) and items[1].data == 'output_dim_param' and len(items[1].children) == 1:
+            try:
+                params["output_dim"] = int(self.extract_value(items[1].children[0]))
+            except ValueError as e:
+                raise ValueError(f"Invalid Embedding output_dim parameter: {e}") from e
+        else:
+            raise ValueError("Invalid Embedding output_dim parameter format.")
+        return params
+
+    def quantum_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes QuantumLayer layer definition."""
+        return {'type': 'QuantumLayer'}
+
+    def dynamic_layer(self, items: List[Any]) -> Dict[str, str]:
+        """Processes DynamicLayer layer definition."""
         return {'type': 'DynamicLayer'}
-    
-    def lstm_layer(self, items):
-        # items[0] is the INT token for units.
-        # Optional items[1] is the return_sequences token.
-        units = int(self.extract_value(items[0]))
+
+
+    def research(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes research file definition."""
+        if not items:
+            return {'type': 'Research', 'params': {}} # Allow empty research block
         if len(items) > 1:
-            rs = self.extract_value(items[1]).lower()
-            return_sequences = (rs == "true")
-        else:
-            return_sequences = False
-        return {"type": "LSTM", "units": units, "return_sequences": return_sequences}
-
-    def gru_layer(self, items):
-        units = int(self.extract_value(items[0]))
-        if len(items) > 1:
-            rs = self.extract_value(items[1]).lower()
-            return_sequences = (rs == "true")
-        else:
-            return_sequences = False
-        return {"type": "GRU", "units": units, "return_sequences": return_sequences}
-    
-    def transformer_layer(self, items):
-        return {
-            "type": "TransformerEncoder",
-            "num_heads": int(self.extract_value(items[0])),
-            "ff_dim": int(self.extract_value(items[1]))
-        }
-    
-    def research(self, items):
-        # For research files, simply construct a dict from the parsed parts.
-        metrics = items[1]
-        references = items[2] if len(items) > 2 else None
-        return {"type": "research", "name": self.extract_value(items[0]), "metrics": metrics, "references": references}
-
-    def network(self, items):
-        name = str(items[0])
-        input_shape = items[1]['shape']  # Input layer configuration
-        layers = items[2]['layers']  # Layers configuration
-        # Use the separate output layer if provided
-        output_layer = next((item for item in items if isinstance(item, dict) and item.get('type') == 'Output'), None)
-        
-        # If no explicit output layer was found, check if there's an output layer in the layers
-        if output_layer is None:
-            output_layer = next((layer for layer in reversed(layers) if layer['type'] == 'Output'), None)
-        
-        # If still no output layer, use a default
-        if output_layer is None:
-            output_layer = {
-                'type': 'Output', 
-                'units': 1, 
-                'activation': 'linear'
-            }
-        
-        # Determine output shape
-        if 'shape' in output_layer:
-            output_shape = output_layer['shape']
-        elif 'units' in output_layer:
-            output_shape = (output_layer['units'],)
-        else:
-            output_shape = (1,)
-        
-        # Find loss and optimizer
-        loss = next((item for item in items if isinstance(item, dict) and item.get('type') == 'Loss'), None)
-        optimizer = next((item for item in items if isinstance(item, dict) and item.get('type') == 'Optimizer'), None)
-        
-        # The rest are configuration blocks (could be training_config and/or execution_config)
-        training_config = None
-        execution_config = {"device": "auto"}  # default
-        # items[5:] contains all config blocks
-        for conf in items[5:]:
-            # We'll assume training_config returns a dict with type "TrainingConfig"
-            # and execution_config returns a dict with type "ExecutionConfig"
-            if conf == "TrainingConfig":
-                training_config = conf
-            elif conf == "ExecutionConfig":
-                execution_config = conf
-
-        # Construct the neural network configuration dictionary
-        # This includes the name, input shape, layers, output layer, output shape, loss, optimizer, and training configuration
-        # If execution configuration is provided, it will be included as well.
-        # If no explicit output layer was found, it will be added to the layers list.
-        # If no loss or optimizer is found, default values will be used.
-        # If no training configuration is found, default values will be used.
-
-        return {
-            'type': 'model',
-            'name': name,
-            'input_shape': input_shape,
-            'layers': layers,
-            'output_layer': output_layer,
-            'output_shape': output_shape,
-            'loss': loss,
-            'optimizer': optimizer,
-            'training_config': training_config,
-            'execution_config': execution_config
-        }
-
-    def research(self, items):
+          return {
+              'type': 'Research',
+              'name': self.extract_value(items[0]) if items[0] else None, # Research name might be optional now
+              'params': items[1] if len(items) > 1 else {}
+          }
         return {
             'type': 'Research',
             'params': items[0] if items else {}
         }
-    
-    def research_params(self, items):
-        params = {}
-        for item in items:
-            params.update(item)
-        return params
-    
-    def metrics(self, items):
+
+    def network(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes network file definition."""
+        if len(items) < 6: # Minimum components: network name, input, layers, loss, optimizer, and potentially training config block
+            raise ValueError("Network definition is incomplete. Requires at least name, input, layers, loss, optimizer, and enclosing braces.")
+
+        name_token = items[0]
+        if not isinstance(name_token, Token):
+            raise TypeError(f"Expected Token for network name, got {type(name_token)}")
+        name = str(name_token.value)
+        input_layer_config = items[1] # Already processed input layer
+        layers_config = items[2]['layers'] # Layers are nested under 'layers' key
+        loss_config = items[3] # Already processed loss
+        optimizer_config = items[4] # Already processed optimizer
+        training_config = next((item for item in items[5:] if item.get('type') == 'TrainingConfig'), None) # Optional training config, default to None
+        execution_config = next((item for item in items[5:] if item.get('type') == 'ExecutionConfig'), {"device": "auto"}) # Default execution config
+
+        output_layer = next((layer for layer in reversed(layers_config) if layer['type'] == 'Output'), None)
+
+        if output_layer is None:
+            output_layer = { 'type': 'Output', 'units': 1, 'activation': 'linear' } # Default output layer
+
+        output_shape = output_layer.get('shape')
+        if output_shape is None and 'units' in output_layer:
+            output_shape = (output_layer['units'],)
+        elif output_shape is None:
+            output_shape = (1,) # Fallback if still no output shape
+
         return {
-            'metrics': {item['type']: item['value'] for item in items}
+            'type': 'model',
+            'name': name,
+            'input': input_layer_config, # Keep input config as nested dict
+            'layers': layers_config, # Layers is already a list of layer configs
+            'output_layer': output_layer,
+            'output_shape': output_shape,
+            'loss': loss_config,
+            'optimizer': optimizer_config,
+            'training_config': training_config,
+            'execution_config': execution_config # Ensure execution config is included, default or parsed
         }
 
-    def accuracy_param(self, items):
-        return {'type': 'accuracy', 'value': float(items[0])}
 
-    def loss_param(self, items):
-        return {'type': 'loss', 'value': float(items[0])}
+    def research_params(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Processes research parameters, merging metrics and references."""
+        params: Dict[str, Any] = {}
+        for item in items:
+            if isinstance(item, dict):
+                params.update(item) # Merge dictionaries directly
+        return params
 
-    def precision_param(self, items):
-        return {'type': 'precision', 'value': float(items[0])}
+    def metrics(self, items: List[Dict[str, float]]) -> Dict[str, float]:
+        """Processes metrics parameters."""
+        metrics_dict: Dict[str, float] = {}
+        for item in items:
+            if isinstance(item, dict) and 'type' in item and 'value' in item:
+                metrics_dict[item['type']] = item['value']
+        return {'metrics': metrics_dict}
 
-    def recall_param(self, items):
-        return {'type': 'recall', 'value': float(items[0])}
 
-    def references(self, items):
-        return {'references': [item['paper'] for item in items]}
+    def accuracy_param(self, items: List[Token]) -> Dict[str, Union[str, float]]:
+        """Processes accuracy parameter."""
+        if not items:
+            raise ValueError("Accuracy parameter missing value.")
+        try:
+            return {'type': 'accuracy', 'value': float(self.extract_value(items[0]))}
+        except ValueError as e:
+            raise ValueError(f"Invalid accuracy value: {e}") from e
 
-    def paper_param(self, items):
-        return {'paper': items[0].strip('"')}
+    def loss_param(self, items: List[Token]) -> Dict[str, Union[str, float]]:
+        """Processes loss metric parameter."""
+        if not items:
+            raise ValueError("Loss metric parameter missing value.")
+        try:
+            return {'type': 'loss', 'value': float(self.extract_value(items[0]))}
+        except ValueError as e:
+            raise ValueError(f"Invalid loss metric value: {e}") from e
 
-    def param_style1(self, items):
-        """Handle both named and ordered parameters"""
-        if isinstance(items[0], dict):
-            # Named parameters
-            return items[0]
+    def precision_param(self, items: List[Token]) -> Dict[str, Union[str, float]]:
+        """Processes precision parameter."""
+        if not items:
+            raise ValueError("Precision parameter missing value.")
+        try:
+            return {'type': 'precision', 'value': float(self.extract_value(items[0]))}
+        except ValueError as e:
+            raise ValueError(f"Invalid precision value: {e}") from e
+
+    def recall_param(self, items: List[Token]) -> Dict[str, Union[str, float]]:
+        """Processes recall parameter."""
+        if not items:
+            raise ValueError("Recall parameter missing value.")
+        try:
+            return {'type': 'recall', 'value': float(self.extract_value(items[0]))}
+        except ValueError as e:
+            raise ValueError(f"Invalid recall value: {e}") from e
+
+
+    def references(self, items: List[Dict[str, str]]) -> Dict[str, List[str]]:
+        """Processes references block."""
+        references_list: List[str] = []
+        for item in items:
+            if isinstance(item, dict) and 'paper' in item:
+                references_list.append(item['paper'])
+        return {'references': references_list}
+
+    def paper_param(self, items: List[Token]) -> Dict[str, str]:
+        """Processes paper parameter."""
+        if not items:
+            raise ValueError("Paper reference missing value.")
+        return {'paper': self.extract_value(items[0])}
+
+
+    def named_params(self, items: List[Tree]) -> Dict[str, Any]:
+        """Processes named parameters, converting to dictionary."""
+        params = {}
+        for item in items:
+            if not isinstance(item, Tree) or len(item.children) != 2:
+                continue  # Robustly skip invalid parameters, or raise error if strict
+            name_token, value_token = item.children
+            if isinstance(name_token, Token):
+                param_name = name_token.value
+                params[param_name] = self.visit(value_token) # Recursively handle value
+        return params
+
+    def ordered_params(self, items: List[Any]) -> List[Any]:
+        """Processes ordered parameters, returning as a list."""
+        return [self.visit(item) for item in items] # Process each parameter value
+
+
+    def value(self, items: List[Token]) -> Union[int, float, str, Tuple[int, int]]:
+        """Processes a value, determining its type (INT, FLOAT, STRING, TUPLE)."""
+        token = items[0]
+        if token.type == 'INT':
+            return int(token.value)
+        elif token.type == 'FLOAT':
+            return float(token.value)
+        elif token.type == 'ESCAPED_STRING':
+            return token.value[1:-1]  # Remove quotes
+        elif token.type == 'tuple':
+            # Handle tuple parsing here directly, or delegate if needed.
+            tuple_content = token.value[1:-1] # Remove parentheses
+            tuple_values = [v.strip() for v in tuple_content.split(',')]
+            if len(tuple_values) == 2:
+                try:
+                    return (int(tuple_values[0]), int(tuple_values[1]))
+                except ValueError:
+                    raise ValueError(f"Invalid tuple values: {token.value}. Must be integers.")
+            else:
+                raise ValueError(f"Invalid tuple format: {token.value}. Expected (INT, INT).")
         else:
-            # Ordered parameters 
-            return items
+            return token.value # Fallback for other token types if any
+
+    def tuple(self, items: List[Token]) -> Tuple[int, int]:
+        """Processes tuple values, ensuring they are integers."""
+        if len(items) == 2:
+            try:
+                return (int(items[0]), int(items[1]))
+            except ValueError as e:
+                raise ValueError(f"Tuple values must be integers: {e}") from e
+        else:
+            raise ValueError("Tuple must contain exactly two integer values.")
 
 
-def propagate_shape(input_shape, layer):
+    def named_rate(self, items: List[Token]) -> Dict[str, float]:
+        """Processes named rate parameter for dropout layers."""
+        if len(items) == 2 and items[0] == 'rate':
+            try:
+                return {'rate': float(items[1])}
+            except ValueError as e:
+                raise ValueError(f"Invalid rate value: {e}") from e
+        raise ValueError("Invalid named rate parameter format.")
+
+
+    def param_style1(self, items: List[Union[Dict[str, Any], List[Any]]]) -> Union[Dict[str, Any], List[Any]]:
+        """Handles both named and ordered parameters styles."""
+        if isinstance(items[0], dict):
+            return items[0] # Named parameters dictionary
+        else:
+            return items # Ordered parameters list
+
+    def number_or_none(self, items: List[Token]) -> Optional[int]:
+        """Processes number_or_none values for shapes."""
+        token = items[0]
+        if token == 'None':
+            return None
+        try:
+            return int(token.value)
+        except ValueError:
+            raise ValueError(f"Invalid shape dimension: {token.value}. Must be an integer or 'None'.")
+
+
+    def epochs_param(self, items: List[Token]) -> Dict[str, int]:
+        """Processes epochs parameter in training config."""
+        if len(items) == 1:
+            try:
+                return {'epochs': int(items[0])}
+            except ValueError as e:
+                raise ValueError(f"Invalid epochs value: {e}") from e
+        raise ValueError("Invalid epochs parameter format.")
+
+    def batch_size_param(self, items: List[Token]) -> Dict[str, int]:
+        """Processes batch_size parameter in training config."""
+        if len(items) == 1:
+            try:
+                return {'batch_size': int(items[0])}
+            except ValueError as e:
+                raise ValueError(f"Invalid batch_size value: {e}") from e
+        raise ValueError("Invalid batch_size parameter format.")
+
+    def device_param(self, items: List[Token]) -> Dict[str, str]:
+        """Processes device parameter in execution config."""
+        if len(items) == 1:
+            return {'device': self.extract_value(items[0])}
+        raise ValueError("Invalid device parameter format.")
+
+    def execution_config(self, items: List[Tree]) -> Dict[str, Any]:
+        """Processes execution configuration block."""
+        config: Dict[str, Any] = {'type': 'ExecutionConfig'}
+        if items:
+            for item in items:
+                if item.data == 'device_param':
+                    config.update(self.device_param(item.children))
+        return config
+def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any]) -> Tuple[Optional[int], ...]:
     """
     Propagates the input shape through a neural network layer to calculate the output shape.
-
-    This function determines the output shape of a layer given its input shape and layer configuration.
-    It supports Conv2D, Flatten, Dense, and Dropout layers.
+    Supports various layer types and handles shape transformations accordingly.
 
     Parameters:
-    input_shape (tuple): The shape of the input to the layer. For Conv2D, it should be a 3-tuple (height, width, channels).
-    layer (dict): A dictionary containing the layer configuration. Must include a 'type' key specifying the layer type.
+    input_shape (tuple): The shape of the input to the layer.
+    layer (dict): A dictionary containing the layer configuration, including 'type' and 'params'.
 
     Returns:
-    tuple: The output shape of the layer after processing the input.
+    tuple: The output shape of the layer.
 
     Raises:
-    TypeError: If the layer parameter is not a dictionary.
-    KeyError: If the layer dictionary is missing required keys.
-    ValueError: If the layer type is unsupported or if the input shape is invalid for the given layer type.
+    TypeError: If layer is not a dictionary or input_shape is not a tuple.
+    ValueError: If layer type is unsupported, or layer parameters are invalid, or input shape is incompatible.
     """
-    # Defensive type checking
     if not isinstance(layer, dict):
         raise TypeError(f"Layer must be a dictionary, got {type(layer)}")
+    if not isinstance(input_shape, tuple):
+        raise TypeError(f"Input shape must be a tuple, got {type(input_shape)}")
 
-    # Extract actual layer type, handling nested dictionary case
-    layer_type = layer['type'] if isinstance(layer['type'], str) else layer['type']['type']
+    layer_type = layer.get('type')
+    if not layer_type:
+        raise ValueError("Layer dictionary must contain a 'type' key.")
 
-    print("Layer Type:", layer_type)
-    print("Input Shape:", input_shape)
-    print("Full Layer:", layer)
+    layer_type = str(layer_type) # Ensure layer_type is string
 
-    # Helper to check input shape is 3D for convolution and pooling layers
-    def check_3d_input(layer_type):
-        if len(input_shape) != 3:
-            raise ValueError(f"{layer_type} requires 3D input shape (h,w,c), got {input_shape}")
-        return input_shape[0], input_shape[1], input_shape[2]
 
-    if layer_type == 'Conv2D':
-        # Handle both direct and nested dictionary cases for layer parameters
-        if isinstance(layer['type'], dict):
-            filters = layer['type']['filters']
-            kernel_size = layer['type']['kernel_size']
+    def validate_input_dims(expected_dims: int, layer_name: str):
+        """Helper function to validate input dimensions."""
+        if len(input_shape) != expected_dims:
+            raise ValueError(f"{layer_name} layer expects {expected_dims}D input (including batch), got {len(input_shape)}D input with shape {input_shape}")
+
+    if layer_type == 'Input':
+        return layer.get('shape', input_shape) # Input layer can optionally override shape
+
+    elif layer_type == 'Conv2D':
+        validate_input_dims(4, 'Conv2D') # Expecting (batch, height, width, channels)
+        params = layer.get('params', layer) # Check both 'params' and direct layer for config
+
+        filters = params.get('filters')
+        kernel_size = params.get('kernel_size')
+        strides = params.get('strides', (1, 1)) # Default strides to 1x1
+        padding_mode = params.get('padding', 'valid').lower() # Default to 'valid' padding
+        dilation_rate = params.get('dilation_rate', (1, 1)) # Default dilation rate to 1x1
+
+        if not filters or not kernel_size:
+            raise ValueError("Conv2D layer requires 'filters' and 'kernel_size' parameters.")
+
+        try:
+            filters = int(filters)
+            kernel_h, kernel_w = map(int, kernel_size)
+            stride_h, stride_w = map(int, strides)
+            dilation_h, dilation_w = map(int, dilation_rate)
+        except ValueError as e:
+            raise ValueError(f"Invalid Conv2D parameter format: {e}") from e
+
+        batch_size, in_h, in_w, in_channels = input_shape
+
+        # Calculate output dimensions based on padding mode
+        if padding_mode == 'valid':
+            out_h = ((in_h - dilation_h * (kernel_h - 1) - 1) // stride_h) + 1
+            out_w = ((in_w - dilation_w * (kernel_w - 1) - 1) // stride_w) + 1
+        elif padding_mode == 'same':
+            out_h = in_h # Output height is same as input height
+            out_w = in_w # Output width is same as input width
         else:
-            filters = layer.get('filters')
-            kernel_size = layer.get('kernel_size')
+            raise ValueError(f"Unsupported padding mode for Conv2D: {padding_mode}. Valid modes are 'valid' or 'same'.")
 
-        h, w, c = check_3d_input('Conv2D')
-        
-        # Validate required parameters
-        if filters is None or kernel_size is None:
-            raise KeyError("Conv2D layer missing required parameters")
-
-        kernel_h, kernel_w = kernel_size
-
-        # Simple shape calculation without padding (assuming valid padding)
-        return (h - kernel_h + 1, w - kernel_w + 1, filters)
+        return (batch_size, out_h, out_w, filters)
 
     elif layer_type == 'MaxPooling2D':
-        h, w, c = check_3d_input('MaxPooling2D')
-        
-        # Handle both direct and nested dictionary cases for pool_size
-        if isinstance(layer['type'], dict):
-            pool_size = layer['type']['pool_size']
+        validate_input_dims(4, 'MaxPooling2D') # Expecting (batch, height, width, channels)
+        params = layer.get('params', layer)
+
+        pool_size = params.get('pool_size')
+        strides = params.get('strides', pool_size) # Default stride to pool_size if not provided
+        padding_mode = params.get('padding', 'valid').lower() # Default to 'valid' padding
+
+        if not pool_size:
+            raise ValueError("MaxPooling2D layer requires 'pool_size' parameter.")
+
+        try:
+            pool_h, pool_w = map(int, pool_size)
+            stride_h, stride_w = map(int, strides) if strides else map(int, pool_size) # If strides is None, use pool_size
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Invalid MaxPooling2D parameter format: {e}") from e
+
+
+        batch_size, in_h, in_w, in_channels = input_shape
+
+        # Calculate output dimensions based on padding mode
+        if padding_mode == 'valid':
+            out_h = ((in_h - pool_h) // stride_h) + 1
+            out_w = ((in_w - pool_w) // stride_w) + 1
+        elif padding_mode == 'same':
+            out_h = in_h // stride_h if in_h % stride_h == 0 else (in_h // stride_h) + 1 # Ceil division for 'same'
+            out_w = in_w // stride_w if in_w % stride_w == 0 else (in_w // stride_w) + 1 # Ceil division for 'same'
         else:
-            pool_size = layer.get('pool_size')
-        
-        # Validate required parameters
-        if pool_size is None:
-            raise KeyError("MaxPooling2D layer missing pool_size parameter")
-        
-        pool_h, pool_w = pool_size
-        return (h // pool_h, w // pool_w, c)
+            raise ValueError(f"Unsupported padding mode for MaxPooling2D: {padding_mode}. Valid modes are 'valid' or 'same'.")
+
+
+        return (batch_size, out_h, out_w, in_channels) # Channels remain the same
 
     elif layer_type == 'Flatten':
-        # Flatten converts multi-dimensional input to 1D
-        return (np.prod(input_shape),)
+        validate_input_dims(4, 'Flatten') # Expecting (batch, height, width, channels)
+        batch_size = input_shape[0]
+        return (batch_size, np.prod(input_shape[1:]),) # Flatten spatial dimensions, keep batch
 
     elif layer_type == 'Dense':
-        # Handle both direct and nested dictionary cases for units
-        if isinstance(layer['type'], dict):
-            units = layer['type'].get('units')
-        else:
-            units = layer.get('units')
+        validate_input_dims(2, 'Dense') # Expecting (batch, features_in)
+        params = layer.get('params', layer)
+        units = params.get('units')
 
-        # Validate required parameters
-        if units is None:
-            raise KeyError("Dense layer missing units parameter")
-        return (units,)
+        if not units:
+            raise ValueError("Dense layer requires 'units' parameter.")
+        try:
+            units = int(units)
+        except ValueError as e:
+            raise ValueError(f"Invalid Dense units parameter: {e}") from e
+
+        batch_size = input_shape[0]
+        return (batch_size, units,)
 
     elif layer_type == 'Dropout':
-        # Dropout doesn't change the shape
-        return input_shape
+        return input_shape # Dropout does not change shape
 
     elif layer_type == 'Output':
-        # Handle both direct and nested dictionary cases for units
-        if isinstance(layer['type'], dict):
-            units = layer['type'].get('units')
-        else:
-            units = layer.get('units')
+        validate_input_dims(2, 'Output') # Assuming output layer also takes 2D input (batch, features_in)
+        params = layer.get('params', layer)
+        units = params.get('units')
+        if not units:
+            raise ValueError("Output layer requires 'units' parameter.")
+        try:
+            units = int(units)
+        except ValueError as e:
+            raise ValueError(f"Invalid Output units parameter: {e}") from e
+        batch_size = input_shape[0]
+        return (batch_size, units,)
 
-        if units is None:
-            raise KeyError("Output layer missing units parameter")
-        return (units,)
+    elif layer_type in ['BatchNormalization', 'LayerNormalization', 'InstanceNormalization', 'GroupNormalization']:
+        return input_shape # Normalization layers typically preserve shape
+
+    # Recurrent Layers - Assuming input is (batch, time_steps, features) for simplicity
+    elif layer_type in ['LSTM', 'GRU', 'SimpleRNN', 'CuDNNLSTM', 'CuDNNGRU', 'RNNCell', 'LSTMCell', 'GRUCell',
+                        'SimpleRNNDropoutWrapper', 'GRUDropoutWrapper', 'LSTMDropoutWrapper']:
+        validate_input_dims(3, layer_type) # Expecting (batch, time_steps, features)
+        params = layer.get('params', layer)
+        units = params.get('units')
+        return_sequences = params.get('return_sequences', False)
+
+        if not units:
+            raise ValueError(f"{layer_type} layer requires 'units' parameter.")
+        try:
+            units = int(units)
+        except ValueError as e:
+            raise ValueError(f"Invalid {layer_type} units parameter: {e}") from e
+
+        batch_size, time_steps, _ = input_shape
+        if return_sequences:
+            return (batch_size, time_steps, units) # Shape is (batch, time_steps, units) if return_sequences=True
+        else:
+            return (batch_size, units) # Shape is (batch, units) if return_sequences=False
+
+
+    elif layer_type in ['Attention', 'TransformerEncoder', 'ResidualConnection', 'InceptionModule',
+                        'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
+        return input_shape # Placeholder for advanced layers, needs specific shape logic
+
 
     else:
-        raise ValueError(f"Unsupported layer type: {layer_type}") 
+        raise ValueError(f"Unsupported layer type: {layer_type}")
 
-
-class QuantumLayer(nn.Module):
-    def __init__(self, n_qubits, n_layers, n_features):
-        """
-        n_qubits: Number of quantum bits to use.
-        n_layers: Number of variational layers in the quantum circuit.
-        n_features: Dimension of the input features per sample.
-        """
-        super(QuantumLayer, self).__init__()
-        self.n_qubits = n_qubits
-        self.n_layers = n_layers
-
-        # Define a quantum device on the CPU or GPU via PennyLane's default.qubit device.
-        self.dev = qml.device("default.qubit", wires=n_qubits)
-
-        # The total number of parameters in the variational circuit.
-        self.weight_shapes = {"weights": (n_layers, n_qubits, 3)}
-
-        # Create a QNode that wraps our quantum circuit.
-        @qml.qnode(self.dev, interface="torch")
-        def circuit(inputs, weights):
-            # Encode classical data into the quantum state.
-            # For simplicity, we embed each feature onto a qubit using an RY gate.
-            for i in range(self.n_qubits):
-                if i < len(inputs):
-                    qml.RY(inputs[i], wires=i)
-                else:
-                    qml.RY(0.0, wires=i)
-
-            # Apply a variational circuit (multiple layers of rotations).
-            for layer in range(self.n_layers):
-                for qubit in range(self.n_qubits):
-                    qml.RX(weights[layer, qubit, 0], wires=qubit)
-                    qml.RY(weights[layer, qubit, 1], wires=qubit)
-                    qml.RZ(weights[layer, qubit, 2], wires=qubit)
-                # Entangle adjacent qubits with CNOTs
-                for qubit in range(self.n_qubits - 1):
-                    qml.CNOT(wires=[qubit, qubit + 1])
-                # Optionally, add a CNOT from the last to the first qubit to create a ring entanglement.
-                qml.CNOT(wires=[self.n_qubits - 1, 0])
-
-            # Measure expectation values on each qubit.
-            return [qml.expval(qml.PauliZ(wires=i)) for i in range(self.n_qubits)]
-
-        # Register the quantum circuit as a torch parameter.
-        self.weights = nn.Parameter(torch.randn(self.weight_shapes["weights"]))
-
-        # Save the QNode function
-        self.circuit = circuit
-
-        # A final linear layer to map the quantum outputs to the desired feature size.
-        self.fc = nn.Linear(n_qubits, n_features)
-
-    def forward(self, x):
-        # x is expected to be of shape (batch_size, n_features_in)
-        # We will process each sample individually.
-        outputs = []
-        for sample in x:
-            # For each sample, convert it to a 1D tensor (if not already).
-            sample = sample.flatten()
-            # Run the quantum circuit on the sample with current weights.
-            q_out = self.circuit(sample, self.weights)
-            q_out = torch.stack(q_out)  # Convert list to tensor.
-            # Map the quantum outputs to desired features.
-            outputs.append(self.fc(q_out))
-        # Stack all outputs into a batch tensor.
-        return torch.stack(outputs)
-
-class DynamicLayer(nn.Module):
-    def __init__(self, threshold=1.0, branch1_units=64, branch2_units=32):
-        """
-        threshold: A value used to decide which branch to activate.
-        branch1_units: Number of output features for branch 1.
-        branch2_units: Number of output features for branch 2.
-        """
-        super(DynamicLayer, self).__init__()
-        self.threshold = threshold
-
-        # Define two branches as simple feedforward layers.
-        self.branch1 = nn.Sequential(
-            nn.Linear(128, branch1_units),
-            nn.ReLU()
-        )
-        self.branch2 = nn.Sequential(
-            nn.Linear(128, branch2_units),
-            nn.ReLU()
-        )
-        # Final layer to map the branch outputs to a common dimension.
-        # Here we choose the maximum of branch outputs as the final dimension.
-        self.final_dim = max(branch1_units, branch2_units)
-        self.final_layer = nn.Linear(self.final_dim, 128)
-
-    def forward(self, x):
-        """
-        x: Expected shape (batch_size, 128)
-        Decision logic: if the mean absolute value of the sample is greater than threshold,
-        use branch1; otherwise, use branch2.
-        """
-        # Compute a simple statistic per sample
-        branch_outputs = []
-        for sample in x:
-            if sample.abs().mean() > self.threshold:
-                out = self.branch1(sample)
-            else:
-                out = self.branch2(sample)
-            branch_outputs.append(out)
-        # Stack outputs into a batch tensor
-        branch_outputs = torch.stack(branch_outputs)
-        # If branch outputs have different dimensions, we pad the smaller ones (for demonstration)
-        if branch_outputs.shape[1] != self.final_dim:
-            # A simple padding example (in practice, better design the branches to output the same dims)
-            padded = torch.zeros(x.size(0), self.final_dim, device=x.device)
-            padded[:, :branch_outputs.shape[1]] = branch_outputs
-            branch_outputs = padded
-        # Pass through a final mapping
-        return self.final_layer(branch_outputs)
-
-
-def generate_code(model_data, backend="tensorflow"):
+def generate_code(model_data: Dict[str, Any], backend: str = "tensorflow") -> str:
     """
-    This function generates code for creating and training a neural network model based on the given model data and backend.
+    Generates code for creating and training a neural network model based on model_data and backend.
+    Supports TensorFlow and PyTorch backends.
 
     Parameters:
-    model_data (dict): A dictionary containing the model configuration and data. It should have the following keys:
-                       - 'input': A dictionary containing the input shape of the model. It should have a 'shape' key.
-                       - 'layers': A list of dictionaries, each representing a layer in the model. Each layer dictionary should have a 'type' key.
-                       - 'loss': A dictionary containing the loss function for the model. It should have a 'value' key.
-                       - 'optimizer': A dictionary containing the optimizer for the model. It should have a 'value' key.
-                       - 'training_config' (optional): A dictionary containing the training configuration for the model. It should have 'epochs' and 'batch_size' keys.
-
-    backend (str): The backend framework to use for generating the code. It can be either 'tensorflow' or 'pytorch'.
+    model_data (dict): Parsed model configuration dictionary.
+    backend (str): Backend framework ('tensorflow' or 'pytorch'). Default: 'tensorflow'.
 
     Returns:
-    str: The generated code for creating and training the neural network model based on the given model data and backend.
+    str: Generated code as a string.
 
     Raises:
-    ValueError: If the specified backend is not supported.
+    ValueError: If the backend is unsupported or model_data is invalid.
     """
+    if not isinstance(model_data, dict) or 'layers' not in model_data or 'input' not in model_data or 'loss' not in model_data or 'optimizer' not in model_data:
+        raise ValueError("Invalid model_data format. Ensure it contains 'layers', 'input', 'loss', and 'optimizer'.")
+
+    indent = "    " # Define consistent indentation
+
     if backend == "tensorflow":
-        code = "import tensorflow as tf\n"
+        code = "import tensorflow as tf\n\n"
         code += "model = tf.keras.Sequential([\n"
-        for layer in model_data['layers']:
-            if layer['type'] == 'Conv2D':
-                code += f"    tf.keras.layers.Conv2D({layer['filters']}, {layer['kernel_size']}, activation='{layer['activation']}'),\n"
-            elif layer['type'] == 'Dense':
-                code += f"    tf.keras.layers.Dense({layer['units']}, activation='{layer['activation']}'),\n"
-            elif layer['type'] == 'Flatten':
-                code += "    tf.keras.layers.Flatten(),\n"
-            elif layer['type'] == 'Dropout':
-                code += f"    tf.keras.layers.Dropout({layer['rate']}),\n"
-        code += "])\n"
 
-        # Remove quotes from optimizer and loss values
-        optimizer = str(model_data['optimizer']['value']).strip('"')
-        loss = str(model_data['loss']['value']).strip('"')
-        code += f"model.compile(loss='{loss}', optimizer='{optimizer}')\n"
+        input_shape = model_data['input']['shape']
+        if not input_shape:
+            raise ValueError("Input layer shape is not defined in model_data.")
+        input_layer_code = f"{indent}tf.keras.layers.Input(shape={input_shape}),\n" # Explicit input layer
+        code += input_layer_code
 
-        # Extract training configuration
-        if 'training' in model_data and model_data['training_config']:
-            epochs = model_data['training_config'].get('epochs', 10) # Default to 10 epochs
-            batch_size = model_data['training_config'].get('batch_size', 32) # Default to batch size of 32
-            code += f"model.fit(data, epochs={epochs}, batch_size={batch_size})\n"
+
+        current_input_shape = input_shape # Start shape propagation from input
+        for layer_config in model_data['layers']:
+            layer_type = layer_config['type']
+            params = layer_config.get('params', layer_config) # Check both 'params' and direct config
+
+            if layer_type == 'Conv2D':
+                filters = params.get('filters')
+                kernel_size = params.get('kernel_size')
+                activation = params.get('activation', 'relu') # Default activation
+                if not filters or not kernel_size:
+                    raise ValueError("Conv2D layer config missing 'filters' or 'kernel_size'.")
+                code += f"{indent}tf.keras.layers.Conv2D(filters={filters}, kernel_size={kernel_size}, activation='{activation}'),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'MaxPooling2D':
+                pool_size = params.get('pool_size')
+                if not pool_size:
+                    raise ValueError("MaxPooling2D layer config missing 'pool_size'.")
+                code += f"{indent}tf.keras.layers.MaxPool2D(pool_size={pool_size}),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'Flatten':
+                code += f"{indent}tf.keras.layers.Flatten(),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'Dense':
+                units = params.get('units')
+                activation = params.get('activation', 'relu') # Default activation
+                if not units:
+                    raise ValueError("Dense layer config missing 'units'.")
+                code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}'),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'Dropout':
+                rate = params.get('rate')
+                if rate is None:
+                    raise ValueError("Dropout layer config missing 'rate'.")
+                code += f"{indent}tf.keras.layers.Dropout(rate={rate}),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'Output':
+                units = params.get('units')
+                activation = params.get('activation', 'linear') # Default linear output
+                if not units:
+                    raise ValueError("Output layer config missing 'units'.")
+                code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}'),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'BatchNormalization':
+                code += f"{indent}tf.keras.layers.BatchNormalization(),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+            elif layer_type == 'LayerNormalization':
+                code += f"{indent}tf.keras.layers.LayerNormalization(),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+            elif layer_type == 'InstanceNormalization':
+                code += f"{indent}tf.keras.layers.InstanceNormalization(),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+            elif layer_type == 'GroupNormalization':
+                groups = params.get('groups')
+                if groups is None:
+                    raise ValueError("GroupNormalization layer config missing 'groups'.")
+                code += f"{indent}tf.keras.layers.GroupNormalization(groups={groups}),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type in ['LSTM', 'GRU', 'SimpleRNN', 'Bidirectional', 'CuDNNLSTM', 'CuDNNGRU']: # Recurrent layers
+                units = params.get('units')
+                return_sequences = params.get('return_sequences', False) # Default to False
+                if units is None:
+                    raise ValueError(f"{layer_type} layer config missing 'units'.")
+                # Map layer_type to TensorFlow name if different
+                tf_layer_name = layer_type
+                if layer_type == 'SimpleRNN':
+                    tf_layer_name = 'SimpleRNN' # Already correct
+                elif layer_type == 'CuDNNLSTM':
+                    tf_layer_name = 'CuDNNLSTM'
+                elif layer_type == 'CuDNNGRU':
+                    tf_layer_name = 'CuDNNGRU'
+
+                code += f"{indent}tf.keras.layers.{tf_layer_name}(units={units}, return_sequences={str(return_sequences).lower()}),\n" # Ensure boolean is lowercase for TF
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'Embedding':
+                input_dim = params.get('input_dim')
+                output_dim = params.get('output_dim')
+                if not input_dim or not output_dim:
+                    raise ValueError("Embedding layer config missing 'input_dim' or 'output_dim'.")
+                code += f"{indent}tf.keras.layers.Embedding(input_dim={input_dim}, output_dim={output_dim}),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'Attention': # Basic Attention (you might need to adjust based on specific AttentionLayer)
+                code += f"{indent}tf.keras.layers.Attention(),\n"
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Shape might not change drastically
+
+            elif layer_type == 'TransformerEncoder': # Simple TransformerEncoder (adjust parameters as needed)
+                num_heads = params.get('num_heads', 4) # Default num_heads
+                ff_dim = params.get('ff_dim', 32)      # Default ff_dim
+                code += f"{indent}tf.keras.layers.TransformerEncoder(num_heads={num_heads}, ffn_units={ff_dim}),\n" # ffn_units for ff_dim in TF
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Shape transformation depends on Transformer
+
+            elif layer_type in ['ResidualConnection', 'InceptionModule', 'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'QuantumLayer', 'DynamicLayer']:
+                print(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for TensorFlow might require manual implementation. Skipping layer code generation for now.")
+                continue # Skip code generation for unsupported/complex layers, warn user
+
+            else:
+                raise ValueError(f"Unsupported layer type: {layer_type} for TensorFlow backend.")
+
+
+        code += "])\n\n" # End Sequential model definition
+
+        # Loss and Optimizer
+        loss_value = model_data['loss']['value'].strip('"') # Remove quotes
+        optimizer_value = model_data['optimizer']['value'].strip('"') # Remove quotes
+
+        code += f"optimizer = tf.keras.optimizers.{optimizer_value}()\n" # Instantiate optimizer
+        code += f"loss_fn = tf.keras.losses.{loss_value}\n" # Define loss function (string lookup)
+
+
+        # Training configuration - basic training loop for demonstration
+        training_config = model_data.get('training_config')
+        if training_config:
+            epochs = training_config.get('epochs', 10) # Default epochs
+            batch_size = training_config.get('batch_size', 32) # Default batch size
+
+            code += "\n# Example training loop (requires data loading and handling)\n"
+            code += "epochs = {}\n".format(epochs)
+            code += "batch_size = {}\n".format(batch_size)
+            code += "for epoch in range(epochs):\n"
+            code += f"{indent}for batch_idx, (data, labels) in enumerate(dataset):\n" # Assumes 'dataset' is defined
+            code += f"{indent}{indent}with tf.GradientTape() as tape:\n"
+            code += f"{indent}{indent}{indent}predictions = model(data)\n"
+            code += f"{indent}{indent}{indent}loss = loss_fn(labels, predictions)\n"
+            code += f"{indent}{indent}gradients = tape.gradient(loss, model.trainable_variables)\n"
+            code += f"{indent}{indent}optimizer.apply_gradients(zip(gradients, model.trainable_variables))\n"
+            code += f"{indent}print(f'Epoch {{epoch+1}}, Batch {{batch_idx}}, Loss: {{loss.numpy()}}')\n"
+        else:
+            code += "\n# No training configuration provided in model definition.\n"
+            code += "# Training loop needs to be implemented manually.\n"
+
+
         return code
 
     elif backend == "pytorch":
-        # PyTorch code generation logic 
         code = "import torch\n"
-        code += "class Model(torch.nn.Module):\n"
-        code += "    def __init__(self):\n"
-        code += "        super(Model, self).__init__()\n"
+        code += "import torch.nn as nn\n"
+        code += "import torch.optim as optim\n\n"
+
+        code += "class NeuralNetworkModel(nn.Module):\n"
+        code += indent + "def __init__(self):\n"
+        code += indent + indent + "super(NeuralNetworkModel, self).__init__()\n"
+
         input_shape = model_data['input']['shape']
-        model_layers = []
-        for layer in model_data['layers']:
-            output_shape = propagate_shape(input_shape, layer)
-            if layer['type'] == 'Conv2D':
-                code += f"        self.conv = torch.nn.Conv2d({input_shape[2]}, {layer['filters']}, {layer['kernel_size']}, padding=1)\n"
-                code += f"        self.relu = torch.nn.ReLU()\n"
-                input_shape = output_shape
-                code += f"        self.pool = torch.nn.MaxPool2d({layer['kernel_size']})\n"
-            elif layer['type'] == 'Flatten':
-                code += "        self.flatten = torch.nn.Flatten()\n"
-                input_shape = output_shape
-                code += f"        self.fc = torch.nn.Linear({np.prod(input_shape)}, {layer['units']})\n"
-                code += f"        self.relu = torch.nn.ReLU()\n"
-                input_shape = output_shape
-                code += f"        self.softmax = torch.nn.Softmax(dim=1)\n"
-                code += f"    def forward(self, x):\n"
-                code += f"        x = self.conv(x)\n"
-                code += f"        x = self.relu(x)\n"
-                code += f"        x = self.pool(x)\n"
-                code += f"        x = self.flatten(x)\n"
-                code += f"        x = self.fc(x)\n"
-                code += f"        x = self.relu(x)\n"
-                code += f"        x = self.softmax(x)\n"
-                code += f"        return x\n"
-            elif layer["type"] == "QuantumLayer":
-                # Instantiate the QuantumLayer with chosen hyperparameters.
-                model_layers.append("QuantumLayer(n_qubits=4, n_layers=2, n_features=128)")
-            elif layer["type"] == "DynamicLayer":
-                model_layers.append("DynamicLayer(threshold=0.5, branch1_units=64, branch2_units=32)")
-        code += "model = Model().to(device)\n"
-        code += f"model.to('{backend}')')\n"
-        code += f"loss_fn = torch.nn.CrossEntropyLoss()\n"
-        code += f"optimizer = torch.optim.{model_data['optimizer']['value']}()\n"
+        if not input_shape:
+            raise ValueError("Input layer shape is not defined in model_data.")
+        current_input_shape = input_shape # Track shape for PyTorch layers
+
+        layers_code = [] # Store layer instantiations for sequential definition
+        forward_code_body = [] # Store forward pass operations
+
+        for i, layer_config in enumerate(model_data['layers']):
+            layer_type = layer_config['type']
+            params = layer_config.get('params', layer_config) # Check both places for params
+            layer_name = f"self.layer{i+1}" # Unique layer name
+
+            if layer_type == 'Conv2D':
+                filters = params.get('filters')
+                kernel_size = params.get('kernel_size')
+                activation_name = params.get('activation', 'relu') # Default activation
+                padding = params.get('padding', 'same').lower() # Default padding to 'same'
+
+                if not filters or not kernel_size:
+                    raise ValueError("Conv2D layer config missing 'filters' or 'kernel_size'.")
+
+                layers_code.append(f"{layer_name}_conv = nn.Conv2d(in_channels={current_input_shape[-1]}, out_channels={filters}, kernel_size={kernel_size}, padding='{padding}')") # Assuming channels_last
+                layers_code.append(f"{layer_name}_activation = nn.ReLU() if '{activation_name}' == 'relu' else nn.Identity()") # Add other activations as needed
+                forward_code_body.append(f"x = self.layer{i+1}_conv(x)")
+                forward_code_body.append(f"x = self.layer{i+1}_activation(x)")
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
 
 
-        if 'training_config' in model_data:
-            code += f"for epoch in range({model_data['training_config']['epochs']}):\n"
-            code += "    for batch_idx, (data, target) in enumerate(data):\n"
-            code += "        optimizer.zero_grad()\n"
-            code += "        output = model(data)\n"
-            code += "        loss = loss_fn(output, target)\n"
-            code += "        loss.backward()\n"
-            code += "        optimizer.step()\n"
-            code += "print('Finished Training')"
+            elif layer_type == 'MaxPooling2D':
+                pool_size = params.get('pool_size')
+                if not pool_size:
+                    raise ValueError("MaxPooling2D layer config missing 'pool_size'.")
+                layers_code.append(f"{layer_name}_pool = nn.MaxPool2d(kernel_size={pool_size})")
+                forward_code_body.append(f"x = self.layer{i+1}_pool(x)")
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'Flatten':
+                layers_code.append(f"{layer_name}_flatten = nn.Flatten()")
+                forward_code_body.append(f"x = self.layer{i+1}_flatten(x)")
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'Dense':
+                units = params.get('units')
+                activation_name = params.get('activation', 'relu') # Default activation
+                if not units:
+                    raise ValueError("Dense layer config missing 'units'.")
+                layers_code.append(f"{layer_name}_dense = nn.Linear(in_features={np.prod(current_input_shape[1:]) if len(current_input_shape)>1 else current_input_shape[1]}, out_features={units})") # Handle flattened input
+                layers_code.append(f"{layer_name}_activation = nn.ReLU() if '{activation_name}' == 'relu' else nn.Identity()") # Add other activations
+                forward_code_body.append(f"x = self.layer{i+1}_dense(x)")
+                forward_code_body.append(f"x = self.layer{i+1}_activation(x)")
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+
+            elif layer_type == 'Dropout':
+                rate = params.get('rate')
+                if rate is None:
+                    raise ValueError("Dropout layer config missing 'rate'.")
+                layers_code.append(f"{layer_name}_dropout = nn.Dropout(p={rate})")
+                forward_code_body.append(f"x = self.layer{i+1}_dropout(x)")
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Shape remains same
+
+            elif layer_type == 'Output':
+                units = params.get('units')
+                activation_name = params.get('activation', 'linear') # Default linear output
+                if not units:
+                    raise ValueError("Output layer config missing 'units'.")
+                layers_code.append(f"{layer_name}_output = nn.Linear(in_features={np.prod(current_input_shape[1:]) if len(current_input_shape)>1 else current_input_shape[1]}, out_features={units})") # Handle flattened input for output
+                layers_code.append(f"{layer_name}_activation = nn.Sigmoid() if '{activation_name}' == 'sigmoid' else (nn.Softmax(dim=1) if '{activation_name}' == 'softmax' else nn.Identity())") # Example activations - expand as needed
+                forward_code_body.append(f"x = self.layer{i+1}_output(x)")
+                forward_code_body.append(f"x = self.layer{i+1}_activation(x)")
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'BatchNormalization':
+                layers_code.append(f"{layer_name}_bn = nn.BatchNorm2d(num_features={current_input_shape[-1]})") # Assuming channels_last, adjust if channels_first
+                forward_code_body.append(f"x = self.layer{i+1}_bn(x)")
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Shape same
+
+            elif layer_type in ['LSTM', 'GRU', 'SimpleRNN', 'CuDNNLSTM', 'CuDNNGRU']: # Recurrent Layers
+                units = params.get('units')
+                return_sequences = params.get('return_sequences', False)
+                if units is None:
+                    raise ValueError(f"{layer_type} layer config missing 'units'.")
+                # Map layer_type to PyTorch name
+                torch_layer_name = layer_type
+                if layer_type == 'SimpleRNN':
+                    torch_layer_name = 'RNN' # Correct PyTorch name is RNN
+                elif layer_type == 'CuDNNLSTM':
+                    torch_layer_name = 'LSTM' # CuDNN is implementation detail, use basic LSTM in code
+                elif layer_type == 'CuDNNGRU':
+                    torch_layer_name = 'GRU' # Same for GRU
+
+                layers_code.append(f"{layer_name}_rnn = nn.{torch_layer_name}(input_size={current_input_shape[-1]}, hidden_size={units}, batch_first=True, bidirectional=False)") # Assuming batch_first=True
+                forward_code_body.append(f"x, _ = self.layer{i+1}_rnn(x)") # RNN returns output and hidden state
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+            elif layer_type == 'Flatten': # Flatten again if needed between RNN and Dense
+                layers_code.append(f"{layer_name}_flatten = nn.Flatten(start_dim=1)") # Flatten from dimension 1 onwards (keep batch dim)
+                forward_code_body.append(f"x = self.layer{i+1}_flatten(x)")
+                current_input_shape = propagate_shape(current_input_shape, layer_config) # Update shape
+
+
+            elif layer_type in ['Attention', 'TransformerEncoder', 'ResidualConnection', 'InceptionModule', 'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
+                print(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for PyTorch might require manual implementation. Skipping layer code generation for now.")
+                continue # Skip advanced layers for now, warn user
+
+            else:
+                raise ValueError(f"Unsupported layer type: {layer_type} for PyTorch backend.")
+
+
+        # __init__ method layer instantiation
+        code += indent + indent + "# Layer Definitions\n"
+        for layer_init_code in layers_code:
+            code += indent + indent + layer_init_code + "\n"
+        code += "\n" # Add newline before forward method
+
+        # forward method
+        code += indent + "def forward(self, x):\n"
+        code += indent + indent + "# Forward Pass\n"
+        code += indent + indent + "batch_size, h, w, c = x.size()\n" # Example input shape assumption, adjust if needed
+        for forward_op in forward_code_body:
+            code += indent + indent + forward_op + "\n"
+        code += indent + indent + "return x\n" # Assuming last 'x' is the output
+
+        code += "model = NeuralNetworkModel()\n"
+        code += "device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\n"
+        code += "model.to(device)\n\n"
+
+        # Loss and Optimizer
+        loss_value = model_data['loss']['value'].strip('"')
+        optimizer_value = model_data['optimizer']['value'].strip('"')
+
+        # Map loss names to PyTorch conventions if needed (e.g., "categorical_crossentropy" to "CrossEntropyLoss")
+        if loss_value.lower() == 'categorical_crossentropy' or loss_value.lower() == 'sparse_categorical_crossentropy':
+            loss_fn_code = "loss_fn = nn.CrossEntropyLoss()" # Common for classification
+        elif loss_value.lower() == 'mean_squared_error':
+            loss_fn_code = "loss_fn = nn.MSELoss()"
+        else:
+            loss_fn_code = f"loss_fn = nn.{loss_value}()" # Try direct name if mapping not defined
+            print(f"Warning: Loss function '{loss_value}' might not be directly supported in PyTorch. Verify the name and compatibility.")
+
+
+        code += loss_fn_code + "\n"
+        code += f"optimizer = optim.{optimizer_value}(model.parameters(), lr=0.001)\n\n" # Example LR - make configurable
+
+
+        # Training loop - basic example
+        training_config = model_data.get('training_config')
+        if training_config:
+            epochs = training_config.get('epochs', 10)
+            batch_size = training_config.get('batch_size', 32)
+
+            code += "# Example training loop (requires data loader setup)\n"
+            code += f"epochs = {epochs}\n"
+            code += f"batch_size = {batch_size}\n"
+            code += "for epoch in range(epochs):\n"
+            code += indent + "for batch_idx, (data, target) in enumerate(train_loader):\n" # Assume train_loader is defined
+            code += indent + indent + "data, target = data.to(device), target.to(device)\n"
+            code += indent + indent + "optimizer.zero_grad()\n"
+            code += indent + indent + "output = model(data)\n"
+            code += indent + indent + "loss = loss_fn(output, target)\n"
+            code += indent + indent + "loss.backward()\n"
+            code += indent + indent + "optimizer.step()\n"
+            code += indent + indent + "if batch_idx % 100 == 0:\n"
+            code += indent + indent + indent + f"print('Epoch: {{epoch+1}} [{{batch_idx*len(data)}}/{{len(train_loader.dataset)}} ({{100.*batch_idx/len(train_loader):.0f}}%)]\\tLoss: {{loss.item():.6f}}')\n"
+            code += "print('Finished Training')\n"
+
+        else:
+            code += "# No training configuration provided. Training loop needs manual implementation.\n"
+
+
         return code
-    else:
-        raise ValueError("Unsupported backend")
-    return code
 
-def load_file(filename):
-    """Load and parse neural network or research files"""
-    with open(filename, 'r') as f:
-        content = f.read()
-        
-    if filename.endswith('.neural'):
-        parser = create_parser('neural_file')
-    elif filename.endswith('.nr'):
-        parser = create_parser('nr_file') 
-    elif filename.endswith('.rnr'):
-        parser = create_parser('rnr_file')
+
     else:
-        raise ValueError(f"Unsupported file type: {filename}")
-        
-    return parser.parse(content)
+        raise ValueError(f"Unsupported backend: {backend}. Choose 'tensorflow' or 'pytorch'.")
+
+
+
+def load_file(filename: str) -> Tree:
+    """
+    Loads and parses a neural network or research file based on its extension.
+
+    Args:
+        filename (str): The path to the file to load.
+
+    Returns:
+        Tree: A Lark parse tree representing the file content.
+
+    Raises:
+        ValueError: If the file type is unsupported or parsing fails.
+        FileNotFoundError: If the file does not exist.
+    """
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f"File not found: {filename}")
+
+    try:
+        with open(filename, 'r') as f:
+            content = f.read()
+    except Exception as e:
+        raise IOError(f"Error reading file: {filename}. {e}") from e
+
+    if filename.endswith(('.neural', '.nr')):
+        parser = network_parser # Use network parser for .neural and .nr files
+    elif filename.endswith('.rnr'):
+        parser = research_parser # Use research parser for .rnr files
+    elif filename.endswith('.layer'):
+        parser = layer_parser # Use layer parser for individual layer files
+    else:
+        raise ValueError(f"Unsupported file type: {filename}. Supported types are .neural, .nr, .rnr, .layer.")
+
+    try:
+        parse_tree = parser.parse(content)
+        return parse_tree
+    except lark.exceptions.LarkError as e: # Catch parsing errors specifically
+        raise ValueError(f"Parsing error in file: {filename}. {e}") from e
+
