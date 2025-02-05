@@ -40,11 +40,48 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         rnr_file: research
 
         # Parameter styles
-        named_params: NAME "=" value ("," NAME "=" value)*
+        named_params: named_param ("," named_param)*
         ordered_params: value ("," value)* 
         named_rate: "rate=" FLOAT
         value: INT | FLOAT | ESCAPED_STRING | tuple
         tuple: "(" WS_INLINE* INT WS_INLINE* "," WS_INLINE* INT WS_INLINE* ")"
+
+        # name_param rules
+        named_data_format: "data_format" "=" value 
+        named_units: "units" "=" INT
+        named_activation: "activation" "=" value
+        named_filters: "filters" "=" INT
+        named_kernel_size: "kernel_size" "=" value
+        named_strides: "strides" "=" value
+        named_padding: "padding" "=" value
+        named_dilation_rate: "dilation_rate" "=" value
+        named_groups: "groups" "=" INT
+        named_channels: "channels" "=" INT
+        named_pool_size: "pool_size" "=" value
+        named_return_sequences: "return_sequences" "=" number_or_none
+        named_num_heads: "num_heads" "=" INT
+        named_ff_dim: "ff_dim" "=" INT
+        named_input_dim: "input_dim" "=" INT
+        named_output_dim: "output_dim" "=" INT  
+        named_param:
+                    | named_units
+                    | named_activation
+                    | named_filters
+                    | named_kernel_size
+                    | named_strides
+                    | named_padding
+                    | named_dilation_rate
+                    | named_groups
+                    | named_data_format
+                    | named_channels 
+                    | named_rate  // for Dropout, etc.
+                    | named_pool_size // for MaxPooling
+                    | named_return_sequences // for LSTM, etc.
+                    | named_num_heads // for TransformerEncoder
+                    | named_ff_dim // for TransformerEncoder
+                    | named_input_dim // for Embedding
+                    | named_output_dim // for Embedding
+                    | named_groups // for GroupNormalization
 
         # Layer parameter styles
         ?param_style1: named_params    // Dense(units=128, activation="relu")
@@ -262,22 +299,12 @@ class ModelTransformer(lark.Transformer):
             raise TypeError(f"Expected tuple for input shape, got {type(shape)}")
         return {'type': 'Input', 'shape': shape}
 
-
-    def conv2d_layer(self, items: List[Union[Dict[str, Any], List[Any]]]) -> Dict[str, Any]:
+    def conv2d_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]: # Expecting List[Dict]
         """Processes the convolutional 2D layer definition."""
-        params = {}
-        if items:
-            if isinstance(items[0], dict):  # Named params
-                params = items[0]
-            elif isinstance(items[0], list): # Ordered params
-                ordered_vals = items[0]
-                if len(ordered_vals) >= 4:
-                    params['filters'] = ordered_vals[0]
-                    params['kernel_size'] = (ordered_vals[1], ordered_vals[2])
-                    params['activation'] = ordered_vals[3]
-                if len(ordered_vals) >= 5:
-                    params['padding'] = ordered_vals[4] # Padding might be missing in some tests?
+        params = items[0] if items else {} # items[0] is now the params dict
         return {'type': 'Conv2D', 'params': params}
+    
+
     def extract_value(self, token: Union[Token, List[Token]]) -> str:
         """Safely extracts the value from a token or list of tokens."""
         if isinstance(token, list) and len(token) == 1:
@@ -286,26 +313,29 @@ class ModelTransformer(lark.Transformer):
             return token.value.strip('"')
         raise TypeError(f"Expected Token, got {type(token)}")
 
-    def dense_layer(self, items: List[Union[Dict[str, Any], List[Any]]]) -> Dict[str, Any]:
+    def dense_layer(self, items: List[Any]) -> Dict[str, Any]: # items can be List or Dict now
         """Processes the dense layer definition."""
         params = {}
         if items:
-            if isinstance(items[0], dict): # Named params - CONDITION IS FALSE! items[0] is a Tree, not dict
+            if isinstance(items[0], dict): # Named params (still handle named params)
                 params = items[0]
-            elif isinstance(items[0], list): # Ordered params - CONDITION IS FALSE! items[0] is a Tree, not list
+            elif isinstance(items[0], list): # Ordered params - HANDLE LIST CASE!
+                ordered_vals = items[0]
+                if len(ordered_vals) >= 1: # At least units is expected
+                    params['units'] = ordered_vals[0]
+                if len(ordered_vals) >= 2: # Activation is optional, if provided
+                    params['activation'] = ordered_vals[1]
+        return {'type': 'Dense', 'params': params}
+   
+    def output_layer(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes the output layer definition."""
+        params = {}
+        if items:
+            if isinstance(items[0], list): # Output layer still uses ordered params directly
                 ordered_vals = items[0]
                 if len(ordered_vals) >= 2:
                     params['units'] = ordered_vals[0]
                     params['activation'] = ordered_vals[1]
-        return {'type': 'Dense', 'params': params}
-
-    def output_layer(self, items: List[Any]) -> Dict[str, Any]:
-        """Processes the output layer definition."""
-        ordered_vals = items[0] # Ordered params list
-        params = {}
-        if len(ordered_vals) >= 2:
-            params['units'] = ordered_vals[0]
-            params['activation'] = ordered_vals[1]
         return {'type': 'Output', 'params': params}
 
     def loss(self, items: List[Token]) -> Dict[str, str]:
@@ -343,30 +373,15 @@ class ModelTransformer(lark.Transformer):
         }
 
 
-    def dropout_layer(self, items: List[Union[Dict[str, float], Token]]) -> Dict[str, Union[str, float]]:
+    def dropout_layer(self, items: List[Dict[str, float]]) -> Dict[str, Union[str, float]]: # Expecting List[Dict]
         """Processes the dropout layer definition."""
-        if not items:
-            raise ValueError("Dropout layer definition is incomplete.")
+        params = items[0] if items else {}
+        return {'type': 'Dropout', 'params': params}
 
-        if isinstance(items[0], dict):  # Named params
-            params = items[0]
-            if 'rate' not in params:
-                raise ValueError("Dropout layer named parameters missing 'rate'.")
-            try:
-                rate = float(params['rate'])
-            except ValueError as e:
-                raise ValueError(f"Invalid Dropout rate: {e}") from e
-        else:  # Direct float value
-            try:
-                rate = float(str(items[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid Dropout rate: {e}") from e
-        return {'type': 'Dropout', 'rate': rate}
-
-
-    def flatten_layer(self, items: List[Any]) -> Dict[str, str]:
+    def flatten_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes the flatten layer definition."""
-        return {'type': 'Flatten'}
+        return {'type': 'Flatten', 'params': {}} # Ensure 'params' is always present
+
 
     def training_config(self, items: List[Dict[str, int]]) -> Dict[str, Any]:
         """Processes the training configuration block."""
@@ -404,256 +419,109 @@ class ModelTransformer(lark.Transformer):
         return tuple(shape_list)
 
 
-    def max_pooling2d_layer(self, items: List[Tree]) -> Dict[str, Union[str, Tuple[int, int]]]:
+    def max_pooling2d_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Union[str, Tuple[int, int]]]: # Expecting List[Dict]
         """Processes the max pooling 2D layer definition."""
-        if not items:
-            raise ValueError("MaxPooling2D layer definition is incomplete.")
-        pool_param_tree = items[0]
-        if pool_param_tree.data != 'pool_param' or len(pool_param_tree.children) != 2:
-            raise ValueError("Invalid MaxPooling2D pool parameter format.")
-        try:
-            pool_h = int(self.extract_value(pool_param_tree.children[0]))
-            pool_w = int(self.extract_value(pool_param_tree.children[1]))
-            return {"type": "MaxPooling2D", "pool_size": (pool_h, pool_w)}
-        except ValueError as e:
-            raise ValueError(f"Invalid MaxPooling2D pool size: {e}") from e
+        params = items[0] if items else {} # items[0] is now the params dict
+        return {"type": "MaxPooling2D", "params": params}
 
 
-    def batch_norm_layer(self, items: List[Any]) -> Dict[str, str]:
+    def batch_norm_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes the batch normalization layer definition."""
-        return {'type': 'BatchNormalization'}
+        return {'type': 'BatchNormalization', 'params': {}} # Ensure 'params' is always present
 
-    def layer_norm_layer(self, items: List[Any]) -> Dict[str, str]:
+    def layer_norm_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes the layer normalization layer definition."""
-        return {'type': 'LayerNormalization'}
+        return {'type': 'LayerNormalization', 'params': {}} # Ensure 'params' is always present
 
-    def instance_norm_layer(self, items: List[Any]) -> Dict[str, str]:
+
+    def instance_norm_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes the instance normalization layer definition."""
-        return {'type': 'InstanceNormalization'}
+        return {'type': 'InstanceNormalization', 'params': {}} # Ensure 'params' is always present
 
-    def group_norm_layer(self, items: List[Tree]) -> Dict[str, Union[str, int]]:
+    def group_norm_layer(self, items: List[Dict[str, int]]) -> Dict[str, Union[str, int]]: # Expecting List[Dict]
         """Processes the group normalization layer definition."""
-        if not items:
-            raise ValueError("GroupNormalization layer definition is incomplete.")
-        groups_param_tree = items[0]
-        if groups_param_tree.data != 'groups_param' or len(groups_param_tree.children) != 1:
-            raise ValueError("Invalid GroupNormalization groups parameter format.")
-        try:
-            groups = int(self.extract_value(groups_param_tree.children[0]))
-            return {"type": "GroupNormalization", "groups": groups}
-        except ValueError as e:
-            raise ValueError(f"Invalid GroupNormalization groups: {e}") from e
+        params = items[0] if items else {} # items[0] is now the params dict
+        return {"type": "GroupNormalization", "params": params}
 
-
-    def lstm_layer(self, items: List[Any]) -> Dict[str, Any]:
+    def lstm_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes LSTM layer definition."""
-        params: Dict[str, Any] = {"type": "LSTM"}
-        if not items:
-            raise ValueError("LSTM layer definition requires 'units' parameter.")
+        params = items[0] if items else {}
+        return {'type': 'LSTM', 'params': params}
 
-        try:
-            params["units"] = int(self.extract_value(items[0]))
-        except ValueError as e:
-            raise ValueError(f"Invalid LSTM units parameter: {e}") from e
-
-        if len(items) > 1:
-            params["return_sequences"] = items[1] # Already transformed to bool in grammar
-
-        return params
-
-    def gru_layer(self, items: List[Any]) -> Dict[str, Any]:
+    def gru_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes GRU layer definition."""
-        params: Dict[str, Any] = {"type": "GRU"}
-        if not items:
-            raise ValueError("GRU layer definition requires 'units' parameter.")
-        try:
-            params["units"] = int(self.extract_value(items[0]))
-        except ValueError as e:
-            raise ValueError(f"Invalid GRU units parameter: {e}") from e
+        params = items[0] if items else {}
+        return {'type': 'GRU', 'params': params}
 
-        if len(items) > 1:
-            params["return_sequences"] = items[1] # Already transformed to bool in grammar
-        return params
-
-    def simple_rnn_layer(self, items: List[Any]) -> Dict[str, Any]:
+    def simple_rnn_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes SimpleRNN layer definition."""
-        params: Dict[str, Any] = {"type": "SimpleRNN"}
-        if not items:
-            raise ValueError("SimpleRNN layer definition requires 'units' parameter.")
-        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
-            try:
-                params["units"] = int(self.extract_value(items[0].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid SimpleRNN units parameter: {e}") from e
-        else:
-            raise ValueError("Invalid SimpleRNN units parameter format.")
+        params = items[0] if items else {}
+        return {'type': 'SimpleRNN', 'params': params}
 
-        if len(items) > 1:
-            params["return_sequences"] = items[1] # Already transformed to bool in grammar
-        return params
-
-    def cudnn_lstm_layer(self, items: List[Any]) -> Dict[str, Any]:
+    def cudnn_lstm_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes CuDNNLSTM layer definition."""
-        params: Dict[str, Any] = {"type": "CuDNNLSTM"}
-        if not items:
-            raise ValueError("CuDNNLSTM layer definition requires 'units' parameter.")
+        params = items[0] if items else {}
+        return {'type': 'CuDNNLSTM', 'params': params}
 
-        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
-            try:
-                params["units"] = int(self.extract_value(items[0].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid CuDNNLSTM units parameter: {e}") from e
-        else:
-            raise ValueError("Invalid CuDNNLSTM units parameter format.")
-
-        if len(items) > 1:
-            params["return_sequences"] = items[1] # Already transformed to bool in grammar
-        return params
-
-
-    def cudnn_gru_layer(self, items: List[Any]) -> Dict[str, Any]:
+    def cudnn_gru_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes CuDNNGRU layer definition."""
-        params: Dict[str, Any] = {"type": "CuDNNGRU"}
-        if not items:
-            raise ValueError("CuDNNGRU layer definition requires 'units' parameter.")
+        params = items[0] if items else {}
+        return {'type': 'CuDNNGRU', 'params': params}
 
-        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
-            try:
-                params["units"] = int(self.extract_value(items[0].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid CuDNNGRU units parameter: {e}") from e
-        else:
-            raise ValueError("Invalid CuDNNGRU units parameter format.")
-
-        if len(items) > 1:
-            params["return_sequences"] = items[1] # Already transformed to bool in grammar
-        return params
-
-    def rnn_cell_layer(self, items: List[Any]) -> Dict[str, Any]:
+    def rnn_cell_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes RNNCell layer definition."""
-        params: Dict[str, Any] = {"type": "RNNCell"}
-        if not items:
-            raise ValueError("RNNCell layer definition requires 'units' parameter.")
+        params = items[0] if items else {}
+        return {'type': 'RNNCell', 'params': params}
 
-        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
-            try:
-                params["units"] = int(self.extract_value(items[0].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid RNNCell units parameter: {e}") from e
-        else:
-            raise ValueError("Invalid RNNCell units parameter format.")
-        return params
-
-    def lstm_cell_layer(self, items: List[Any]) -> Dict[str, Any]:
+    def lstm_cell_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes LSTMCell layer definition."""
-        params: Dict[str, Any] = {"type": "LSTMCell"}
-        if not items:
-            raise ValueError("LSTMCell layer definition requires 'units' parameter.")
-        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
-            try:
-                params["units"] = int(self.extract_value(items[0].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid LSTMCell units parameter: {e}") from e
-        else:
-            raise ValueError("Invalid LSTMCell units parameter format.")
-        return params
+        params = items[0] if items else {}
+        return {'type': 'LSTMCell', 'params': params}
 
-    def gru_cell_layer(self, items: List[Any]) -> Dict[str, Any]:
+    def gru_cell_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes GRUCell layer definition."""
-        params: Dict[str, Any] = {"type": "GRUCell"}
-        if not items:
-            raise ValueError("GRUCell layer definition requires 'units' parameter.")
-        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
-            try:
-                params["units"] = int(self.extract_value(items[0].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid GRUCell units parameter: {e}") from e
-        else:
-            raise ValueError("Invalid GRUCell units parameter format.")
-        return params
+        params = items[0] if items else {}
+        return {'type': 'GRUCell', 'params': params}
 
-
-    def simple_rnn_dropout(self, items: List[Any]) -> Dict[str, Any]:
+    def simple_rnn_dropout(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes SimpleRNNDropoutWrapper layer definition."""
-        params: Dict[str, Any] = {}
-        if items and items[0].data == 'units_param' and items[1].data == 'dropout_param':
-            params["units"] = items[0].children[0]
-            params["dropout"] = items[1].children[0]
+        params = items[0] if items else {} # Expecting transformed params dict now
         return {"type": "SimpleRNNDropoutWrapper", 'params': params}
 
-    def gru_dropout(self, items: List[Any]) -> Dict[str, Any]:
+    def gru_dropout(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes GRUDropoutWrapper layer definition."""
-        params: Dict[str, Any] = {}
-        if items and items[0].data == 'units_param' and items[1].data == 'dropout_param':
-            params["units"] = items[0].children[0]
-            params["dropout"] = items[1].children[0]
+        params = items[0] if items else {} # Expecting transformed params dict now
         return {"type": "GRUDropoutWrapper", 'params': params}
 
-    def lstm_dropout(self, items: List[Any]) -> Dict[str, Any]:
+    def lstm_dropout(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes LSTMDropoutWrapper layer definition."""
-        params: Dict[str, Any] = {"type": "LSTMDropoutWrapper"}
-        if len(items) != 2:
-            raise ValueError("LSTMDropoutWrapper layer definition requires 'units' and 'dropout' parameters.")
-
-        if isinstance(items[0], Tree) and items[0].data == 'units_param' and len(items[0].children) == 1:
-            try:
-                params["units"] = int(self.extract_value(items[0].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid LSTMDropoutWrapper units parameter: {e}") from e
-        else:
-            raise ValueError("Invalid LSTMDropoutWrapper units parameter format.")
-
-        if isinstance(items[1], Tree) and items[1].data == 'dropout_param' and len(items[1].children) == 1:
-            try:
-                params["dropout"] = float(self.extract_value(items[1].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid LSTMDropoutWrapper dropout parameter: {e}") from e
-        else:
-            raise ValueError("Invalid LSTMDropoutWrapper dropout parameter format.")
-        return params
-
+        params = items[0] if items else {} # Expecting transformed params dict now
+        return {"type": "LSTMDropoutWrapper", 'params': params}
+    
 
     #### Advanced Layers #################################
 
-    def attention_layer(self, items: List[Any]) -> Dict[str, str]:
+    def attention_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes Attention layer definition."""
-        return {'type': 'Attention'}
+        return {'type': 'Attention', 'params': {}} # Ensure 'params' is always present
 
-    def transformer_layer(self, items: List[Tree]) -> Dict[str, Union[str, int]]:
+
+    def transformer_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Union[str, int]]: # Expecting List[Dict]
         """Processes TransformerEncoder layer definition."""
-        if len(items) != 2:
-            raise ValueError("TransformerEncoder layer definition requires 'num_heads' and 'ff_dim' parameters.")
+        params: Dict[str, Union[str, int]] = items[0] if items else {} # items[0] is now the params dict
+        return {"type": "TransformerEncoder", 'params': params}
 
-        params: Dict[str, Union[str, int]] = {"type": "TransformerEncoder"}
-
-        if isinstance(items[0], Tree) and items[0].data == 'heads_param' and len(items[0].children) == 1:
-            try:
-                params["num_heads"] = int(self.extract_value(items[0].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid TransformerEncoder num_heads parameter: {e}") from e
-        else:
-            raise ValueError("Invalid TransformerEncoder num_heads parameter format.")
-
-        if isinstance(items[1], Tree) and items[1].data == 'dim_param' and len(items[1].children) == 1:
-            try:
-                params["ff_dim"] = int(self.extract_value(items[1].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid TransformerEncoder ff_dim parameter: {e}") from e
-        else:
-            raise ValueError("Invalid TransformerEncoder ff_dim parameter format.")
-        return params
-
-    def residual_layer(self, items: List[Any]) -> Dict[str, str]:
+    def residual_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes ResidualConnection layer definition."""
-        return {'type': 'ResidualConnection'}
+        return {'type': 'ResidualConnection', 'params': {}} # Ensure 'params' is always present
 
-    def inception_layer(self, items: List[Any]) -> Dict[str, str]:
+    def inception_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes InceptionModule layer definition."""
-        return {'type': 'InceptionModule'}
+        return {'type': 'InceptionModule', 'params': {}} # Ensure 'params' is always present
 
-    def capsule_layer(self, items: List[Any]) -> Dict[str, str]:
-        """Processes CapsuleLayer layer definition."""
-        return {'type': 'CapsuleLayer'}
+    def quantum_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
+        """Processes QuantumLayer definition."""
+        return {'type': 'QuantumLayer', 'params': {}} # Ensure 'params' is always present
 
     def squeeze_excitation_layer(self, items: List[Any]) -> Dict[str, str]:
         """Processes SqueezeExcitation layer definition."""
@@ -663,36 +531,18 @@ class ModelTransformer(lark.Transformer):
         """Processes GraphConv layer definition."""
         return {'type': 'GraphConv'}
 
-    def embedding_layer(self, items: List[Tree]) -> Dict[str, Union[str, int]]:
+    def embedding_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Union[str, int]]: # Expecting List[Dict]
         """Processes Embedding layer definition."""
-        if len(items) != 2:
-            raise ValueError("Embedding layer definition requires 'input_dim' and 'output_dim' parameters.")
-        params: Dict[str, Union[str, int]] = {"type": "Embedding"}
-
-        if isinstance(items[0], Tree) and items[0].data == 'input_dim_param' and len(items[0].children) == 1:
-            try:
-                params["input_dim"] = int(self.extract_value(items[0].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid Embedding input_dim parameter: {e}") from e
-        else:
-            raise ValueError("Invalid Embedding input_dim parameter format.")
-
-        if isinstance(items[1], Tree) and items[1].data == 'output_dim_param' and len(items[1].children) == 1:
-            try:
-                params["output_dim"] = int(self.extract_value(items[1].children[0]))
-            except ValueError as e:
-                raise ValueError(f"Invalid Embedding output_dim parameter: {e}") from e
-        else:
-            raise ValueError("Invalid Embedding output_dim parameter format.")
-        return params
+        params: Dict[str, Union[str, int]] = items[0] if items else {} # items[0] is now the params dict
+        return {"type": "Embedding", 'params': params}
 
     def quantum_layer(self, items: List[Any]) -> Dict[str, str]:
         """Processes QuantumLayer layer definition."""
         return {'type': 'QuantumLayer'}
 
-    def dynamic_layer(self, items: List[Any]) -> Dict[str, str]:
-        """Processes DynamicLayer layer definition."""
-        return {'type': 'DynamicLayer'}
+    def dynamic_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
+        """Processes DynamicLayer definition."""
+        return {'type': 'DynamicLayer', 'params': {}} # Ensure 'params' is always present
 
 
     def research(self, items: List[Any]) -> Dict[str, Any]:
@@ -820,45 +670,87 @@ class ModelTransformer(lark.Transformer):
         return {'paper': self.extract_value(items[0])}
 
 
-    def named_params(self, items: List[Tree]) -> Dict[str, Any]:
-        """Processes named parameters, converting to dictionary."""
+    def named_params(self, items: List[Any]) -> Dict[str, Any]: # items can be List of Trees or mixed
+        """Processes named parameters, returning as a dictionary."""
+        print("\n--- named_params ---")
+        print(f"Items received in named_params: {items}")
+
+        param_dicts = [] # Initialize an empty list to collect parameter dictionaries
+        for item in items: # Iterate through the items received (which are children of 'named_params' tree)
+            if isinstance(item, Tree): # IMPORTANT: Check if item is a Tree (named_param subtree)
+                param_dict = self.visit(item) # VISIT each child TREE to transform named_param
+                param_dicts.append(param_dict) # Add the transformed dictionary to the list
+            # else: What to do if it's not a Tree? (Shouldn't happen based on grammar, but for robustness, can add error handling or ignore)
+
+        print(f"Collected param dicts in named_params: {param_dicts}") # Print the collected list of dictionaries
         params = {}
-        for item in items:
-            if not isinstance(item, Tree) or len(item.children) != 2:
-                continue  # Robustly skip invalid parameters, or raise error if strict
-            name_token, value_token = item.children
-            if isinstance(name_token, Token):
-                param_name = name_token.value
-                params[param_name] = self.visit(value_token) # Recursively handle value
+        for param_dict in param_dicts: # Now iterate through the *list of dictionaries*
+            if isinstance(param_dict, dict): # Double check it's a dict before updating
+                params.update(param_dict) # MERGE dictionaries into a single dictionary
+            else:
+                print(f"Warning: Unexpected non-dictionary item in param_dicts: {param_dict}") # Warning if not a dict
+
+        print(f"Merged params in named_params: {params}")
         return params
 
     def ordered_params(self, items: List[Any]) -> List[Any]:
         """Processes ordered parameters, returning as a list."""
-        return [self.visit(item) for item in items]
+        print("\n--- ordered_params ---") # Added print statement
+        print(f"Items received in ordered_params: {items}") # Added print statement
+        # visited_items = [self.visit(item) for item in items] # REMOVE this line
+        # print(f"Visited items in ordered_params: {visited_items}") # REMOVE this line
+        return items # Just return the items as they are already transformed in 'value'
 
-    def value(self, items: List[Token]) -> Union[int, float, str, Tuple[int, int]]:
+    def value(self, items: List[Any]) -> Union[int, float, str, Tuple[int, int]]:
         """Processes a value, determining its type (INT, FLOAT, STRING, TUPLE)."""
-        token = items[0]
-        if token.type == 'INT':
-            return int(token.value)
-        elif token.type == 'FLOAT':
-            return float(token.value)
-        elif token.type == 'ESCAPED_STRING':
-            return token.value[1:-1]  # Remove quotes
-        elif token.type == 'tuple':
-            # Handle tuple parsing here directly, or delegate if needed.
-            tuple_content = token.value[1:-1] # Remove parentheses
-            tuple_values = [v.strip() for v in tuple_content.split(',')]
-            if len(tuple_values) == 2:
-                try:
-                    return (int(tuple_values[0]), int(tuple_values[1]))
-                except ValueError:
-                    raise ValueError(f"Invalid tuple values: {token.value}. Must be integers.")
+        print("\n--- value ---") # Added print statement
+        print(f"Items received in value: {items}") # Added print statement
+        item = items[0] # Get the first item
+
+        if isinstance(item, Token):
+            token = item
+            if token.type == 'INT':
+                print(f"Token type: INT, Value: {token.value}") # Added print statement
+                return int(token.value)
+            elif token.type == 'FLOAT':
+                print(f"Token type: FLOAT, Value: {token.value}") # Added print statement
+                return float(token.value)
+            elif token.type == 'ESCAPED_STRING':
+                print(f"Token type: ESCAPED_STRING, Value: {token.value}") # Added print statement
+                return token.value[1:-1]  # Remove quotes
+            elif token.type == 'tuple': # Handle tuple TOKEN
+                print(f"Token type: tuple, Value: {token.value}") # Added print statement
+                tuple_content = token.value[1:-1] # Remove parentheses
+                tuple_values = [v.strip() for v in tuple_content.split(',')]
+                if len(tuple_values) == 2:
+                    try:
+                        tuple_result = (int(tuple_values[0]), int(tuple_values[1]))
+                        print(f"Parsed tuple: {tuple_result}") # Added print statement
+                        return tuple_result
+                    except ValueError:
+                        raise ValueError(f"Invalid tuple values: {token.value}. Must be integers.")
+                else:
+                    raise ValueError(f"Invalid tuple format: {token.value}. Expected (INT, INT).")
             else:
-                raise ValueError(f"Invalid tuple format: {token.value}. Expected (INT, INT).")
+                print(f"Token type: Other, Value: {token.value}, Type: {token.type}") # Added print statement
+                return token.value
+
+        elif isinstance(item, Tree) and item.data == 'tuple': # Handle tuple TREE
+            print(f"Item type: Tuple Tree, Data: {item.data}, Children: {item.children}") # Added print statement
+            # Process children of tuple TREE, which should be INT tokens
+            if len(item.children) == 3 and isinstance(item.children[0], Token) and item.children[0].type == '(' and \
+               isinstance(item.children[1], Token) and item.children[1].type == 'INT' and \
+               isinstance(item.children[2], Token) and item.children[2].type == 'INT': # Basic check
+                 try:
+                     tuple_result = (int(item.children[1].value), int(item.children[2].value))
+                     print(f"Parsed tuple from tree: {tuple_result}") # Added print statement
+                     return tuple_result
+                 except ValueError:
+                     raise ValueError(f"Invalid tuple values in tree: {item}. Must be integers.")
+            else:
+                raise ValueError(f"Invalid tuple tree format: {item}. Expected (INT, INT).")
         else:
-            return token.value # Fallback for other token types if any
- 
+            raise TypeError(f"Unexpected item type in value: {type(item)}, item: {item}") # More informative error
     def tuple(self, items: List[Token]) -> Tuple[int, int]:
         """Processes tuple values, ensuring they are integers."""
         if len(items) == 2:
@@ -870,9 +762,9 @@ class ModelTransformer(lark.Transformer):
             raise ValueError("Tuple must contain exactly two integer values.")
 
 
-    def named_rate(self, items: List[Tree]) -> Dict[str, float]:
+    def named_rate(self, items: List[Tree]) -> Dict[str, float]: # named_rate already returns a dict
         """Processes named rate parameter for Dropout."""
-        if items and items[0].data == 'named_rate': # Corrected condition
+        if items and items[0].data == 'named_rate':
             rate_param = items[0].children[0] # Access the FLOAT token
             if isinstance(rate_param, Token) and rate_param.type == 'FLOAT':
                 try:
@@ -880,6 +772,24 @@ class ModelTransformer(lark.Transformer):
                 except ValueError:
                     raise ValueError(f"Invalid float value for rate: {rate_param.value}")
         return {} # Return empty dict if parsing fails or no rate found
+
+    def named_filters(self, items: List[Any]) -> Dict[str, int]:
+        """Processes named 'filters' parameter."""
+        print("\n--- named_filters ---") # Added print statement
+        print(f"Items received in named_filters: {items}") # Added print statement
+        return {'filters': self.visit(items[0])} # visit the value and create dict
+
+    def named_kernel_size(self, items: List[Any]) -> Dict[str, Tuple[int, int]]:
+        """Processes named 'kernel_size' parameter."""
+        print("\n--- named_kernel_size ---") # Added print statement
+        print(f"Items received in named_kernel_size: {items}") # Added print statement
+        return {'kernel_size': self.visit(items[0])} # visit the tuple and create dict
+
+    def named_activation(self, items: List[Any]) -> Dict[str, str]:
+        """Processes named 'activation' parameter."""
+        print("\n--- named_activation ---") # Added print statement
+        print(f"Items received in named_activation: {items}") # Added print statement
+        return {'activation': self.visit(items[0])} # visit the value and create dict
 
     def param_style1(self, items: List[Union[Dict[str, Any], List[Any]]]) -> Union[Dict[str, Any], List[Any]]:
         """Handles both named and ordered parameters styles."""
@@ -922,6 +832,40 @@ class ModelTransformer(lark.Transformer):
         if len(items) == 1:
             return {'device': self.extract_value(items[0])}
         raise ValueError("Invalid device parameter format.")
+
+    def dropout_param(self, items: List[Tree]) -> Dict[str, float]: # dropout_param already returns a dict
+        """Processes dropout parameter for DropoutWrapper layers."""
+        if items and items[0].data == 'dropout_param':
+            dropout_token = items[0].children[0] # Access the FLOAT token
+            if isinstance(dropout_token, Token) and dropout_token.type == 'FLOAT':
+                try:
+                    return {'dropout': float(dropout_token.value)}
+                except ValueError:
+                    raise ValueError(f"Invalid float value for dropout: {dropout_token.value}")
+        return {} # Return empty dict if parsing fails or no dropout found
+
+    def named_param(self, items: List[Any]) -> Dict[str, Any]: # Is this method even being called?
+        """Processes a single named parameter."""
+        print("\n--- named_param ---") # Added print statement - IS THIS PRINTING?
+        print(f"Items received in named_param: {items}") # Added print statement
+        # It should just return the dictionary created by named_units, named_activation etc.
+        if items:
+            return items[0] if isinstance(items[0], dict) else {} # Return first item if it's a dict
+        return {}
+
+
+    def named_units(self, items: List[Any]) -> Dict[str, int]:
+        """Processes named 'units' parameter."""
+        print("\n--- named_units ---") 
+        print(f"Items received in named_units: {items}") 
+        return {'units': self.visit(items[0])} # RE-INTRODUCE self.visit HERE
+
+    def named_activation(self, items: List[Any]) -> Dict[str, str]:
+        """Processes named 'activation' parameter."""
+        print("\n--- named_activation ---") 
+        print(f"Items received in named_activation: {items}") 
+        return {'activation': self.visit(items[0])} # RE-INTRODUCE self.visit HERE
+
 
     def execution_config(self, items: List[Tree]) -> Dict[str, Any]:
         """Processes execution configuration block."""
