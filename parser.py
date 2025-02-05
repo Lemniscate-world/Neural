@@ -288,7 +288,6 @@ class ModelTransformer(lark.Transformer):
 
         return {'type': layer_type, **params}
 
-
     def input_layer(self, items):
         shape = tuple(items[0])
         return {'type': 'Input', 'shape': shape}
