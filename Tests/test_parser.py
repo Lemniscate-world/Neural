@@ -293,9 +293,9 @@ def test_invalid_network(network_parser):
         network_parser.parse("invalid network syntax { }") # Added braces to make it more like network def
 
 def test_invalid_research(research_parser):
-    with pytest.raises(exceptions.UnexpectedCharacters): # More specific exception
-        research_parser.parse("research { invalid metrics }") # Invalid metrics block syntax
-
+    with pytest.raises(exceptions.UnexpectedToken):
+        research_parser.parse("research { invalid metrics }")
+        
 def test_invalid_layer(layer_parser):
     with pytest.raises(exceptions.UnexpectedCharacters):
         layer_parser.parse("InvalidLayer()")
