@@ -237,7 +237,6 @@ class ModelTransformer(lark.Transformer):
             'shape': items[0]
         }
 
-    
     def conv2d_layer(self, items):
         return {
             "type": "Conv2D",
@@ -246,21 +245,32 @@ class ModelTransformer(lark.Transformer):
                 int(self.extract_value(items[1])),
                 int(self.extract_value(items[2]))
             ),
-            "activation": str(self.extract_value(items[3]))
+            "activation": self.extract_value(items[3]).strip('"')
         }
     
+
     def extract_value(self, item):
-        """ Extracts the actual value from a Lark Tree node or Token. """
-        if isinstance(item, Tree) and item.children:
-            return self.extract_value(item.children[0])  # Recursively get the value
-        return item  # Return the value directly if not a Tree
+        """Recursively extract the actual value from a token or Tree.
+        If the item is a Tree with children, return the extraction of its first child;
+        otherwise, return item.value if available, or the item itself as string.
+        """
+        if isinstance(item, Tree):
+            # Recursively extract the first child's value
+            if item.children:
+                return self.extract_value(item.children[0])
+            else:
+                return ""
+        elif hasattr(item, "value"):
+            return item.value
+        else:
+            return str(item)
 
 
     def dense_layer(self, items):
         return {
             "type": "Dense",
             "units": int(self.extract_value(items[0])),
-            "activation": str(self.extract_value(items[1]))
+            "activation": self.extract_value(items[1]).strip('"')
         }
     
     def output_layer(self, items):
@@ -317,6 +327,7 @@ class ModelTransformer(lark.Transformer):
             "type": "Dropout",
             "rate": float(self.extract_value(items[0]))
         }
+
     
     def flatten_layer(self, items):
         return {'type': 'Flatten'}
@@ -360,8 +371,11 @@ class ModelTransformer(lark.Transformer):
 
     def max_pooling2d_layer(self, items):
         return {
-            'type': 'MaxPooling2D',
-            'pool_size': (int(items[0].value), int(items[1].value))
+            "type": "MaxPooling2D",
+            "pool_size": (
+                int(self.extract_value(items[0])),
+                int(self.extract_value(items[1]))
+            )
         }
     
 
@@ -375,7 +389,10 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'InstanceNormalization'}
 
     def group_norm_layer(self, items):
-        return {'type': 'GroupNormalization', 'groups': int(items[0])}
+        return {
+            "type": "GroupNormalization",
+            "groups": int(self.extract_value(items[0]))
+        }
 
     #### Recurrent Layers ###################################
     
@@ -551,26 +568,38 @@ class ModelTransformer(lark.Transformer):
     def dynamic_layer(self, items):
         return {'type': 'DynamicLayer'}
     
-    def lstm_layer(self, items):
-        return {
-            "type": "LSTM",
-            "units": int(self.extract_value(items[0])),
-            "return_sequences": self.extract_value(items[1]) if len(items) > 1 else False
-        }
-
     def gru_layer(self, items):
-        return {
-            "type": "GRU",
-            "units": int(self.extract_value(items[0])),
-            "return_sequences": self.extract_value(items[1]) if len(items) > 1 else False
-        }
+        units = int(self.extract_value(items[0]))
+        if len(items) > 1:
+            rs = self.extract_value(items[1]).lower()
+            return_sequences = (rs == "true")
+        else:
+            return_sequences = False
+        return {"type": "GRU", "units": units, "return_sequences": return_sequences}
     
-    def transformer_layer(self, items):
-        return {
-            "type": "TransformerEncoder",
-            "num_heads": int(self.extract_value(items[0])),
-            "ff_dim": int(self.extract_value(items[1]))
-        }
+        def transformer_layer(self, items):
+            return {
+                "type": "TransformerEncoder",
+                "num_heads": int(self.extract_value(items[0])),
+                "ff_dim": int(self.extract_value(items[1]))
+            }
+
+    def extract_value(self, item):
+        """Recursively extract the actual value from a token or Tree.
+        If the item is a Tree with children, return the extraction of its first child;
+        otherwise, return item.value if available, or the item itself as string.
+        """
+        if isinstance(item, Tree):
+            # Recursively extract the first child's value
+            if item.children:
+                return self.extract_value(item.children[0])
+            else:
+                return ""
+        elif hasattr(item, "value"):
+            return item.value
+        else:
+            return str(item)
+
 
     def network(self, items):
         name = str(items[0])
@@ -971,12 +1000,26 @@ def generate_code(model_data, backend="tensorflow"):
     return code
 
 def load_file(filename):
+    """
+    Reads a file and categorizes it as a model definition file or a research file based on its extension.
+    
+    Returns:
+        tuple: (file_type, parsed_tree)
+    """
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f"File {filename} not found.")
+    
+    file_ext = os.path.splitext(filename)[-1].lower()
     with open(filename, "r") as f:
         content = f.read()
     
-    if filename.endswith(".rnr"):
-        return "research", parser.parse(content, start="research")
-    elif filename.endswith(".neural") or filename.endswith(".nr"):
+    if file_ext in [".neural", ".nr"]:
+        print(f"✅ Loading Model Definition from {filename}...")
+        # Parse with network start rule
         return "model", parser.parse(content, start="network")
+    elif file_ext == ".rnr":
+        print(f"✅ Loading Research Report from {filename}...")
+        # Parse with research start rule
+        return "research", research_parser.parse(content, start="research")
     else:
-        raise ValueError(f"Unknown file type: {filename}")
+        raise ValueError(f"Unsupported file extension: {file_ext}")
