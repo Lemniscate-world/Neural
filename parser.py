@@ -222,11 +222,12 @@ class ModelTransformer(lark.Transformer):
         layer_info = items[0].data # Get layer type from Tree data
         params = {}
         if items[0].children: # Get params from Tree children
-            params = items[0].children[0] # Parameters are in the first child
+            params_tree = items[0].children[0] # Get the param_style1 (or similar) Tree
+            params = self.transform(params_tree) # **TRANSFORM the params_tree!**
 
         layer_type = str(layer_info)
         return {'type': layer_type, 'params': params}
-
+        
     def visit_layer(self, tree: Tree) -> Dict[str, Any]:
         """Visits a layer tree node and processes its children."""
         layer_type_token = tree.children[0]
