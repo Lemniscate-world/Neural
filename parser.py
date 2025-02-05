@@ -8,178 +8,192 @@ import pennylane as qml
 from pennylane import numpy as pnp
 from plugins import LAYER_PLUGINS
 
+def create_parser(start_rule='network'):
 
-grammar = r"""
+    grammar = r"""
 
-    start: network | research  # Allow parsing either networks or research files
-
-
-    # Top-level network definition - defines the structure of an entire neural network
-    network: "network" NAME "{" input_layer layers loss optimizer config* "}"
-
-    # Configuration can be either training-related or execution-related
-    config: training_config | execution_config
-    
-    # Input layer definition - specifies the shape of input data
-    input_layer: "input:" "(" shape ")"
-    # Shape can contain multiple dimensions, each being a number or None
-    shape: number_or_none ("," number_or_none)*
-    # Dimensions can be specific integers or None (for variable dimensions)
-    number_or_none: INT | "None"
-
-    # Layers section - contains all layer definitions separated by newlines
-    layers: "layers:" _NL* layer (_NL+ layer)* _NL*
-
-    # All possible layer types that can be used in the network
-    layer: conv2d_layer              # Convolutional layers
-         | max_pooling2d_layer       # Pooling layers
-         | dropout_layer             # Regularization
-         | flatten_layer             # Reshaping
-         | dense_layer              # Fully connected
-         | output_layer             # Network output
-         | batch_norm_layer         # Normalization layers
-         | layer_norm_layer
-         | instance_norm_layer
-         | group_norm_layer
-         | recurrent_layer          # RNN-based layers
-         | attention_layer          # Attention mechanisms
-         | transformer_layer        # Transformer architecture
-         | residual_layer          # Skip connections
-         | inception_layer         # Inception modules
-         | capsule_layer          # Capsule networks
-         | squeeze_excitation_layer # SE blocks
-         | graph_conv_layer       # Graph convolutions
-         | embedding_layer        # Embeddings
-         | quantum_layer         # Quantum computing layers
-         | dynamic_layer         # Dynamic/adaptive layers
-
-    # Output layer parameters
-    output_layer: "Output(" units_param "," activation_param ")"
-    units_param: "units=" INT
-    activation_param: "activation=" ESCAPED_STRING
-         
-    # Convolutional layer parameters
-    conv2d_layer: "Conv2D(" filters_param "," kernel_param "," activation_param ")"
-    filters_param: "filters=" INT
-    kernel_param: "kernel_size=" "(" INT "," INT ")"
-    
-    # Pooling layer parameters
-    max_pooling2d_layer: "MaxPooling2D(" pool_param ")"
-    pool_param: "pool_size=" "(" INT "," INT ")"
-    
-    # Dropout layer for regularization
-    dropout_layer: "Dropout(" rate_param ")"
-    rate_param: "rate=" FLOAT
-    
-    # Normalization layers
-    batch_norm_layer: "BatchNormalization(" ")"
-    layer_norm_layer: "LayerNormalization(" ")"
-    instance_norm_layer: "InstanceNormalization(" ")"
-    group_norm_layer: "GroupNormalization(" groups_param ")"
-    groups_param: "groups=" INT
-
-    # Basic layer types
-    dense_layer: "Dense(" units_param "," activation_param ")"
-    flatten_layer: "Flatten(" ")"
-    
-    # Recurrent layers section - includes all RNN variants
-    recurrent_layer: lstm_layer
-                   | gru_layer
-                   | simple_rnn_layer
-                   | cudnn_lstm_layer
-                   | cudnn_gru_layer
-                   | rnn_cell_layer
-                   | lstm_cell_layer
-                   | gru_cell_layer
-                   | dropout_wrapper_layer
-
-    # Different types of RNN layers with optional return sequences parameter
-    lstm_layer: "LSTM(" "units=" INT ["," "return_sequences=" return_sequences] ")"
-    gru_layer: "GRU(" "units=" INT ["," "return_sequences=" return_sequences] ")"
-    simple_rnn_layer: "SimpleRNN(" units_param ["," return_sequences_param] ")"
-    cudnn_lstm_layer: "CuDNNLSTM(" units_param ["," return_sequences_param] ")"
-    cudnn_gru_layer: "CuDNNGRU(" units_param ["," return_sequences_param] ")"
-
-    # RNN cell variants - single-step RNN computations
-    rnn_cell_layer: "RNNCell(" INT ")"
-    lstm_cell_layer: "LSTMCell(" INT ")"
-    gru_cell_layer: "GRUCell(" INT ")"
-
-    # Dropout wrapper layers for RNNs
-    dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
-    simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" INT "," dropout_param ")"
-    gru_dropout: "GRUDropoutWrapper" "(" INT "," dropout_param ")"
-    lstm_dropout: "LSTMDropoutWrapper" "(" INT "," dropout_param ")"
-    dropout_param: "dropout=" FLOAT
-    
-    # Return sequences parameter for RNN layers
-    return_sequences_param: "return_sequences=" return_sequences
-    return_sequences: "true" -> true
-                   | "false" -> false
-
-    # Attention and transformer mechanisms
-    attention_layer: "Attention" "(" ")"
-    transformer_layer: "TransformerEncoder" "(" heads_param "," dim_param ")"
-    heads_param: "num_heads=" INT
-    dim_param: "ff_dim=" INT
-
-    # Advanced architecture layers
-    residual_layer: "ResidualConnection" "(" ")"
-    inception_layer: "InceptionModule" "(" ")"
-    capsule_layer: "CapsuleLayer" "(" ")"
-    squeeze_excitation_layer: "SqueezeExcitation" "(" ")"
-    graph_conv_layer: "GraphConv" "(" ")"
-    embedding_layer: "Embedding" "(" input_dim_param "," output_dim_param ")"
-    input_dim_param: "input_dim=" INT
-    output_dim_param: "output_dim=" INT
-    
-    # Special purpose layers
-    quantum_layer: "QuantumLayer" "(" ")"
-    dynamic_layer: "DynamicLayer" "(" ")"
-
-    # Training configuration block
-    training_config: "train" "{" [epochs_param] [batch_size_param] "}"
-    epochs_param: "epochs:" INT
-    batch_size_param: "batch_size:" INT
-    
-    # Loss and optimizer specifications
-    loss: "loss:" ESCAPED_STRING
-    optimizer: "optimizer:" ESCAPED_STRING
-
-    # Execution environment configuration
-    execution_config: "execution" "{" device_param "}"
-    device_param: "device:" ESCAPED_STRING
-
-    # Research-specific configurations
-    research: "research" NAME "{" metrics references? "}"
-    # Metrics tracking
-    metrics: "metrics" "{" [accuracy_param] [loss_param] [precision_param] [recall_param] "}"
-    accuracy_param: "accuracy:" FLOAT
-    loss_param: "loss:" FLOAT
-    precision_param: "precision:" FLOAT
-    recall_param: "recall:" FLOAT
-    # Paper references
-    references: "references" "{" paper_param+ "}"
-    paper_param: "paper:" ESCAPED_STRING
-
-    # Import common tokens from Lark
-    %import common.NEWLINE -> _NL        # Newline characters
-    %import common.CNAME -> TRANSFORMERENCODER
-    %import common.WS_INLINE             # Inline whitespace
-    %import common.BOOL                  # Boolean values
-    %import common.CNAME -> NAME         # Names/identifiers
-    %import common.INT                   # Integer numbers
-    %import common.FLOAT                 # Floating point numbers
-    %import common.ESCAPED_STRING        # Quoted strings
-    %import common.WS                    # All whitespace
-    %ignore WS                          # Ignore whitespace in processing
-"""
+        ?start: network | layer | research  # Allow parsing either networks or research files
 
 
-parser = lark.Lark(grammar, start='network', parser='lalr')
-# Creating a separate parser instance for research files
-research_parser = lark.Lark(grammar, start='research', parser='lalr')
+        # Top-level network definition - defines the structure of an entire neural network
+        network: "network" NAME "{" input_layer layers loss optimizer config* "}"
 
+        # Configuration can be either training-related or execution-related
+        config: training_config | execution_config
+        
+        # Input layer definition - specifies the shape of input data
+        input_layer: "input:" "(" shape ")"
+        # Shape can contain multiple dimensions, each being a number or None
+        shape: number_or_none ("," number_or_none)*
+        # Dimensions can be specific integers or None (for variable dimensions)
+        number_or_none: INT | "None"
+
+        # Layers section - contains all layer definitions separated by newlines
+        layers: "layers:" _NL* layer (_NL+ layer)* _NL*
+
+        # All possible layer types that can be used in the network
+        ?layer: basic_layer
+            | recurrent_layer
+            | advanced_layer
+
+
+        # Basic layers group
+        basic_layer: conv2d_layer
+                | max_pooling2d_layer
+                | dropout_layer
+                | flatten_layer
+                | dense_layer
+                | output_layer
+                | norm_layer
+        
+        
+        # Output layer parameters
+        output_layer: "Output(" units_param "," activation_param ")"
+        units_param: "units=" INT
+        activation_param: "activation=" ESCAPED_STRING
+            
+        # Convolutional layer parameters
+        conv2d_layer: "Conv2D(" filters_param "," kernel_param "," activation_param ")"
+        filters_param: "filters=" INT
+        kernel_param: "kernel_size=" "(" INT "," INT ")"
+        
+        # Pooling layer parameters
+        max_pooling2d_layer: "MaxPooling2D(" pool_param ")"
+        pool_param: "pool_size=" "(" INT "," INT ")"
+        
+        # Dropout layer for regularization
+        dropout_layer: "Dropout(" rate_param ")"
+        rate_param: "rate=" FLOAT
+        
+        # Normalization layers
+        norm_layer: batch_norm_layer
+                | layer_norm_layer
+                | instance_norm_layer
+                | group_norm_layer
+
+        batch_norm_layer: "BatchNormalization(" ")"
+        layer_norm_layer: "LayerNormalization(" ")"
+        instance_norm_layer: "InstanceNormalization(" ")"
+        group_norm_layer: "GroupNormalization(" groups_param ")"
+        groups_param: "groups=" INT
+
+        # Basic layer types
+        dense_layer: "Dense(" units_param "," activation_param ")"
+        flatten_layer: "Flatten(" ")"
+        
+        # Recurrent layers section - includes all RNN variants
+        recurrent_layer: lstm_layer
+                    | gru_layer
+                    | simple_rnn_layer
+                    | cudnn_lstm_layer
+                    | cudnn_gru_layer
+                    | rnn_cell_layer
+                    | lstm_cell_layer
+                    | gru_cell_layer
+                    | dropout_wrapper_layer
+
+        # Different types of RNN layers with optional return sequences parameter
+        lstm_layer: "LSTM(" "units=" INT ["," "return_sequences=" return_sequences] ")"
+        gru_layer: "GRU(" "units=" INT ["," "return_sequences=" return_sequences] ")"
+        simple_rnn_layer: "SimpleRNN(" units_param ["," return_sequences_param] ")"
+        cudnn_lstm_layer: "CuDNNLSTM(" units_param ["," return_sequences_param] ")"
+        cudnn_gru_layer: "CuDNNGRU(" units_param ["," return_sequences_param] ")"
+
+        # RNN cell variants - single-step RNN computations
+        rnn_cell_layer: "RNNCell(" INT ")"
+        lstm_cell_layer: "LSTMCell(" INT ")"
+        gru_cell_layer: "GRUCell(" INT ")"
+
+        # Dropout wrapper layers for RNNs
+        dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
+        simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" INT "," dropout_param ")"
+        gru_dropout: "GRUDropoutWrapper" "(" INT "," dropout_param ")"
+        lstm_dropout: "LSTMDropoutWrapper" "(" INT "," dropout_param ")"
+        dropout_param: "dropout=" FLOAT
+        
+        # Return sequences parameter for RNN layers
+        return_sequences_param: "return_sequences=" return_sequences
+        return_sequences: "true" -> true
+                    | "false" -> false
+
+        # Advanced layers group
+        advanced_layer: attention_layer
+                    | transformer_layer
+                    | residual_layer
+                    | inception_layer
+                    | capsule_layer
+                    | squeeze_excitation_layer
+                    | graph_conv_layer
+                    | embedding_layer
+                    | quantum_layer
+                    | dynamic_layer
+
+        # Attention and transformer mechanisms
+        attention_layer: "Attention" "(" ")"
+        transformer_layer: "TransformerEncoder" "(" heads_param "," dim_param ")"
+        heads_param: "num_heads=" INT
+        dim_param: "ff_dim=" INT
+
+        # Advanced architecture layers
+        residual_layer: "ResidualConnection" "(" ")"
+        inception_layer: "InceptionModule" "(" ")"
+        capsule_layer: "CapsuleLayer" "(" ")"
+        squeeze_excitation_layer: "SqueezeExcitation" "(" ")"
+        graph_conv_layer: "GraphConv" "(" ")"
+        embedding_layer: "Embedding" "(" input_dim_param "," output_dim_param ")"
+        input_dim_param: "input_dim=" INT
+        output_dim_param: "output_dim=" INT
+        
+        # Special purpose layers
+        quantum_layer: "QuantumLayer" "(" ")"
+        dynamic_layer: "DynamicLayer" "(" ")"
+
+        # Training configuration block
+        training_config: "train" "{" [epochs_param] [batch_size_param] "}"
+        epochs_param: "epochs:" INT
+        batch_size_param: "batch_size:" INT
+        
+        # Loss and optimizer specifications
+        loss: "loss:" ESCAPED_STRING
+        optimizer: "optimizer:" ESCAPED_STRING
+
+        # Execution environment configuration
+        execution_config: "execution" "{" device_param "}"
+        device_param: "device:" ESCAPED_STRING
+
+        # Research-specific configurations
+        research: "research" "{" [research_params] "}"
+        research_params: (metrics | references)*
+        
+        # Metrics tracking
+        metrics: "metrics" "{" [accuracy_param] [loss_param] [precision_param] [recall_param] "}"
+        accuracy_param: "accuracy:" FLOAT
+        loss_param: "loss:" FLOAT
+        precision_param: "precision:" FLOAT
+        recall_param: "recall:" FLOAT
+        
+        # Paper references
+        references: "references" "{" paper_param+ "}"
+        paper_param: "paper:" ESCAPED_STRING
+
+
+        # Import common tokens from Lark
+        %import common.NEWLINE -> _NL        # Newline characters
+        %import common.CNAME -> TRANSFORMERENCODER
+        %import common.WS_INLINE             # Inline whitespace
+        %import common.BOOL                  # Boolean values
+        %import common.CNAME -> NAME         # Names/identifiers
+        %import common.INT                   # Integer numbers
+        %import common.FLOAT                 # Floating point numbers
+        %import common.ESCAPED_STRING        # Quoted strings
+        %import common.WS                    # All whitespace
+        %ignore WS                          # Ignore whitespace in processing
+    """
+    return lark.Lark(grammar, start=[start_rule], parser='lalr')
+
+network_parser = create_parser('network')
+layer_parser = create_parser('layer')
+research_parser = create_parser('research')
 
 class ModelTransformer(lark.Transformer):
     def layer(self, items):
@@ -229,7 +243,19 @@ class ModelTransformer(lark.Transformer):
             'params': items[1] if len(items) > 1 else {}
         }
 
-    
+    def visit_layer(self, tree):
+        layer_type = tree.children[0].value
+        params = {}
+        for param in tree.children[1:]:
+            key, value = param.children
+            params[key] = self.visit(value)
+        
+        if layer_type in ['LSTM', 'GRU']:
+            if 'units' in params:
+                params['units'] = int(params['units'])
+        
+        return {'type': layer_type, **params}
+        
     def input_layer(self, items):
     # items[0] is the result from the 'shape' rule, a tuple.
         return {
@@ -667,14 +693,40 @@ class ModelTransformer(lark.Transformer):
             'execution_config': execution_config
         }
 
-    def research(self,items):
-        return{
-            "type": "research",
-            "name": str(items[0]),
-            "metrics": items[1],
-            "references": items[2] if len(items) > 2 else None
-            
+    def research(self, items):
+        return {
+            'type': 'Research',
+            'params': items[0] if items else {}
         }
+    
+    def research_params(self, items):
+        params = {}
+        for item in items:
+            params.update(item)
+        return params
+    
+    def metrics(self, items):
+        return {
+            'metrics': {item['type']: item['value'] for item in items}
+        }
+
+    def accuracy_param(self, items):
+        return {'type': 'accuracy', 'value': float(items[0])}
+
+    def loss_param(self, items):
+        return {'type': 'loss', 'value': float(items[0])}
+
+    def precision_param(self, items):
+        return {'type': 'precision', 'value': float(items[0])}
+
+    def recall_param(self, items):
+        return {'type': 'recall', 'value': float(items[0])}
+
+    def references(self, items):
+        return {'references': [item['paper'] for item in items]}
+
+    def paper_param(self, items):
+        return {'paper': items[0].strip('"')}
 
 def propagate_shape(input_shape, layer):
     """
@@ -1003,18 +1055,10 @@ def generate_code(model_data, backend="tensorflow"):
     return code
 
 def load_file(filename):
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f"File {filename} not found.")
-    file_ext = os.path.splitext(filename)[-1].lower()
-    with open(filename, "r") as f:
-        content = f.read()
-    if file_ext in [".neural", ".nr"]:
-        print(f"✅ Loading Model Definition from {filename}...")
-        tree = parser.parse(content, start="network")
-        return "model", tree
-    elif file_ext == ".rnr":
-        print(f"✅ Loading Research Report from {filename}...")
-        tree = research_parser.parse(content, start="research")
-        return "research", tree
+    with open(filename, 'r') as file:
+        content = file.read()
+    
+    if filename.endswith('.rnr'):
+        return "research", content
     else:
-        raise ValueError(f"Unsupported file extension: {file_ext}")
+        return "model", content
