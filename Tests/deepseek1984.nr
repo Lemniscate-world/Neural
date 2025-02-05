@@ -1,4 +1,4 @@
-network DeepSeekLite {
+network DeepSeek1984 {
     input: (None, 512)
     layers:
         Embedding(input_dim=50000, output_dim=256)
