@@ -297,5 +297,5 @@ def test_invalid_research(research_parser):
         research_parser.parse("research { invalid metrics }") # Invalid metrics block syntax
 
 def test_invalid_layer(layer_parser):
-    with pytest.raises(exceptions.UnexpectedCharacters):  # Changed exception type
+    with pytest.raises(exceptions.UnexpectedCharacters):
         layer_parser.parse("InvalidLayer()")
