@@ -95,7 +95,9 @@ grammar = r"""
     execution_config: "execution" "{" "device:" ESCAPED_STRING "}"
 
     # Research .rnr Files Configurations
-    research: "research" NAME "{" metrics references? "}"
+    research: "research" NAME "{" research_content "}"
+    research_content: (research_section)+
+    research_section: "title:" ESCAPED_STRING | "abstract:" ESCAPED_STRING | "results:" ESCAPED_STRING
     metrics: "metrics" "{" ("accuracy:" FLOAT)? ("loss:" FLOAT)? ("precision:" FLOAT)? ("recall:" FLOAT)? "}"
     references: "references" "{" ("paper:" ESCAPED_STRING)+ "}"
 
@@ -338,18 +340,22 @@ class ModelTransformer(lark.Transformer):
         For additional parameters, they appear at fixed positions.
         """
 
-    def _get_value(items, idx, conv=lambda x: x, default=None):
-        """Safely extract and convert the value at index idx from items.
-        
-        If the item has a .value attribute (as tokens do), use it; otherwise, use str(item).
-        """
-        try:
-            token = items[idx]
-            val = token.value if hasattr(token, "value") else str(token)
-            return conv(val)
-        except (IndexError, ValueError):
-            return default
 
+
+        def _get_value(items, idx, conv=lambda x: x, default=None):
+            """Safely extract and convert the value at index idx from items.
+            
+            If the item has a .value attribute (as tokens do), use it; otherwise, use str(item).
+            """
+            try:
+                token = items[idx]
+                val = token.value if hasattr(token, "value") else str(token)
+                return conv(val)
+            except (IndexError, ValueError):
+                return default
+        
+        # Extract the number of units from the items.
+        units = _get_value(items, 1, int, None)
 
         # Extract the layer type as a string.
         if hasattr(items[0], "value"):
@@ -895,7 +901,7 @@ def generate_code(model_data, backend="tensorflow"):
     return code
 
 def load_file(filename):
-    """ Reads and categorizes Neural files based on extensions """
+    """Reads and categorizes Neural files based on extensions."""
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} not found.")
 
@@ -906,11 +912,10 @@ def load_file(filename):
 
     if file_ext in [".neural", ".nr"]:
         print(f"✅ Loading Model Definition from {filename}...")
-        return "model", content
+        return "model", parser.parse(content, start="network")  # Explicit start
     elif file_ext == ".rnr":
-        tree = parser.parse(content, start="research")
         print(f"✅ Loading Research Report from {filename}...")
-        return "research", content
+        return "research", parser.parse(content, start="research")  # Correct start rule
     else:
         raise ValueError(f"Unsupported file extension: {file_ext}")
 
