@@ -9,7 +9,9 @@ from plugins import LAYER_PLUGINS
 
 
 grammar = r"""
-    network: "network" NAME "{" input_layer layers loss optimizer training_config? "}"
+    network: "network" NAME "{" input_layer layers loss optimizer config* "}"
+
+    config: training_config | execution_config
     
     # New helper rule for a number of None
     number_or_none: INT | "None"
@@ -266,7 +268,7 @@ class ModelTransformer(lark.Transformer):
             if val == "None":
                 result.append(None)
             else:
-                result.append(int(val))
+                result.append(val)
         return tuple(result)
 
 
@@ -358,12 +360,18 @@ class ModelTransformer(lark.Transformer):
         loss = next((item for item in items if isinstance(item, dict) and item.get('type') == 'Loss'), None)
         optimizer = next((item for item in items if isinstance(item, dict) and item.get('type') == 'Optimizer'), None)
         
-        # Find training config (if exists)
-        training_config = next((item for item in items if isinstance(item, dict) and item.get('type') == 'TrainingConfig'), {})
-        
-        # Find Execution config (if exists)
-        execution_config = next((item for item in items if isinstance(item, dict) and item.get('type') == 'ExecutionConfig'), {})
-        
+        # The rest are configuration blocks (could be training_config and/or execution_config)
+        training_config = None
+        execution_config = {"device": "auto"}  # default
+        # items[5:] contains all config blocks
+        for conf in items[5:]:
+            # We'll assume training_config returns a dict with type "TrainingConfig"
+            # and execution_config returns a dict with type "ExecutionConfig"
+            if conf.get("type") == "TrainingConfig":
+                training_config = conf
+            elif conf.get("type") == "ExecutionConfig":
+                execution_config = conf
+
         # Construct the neural network configuration dictionary
         # This includes the name, input shape, layers, output layer, output shape, loss, optimizer, and training configuration
         # If execution configuration is provided, it will be included as well.
