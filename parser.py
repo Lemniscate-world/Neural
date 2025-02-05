@@ -81,7 +81,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
                     | named_ff_dim // for TransformerEncoder
                     | named_input_dim // for Embedding
                     | named_output_dim // for Embedding
-                    | named_groups // for GroupNormalization
 
         # Layer parameter styles
         ?param_style1: named_params    // Dense(units=128, activation="relu")
@@ -326,17 +325,6 @@ class ModelTransformer(lark.Transformer):
                 if len(ordered_vals) >= 2: # Activation is optional, if provided
                     params['activation'] = ordered_vals[1]
         return {'type': 'Dense', 'params': params}
-   
-    def output_layer(self, items: List[Any]) -> Dict[str, Any]:
-        """Processes the output layer definition."""
-        params = {}
-        if items:
-            if isinstance(items[0], list): # Output layer still uses ordered params directly
-                ordered_vals = items[0]
-                if len(ordered_vals) >= 2:
-                    params['units'] = ordered_vals[0]
-                    params['activation'] = ordered_vals[1]
-        return {'type': 'Output', 'params': params}
 
     def loss(self, items: List[Token]) -> Dict[str, str]:
         """Processes the loss function definition."""
@@ -371,12 +359,6 @@ class ModelTransformer(lark.Transformer):
             'type': 'Layers',
             'layers': parsed_layers
         }
-
-
-    def dropout_layer(self, items: List[Dict[str, float]]) -> Dict[str, Union[str, float]]: # Expecting List[Dict]
-        """Processes the dropout layer definition."""
-        params = items[0] if items else {}
-        return {'type': 'Dropout', 'params': params}
 
     def flatten_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes the flatten layer definition."""
@@ -518,27 +500,11 @@ class ModelTransformer(lark.Transformer):
     def inception_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes InceptionModule layer definition."""
         return {'type': 'InceptionModule', 'params': {}} # Ensure 'params' is always present
-
-    def quantum_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
-        """Processes QuantumLayer definition."""
-        return {'type': 'QuantumLayer', 'params': {}} # Ensure 'params' is always present
-
-    def squeeze_excitation_layer(self, items: List[Any]) -> Dict[str, str]:
-        """Processes SqueezeExcitation layer definition."""
-        return {'type': 'SqueezeExcitation'}
-
-    def graph_conv_layer(self, items: List[Any]) -> Dict[str, str]:
-        """Processes GraphConv layer definition."""
-        return {'type': 'GraphConv'}
-
+    
     def embedding_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Union[str, int]]: # Expecting List[Dict]
         """Processes Embedding layer definition."""
         params: Dict[str, Union[str, int]] = items[0] if items else {} # items[0] is now the params dict
         return {"type": "Embedding", 'params': params}
-
-    def quantum_layer(self, items: List[Any]) -> Dict[str, str]:
-        """Processes QuantumLayer layer definition."""
-        return {'type': 'QuantumLayer'}
 
     def dynamic_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes DynamicLayer definition."""
@@ -774,22 +740,73 @@ class ModelTransformer(lark.Transformer):
         return {} # Return empty dict if parsing fails or no rate found
 
     def named_filters(self, items: List[Any]) -> Dict[str, int]:
-        """Processes named 'filters' parameter."""
-        print("\n--- named_filters ---") # Added print statement
-        print(f"Items received in named_filters: {items}") # Added print statement
-        return {'filters': self.visit(items[0])} # visit the value and create dict
+        return {'filters': self.visit(items[2])}
 
-    def named_kernel_size(self, items: List[Any]) -> Dict[str, Tuple[int, int]]:
-        """Processes named 'kernel_size' parameter."""
-        print("\n--- named_kernel_size ---") # Added print statement
-        print(f"Items received in named_kernel_size: {items}") # Added print statement
-        return {'kernel_size': self.visit(items[0])} # visit the tuple and create dict
+    def named_return_sequences(self, items: List[Any]) -> Dict[str, bool]:
+        return {'return_sequences': self.visit(items[2])}
+
+    def named_num_heads(self, items: List[Any]) -> Dict[str, int]:
+        return {'num_heads': self.visit(items[2])}
+
+    def named_ff_dim(self, items: List[Any]) -> Dict[str, int]:
+        return {'ff_dim': self.visit(items[2])}
+
+    def named_input_dim(self, items: List[Any]) -> Dict[str, int]:
+        return {'input_dim': self.visit(items[2])}
+
+    def named_output_dim(self, items: List[Any]) -> Dict[str, int]:
+        return {'output_dim': self.visit(items[2])}
+
+    # Correct number_or_none method
+    def number_or_none(self, items: List[Token]) -> Optional[int]:
+        token = items[0]
+        if token.value == 'None':
+            return None
+        try:
+            return int(token.value)
+        except ValueError:
+            raise ValueError(f"Invalid shape dimension: {token.value}. Must be an integer or 'None'.")
+
+    # Correct dropout_layer to handle both named and ordered parameters
+    def dropout_layer(self, items: List[Any]) -> Dict[str, Any]:
+        params = {}
+        if items:
+            if isinstance(items[0], dict):
+                params = items[0]
+            else:
+                params = {'rate': items[0]}
+        return {'type': 'Dropout', 'params': params}
+
+    # Add methods for Output layer parameters
+    def units_param(self, items: List[Any]) -> Dict[str, int]:
+        return {'units': int(items[2].value)}
+
+    def activation_param(self, items: List[Any]) -> Dict[str, str]:
+        return {'activation': items[2].value.strip('"')}
+
+    def output_layer(self, items: List[Any]) -> Dict[str, Any]:
+        params = {}
+        for item in items:
+            if isinstance(item, Tree):
+                param = self.visit(item)
+                params.update(param)
+        return {'type': 'Output', 'params': params}
+
+    # Add methods for advanced layers
+    def capsule_layer(self, items: List[Any]) -> Dict[str, Any]:
+        return {'type': 'CapsuleLayer', 'params': {}}
+
+    def squeeze_excitation_layer(self, items: List[Any]) -> Dict[str, Any]:
+        return {'type': 'SqueezeExcitation', 'params': {}}
+
+    def graph_conv_layer(self, items: List[Any]) -> Dict[str, Any]:
+        return {'type': 'GraphConv', 'params': {}}
+
+    def quantum_layer(self, items: List[Any]) -> Dict[str, Any]:
+        return {'type': 'QuantumLayer', 'params': {}}
 
     def named_activation(self, items: List[Any]) -> Dict[str, str]:
-        """Processes named 'activation' parameter."""
-        print("\n--- named_activation ---") # Added print statement
-        print(f"Items received in named_activation: {items}") # Added print statement
-        return {'activation': self.visit(items[0])} # visit the value and create dict
+        return {'activation': self.visit(items[2])}
 
     def param_style1(self, items: List[Union[Dict[str, Any], List[Any]]]) -> Union[Dict[str, Any], List[Any]]:
         """Handles both named and ordered parameters styles."""
@@ -797,17 +814,6 @@ class ModelTransformer(lark.Transformer):
             return items[0] # Named parameters dictionary
         else:
             return items # Ordered parameters list
-
-    def number_or_none(self, items: List[Token]) -> Optional[int]:
-        """Processes number_or_none values for shapes."""
-        token = items[0]
-        if token == 'None':
-            return None
-        try:
-            return int(token.value)
-        except ValueError:
-            raise ValueError(f"Invalid shape dimension: {token.value}. Must be an integer or 'None'.")
-
 
     def epochs_param(self, items: List[Token]) -> Dict[str, int]:
         """Processes epochs parameter in training config."""
@@ -853,19 +859,26 @@ class ModelTransformer(lark.Transformer):
             return items[0] if isinstance(items[0], dict) else {} # Return first item if it's a dict
         return {}
 
-
     def named_units(self, items: List[Any]) -> Dict[str, int]:
-        """Processes named 'units' parameter."""
-        print("\n--- named_units ---") 
-        print(f"Items received in named_units: {items}") 
-        return {'units': self.visit(items[0])} # RE-INTRODUCE self.visit HERE
+        return {'units': self.visit(items[2])}
+    
+    def named_kernel_size(self, items: List[Any]) -> Dict[str, Tuple[int, int]]:
+        return {'kernel_size': self.visit(items[2])}
 
-    def named_activation(self, items: List[Any]) -> Dict[str, str]:
-        """Processes named 'activation' parameter."""
-        print("\n--- named_activation ---") 
-        print(f"Items received in named_activation: {items}") 
-        return {'activation': self.visit(items[0])} # RE-INTRODUCE self.visit HERE
+    def named_padding(self, items: List[Any]) -> Dict[str, str]:
+        return {'padding': self.visit(items[2])}
 
+    def named_strides(self, items: List[Any]) -> Dict[str, Tuple[int, int]]:
+        return {'strides': self.visit(items[2])}
+
+    def named_dilation_rate(self, items: List[Any]) -> Dict[str, Tuple[int, int]]:
+        return {'dilation_rate': self.visit(items[2])}
+
+    def named_groups(self, items: List[Any]) -> Dict[str, int]:
+        return {'groups': self.visit(items[2])}
+
+    def named_pool_size(self, items: List[Any]) -> Dict[str, Tuple[int, int]]:
+        return {'pool_size': self.visit(items[2])}
 
     def execution_config(self, items: List[Tree]) -> Dict[str, Any]:
         """Processes execution configuration block."""
