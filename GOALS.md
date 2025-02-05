@@ -71,6 +71,9 @@
 - Create my own neural machine learning model based on graph theory, with benchmarks and research papers wto showcase neural functionalities.
 - Create model for autoevolving music with neural
 - Add custom graph-based debugging
+- explainability, and rich metric visualizations.
+-  Engineered for production: prebuilt Docker containers, native support for running with Ray on Kubernetes, export models to Torchscript and Triton, upload to HuggingFace with one command.
+- Optimized for scale and efficiency: automatic batch size selection, distributed training (DDP, DeepSpeed), parameter efficient fine-tuning (PEFT), 4-bit quantization (QLoRA), and larger-than-memory datasets.
 - Implement hyperparameter tuning visualization
 - Live tracking of training progress
 - My own model form y MWI Qubits simulator

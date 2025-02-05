@@ -248,21 +248,16 @@ class ModelTransformer(lark.Transformer):
             "activation": self.extract_value(items[3]).strip('"')
         }
     
-
-    
     def extract_value(self, item):
         """Recursively extract a value from a Token or Tree."""
-        if isinstance(item, Token):
-            return item.value
-        elif isinstance(item, Tree):
-            # If the tree has children, return the value from the first child.
+        if isinstance(item, Tree):
             if item.children:
                 return self.extract_value(item.children[0])
-            else:
-                return ""
+            return ""
+        elif isinstance(item, Token):
+            return item.value
         else:
             return str(item)
-
 
 
     def dense_layer(self, items):
@@ -272,6 +267,16 @@ class ModelTransformer(lark.Transformer):
             "activation": self.extract_value(items[1]).strip('"')
         }
     
+    def conv2d_layer(self, items):
+        # items: [filters_param, kernel_param, activation_param]
+        filters = int(self.extract_value(items[0]))
+        # kernel_param is a Tree with two children
+        kernel_tree = items[1]
+        kernel_h = int(self.extract_value(kernel_tree.children[0]))
+        kernel_w = int(self.extract_value(kernel_tree.children[1]))
+        activation = self.extract_value(items[2]).strip('"')
+        return {"type": "Conv2D", "filters": filters, "kernel_size": (kernel_h, kernel_w), "activation": activation}
+
     def output_layer(self, items):
         """
         Parses and processes the configuration of an output layer in a neural network.
@@ -369,13 +374,12 @@ class ModelTransformer(lark.Transformer):
 
 
     def max_pooling2d_layer(self, items):
-        return {
-            "type": "MaxPooling2D",
-            "pool_size": (
-                int(self.extract_value(items[0])),
-                int(self.extract_value(items[1]))
-            )
-        }
+        # items: [pool_param]
+        pool_tree = items[0]
+        pool_h = int(self.extract_value(pool_tree.children[0]))
+        pool_w = int(self.extract_value(pool_tree.children[1]))
+        return {"type": "MaxPooling2D", "pool_size": (pool_h, pool_w)}
+
     
 
     def batch_norm_layer(self, items):
@@ -586,12 +590,19 @@ class ModelTransformer(lark.Transformer):
         else:
             return_sequences = False
         return {"type": "GRU", "units": units, "return_sequences": return_sequences}
+    
     def transformer_layer(self, items):
         return {
             "type": "TransformerEncoder",
             "num_heads": int(self.extract_value(items[0])),
             "ff_dim": int(self.extract_value(items[1]))
         }
+    
+    def research(self, items):
+        # For research files, simply construct a dict from the parsed parts.
+        metrics = items[1]
+        references = items[2] if len(items) > 2 else None
+        return {"type": "research", "name": self.extract_value(items[0]), "metrics": metrics, "references": references}
 
     def network(self, items):
         name = str(items[0])
@@ -992,26 +1003,18 @@ def generate_code(model_data, backend="tensorflow"):
     return code
 
 def load_file(filename):
-    """
-    Reads a file and categorizes it as a model definition file or a research file based on its extension.
-    
-    Returns:
-        tuple: (file_type, parsed_tree)
-    """
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} not found.")
-    
     file_ext = os.path.splitext(filename)[-1].lower()
     with open(filename, "r") as f:
         content = f.read()
-    
     if file_ext in [".neural", ".nr"]:
         print(f"✅ Loading Model Definition from {filename}...")
-        # Parse with network start rule
-        return "model", parser.parse(content, start="network")
+        tree = parser.parse(content, start="network")
+        return "model", tree
     elif file_ext == ".rnr":
         print(f"✅ Loading Research Report from {filename}...")
-        # Parse with research start rule
-        return "research", research_parser.parse(content, start="research")
+        tree = research_parser.parse(content, start="research")
+        return "research", tree
     else:
         raise ValueError(f"Unsupported file extension: {file_ext}")
