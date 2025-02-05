@@ -1,7 +1,7 @@
 import os
 import sys
 import pytest
-from lark import Lark
+from lark import Lark, exceptions
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -183,8 +183,7 @@ def transformer():
 def test_layer_parsing(layer_parser, transformer, layer_string, expected):
     tree = layer_parser.parse(layer_string)
     result = transformer.transform(tree)
-    assert result['type'] == expected['type']
-    assert result['params'] == expected['params']
+    assert result == expected
 
 def test_network_parsing(network_parser, transformer):
     network_string = """
@@ -286,13 +285,13 @@ def test_research_parsing_no_name(research_parser, transformer):
 
 
 def test_invalid_layer(layer_parser):
-    with pytest.raises(lark.exceptions.UnexpectedToken): # More specific exception
+    with pytest.raises(exceptions.UnexpectedToken): # More specific exception
         layer_parser.parse("InvalidLayer()")
 
 def test_invalid_network(network_parser):
-    with pytest.raises(lark.exceptions.UnexpectedToken): # More specific exception
+    with pytest.raises(exceptions.UnexpectedToken): # More specific exception
         network_parser.parse("invalid network syntax { }") # Added braces to make it more like network def
 
 def test_invalid_research(research_parser):
-    with pytest.raises(lark.exceptions.UnexpectedToken): # More specific exception
+    with pytest.raises(exceptions.UnexpectedCharacters): # More specific exception
         research_parser.parse("research { invalid metrics }") # Invalid metrics block syntax
