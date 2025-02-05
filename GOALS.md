@@ -44,8 +44,16 @@
 - Make neural generate research paper (No AI) on model i'm using or training with benchmarks and stats etc in the its IDE + visualizer and interactive solver and nodes explorers with details
 - Create very basic deepseek model with neural and even fine-tune to showcase all neural functionalities.and in the same time testing if they are working.
 
+05 02 25
 
 - Creating executable neural files
+- Enhance parallelization in neural
+- Create parallelization layers and unique parallelization techniques
+- Add all pytorch and tensorflow syntax to neural
+- Add more researchs capabilities for neural
+- Create my bennchmark module with all possible and disponibles statistic and analysis capabilities
+- Syntax highlight neural IDE
+- Mathematical formulas and modeling  extraction and visualization on the dashboard
 - Create a memory file to resume for neural
 - Create a standalone interpreter for neural
 - Ability to load models and parses them into different backends  

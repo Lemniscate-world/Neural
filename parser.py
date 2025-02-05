@@ -11,7 +11,10 @@ from plugins import LAYER_PLUGINS
 grammar = r"""
     network: "network" NAME "{" input_layer layers loss optimizer training_config? "}"
     
-    input_layer: "input:" "(" INT "," INT "," INT ")"
+    # New helper rule for a number of None
+    number_or_none: INT | "None"
+    input_layer: "input:" "(" number_or_none "," number_or_none "," number_or_none ")"
+
     
     layers: "layers:" layer+
     
@@ -70,6 +73,7 @@ grammar = r"""
     research: "research" NAME "{" metrics references? "}"
     metrics: "metrics" "{" ("accuracy:" FLOAT)? ("loss:" FLOAT)? ("precision:" FLOAT)? ("recall:" FLOAT)? "}"
     references: "references" "{" ("paper:" ESCAPED_STRING)+ "}"
+
 
     %import common.CNAME -> NAME
     %import common.INT
