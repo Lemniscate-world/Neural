@@ -46,18 +46,29 @@ grammar = r"""
     dense_layer: "Dense(" "units=" INT "," "activation=" ESCAPED_STRING ")"
     flatten_layer: "Flatten()"
     
-    # Recurrent Layers
-    lstm_layer: "LSTM(" "units=" INT ")"
-    gru_layer: "GRU(" "units=" INT ")"
-    vanila_rnn_layer: "RNN(" "units=" INT ")"
-    gated_recurrent_unit_layer: "GRUCell(" "units=" INT ")"
-    long_short_term_memory_layer: "LSTMCell(" "units=" INT ")"
-    dynamic_rnn_layer: "DynamicRNN(" "units=" INT ")"
-    transformer_encoder_layer: "TransformerEncoderLayer(" "d_model=" INT "," "nhead=" INT ")"
-    transformer_decoder_layer: "TransformerDecoderLayer(" "d_model=" INT "," "nhead=" INT ")"
-    transformer_multihead_attention_layer: "MultiheadAttention(" "d_model=" INT "," "nhead=" INT ")"
-    recurrent_layer: TYPE "(" "units=" INT ")"
-    TYPE: "LSTM" | "GRU"
+    # Recurrent Layers Definitions
+    recurrent_layer: lstm_layer | gru_layer | simple_rnn_layer 
+               | cudnn_lstm_layer | cudnn_gru_layer 
+               | rnn_cell_layer | lstm_cell_layer | gru_cell_layer
+               | dropout_wrapper_layer
+
+    lstm_layer: "LSTM" "(" INT ("," return_sequences)? ")"
+    gru_layer: "GRU" "(" INT ("," return_sequences)? ")"
+    simple_rnn_layer: "SimpleRNN" "(" INT ("," return_sequences)? ")"
+    cudnn_lstm_layer: "CuDNNLSTM" "(" INT ("," return_sequences)? ")"
+    cudnn_gru_layer: "CuDNNGRU" "(" INT ("," return_sequences)? ")"
+
+    rnn_cell_layer: "RNNCell" "(" INT ")"
+    lstm_cell_layer: "LSTMCell" "(" INT ")"
+    gru_cell_layer: "GRUCell" "(" INT ")"
+
+    dropout_wrapper_layer: ("SimpleRNNDropoutWrapper" | "GRUDropoutWrapper" | "LSTMDropoutWrapper") "(" INT "," FLOAT ")"
+
+    # Helper for return_sequences parameter
+    return_sequences: "true" -> true
+                   | "false" -> false
+    
+    
 
     # Attention & Transformer
     attention_layer: "Attention()"
@@ -88,6 +99,7 @@ grammar = r"""
     metrics: "metrics" "{" ("accuracy:" FLOAT)? ("loss:" FLOAT)? ("precision:" FLOAT)? ("recall:" FLOAT)? "}"
     references: "references" "{" ("paper:" ESCAPED_STRING)+ "}"
 
+    %import common.BOOL
     %import common.CNAME -> NAME
     %import common.INT
     %import common.FLOAT
@@ -314,13 +326,112 @@ class ModelTransformer(lark.Transformer):
     def group_norm_layer(self, items):
         return {'type': 'GroupNormalization', 'groups': int(items[0])}
 
-    
+    #### Recurrent Layers ###################################
+
     def recurrent_layer(self, items):
-    # items[0] will be a Token of type TYPE (with value "LSTM" or "GRU")
-    # items[1] will be the INT token for the units.
-        layer_type = str(items[0])  # Convert the token to a string.
-        units = int(items[1])
+        """
+        Processes a recurrent layer. Expects:
+        - items[0]: A token (or string) representing the layer type.
+        - items[1]: The 'units' (INT).
+        - Additional parameters may follow depending on the layer type.
+        
+        Returns a dictionary with the appropriate keys.
+        """
+
+        def _get_value(items, idx, conv=lambda x: x, default=None):
+            """Helper to safely extract and convert a value from items."""
+            return conv(items[idx]) if len(items) > idx else default
+        # Convert the token to string (e.g. "LSTM", "GRU", etc.)
+        layer_type = str(items[0])
+        # Basic units (if provided)
+        units = _get_value(items, 1, int, None)
+        
+        # --- Category 1: Common recurrent layers with return_sequences at index 2 ---
+        common_layers = {
+            "LSTM", "GRU", "SimpleRNN", "CuDNNLSTM", "CuDNNGRU", "CuDNNSimpleRNN", "RNN"
+        }
+        # --- Category 2: Recurrent cell variants with return_sequences at index 3 ---
+        cell_layers = {"SimpleRNNCell", "GRUCell", "LSTMCell"}
+        # --- Category 3: Dropout wrappers; expect return_sequences at index 2 and dropout at index 3 ---
+        dropout_wrappers = {"SimpleRNNDropoutWrapper", "GRUDropoutWrapper", "LSTMDropoutWrapper",
+                            "GRUCellDropoutWrapper", "LSTMCellDropoutWrapper"}
+        # --- Category 4: Projection layers; expect projection_size at index 2 ---
+        projection_layers = {"BasicLSTMCellWithProjection", "BasicGRUCellWithProjection",
+                            "BasicRNNCellWithProjection", "BasicRNNCellWithInputProjection",
+                            "GRUCellWithInputProjection"}
+        # --- Category 5: Peephole/Projection combinations ---
+        peephole_projection_layers = {
+            "BasicRNNCellWithInputProjectionAndPeephole",
+            "BasicRNNCellWithInputProjectionAndPeepholeAndProjection",
+            "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSize",
+            "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSizeAndNumLayers",
+            "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSizeAndNumLayersAndDropout",
+            "BasicRNNCellWithInputProjectionAndPeepholeAndProjectionAndHiddenSizeAndNumLayersAndDropoutAndkernel_initializer"
+        }
+        # --- Category 6: Basic recurrent cells ---
+        basic_cells = {"BasicLSTMCell", "BasicGRUCell", "BasicLSTMCellWithPeephole",
+                    "BasicRNNCell", "BasicRNNCellWithPeephole"}
+        
+        # --- Category 7: Attention wrappers (handle any that start with "AttentionWrapper") ---
+        if layer_type.startswith("AttentionWrapper"):
+            # A simplified treatment: assume at least:
+            # items[1]: attention_layer (to be processed via self.layer_norm_layer)
+            # items[2]: attention_layer_size (INT)
+            # items[3]: attention_type token (optional, default "bahdanau")
+            return {
+                "type": layer_type,
+                "attention_layer": self.layer_norm_layer(items[1]),
+                "attention_layer_size": int(items[2]),
+                "attention_type": _get_value(items, 3, lambda x: x.value, "bahdanau")
+            }
+        
+        # --- Process each category ---
+        if layer_type in common_layers:
+            # Return sequences flag expected at index 2.
+            return {
+                "type": layer_type,
+                "units": units,
+                "return_sequences": _get_value(items, 2, lambda x: x, False)
+            }
+        elif layer_type in cell_layers:
+            # Return sequences flag expected at index 3.
+            return {
+                "type": layer_type,
+                "units": units,
+                "return_sequences": _get_value(items, 3, lambda x: x, False)
+            }
+        elif layer_type in dropout_wrappers:
+            # Return sequences at index 2, dropout value (float) at index 3.
+            return {
+                "type": layer_type,
+                "units": units,
+                "return_sequences": _get_value(items, 2, lambda x: x, False),
+                "dropout": _get_value(items, 3, float, None)
+            }
+        elif layer_type in projection_layers:
+            # Expect projection_size at index 2.
+            return {
+                "type": layer_type,
+                "units": units,
+                "projection_size": _get_value(items, 2, int, None)
+            }
+        elif layer_type in peephole_projection_layers:
+            # Expect a sequence of parameters: projection_size (idx 2), hidden_size (idx 3),
+            # num_layers (idx 4), dropout (idx 5), kernel_initializer (idx 6)
+            result = {"type": layer_type, "units": units}
+            result["projection_size"] = _get_value(items, 2, int, None)
+            result["hidden_size"] = _get_value(items, 3, int, None)
+            result["num_layers"] = _get_value(items, 4, int, None)
+            result["dropout"] = _get_value(items, 5, float, None)
+            result["kernel_initializer"] = _get_value(items, 6, lambda x: x.value, None)
+            return result
+        elif layer_type in basic_cells:
+            return {"type": layer_type, "units": units}
+        
+        # --- Fallback ---
         return {"type": layer_type, "units": units}
+
+    #### Recurrent Layers #################################
 
 
     def attention_layer(self, items):
