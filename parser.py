@@ -384,22 +384,8 @@ class ModelTransformer(lark.Transformer):
         return config
 
 
-    def shape(self, items: List[Token]) -> Tuple[Optional[int], ...]:
-        """
-        Convert the list of tokens into a tuple representing shape.
-        Handles 'None' for variable dimensions and converts integers.
-        """
-        shape_list: List[Optional[int]] = []
-        for item in items:
-            val_str = str(item)
-            if val_str == "None":
-                shape_list.append(None)
-            else:
-                try:
-                    shape_list.append(int(val_str))
-                except ValueError:
-                    raise ValueError(f"Invalid shape dimension: {val_str}. Must be an integer or 'None'.")
-        return tuple(shape_list)
+    def shape(self, items: List[Union[int, None]]) -> Tuple[Optional[int], ...]:
+        return tuple(items)
 
 
     def max_pooling2d_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Union[str, Tuple[int, int]]]: # Expecting List[Dict]
@@ -527,8 +513,8 @@ class ModelTransformer(lark.Transformer):
         layers_config = items[2]['layers'] # Layers are nested under 'layers' key
         loss_config = items[3] # Already processed loss
         optimizer_config = items[4] # Already processed optimizer
-        training_config = next((item for item in items[5:] if item.get('type') == 'TrainingConfig'), None) # Optional training config, default to None
-        execution_config = next((item for item in items[5:] if item.get('type') == 'ExecutionConfig'), {"device": "auto"}) # Default execution config
+        training_config = next((item for item in items[5:] if item == 'TrainingConfig'), None) # Optional training config, default to None
+        execution_config = next((item for item in items[5:] if item == 'ExecutionConfig'), {"device": "auto"}) # Default execution config
 
         output_layer = next((layer for layer in reversed(layers_config) if layer['type'] == 'Output'), None)
 
@@ -658,13 +644,21 @@ class ModelTransformer(lark.Transformer):
     def value(self, items):
         if isinstance(items[0], Tree) and items[0].data == 'tuple':
             return self.visit(items[0])
+        token = items[0]
+        if isinstance(token, Token):
+            if token.type == 'ESCAPED_STRING':
+                return token.value.strip('"')
+            elif token.type == 'INT':
+                return int(token.value)
+            elif token.type == 'FLOAT':
+                return float(token.value)
         return super().value(items)
 
     def tuple(self, items):
         return (int(items[1].value), int(items[3].value))
 
-    def named_return_sequences(self, items: List[Any]) -> Dict[str, bool]:
-        return {'return_sequences': self.visit(items[2])}
+    def named_return_sequences(self, items: List[Token]) -> Dict[str, bool]:
+        return {'return_sequences': items[2].value == 'true'}
 
     def named_num_heads(self, items: List[Any]) -> Dict[str, int]:
         return {'num_heads': self.visit(items[2])}
@@ -686,10 +680,10 @@ class ModelTransformer(lark.Transformer):
         return int(token.value)
     
     def named_filters(self, items):
-        return {'filters': int(items[2].value)}
+        return {'filters': int(items[0].value)}
     
     def named_activation(self, items):
-        return {'activation': items[2].value.strip('"')}
+        return {'activation': items[0].value.strip('"')}
     
     def named_kernel_size(self, items):
         return {'kernel_size': self.visit(items[2])}
@@ -701,20 +695,19 @@ class ModelTransformer(lark.Transformer):
         return {'strides': self.visit(items[2])}
     
     def named_rate(self, items):
-        return {'rate': float(items[2].value)}
-
+        return {'rate': float(items[0].value)}
 
     def dropout_layer(self, items):
         if isinstance(items[0], (int, float)):
             return {'type': 'Dropout', 'params': {'rate': items[0]}}
         return {'type': 'Dropout', 'params': items[0]}
-
+    
     # Add methods for Output layer parameters
     def units_param(self, items):
-        return {'units': int(items[2].value)}
+        return {'units': int(items[0].value)}
 
     def activation_param(self, items: List[Any]) -> Dict[str, str]:
-        return {'activation': items[2].value.strip('"')}
+        return {'activation': items[0].value.strip('"')}
 
     def output_layer(self, items):
         params = {}
@@ -777,7 +770,7 @@ class ModelTransformer(lark.Transformer):
 
     def dropout_param(self, items: List[Tree]) -> Dict[str, float]: # dropout_param already returns a dict
         """Processes dropout parameter for DropoutWrapper layers."""
-        if items and items[0].data == 'dropout_param':
+        if items and items[0] == 'dropout_param':
             dropout_token = items[0].children[0] # Access the FLOAT token
             if isinstance(dropout_token, Token) and dropout_token.type == 'FLOAT':
                 try:
@@ -985,7 +978,7 @@ def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any
     else:
         raise ValueError(f"Unsupported layer type: {layer_type}")
 
-def generate_code(model_data: Dict[str, Any], backend: str = "tensorflow") -> str:
+def generate_code(model_data,backend):
     """
     Generates code for creating and training a neural network model based on model_data and backend.
     Supports TensorFlow and PyTorch backends.
