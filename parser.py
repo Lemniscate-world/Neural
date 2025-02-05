@@ -13,9 +13,11 @@ grammar = r"""
     
     # New helper rule for a number of None
     number_or_none: INT | "None"
-    input_layer: "input:" "(" number_or_none "," number_or_none "," number_or_none ")"
-
     
+    # Allow a shape with one or more comma-separated items
+    input_layer: "input:" "(" shape ")"
+    shape: number_or_none ("," number_or_none)*
+
     layers: "layers:" layer+
     
     layer: conv2d_layer | max_pooling2d_layer | dropout_layer | flatten_layer | dense_layer | output_layer 
@@ -718,7 +720,6 @@ def load_file(filename):
         return "model", content
     elif file_ext == ".rnr":
         print(f"✅ Loading Research Report from {filename}...")
-        tree = parser.parse(content, start="research")
         return "research", content
     else:
         raise ValueError(f"Unsupported file extension: {file_ext}")
