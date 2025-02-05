@@ -52,11 +52,11 @@ grammar = r"""
                | rnn_cell_layer | lstm_cell_layer | gru_cell_layer
                | dropout_wrapper_layer
 
-    lstm_layer: "LSTM" "(" "units=" INT ("," return_sequences)? ")"
-    gru_layer: "GRU" "(" "units=" INT ("," return_sequences)? ")"
-    simple_rnn_layer: "SimpleRNN" "(" INT ("," return_sequences)? ")"
-    cudnn_lstm_layer: "CuDNNLSTM" "(" INT ("," return_sequences)? ")"
-    cudnn_gru_layer: "CuDNNGRU" "(" INT ("," return_sequences)? ")"
+    lstm_layer: "LSTM" "(" "units=" INT -> lstm_units ("," return_sequences)? ")"
+    gru_layer: "GRU" "(" "units=" INT -> gru_units ("," return_sequences)? ")"
+    simple_rnn_layer: "SimpleRNN" "(" INT -> simple_rnn_units ("," return_sequences)? ")"
+    cudnn_lstm_layer: "CuDNNLSTM" "(" INT -> cudnn_lstm_units ("," return_sequences)? ")"
+    cudnn_gru_layer: "CuDNNGRU" "(" INT -> cudnn_gru_units ("," return_sequences)? ")"
 
     rnn_cell_layer: "RNNCell" "(" INT ")"
     lstm_cell_layer: "LSTMCell" "(" INT ")"
@@ -501,7 +501,28 @@ class ModelTransformer(lark.Transformer):
 
     def dynamic_layer(self, items):
         return {'type': 'DynamicLayer'}
+    
+    def lstm_layer(self, items):
+        """
+        Expected children:
+        - items[0]: the INT token for units (captured by the alias 'lstm_units')
+        - items[1] (optional): the result of return_sequences (a boolean, if provided)
+        """
+        units = int(items[0])
+        return_sequences = items[1] if len(items) > 1 else False
+        # If you want to omit return_sequences when false, you can choose to do so.
+        return {"type": "LSTM", "units": units, "return_sequences": return_sequences}
 
+    def gru_layer(self, items):
+        """
+        Expected children:
+        - items[0]: the INT token for units (captured by the alias 'gru_units')
+        - items[1] (optional): the result of return_sequences (a boolean, if provided)
+        """
+        units = int(items[0])
+        return_sequences = items[1] if len(items) > 1 else False
+        return {"type": "GRU", "units": units, "return_sequences": return_sequences}
+    
     def network(self, items):
         name = str(items[0])
         input_shape = items[1]['shape']  # Input layer configuration
