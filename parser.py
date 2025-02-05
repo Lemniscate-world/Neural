@@ -254,7 +254,21 @@ class ModelTransformer(lark.Transformer):
         }
     
     def shape(self, items):
-        return tuple(items)
+        """
+        Convert the list of tokens (or strings) into a tuple.
+        If a token equals "None", convert it to Python's None.
+        Otherwise, convert to integer.
+        """
+        result = []
+        for item in items:
+            # item is a Token, so convert it to a string.
+            val = str(item)
+            if val == "None":
+                result.append(None)
+            else:
+                result.append(int(val))
+        return tuple(result)
+
 
     def max_pooling2d_layer(self, items):
         return {
