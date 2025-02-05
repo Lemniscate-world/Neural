@@ -49,7 +49,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         # name_param rules
         named_data_format: "data_format" "=" value 
         named_units: "units" "=" INT
-        named_activation: "activation" "=" value
+        named_activation: "activation" "=" ESCAPED_STRING
         named_filters: "filters" "=" INT
         named_kernel_size: "kernel_size" "=" value
         named_strides: "strides" "=" value
@@ -655,7 +655,7 @@ class ModelTransformer(lark.Transformer):
         return super().value(items)
 
     def tuple(self, items):
-        return (int(items[1].value), int(items[3].value))
+        return (int(items[0].value), int(items[1].value))
 
     def named_return_sequences(self, items: List[Token]) -> Dict[str, bool]:
         return {'return_sequences': items[2].value == 'true'}
