@@ -55,6 +55,8 @@
 - Syntax highlight neural IDE
 - Mathematical formulas and modeling  extraction and visualization on the dashboard
 - High-level API
+- Implement and create my own neural tester
+- Make neural more faster - Faster analyzer, analyzer code with the goal to make everything faster
 - compiler optimizations
 - Integrate Hugging Face
 - AutoML features.
