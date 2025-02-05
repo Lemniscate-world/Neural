@@ -54,10 +54,17 @@
 - Create my bennchmark module with all possible and disponibles statistic and analysis capabilities
 - Syntax highlight neural IDE
 - Mathematical formulas and modeling  extraction and visualization on the dashboard
+- High-level API
+- compiler optimizations
+- Integrate Hugging Face
+- AutoML features.
+- Compiler stack for deployment
 - Create a memory file to resume for neural
 - Create a standalone interpreter for neural
 - Ability to load models and parses them into different backends  
 - Add Multi GPU training
+- DSL for image processing (Add image processing)
+- Optimize and enhance Automatic Shape Validation to the best
 - Optimize for low-latency real-time inference
 - Create my own neural machine learning model based on graph theory, with benchmarks and research papers wto showcase neural functionalities.
 - Create model for autoevolving music with neural
