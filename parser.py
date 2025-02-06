@@ -610,6 +610,7 @@ class ModelTransformer(lark.Transformer):
             value = self.tuple_(value.children)
         elif isinstance(value, Token) and value.type == 'BOOL':
             value = value.value == 'true'
+        
         return {name: value}
     
     def number_or_none(self, items):
