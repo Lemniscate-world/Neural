@@ -611,7 +611,7 @@ class ModelTransformer(lark.Transformer):
         }
 
 
-    # Parameters  #######################################################
+    ### Parameters  #######################################################
 
     def _extract_value(self, item):  # Helper function to extract values from tokens and tuples
         if isinstance(item, Token):
@@ -631,16 +631,16 @@ class ModelTransformer(lark.Transformer):
     def named_param(self, items):  # Corrected to use _extract_value and return a dictionary
         name = str(items[0])
         value = self._extract_value(items[2])  # Extract the value using the helper function
-        return {name: value}
+        return {name: self._extract_value(value)}
     
     def number_param(self, items):
-        """Handles numeric parameters without explicit names."""
-        return {"units": items[0]}  # Defaulting to "units"
+        return {"units": self._extract_value(items[0])}
 
     def string_param(self, items):
-        """Handles string parameters without explicit names, defaults to 'activation'."""
-        return {"activation": items[0].value.strip('"')}
+        return {"activation": self._extract_value(items[0])}
 
+    def number(self, items):
+        return self._extract_value(items[0])
     
     def number_or_none(self, items):
         if items[0].value.lower() == 'none':
@@ -712,55 +712,79 @@ class ModelTransformer(lark.Transformer):
     # Named_params & Their Properties ##################################################
 
     def bool_value(self, items):
-        return items[0].value.lower() == 'true'
-
-    def named_return_sequences(self, items):
-        return {'return_sequences': items[2]}
-
-    def named_num_heads(self, items):
-        return {'num_heads': items[2]}
-
-    def named_ff_dim(self, items):
-        return {'ff_dim': items[2]}
-
-    def named_input_dim(self, items):
-        return {'input_dim': items[2]}
-
-    def named_output_dim(self, items):
-        return {'output_dim': items[2]}
-
-    def number(self, items):
-        return float(items[0]) if '.' in items[0] else int(items[0])
+        return self._extract_value(items[0])
 
     def named_filters(self, items):
-        return {'filters': items[2]}
+        return {"filters": self._extract_value(items[2])}
 
     def named_activation(self, items):
-        return {'activation': items[2]}
+        return {"activation": self._extract_value(items[2])}
 
     def named_kernel_size(self, items):
-        return {'kernel_size': items[2]}
+        return {"kernel_size": self._extract_value(items[2])}
 
     def named_padding(self, items):
-        return {'padding': items[2]}
+        return {"padding": self._extract_value(items[2])}
 
     def named_strides(self, items):
-        return {'strides': items[2]}
+        return {"strides": self._extract_value(items[2])}
 
     def named_rate(self, items):
-        return {'rate': items[2]}
+        return {"rate": self._extract_value(items[2])}
 
     def named_dilation_rate(self, items):
-        return {'dilation_rate': items[2]}
+        return {"dilation_rate": self._extract_value(items[2])}
 
     def named_groups(self, items):
-        return {'groups': items[2]}
+        return {"groups": self._extract_value(items[2])}
 
     def named_pool_size(self, items):
-        return {'pool_size': items[2]}
+        return {"pool_size": self._extract_value(items[2])}
 
     def named_dropout(self, items):
-        return {"dropout": items[2]}
+        return {"dropout": self._extract_value(items[2])}
+
+    def named_return_sequences(self, items):
+        return {"return_sequences": self._extract_value(items[2])}
+
+    def named_num_heads(self, items):
+        return {"num_heads": self._extract_value(items[2])}
+
+    def named_ff_dim(self, items):
+        return {"ff_dim": self._extract_value(items[2])}
+
+    def named_input_dim(self, items):
+        return {"input_dim": self._extract_value(items[2])}
+
+    def named_output_dim(self, items):
+        return {"output_dim": self._extract_value(items[2])}
+
+    def groups_param(self, items):
+        return {'groups': self._extract_value(items[2])}
+
+    def epochs_param(self, items):
+        return {'epochs': self._extract_value(items[0])}
+
+    def batch_size_param(self, items):
+        return {'batch_size': self._extract_value(items[0])}
+
+    def device_param(self, items):
+        return {'device': self._extract_value(items[0])}
+
+    def paper_param(self, items):
+        return self._extract_value(items[0])
+
+    def accuracy_param(self, items):
+        return {'accuracy': self._extract_value(items[0])}
+
+    def loss_param(self, items):
+        return {'loss': self._extract_value(items[0])}
+
+    def precision_param(self, items):
+        return {'precision': self._extract_value(items[0])}
+
+    def recall_param(self, items):
+        return {'recall': self._extract_value(items[0])}
 
 
     ### End named_params ################################################
