@@ -141,7 +141,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         layer_norm_layer: "LayerNormalization(" ")"
         instance_norm_layer: "InstanceNormalization(" ")"
         group_norm_layer: "GroupNormalization(" groups_param ")"
-        groups_param: "groups=" INT
+        groups_param: "groups" "=" INT
 
         # Basic layer types
         dense_layer: "Dense(" (named_params | ordered_params) ")"
@@ -197,8 +197,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         # Attention and transformer mechanisms
         attention_layer: "Attention" "(" ")"
         transformer_layer: "TransformerEncoder" "(" heads_param "," dim_param ")"
-        heads_param: "num_heads=" INT
-        dim_param: "ff_dim=" INT
+        heads_param: "num_heads" "=" INT
+        dim_param: "ff_dim" "=" INT
 
         # Advanced architecture layers
         residual_layer: "ResidualConnection" "(" ")"
@@ -1255,8 +1255,6 @@ def generate_code(model_data,backend):
 
             elif layer_type in ['Attention', 'TransformerEncoder', 'ResidualConnection', 'InceptionModule', 'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
                 print(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for PyTorch might require manual implementation. Skipping layer code generation for now.")
-                continue
-
             else:
                 raise ValueError(f"Unsupported layer type: {layer_type} for PyTorch backend.")
 
