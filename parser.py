@@ -198,19 +198,26 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Attention and transformer mechanisms
         attention_layer: "Attention(" named_params ")"
-        transformer_layer: "TransformerEncoder(" named_params ")"
+        transformer_layer: "Transformer(" named_params ")" | "TransformerEncoder(" named_params ")" | "TransformerDecoder(" named_params ")"
 
         # Advanced architecture layers
-        residual_layer: "ResidualConnection(" named_params ")"
-        inception_layer: "InceptionModule(" named_params ")"
-        capsule_layer: "CapsuleLayer(" named_params ")"
+        residual_layer: "Residual(" named_params ")"  # Shortened for consistency
+        inception_layer: "Inception(" named_params ")"  # Shortened for consistency
+        capsule_layer: "Capsule(" named_params ")"  # Shortened for consistency
         squeeze_excitation_layer: "SqueezeExcitation(" named_params ")"
-        graph_conv_layer: "GraphConv(" named_params ")"
-        embedding_layer: "Embedding" "(" named_params ")"
-
-        # Special purpose layers
+        graph_layer: "GraphConv(" named_params ")" | "GraphAttention(" named_params ")"  # Added GraphAttention
+        embedding_layer: "Embedding(" named_params ")"
         quantum_layer: "QuantumLayer(" named_params ")"
         dynamic_layer: "DynamicLayer(" named_params ")"
+        noise_layer: "GaussianNoise(" named_params ")" | "GaussianDropout(" named_params ")" | "AlphaDropout(" named_params ")"
+        normalization_layer: "BatchNormalization(" named_params ")" | "LayerNormalization(" named_params ")" | "InstanceNormalization(" named_params ")" | "GroupNormalization(" named_params ")"
+        regularization_layer: "Dropout(" named_params ")" | "SpatialDropout1D(" named_params ")" | "SpatialDropout2D(" named_params ")" | "SpatialDropout3D(" named_params ")" | "ActivityRegularization(" named_params ")" | "L1L2(" named_params ")"
+
+        custom_layer: NAME "(" named_params ")"  # Allow any custom layer name
+
+        activation_layer: activation_with_params | activation_without_params
+        activation_with_params: "Activation(" ESCAPED_STRING "," named_params ")" # e.g., Activation("leaky_relu", alpha=0.3)
+        activation_without_params: "Activation(" ESCAPED_STRING ")" # e.g., Activation("relu")
 
         # Training configuration block
         training_config: "train" "{" training_params "}"
