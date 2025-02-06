@@ -1,6 +1,6 @@
 import lark
 from lark import Tree, Transformer, Token
-from typing import Any, Dict, List, Tuple, Union, Optional
+from typing import Any, Dict, List, Tuple, Union, Optional, Callable
 
 def create_parser(start_rule: str = 'network') -> lark.Lark:
     """
@@ -20,7 +20,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         %import common.SIGNED_NUMBER -> NUMBER
         %import common.WS_INLINE             # Inline whitespace
         %import common.INT
-        %import common.BOOL                  # Boolean values
         %import common.CNAME -> NAME         # Names/identifiers
         %import common.FLOAT                 # Floating poNUMBER numbers
         %import common.ESCAPED_STRING        # Quoted strings
@@ -36,19 +35,20 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Parameter & Properties
         named_params: named_param ("," named_param)*
+        value: ESCAPED_STRING | tuple_ | number | BOOL  
         activation_param: "activation" "=" ESCAPED_STRING
         ordered_params: value ("," value)* 
-        value: NUMBER | ESCAPED_STRING | tuple_ | BOOL
-        tuple_: "(" WS_INLINE* NUMBER WS_INLINE* "," WS_INLINE* NUMBER WS_INLINE* ")"
+        tuple_: "(" WS_INLINE* number WS_INLINE* "," WS_INLINE* number WS_INLINE* ")"  
+        number: NUMBER  
         BOOL: "true" | "false"
 
         # name_param rules
         bool_value: BOOL  // Example: true or false
         named_return_sequences: "return_sequences" "=" bool_value
         named_units: "units" "=" NUMBER  // Example: units=64
-        named_activation: "activation" "=" ESCAPED_STRING  // Example: activation="relu"
+        named_activation: "activation" "=" ESCAPED_STRING  
         named_filters: "filters" "=" NUMBER  // Example: filters=32
-        named_kernel_size: "kernel_size" "=" value  // Example: kernel_size=(3, 3) or kernel_size=3
+        named_kernel_size: "kernel_size" "=" value  
         named_strides: "strides" "=" value  // Example: strides=(1, 1) or strides=1
         named_padding: "padding" "=" value  // Example: padding="same" or padding="valid"
         named_dilation_rate: "dilation_rate" "=" value  // Example: dilation_rate=(2, 2) or dilation_rate=2
@@ -110,17 +110,16 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_causal: "causal" "=" BOOL // Example: causal=false
         named_use_scale: "use_scale" "=" BOOL // Example: use_scale=true
         named_key_dim: "key_dim" "=" NUMBER // Example: key_dim=64
-        named_value_dim: "value_dim" "=" NUMBER // Example: value_dim=128
-        named_output_shape: "output_shape" "=" value // Example: output_shape=(256,)
-        named_arguments: "arguments" "=" value // Example: arguments={...}
-        named_initializer: "initializer" "=" ESCAPED_STRING // Example: initializer="orthogonal"
-        named_regularizer: "regularizer" "=" ESCAPED_STRING // Example: regularizer="l1_l2"
-        named_constraint: "constraint" "=" ESCAPED_STRING // Example: constraint="unit_norm"
-        named_l1: "l1" "=" FLOAT // Example: l1=0.01
-        named_l2: "l2" "=" FLOAT // Example: l2=0.001
-        named_l1_l2: "l1_l2" "=" tuple_ // Example: l1_l2=(0.01, 0.001)
-        ?named_param: named_units | named_activation | named_filters | named_kernel_size | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_pool_size | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_data_format | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2
-        
+        named_value_dim: "value_dim" "=" NUMBER 
+        named_output_shape: "output_shape" "=" value 
+        named_arguments: "arguments" "=" value 
+        named_initializer: "initializer" "=" ESCAPED_STRING 
+        named_regularizer: "regularizer" "=" ESCAPED_STRING 
+        named_constraint: "constraint" "=" ESCAPED_STRING
+        named_l1: "l1" "=" FLOAT  // Example: l1=0.01
+        named_l2: "l2" "=" FLOAT  // Example: l2=0.001
+        named_l1_l2: "l1_l2" "=" tuple_  // Example: l1_l2=(0.01, 0.001)
+        ?named_param: (named_units | named_activation | named_filters | named_kernel_size | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_pool_size | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2)
         # Layer parameter styles
         ?param_style1: named_params    // Dense(units=128, activation="relu")
                     | ordered_params   // Dense(128, "relu")
@@ -136,19 +135,25 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         # Shape can contain multiple dimensions, each being a number or None
         shape: number_or_none ("," number_or_none)*
         # Dimensions can be specific NUMBERegers or None (for variable dimensions)
-        number_or_none: NUMBER | "None"
+        number_or_none: number | "None"
 
         # Layers section - contains all layer definitions separated by newlines
         layers: "layers" ":" _NL* layer+ _NL*
 
         # All possible layer types that can be used in the network
-        ?layer: basic | recurrent | advanced | activation | merge | noise | normalization | regularization | custom | wrapper | lambda_ // Added wrapper for layers like TimeDistributed
+        ?layer: (basic | recurrent | advanced | activation | merge | noise | normalization | regularization | custom | wrapper | lambda_ )  
         lambda_: "Lambda(" ESCAPED_STRING ")"
-        wrapper: wrapper_layer_type "(" layer "," named_params ")"
-        wrapper_layer_type: "TimeDistributed" | "Bidirectional"
+        wrapper: wrapper_layer_type "(" layer "," named_params ")"  
+        wrapper_layer_type: "TimeDistributed" 
 
         # Basic layers group
         ?basic: conv | pooling | dropout | flatten | dense | output
+        dropout: "Dropout(" named_params ")"
+
+        regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2 
+        l1: "L1(" named_params ")"
+        l2: "L2(" named_params ")"
+        l1_l2: "L1L2(" named_params ")" 
 
 
         # Output layer 
@@ -195,9 +200,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         adaptive_average_pooling2d: "AdaptiveAveragePooling2D(" named_params ")"
         adaptive_average_pooling3d: "AdaptiveAveragePooling3D(" named_params ")"
 
-        # Dropout layer for regularization
-        dropout: "Dropout(" named_params ")"
-
         # Normalization layers
         ?norm_layer: batch_norm | layer_norm | instance_norm | group_norm
         batch_norm: "BatchNormalization(" named_params ")"
@@ -211,16 +213,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         flatten: "Flatten(" named_params ")"
 
         # Recurrent layers section - includes all RNN variants
-        ?recurrent: rnn | bidirectional | conv_rnn | rnn_cell
+        ?recurrent: rnn | bidirectional_rnn | conv_rnn | rnn_cell  
+        bidirectional_rnn: "Bidirectional(" rnn "," named_params ")" 
         rnn: simple_rnn | lstm | gru
         simple_rnn: "SimpleRNN(" named_params ")"
         lstm: "LSTM(" named_params ")"
         gru: "GRU(" named_params ")"
 
-        bidirectional: bidirectional_simple_rnn | bidirectional_lstm | bidirectional_gru
-        bidirectional_simple_rnn: "Bidirectional(SimpleRNN(" named_params "))"
-        bidirectional_lstm: "Bidirectional(LSTM(" named_params "))"
-        bidirectional_gru: "Bidirectional(GRU(" named_params "))"
 
         conv_rnn: conv_lstm | conv_gru
         conv_lstm: "ConvLSTM2D(" named_params ")"
@@ -285,12 +284,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         instance_normalization: "InstanceNormalization(" named_params ")"
         group_normalization: "GroupNormalization(" named_params ")"
 
-        regularization: dropout | spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1_l2
         spatial_dropout1d: "SpatialDropout1D(" named_params ")"
         spatial_dropout2d: "SpatialDropout2D(" named_params ")"
         spatial_dropout3d: "SpatialDropout3D(" named_params ")"
         activity_regularization: "ActivityRegularization(" named_params ")"
-        l1_l2: "L1L2(" named_params ")"
 
         custom: NAME "(" named_params ")"
 
@@ -359,6 +356,9 @@ class ModelTransformer(lark.Transformer):
 
     def output(self, items):
         return {'type': 'Output', 'params': items[0]}
+    
+    def regularization(self, items):  # Added method to handle regularization layers
+        return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
 
     ### Convolutional Layers ####################
     def conv1d(self, items):
@@ -495,20 +495,19 @@ class ModelTransformer(lark.Transformer):
     def simple_rnn(self, items):
         return {'type': 'SimpleRNN', 'params': items[0]}
     
-    def bidirectional_simple_rnn(self, items):
-        return {'type': 'Bidirectional(SimpleRNN)', 'params': items[0]}
 
-    def bidirectional_lstm(self, items):
-        return {'type': 'Bidirectional(LSTM)', 'params': items[0]}
-
-    def bidirectional_gru(self, items):
-        return {'type': 'Bidirectional(GRU)', 'params': items[0]}
     
     def conv_lstm(self, items):
         return {'type': 'ConvLSTM2D', 'params': items[0]}
 
     def conv_gru(self, items):
         return {'type': 'ConvGRU2D', 'params': items[0]}
+
+    def bidirectional_rnn(self, items):
+        rnn_layer = items[0]
+        bidirectional_params = items[1]
+        rnn_layer['params'].update(bidirectional_params)  # Merge params
+        return {'type': f"Bidirectional({rnn_layer['type']})", 'params': rnn_layer['params']}
 
     def cudnn_gru_layer(self, items):  # No such thing as CuDNNGRU in PyTorch
         return {'type': 'GRU', 'params': items[0]}
@@ -612,6 +611,11 @@ class ModelTransformer(lark.Transformer):
         elif isinstance(value, Token) and value.type == 'BOOL':
             value = value.value == 'true'
         return {name: value}
+    
+    def number_or_none(self, items):
+        if items[0].value.lower() == 'none':
+            return None
+        return int(items[0])  # Convert to int after checking for 'none'
 
     def named_params(self, items):
         params = {}
@@ -696,7 +700,7 @@ class ModelTransformer(lark.Transformer):
         return {'output_dim': items[2]}
 
     def number(self, items):
-        return eval(items[0].value)
+        return float(items[0]) if '.' in items[0] else int(items[0])
 
     def named_filters(self, items):
         return {'filters': items[2]}
@@ -729,7 +733,7 @@ class ModelTransformer(lark.Transformer):
         return {"dropout": items[2]}
 
 
-    #End named_params ################################################
+    ### End named_params ################################################
 
     ### Advanced layers ###############################
     
@@ -865,7 +869,18 @@ class ModelTransformer(lark.Transformer):
 
 ### Shape Propagation ##########################
 
-def propagate_shape(input_shape: Tuple[Optional[NUMBER], ...], layer: Dict[str, Any]) -> Tuple[Optional[NUMBER], ...]:
+import os
+import numpy as np
+import lark
+from numbers import Number
+
+def NUMBER(x):
+    try:
+        return int(x)
+    except ValueError:
+        return float(x)
+
+def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any]) -> Tuple[Optional[int], ...]:
     """
     Propagates the input shape through a neural network layer to calculate the output shape.
     Supports various layer types and handles shape transformations accordingly.
@@ -1132,10 +1147,10 @@ def generate_code(model_data,backend):
                 groups = params.get('groups')
                 if groups is None:
                     raise ValueError("GroupNormalization layer config missing 'groups'.")
-                code += f"{indent}tf.keras.layers.GroupNormalization(groups={groups}),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
-
-            elif layer_type in ['LSTM', 'GRU', 'SimpleRNN', 'Bidirectional', 'CuDNNLSTM', 'CuDNNGRU']:
+                elif layer_type == 'CuDnnLSTM':
+                    tf_layer_name = 'CuDnnLSTM'
+                elif layer_type == 'CuDnnGRU':
+                    tf_layer_name = 'CuDnnGRU'
                 units = params.get('units')
                 return_sequences = params.get('return_sequences', False)
                 if units is None:
@@ -1159,7 +1174,7 @@ def generate_code(model_data,backend):
                 code += f"{indent}tf.keras.layers.Embedding(input_dim={input_dim}, output_dim={output_dim}),\n"
                 current_input_shape = propagate_shape(current_input_shape, layer_config)
 
-            elif layer_type == 'Attention':
+                print(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for TensorFlow might require manual implementation. Skipping layer code generation for now.")
                 code += f"{indent}tf.keras.layers.Attention(),\n"
                 current_input_shape = propagate_shape(current_input_shape, layer_config)
 
@@ -1170,7 +1185,7 @@ def generate_code(model_data,backend):
                 current_input_shape = propagate_shape(current_input_shape, layer_config)
 
             elif layer_type in ['ResidualConnection', 'InceptionModule', 'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'QuantumLayer', 'DynamicLayer']:
-                prNUMBER(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for TensorFlow might require manual implementation. Skipping layer code generation for now.")
+                NUMBER(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for TensorFlow might require manual implementation. Skipping layer code generation for now.")
                 continue
 
             else:
@@ -1288,37 +1303,30 @@ def generate_code(model_data,backend):
 
             elif layer_type == 'BatchNormalization':
                 layers_code.append(f"{layer_name}_bn = nn.BatchNorm2d(num_features={current_input_shape[-1]})")
-                forward_code_body.append(f"x = self.layer{i+1}_bn(x)")
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
-
-            elif layer_type in ['LSTM', 'GRU', 'SimpleRNN', 'CuDNNLSTM', 'CuDNNGRU']:
+            elif layer_type in ['CuDNNLSTM', 'CuDNNGRU', 'SimpleRNN']:
+                if layer_type == 'CuDNNLSTM':
+                    torch_layer_name = 'LSTM'
+                elif layer_type == 'CuDNNGRU':
+                    torch_layer_name = 'GRU'
+                elif layer_type == 'SimpleRNN':
+                    torch_layer_name = 'RNN'
                 units = params.get('units')
                 return_sequences = params.get('return_sequences', False)
                 if units is None:
                     raise ValueError(f"{layer_type} layer config missing 'units'.")
-                torch_layer_name = layer_type
-                if layer_type == 'SimpleRNN':
-                    torch_layer_name = 'RNN'
-                elif layer_type == 'CuDNNLSTM':
-                    torch_layer_name = 'LSTM'
-                elif layer_type == 'CuDNNGRU':
-                    torch_layer_name = 'GRU'
-
+                print(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for PyTorch might require manual implementation. Skipping layer code generation for now.")
                 layers_code.append(f"{layer_name}_rnn = nn.{torch_layer_name}(input_size={current_input_shape[-1]}, hidden_size={units}, batch_first=True, bidirectional=False)")
                 forward_code_body.append(f"x, _ = self.layer{i+1}_rnn(x)")
                 current_input_shape = propagate_shape(current_input_shape, layer_config)
-
             elif layer_type == 'Flatten':
                 layers_code.append(f"{layer_name}_flatten = nn.Flatten(start_dim=1)")
                 forward_code_body.append(f"x = self.layer{i+1}_flatten(x)")
                 current_input_shape = propagate_shape(current_input_shape, layer_config)
-
             elif layer_type in ['Attention', 'TransformerEncoder', 'ResidualConnection', 'InceptionModule', 'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
-                prNUMBER(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for PyTorch might require manual implementation. Skipping layer code generation for now.")
+                NUMBER(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for PyTorch might require manual implementation. Skipping layer code generation for now.")
             else:
                 raise ValueError(f"Unsupported layer type: {layer_type} for PyTorch backend.")
-
-        code += indent + indent + "# Layer Definitions\n"
+                code += indent + indent + "# Layer Definitions\n"
         for layer_init_code in layers_code:
             code += indent + indent + layer_init_code + "\n"
         code += "\n"
@@ -1326,8 +1334,8 @@ def generate_code(model_data,backend):
         code += indent + "def forward(self, x):\n"
         code += indent + indent + "# Forward Pass\n"
         code += indent + indent + "batch_size, h, w, c = x.size()\n"
-        for forward_op in forward_code_body:
-            code += indent + indent + forward_op + "\n"
+        if loss_value.lower() in {'categorical_crossentropy', 'sparse_categorical_crossentropy'}:
+            loss_fn_code = "loss_fn = nn.CrossEntropyLoss()"
         code += indent + indent + "return x\n"
 
         code += "model = NeuralNetworkModel()\n"
@@ -1343,7 +1351,7 @@ def generate_code(model_data,backend):
             loss_fn_code = "loss_fn = nn.MSELoss()"
         else:
             loss_fn_code = f"loss_fn = nn.{loss_value}()"
-            prNUMBER(f"Warning: Loss function '{loss_value}' might not be directly supported in PyTorch. Verify the name and compatibility.")
+            NUMBER(f"Warning: Loss function '{loss_value}' might not be directly supported in PyTorch. Verify the name and compatibility.")
 
         code += loss_fn_code + "\n"
         code += f"optimizer = optim.{optimizer_value}(model.parameters(), lr=0.001)\n\n"
@@ -1367,18 +1375,16 @@ def generate_code(model_data,backend):
             code += indent + indent + "if batch_idx % 100 == 0:\n"
             code += indent + indent + indent + f"prNUMBER('Epoch: {{epoch+1}} [{{batch_idx*len(data)}}/{{len(train_loader.dataset)}} ({{100.*batch_idx/len(train_loader):.0f}}%)]\\tLoss: {{loss.item():.6f}}')\n"
             code += "prNUMBER('Finished Training')\n"
-
         else:
             code += "# No training configuration provided. Training loop needs manual implementation.\n"
-
-        return code
-
+            return code
+    
     else:
         raise ValueError(f"Unsupported backend: {backend}. Choose 'tensorflow' or 'pytorch'.")
 
 def save_file(filename: str, content: str) -> None:
     """
-    Saves the provided content to a file.
+    print(f"Successfully saved file: {filename}")
 
     Args:
         filename (str): The path to the file to save.
@@ -1389,14 +1395,14 @@ def save_file(filename: str, content: str) -> None:
             f.write(content)
     except Exception as e:
         raise IOError(f"Error writing file: {filename}. {e}") from e
-    prNUMBER(f"Successfully saved file: {filename}")
+    NUMBER(f"Successfully saved file: {filename}")
     return None
 
 
 def load_file(filename: str) -> Tree:
     """
     Loads and parses a neural network or research file based on its extension.
-
+    if not os.path.exists(filename):
     Args:
         filename (str): The path to the file to load.
 
@@ -1410,14 +1416,13 @@ def load_file(filename: str) -> Tree:
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File not found: {filename}")
 
-    try:
-        with open(filename, 'r') as f:
-            content = f.read()
-    except Exception as e:
-        raise IOError(f"Error reading file: {filename}. {e}") from e
-
-    if filename.endswith(('.neural', '.nr')):
-        parser = network_parser # Use network parser for .neural and .nr files
+        try:
+            with open(filename, 'r') as f:
+                content = f.read()
+        except Exception as e:
+            raise IOError(f"Error reading file: {filename}. {e}") from e
+            return parser.parse(content)
+            parser = network_parser # Use network parser for .neural and .nr files
     elif filename.endswith('.rnr'):
         parser = research_parser # Use research parser for .rnr files
     elif filename.endswith('.layer'):
@@ -1425,9 +1430,9 @@ def load_file(filename: str) -> Tree:
     else:
         raise ValueError(f"Unsupported file type: {filename}. Supported types are .neural, .nr, .rnr, .layer.")
 
-    try:
-        parse_tree = parser.parse(content)
-        return parse_tree
-    except lark.exceptions.LarkError as e: # Catch parsing errors specifically
-        raise ValueError(f"Parsing error in file: {filename}. {e}") from e
+        try:
+            parse_tree = parser.parse(content)
+            return parse_tree
+        except lark.exceptions.LarkError as e: # Catch parsing errors specifically
+            raise ValueError(f"Parsing error in file: {filename}. {e}") from e
 
