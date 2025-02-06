@@ -46,6 +46,10 @@
 
 05 02 25
 - Debugging all day, great improvements but still bugs.
+06 02 25
+- 15h of Debugging (Still, some errors)
+- 
+
 
 - Creating executable neural files
 - Neural Syntax
