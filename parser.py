@@ -280,17 +280,15 @@ class ModelTransformer(lark.Transformer):
     def output_layer(self, items):
         return {'type': 'Output', 'params': items[0]}
 
+    ### Convolutional Layers ####################
+    def conv1d_layer(self, items):
+        return {'type': 'Conv1D', 'params': items[0]}
+
     def conv2d_layer(self, items):
-        if isinstance(items[0], list):
-            # Ordered params: filters, kernel_size (h, w), activation
-            params = {
-                'filters': items[0][0],
-                'kernel_size': (items[0][1], items[0][2]),
-                'activation': items[0][3].strip('"') if len(items[0]) > 3 else None
-            }
-        else:
-            params = items[0]
-        return {'type': 'Conv2D', 'params': params}
+        return {'type': 'Conv2D', 'params': items[0]}
+
+    def conv3d_layer(self, items):
+        return {'type': 'Conv3D', 'params': items[0]}
     
 
     def dense_layer(self, items):
@@ -321,9 +319,53 @@ class ModelTransformer(lark.Transformer):
 
     def shape(self, items):
         return tuple(items)
+    
+    ### Pooling Layers #############################
+
+    def max_pooling1d_layer(self, items):
+        return {'type': 'MaxPooling1D', 'params': items[0]}
 
     def max_pooling2d_layer(self, items):
-        return {"type": "MaxPooling2D", "params": items[0]}
+        return {'type': 'MaxPooling2D', 'params': items[0]}
+
+    def max_pooling3d_layer(self, items):
+        return {'type': 'MaxPooling3D', 'params': items[0]}
+    
+    def max_pooling1d_layer(self, items):
+        return {'type': 'MaxPooling1D', 'params': items[0]}
+
+    def max_pooling2d_layer(self, items):
+        return {'type': 'MaxPooling2D', 'params': items[0]}
+
+    def max_pooling3d_layer(self, items):
+        return {'type': 'MaxPooling3D', 'params': items[0]}
+
+    def global_max_pooling1d_layer(self, items):
+        return {'type': 'GlobalMaxPooling1D', 'params': items[0]}
+
+    def global_max_pooling2d_layer(self, items):
+        return {'type': 'GlobalMaxPooling2D', 'params': items[0]}
+
+    def global_max_pooling3d_layer(self, items):
+        return {'type': 'GlobalMaxPooling3D', 'params': items[0]}
+    
+    def adaptive_max_pooling1d_layer(self, items):
+        return {'type': 'AdaptiveMaxPooling1D', 'params': items[0]}
+
+    def adaptive_max_pooling2d_layer(self, items):
+        return {'type': 'AdaptiveMaxPooling2D', 'params': items[0]}
+
+    def adaptive_max_pooling3d_layer(self, items):
+        return {'type': 'AdaptiveMaxPooling3D', 'params': items[0]}
+
+    def adaptive_average_pooling1d_layer(self, items):
+        return {'type': 'AdaptiveAveragePooling1D', 'params': items[0]}
+
+    def adaptive_average_pooling2d_layer(self, items):
+        return {'type': 'AdaptiveAveragePooling2D', 'params': items[0]}
+
+    def adaptive_average_pooling3d_layer(self, items):
+        return {'type': 'AdaptiveAveragePooling3D', 'params': items[0]}
 
     # End Basic Layers & Properties #########################
 
@@ -344,18 +386,38 @@ class ModelTransformer(lark.Transformer):
 
     def gru_layer(self, items):
         return {'type': 'GRU', 'params': items[0]}
+    
+    ### Recurrent Layers ############
 
     def simple_rnn_layer(self, items):
         return {'type': 'SimpleRNN', 'params': items[0]}
 
-    def cudnn_lstm_layer(self, items):
-        return {'type': 'CuDNNLSTM', 'params': items[0]}
+    def cudnn_lstm_layer(self, items):  # No such thing as CuDNNLSTM in PyTorch
+        return {'type': 'LSTM', 'params': items[0]}  # Use regular LSTM
 
-    def cudnn_gru_layer(self, items):
-        return {'type': 'CuDNNGRU', 'params': items[0]}
+    def cudnn_gru_layer(self, items):  # No such thing as CuDNNGRU in PyTorch
+        return {'type': 'GRU', 'params': items[0]}
+
+    def bidirectional_simple_rnn_layer(self, items):
+        return {'type': 'Bidirectional(SimpleRNN)', 'params': items[0]}
+
+    def bidirectional_lstm_layer(self, items):
+        return {'type': 'Bidirectional(LSTM)', 'params': items[0]}
+
+    def bidirectional_gru_layer(self, items):
+        return {'type': 'Bidirectional(GRU)', 'params': items[0]}
+
+    def conv_lstm_layer(self, items):
+        return {'type': 'ConvLSTM2D', 'params': items[0]}
+
+    def conv_gru_layer(self, items):
+        return {'type': 'ConvGRU2D', 'params': items[0]}
 
     def rnn_cell_layer(self, items):
         return {'type': 'RNNCell', 'params': items[0]}
+    
+    def simple_rnn_cell_layer(self, items):
+        return {'type': 'SimpleRNNCell', 'params': items[0]}
 
     def lstm_cell_layer(self, items):
         return {'type': 'LSTMCell', 'params': items[0]}
@@ -520,10 +582,8 @@ class ModelTransformer(lark.Transformer):
     def named_output_dim(self, items):
         return {'output_dim': items[2]}
 
-    def number_or_none(self, items):
-        if items[0].value.lower() == 'none':  # Case-insensitive check
-            return None
-        return eval(items[0].value)    # Evaluate the number
+    def number(self, items):
+        return eval(items[0].value)
 
     def named_filters(self, items):
         return {'filters': items[2]}
@@ -559,6 +619,30 @@ class ModelTransformer(lark.Transformer):
     #End named_params ################################################
 
     ### Advanced layers ###############################
+    
+    def graph_layer(self, items):
+        if items[0].data == 'graph_conv':
+            return {'type': 'GraphConv', 'params': items[0].children[0]}
+        elif items[0].data == 'graph_attention':
+            return {'type': 'GraphAttention', 'params': items[0].children[0]}
+
+    def noise_layer(self, items):
+        return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
+
+    def normalization_layer(self, items):
+        return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
+
+    def regularization_layer(self, items):
+        return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
+
+    def custom_layer(self, items):
+        return {'type': items[0], 'params': items[1]}
+
+    def activation_layer(self, items):
+        activation_type = items[0].value.strip('"')
+        params = items[1] if len(items) > 1 else {}
+        return {'type': 'Activation', 'activation': activation_type, 'params': params}
+    
     def capsule_layer(self, items):
         return {'type': 'CapsuleLayer', 'params': items[0]}
 
@@ -572,7 +656,12 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'QuantumLayer', 'params': items[0]}
 
     def transformer_layer(self, items):
-        return {'type': 'TransformerEncoder', 'params': items[0]}
+        if items[0].data == 'transformer_encoder':
+            return {'type': 'TransformerEncoder', 'params': items[0].children[0]}
+        elif items[0].data == 'transformer_decoder':
+            return {'type': 'TransformerDecoder', 'params': items[0].children[0]}
+        else:  # Handle the base 'Transformer' case
+            return {'type': 'Transformer', 'params': items[0].children[0]}
 
     def embedding_layer(self, items):
         return {'type': 'Embedding', 'params': items[0]}
