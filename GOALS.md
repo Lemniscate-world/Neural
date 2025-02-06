@@ -49,7 +49,7 @@
 06 02 25
 - 15h of Debugging (Still, some errors)
 - Enhance and test the research paper creation of neural
-
+- Then debugging again.
 
 - Creating executable neural files
 - Neural Syntax
