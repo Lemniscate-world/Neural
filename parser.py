@@ -611,8 +611,11 @@ class ModelTransformer(lark.Transformer):
         value = items[2]
         if isinstance(value, Tree) and value.data == 'tuple_':
             value = self.tuple_(value.children)
-        elif isinstance(value, Token) and value.type == 'BOOL':
-            value = value.value == 'true'
+        elif isinstance(value, Token):
+            if value.type == 'BOOL':
+                value = value.value.lower() == 'true'
+            elif value.type in ('INT', 'FLOAT', 'NUMBER'):
+                value = eval(value.value)  # Evaluate numeric tokens
         return {name: value}
     
     def number_or_none(self, items):
