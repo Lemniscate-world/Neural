@@ -45,6 +45,7 @@
 - Create very basic deepseek model with neural and even fine-tune to showcase all neural functionalities.and in the same time testing if they are working.
 
 05 02 25
+- Debugging all day, great improvements but still bugs.
 
 - Creating executable neural files
 - Neural Syntax

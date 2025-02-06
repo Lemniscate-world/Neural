@@ -26,7 +26,7 @@ def transformer():
 
 
 @pytest.mark.parametrize(
-    "layer_string,expected",
+    "layer_string,expected,test_id",
     [
         ('Dense(128, "relu")', {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}}, "dense-relu"),
         ('Dense(units=256, activation="sigmoid")', {'type': 'Dense', 'params': {'units': 256, 'activation': 'sigmoid'}}, "dense-sigmoid"),
@@ -84,7 +84,7 @@ def transformer():
         "dense-invalid-units", "dropout-invalid-rate", "invalid-layer-name"
     ]
 )
-def test_layer_parsing(layer_parser, transformer, layer_string, expected, id):
+def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_id):
 
     # Act
     if expected is None:
