@@ -39,13 +39,14 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         nr_file: network
         rnr_file: research
 
-        # Parameter styles
+        # Parameter & Properties
         named_params: named_param ("," named_param)*
         activation_param: "activation=" ESCAPED_STRING
         ordered_params: value ("," value)* 
         named_rate: "rate=" FLOAT
         value: INT | FLOAT | ESCAPED_STRING | tuple
         tuple: "(" WS_INLINE* INT WS_INLINE* "," WS_INLINE* INT WS_INLINE* ")"
+        BOOL: "true" | "false"
 
         # name_param rules
         named_data_format: "data_format" "=" value 
@@ -59,9 +60,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_groups: "groups" "=" INT
         named_channels: "channels" "=" INT
         named_pool_size: "pool_size" "=" value
-        named_return_sequences: "return_sequences" "=" BOOL
-        BOOL: "true" -> True
-            | "false" -> False
+        named_return_sequences: "return_sequences" "=" bool_value
+        bool_value: BOOL -> bool
         named_num_heads: "num_heads" "=" INT
         named_ff_dim: "ff_dim" "=" INT
         named_input_dim: "input_dim" "=" INT
@@ -211,7 +211,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         dynamic_layer: "DynamicLayer" "(" ")"
 
         # Training configuration block
-        training_config: "train" "{" [epochs_param] [batch_size_param] "}"
+        training_config: "train" "{" training_params "}"
+        training_params: (epochs_param | batch_size_param)*
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" INT
 
@@ -508,6 +509,8 @@ class ModelTransformer(lark.Transformer):
             'params': items[0] if items else {}
         }
 
+    # NETWORK ACTIVATION ##############################
+
     def network(self, items: List[Any]) -> Dict[str, Any]:
         """Processes network file definition."""
         if len(items) < 6: # Minimum components: network name, input, layers, loss, optimizer, and potentially training config block
@@ -538,14 +541,14 @@ class ModelTransformer(lark.Transformer):
         return {
             'type': 'model',
             'name': name,
-            'input': input_layer_config, # Keep input config as nested dict
-            'layers': layers_config, # Layers is already a list of layer configs
+            'input': input_layer_config,
+            'layers': layers_config,
             'output_layer': output_layer,
             'output_shape': output_shape,
             'loss': loss_config,
             'optimizer': optimizer_config,
-            'training_config': training_config,
-            'execution_config': execution_config # Ensure execution config is included, default or parsed
+            'training_config': training_config or {}, # Default to empty dict if no training config
+            'execution_config': execution_config
         }
 
     # Parameters  #######################################################
@@ -698,22 +701,25 @@ class ModelTransformer(lark.Transformer):
                     raise ValueError(f"Invalid float value for dropout: {dropout_token.value}")
         return {} # Return empty dict if parsing fails or no dropout found
     
-    # Named_params ##################################################
+    # Named_params & Their Properties ##################################################
+
+    def bool_value(self, items):
+        return items[0].value == 'true'
 
     def named_return_sequences(self, items):
-        return {'return_sequences': items[2].value == 'true'}  # Access the boolean value
+        return {'return_sequences': items[2]}
 
-    def named_num_heads(self, items: List[Any]) -> Dict[str, int]:
-        return {'num_heads': self.visit(items[2])}
+    def named_num_heads(self, items):
+        return {'num_heads': int(items[2])}
 
-    def named_ff_dim(self, items: List[Any]) -> Dict[str, int]:
-        return {'ff_dim': self.visit(items[2])}
+    def named_ff_dim(self, items):
+        return {'ff_dim': int(items[2])}
 
-    def named_input_dim(self, items: List[Any]) -> Dict[str, int]:
-        return {'input_dim': self.visit(items[2])}
+    def named_input_dim(self, items):
+        return {'input_dim': int(items[2])}
 
-    def named_output_dim(self, items: List[Any]) -> Dict[str, int]:
-        return {'output_dim': self.visit(items[2])}
+    def named_output_dim(self, items):
+        return {'output_dim': int(items[2])}
 
     # Correct number_or_none method
     def number_or_none(self, items):
