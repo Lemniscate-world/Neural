@@ -48,6 +48,7 @@
 
 - Creating executable neural files
 - Enhance parallelization in neural
+- Arxiv and JOSS apI
 - Shape propagations and code generations in separate files
 - Add mathematics formulations to shape propagation on research paper and visualizations
 - Create parallelization layers and unique parallelization techniques
