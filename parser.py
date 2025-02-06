@@ -650,7 +650,12 @@ class ModelTransformer(lark.Transformer):
         return {"activation": self._extract_value(items[0])}
 
     def number(self, items):
-        return self._extract_value(items[0])
+        """Handles standalone numbers."""
+        return eval(items[0].value)  # Evaluate the number
+
+    def string(self, items):
+        """Handles standalone strings."""
+        return items[0].value.strip('"')
     
     def number_or_none(self, items):
         if items[0].value.lower() == 'none':
@@ -658,14 +663,21 @@ class ModelTransformer(lark.Transformer):
         return int(items[0])  # Convert to int after checking for 'none'
 
     def named_params(self, items):
+        """Handles named parameters, extracting values and converting to a dictionary."""
         params = {}
         for item in items:
             if isinstance(item, Tree):
                 item = self.visit(item)
-            params.update(item)
+            if isinstance(item, tuple):  # Handle tuple values directly assigned to kernel_size
+                params['kernel_size'] = item
+            elif isinstance(item, dict):
+                params.update(item)
+            elif isinstance(item, (int, float, str)):
+                params['filters'] = item  # Assign unnamed number to 'filters' for Conv layers
         return params
 
     def value(self, items):
+        """Extracts the value from different token types."""
         item = items[0]
         if isinstance(item, Tree) and item.data == 'tuple_':
             return self.tuple_(item.children)
@@ -673,11 +685,12 @@ class ModelTransformer(lark.Transformer):
             if item.type == 'ESCAPED_STRING':
                 return item.value.strip('"')
             elif item.type in ('NUMBER', 'FLOAT', 'BOOL'):
-                return eval(item.value)
+                return eval(item.value)  # Evaluate numeric and boolean literals
         return item
 
     def tuple_(self, items):
-        return tuple(eval(item.value) for item in items if isinstance(item, Token) and item.type == 'NUMBER')
+        """Extracts tuple values."""
+        return tuple(eval(item.value) for item in items if isinstance(item, Token) and item.type in ('NUMBER', 'FLOAT'))
     
     def groups_param(self, items):
         return {'groups': items[2]}
@@ -728,7 +741,8 @@ class ModelTransformer(lark.Transformer):
     
     def kernel_size_tuple(self, items):
         """Handles kernel size specified as a tuple directly."""
-        return {"kernel_size": self._extract_value(items[0])}
+        return self.tuple_(items)  # Directly return the tuple
+
 
 
     def named_filters(self, items):
