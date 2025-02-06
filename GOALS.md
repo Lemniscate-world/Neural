@@ -47,6 +47,7 @@
 05 02 25
 
 - Creating executable neural files
+- Neural Syntax
 - Enhance parallelization in neural
 - Arxiv and JOSS apI
 - Shape propagations and code generations in separate files
