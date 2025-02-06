@@ -613,23 +613,24 @@ class ModelTransformer(lark.Transformer):
 
     # Parameters  #######################################################
 
-    def named_param(self, items):
-        name = str(items[0])
-        value = items[2]
-
-        if isinstance(value, Tree) and value.data == 'tuple_':
-            value = self.tuple_(value.children)
-        elif isinstance(value, Token):
-            if value.type == 'BOOL':
-                value = value.value.lower() == 'true'
-            elif value.type in ('INT', 'FLOAT', 'NUMBER'):
-                try:  # Try converting to int or float
-                    value = int(value)
+    def _extract_value(self, item):  # Helper function to extract values from tokens and tuples
+        if isinstance(item, Token):
+            if item.type in ('INT', 'FLOAT', 'NUMBER', 'SIGNED_NUMBER'):
+                try:
+                    return int(item)
                 except ValueError:
-                    value = float(value)
-            elif value.type == "ESCAPED_STRING":
-                value = value.value.strip('"')  # Remove quotes from strings
-
+                    return float(item)
+            elif item.type == 'BOOL':
+                return item.value.lower() == 'true'
+            elif item.type == 'ESCAPED_STRING':
+                return item.value.strip('"')
+        elif isinstance(item, Tree) and item.data == 'tuple_':
+            return tuple(self._extract_value(child) for child in item.children)
+        return item
+    
+    def named_param(self, items):  # Corrected to use _extract_value and return a dictionary
+        name = str(items[0])
+        value = self._extract_value(items[2])  # Extract the value using the helper function
         return {name: value}
     
     def number_param(self, items):
