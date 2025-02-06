@@ -41,6 +41,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Parameter styles
         named_params: named_param ("," named_param)*
+        activation_param: "activation=" ESCAPED_STRING
         ordered_params: value ("," value)* 
         named_rate: "rate=" FLOAT
         value: INT | FLOAT | ESCAPED_STRING | tuple
@@ -58,12 +59,15 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_groups: "groups" "=" INT
         named_channels: "channels" "=" INT
         named_pool_size: "pool_size" "=" value
-        named_return_sequences: "return_sequences" "=" number_or_none
+        named_return_sequences: "return_sequences" "=" BOOL
+        BOOL: "true" -> True
+            | "false" -> False
         named_num_heads: "num_heads" "=" INT
         named_ff_dim: "ff_dim" "=" INT
         named_input_dim: "input_dim" "=" INT
         named_output_dim: "output_dim" "=" INT  
-        named_param:
+        named_dropout: "dropout:" FLOAT
+        ?named_param:
                     | named_units
                     | named_activation
                     | named_filters
@@ -116,12 +120,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
                     | norm_layer
 
 
-        # Output layer parameters
-        output_layer: "Output(" units_param "," activation_param ")"
-        units_param: "units=" INT
-        activation_param: "activation=" ESCAPED_STRING
+        # Output layer 
+        output_layer: "Output(" named_params "," named_activation ")"
 
-        # Convolutional layer parameters
+        # Convolutional layers 
         conv2d_layer: "Conv2D(" (named_params | ordered_params) ")"
 
         # Pooling layer parameters
@@ -159,28 +161,22 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
                         | dropout_wrapper_layer
 
         # Different types of RNN layers with optional return sequences parameter
-        lstm_layer: "LSTM(" "units=" INT ["," "return_sequences=" return_sequences] ")"
-        gru_layer: "GRU(" "units=" INT ["," "return_sequences=" return_sequences] ")"
-        simple_rnn_layer: "SimpleRNN(" units_param ["," return_sequences_param] ")"
-        cudnn_lstm_layer: "CuDNNLSTM(" units_param ["," return_sequences_param] ")"
-        cudnn_gru_layer: "CuDNNGRU(" units_param ["," return_sequences_param] ")"
+        lstm_layer: "LSTM(" named_params ")"
+        gru_layer: "GRU(" named_params ")"
+        simple_rnn_layer: "SimpleRNN(" named_params ")"
+        cudnn_lstm_layer: "CuDNNLSTM(" named_params ")"
+        cudnn_gru_layer: "CuDNNGRU(" named_params ")"
 
         # RNN cell variants - single-step RNN computations
-        rnn_cell_layer: "RNNCell(" units_param ")"
-        lstm_cell_layer: "LSTMCell(" units_param ")"
-        gru_cell_layer: "GRUCell(" units_param ")"
+        rnn_cell_layer: "RNNCell(" named_params ")"
+        lstm_cell_layer: "LSTMCell(" named_params ")"
+        gru_cell_layer: "GRUCell(" named_params ")"
 
         # Dropout wrapper layers for RNNs
         dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
-        simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" units_param "," dropout_param ")"
-        gru_dropout: "GRUDropoutWrapper" "(" units_param "," dropout_param ")"
-        lstm_dropout: "LSTMDropoutWrapper" "(" units_param "," dropout_param ")"
-        dropout_param: "dropout=" FLOAT
-
-        # Return sequences parameter for RNN layers
-        return_sequences_param: "return_sequences=" return_sequences
-        return_sequences: "true" -> true
-                    | "false" -> false
+        simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" named_params "," named_dropout ")"
+        gru_dropout: "GRUDropoutWrapper" "(" named_params "," named_dropout ")"
+        lstm_dropout: "LSTMDropoutWrapper" "(" named_params "," named_dropout ")"
 
         # Advanced layers group
         ?advanced_layer: attention_layer
@@ -207,8 +203,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         squeeze_excitation_layer: "SqueezeExcitation" "(" ")"
         graph_conv_layer: "GraphConv" "(" ")"
         embedding_layer: "Embedding" "(" input_dim_param "," output_dim_param ")"
-        input_dim_param: "input_dim=" INT
-        output_dim_param: "output_dim=" INT
+        input_dim_param: "input_dim" "=" INT
+        output_dim_param: "output_dim" "=" INT
 
         # Special purpose layers
         quantum_layer: "QuantumLayer" "(" ")"
@@ -288,6 +284,8 @@ class ModelTransformer(lark.Transformer):
 
         return {'type': layer_type, **params}
 
+    # Basic Layers & Properties ###################
+
     def input_layer(self, items):
         shape = tuple(items[0])
         return {'type': 'Input', 'shape': shape}
@@ -365,6 +363,16 @@ class ModelTransformer(lark.Transformer):
         """Processes the flatten layer definition."""
         return {'type': 'Flatten', 'params': {}} # Ensure 'params' is always present
 
+    def dropout_layer(self, items):
+        if isinstance(items[0], dict):
+            return {'type': 'Dropout', 'params': items[0]}  # named_rate case
+        elif isinstance(items[0], (int, float)):
+            return {'type': 'Dropout', 'params': {'rate': items[0]}}  # FLOAT case
+        # Handle Token case (FLOAT as token)
+        elif isinstance(items[0], Token) and items[0].type == 'FLOAT':
+            return {'type': 'Dropout', 'params': {'rate': float(items[0].value)}}
+        else:
+            return {'type': 'Dropout', 'params': {}}
 
     def training_config(self, items: List[Dict[str, int]]) -> Dict[str, Any]:
         """Processes the training configuration block."""
@@ -393,6 +401,7 @@ class ModelTransformer(lark.Transformer):
         params = items[0] if items else {} # items[0] is now the params dict
         return {"type": "MaxPooling2D", "params": params}
 
+    # End Basic Layers & Properties #########################
 
     def batch_norm_layer(self, items: List[Any]) -> Dict[str, str]: # No params, still needs 'params': {}
         """Processes the batch normalization layer definition."""
@@ -412,16 +421,15 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'GroupNormalization', 'params': params}
 
     def lstm_layer(self, items):
-        params = items[0]
+        params = items[0]  # Processed named_params dict
         return {'type': 'LSTM', 'params': params}
 
     def gru_layer(self, items):
         params = items[0]
         return {'type': 'GRU', 'params': params}
 
-    def simple_rnn_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Processes SimpleRNN layer definition."""
-        params = items[0] if items else {}
+    def simple_rnn_layer(self, items):
+        params = items[0]
         return {'type': 'SimpleRNN', 'params': params}
 
     def cudnn_lstm_layer(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -540,6 +548,45 @@ class ModelTransformer(lark.Transformer):
             'execution_config': execution_config # Ensure execution config is included, default or parsed
         }
 
+    # Parameters  #######################################################
+
+    def named_param(self, items):
+        if isinstance(items[2], Tree) and items[2].data == 'tuple_':
+            return {str(items[0]): self.tuple_(items[2].children)}
+        return {str(items[0]): items[2]}
+
+    def named_params(self, items: List[Any]) -> Dict[str, Any]:
+        """Processes named parameters, returning as a dictionary."""
+        params = {}
+        for item in items:
+            params.update(item)
+        return params
+
+    def ordered_params(self, items: List[Any]) -> List[Any]:
+        """Processes ordered parameters, returning as a list."""
+        return list(items)
+
+    def value(self, items):
+        item = items[0]
+        if isinstance(item, Tree) and item.data == 'tuple_':
+            return self.tuple_(item.children)
+        elif isinstance(item, Token):
+            if item.type == 'ESCAPED_STRING':
+                return item.value.strip('"')
+            elif item.type == 'INT':
+                return int(item.value)
+            elif item.type == 'FLOAT':
+                return float(item.value)
+            elif item.type == 'BOOL':
+                return bool(item.value) # Handle boolean values
+        return item
+
+    def tuple(self, items):
+        return tuple(int(item) for item in items if isinstance(item, Token) and item.type == 'INT')
+        
+
+    def groups_param(self, items):
+        return {'groups': int(items[2].value)}  # items[2] is the INT token after "groups" and "="
 
     def research_params(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Processes research parameters, merging metrics and references."""
@@ -609,134 +656,6 @@ class ModelTransformer(lark.Transformer):
             raise ValueError("Paper reference missing value.")
         return {'paper': self.extract_value(items[0])}
 
-
-    def named_params(self, items: List[Any]) -> Dict[str, Any]: # items can be List of Trees or mixed
-        """Processes named parameters, returning as a dictionary."""
-        print("\n--- named_params ---")
-        print(f"Items received in named_params: {items}")
-
-        param_dicts = [] # Initialize an empty list to collect parameter dictionaries
-        for item in items: # Iterate through the items received (which are children of 'named_params' tree)
-            if isinstance(item, Tree): # IMPORTANT: Check if item is a Tree (named_param subtree)
-                param_dict = self.visit(item) # VISIT each child TREE to transform named_param
-                param_dicts.append(param_dict) # Add the transformed dictionary to the list
-            # else: What to do if it's not a Tree? (Shouldn't happen based on grammar, but for robustness, can add error handling or ignore)
-
-        print(f"Collected param dicts in named_params: {param_dicts}") # Print the collected list of dictionaries
-        params = {}
-        for param_dict in param_dicts: # Now iterate through the *list of dictionaries*
-            if isinstance(param_dict, dict): # Double check it's a dict before updating
-                params.update(param_dict) # MERGE dictionaries into a single dictionary
-            else:
-                print(f"Warning: Unexpected non-dictionary item in param_dicts: {param_dict}") # Warning if not a dict
-
-        print(f"Merged params in named_params: {params}")
-        return params
-
-    def ordered_params(self, items: List[Any]) -> List[Any]:
-        """Processes ordered parameters, returning as a list."""
-        print("\n--- ordered_params ---") # Added print statement
-        print(f"Items received in ordered_params: {items}") # Added print statement
-        # visited_items = [self.visit(item) for item in items] # REMOVE this line
-        # print(f"Visited items in ordered_params: {visited_items}") # REMOVE this line
-        return items # Just return the items as they are already transformed in 'value'
-
-    def value(self, items):
-        if isinstance(items[0], Tree) and items[0].data == 'tuple':
-            return self.visit(items[0])
-        token = items[0]
-        if isinstance(token, Token):
-            if token.type == 'ESCAPED_STRING':
-                return token.value.strip('"')
-            elif token.type == 'INT':
-                return int(token.value)
-            elif token.type == 'FLOAT':
-                return float(token.value)
-        return super().value(items)
-
-    def tuple(self, items):
-        return (int(items[0].value), int(items[1].value))
-
-    def named_return_sequences(self, items: List[Token]) -> Dict[str, bool]:
-        return {'return_sequences': items[2].value == 'true'}
-
-    def named_num_heads(self, items: List[Any]) -> Dict[str, int]:
-        return {'num_heads': self.visit(items[2])}
-
-    def named_ff_dim(self, items: List[Any]) -> Dict[str, int]:
-        return {'ff_dim': self.visit(items[2])}
-
-    def named_input_dim(self, items: List[Any]) -> Dict[str, int]:
-        return {'input_dim': self.visit(items[2])}
-
-    def named_output_dim(self, items: List[Any]) -> Dict[str, int]:
-        return {'output_dim': self.visit(items[2])}
-
-    # Correct number_or_none method
-    def number_or_none(self, items):
-        token = items[0]
-        if token.value == 'None':
-            return None
-        return int(token.value)
-    
-    def named_filters(self, items):
-        return {'filters': int(items[0].value)}
-    
-    def named_activation(self, items):
-        return {'activation': items[0].value.strip('"')}
-    
-    def named_kernel_size(self, items):
-        return {'kernel_size': self.visit(items[2])}
-    
-    def named_padding(self, items):
-        return {'padding': items[2].value.strip('"')}
-    
-    def named_strides(self, items):
-        return {'strides': self.visit(items[2])}
-    
-    def named_rate(self, items):
-        return {'rate': float(items[0].value)}
-
-    def dropout_layer(self, items):
-        if isinstance(items[0], (int, float)):
-            return {'type': 'Dropout', 'params': {'rate': items[0]}}
-        return {'type': 'Dropout', 'params': items[0]}
-    
-    # Add methods for Output layer parameters
-    def units_param(self, items):
-        return {'units': int(items[0].value)}
-
-    def activation_param(self, items: List[Any]) -> Dict[str, str]:
-        return {'activation': items[0].value.strip('"')}
-
-    def output_layer(self, items):
-        params = {}
-        for item in items:
-            if isinstance(item, dict):
-                params.update(item)
-        return {'type': 'Output', 'params': params}
-
-    # Add methods for advanced layers
-    def capsule_layer(self, items):
-        return {'type': 'CapsuleLayer', 'params': {}}
-
-    def squeeze_excitation_layer(self, items):
-        return {'type': 'SqueezeExcitation', 'params': {}}
-
-    def graph_conv_layer(self, items):
-        return {'type': 'GraphConv', 'params': {}}
-
-    def quantum_layer(self, items):
-        return {'type': 'QuantumLayer', 'params': {}}
-    
-    def transformer_layer(self, items):
-        params = items[0]
-        return {'type': 'TransformerEncoder', 'params': params}
-    
-    def embedding_layer(self, items):
-        params = items[0]
-        return {'type': 'Embedding', 'params': params}
-
     def param_style1(self, items: List[Union[Dict[str, Any], List[Any]]]) -> Union[Dict[str, Any], List[Any]]:
         """Handles both named and ordered parameters styles."""
         if isinstance(items[0], dict):
@@ -778,15 +697,48 @@ class ModelTransformer(lark.Transformer):
                 except ValueError:
                     raise ValueError(f"Invalid float value for dropout: {dropout_token.value}")
         return {} # Return empty dict if parsing fails or no dropout found
+    
+    # Named_params ##################################################
 
-    def named_param(self, items: List[Any]) -> Dict[str, Any]: # Is this method even being called?
-        """Processes a single named parameter."""
-        print("\n--- named_param ---") # Added print statement - IS THIS PRINTING?
-        print(f"Items received in named_param: {items}") # Added print statement
-        # It should just return the dictionary created by named_units, named_activation etc.
-        if items:
-            return items[0] if isinstance(items[0], dict) else {} # Return first item if it's a dict
-        return {}
+    def named_return_sequences(self, items):
+        return {'return_sequences': items[2].value == 'true'}  # Access the boolean value
+
+    def named_num_heads(self, items: List[Any]) -> Dict[str, int]:
+        return {'num_heads': self.visit(items[2])}
+
+    def named_ff_dim(self, items: List[Any]) -> Dict[str, int]:
+        return {'ff_dim': self.visit(items[2])}
+
+    def named_input_dim(self, items: List[Any]) -> Dict[str, int]:
+        return {'input_dim': self.visit(items[2])}
+
+    def named_output_dim(self, items: List[Any]) -> Dict[str, int]:
+        return {'output_dim': self.visit(items[2])}
+
+    # Correct number_or_none method
+    def number_or_none(self, items):
+        token = items[0]
+        if token.value == 'None':
+            return None
+        return int(token.value)
+    
+    def named_filters(self, items):
+        return {'filters': int(items[0].value)}
+    
+    def named_activation(self, items):
+        return {'activation': items[0].value.strip('"')}
+    
+    def named_kernel_size(self, items):
+        return {'kernel_size': items[2]}
+    
+    def named_padding(self, items):
+        return {'padding': items[2].value.strip('"')}
+    
+    def named_strides(self, items):
+        return {'strides': self.visit(items[2])}
+    
+    def named_rate(self, items):
+        return {'rate': float(items[0].value)}
 
     def named_dilation_rate(self, items: List[Any]) -> Dict[str, Tuple[int, int]]:
         return {'dilation_rate': self.visit(items[2])}
@@ -794,8 +746,46 @@ class ModelTransformer(lark.Transformer):
     def named_groups(self, items: List[Any]) -> Dict[str, int]:
         return {'groups': self.visit(items[2])}
 
-    def named_pool_size(self, items: List[Any]) -> Dict[str, Tuple[int, int]]:
-        return {'pool_size': self.visit(items[2])}
+    def named_pool_size(self, items):
+        return {'pool_size': items[2]}
+
+    def named_dropout(self, items):
+        return {"dropout": float(items[2])}
+
+
+    #End named_params ################################################
+
+    def activation_param(self, items: List[Any]) -> Dict[str, str]:
+        return {'activation': items[0].value.strip('"')}
+
+    def output_layer(self, items):
+        params = {}
+        for item in items:
+            if isinstance(item, dict):
+                params.update(item)
+        return {'type': 'Output', 'params': params}
+
+    # Add methods for advanced layers
+    def capsule_layer(self, items):
+        return {'type': 'CapsuleLayer', 'params': {}}
+
+    def squeeze_excitation_layer(self, items):
+        return {'type': 'SqueezeExcitation', 'params': {}}
+
+    def graph_conv_layer(self, items):
+        return {'type': 'GraphConv', 'params': {}}
+
+    def quantum_layer(self, items):
+        return {'type': 'QuantumLayer', 'params': {}}
+    
+    def transformer_layer(self, items):
+        params = items[0]
+        return {'type': 'TransformerEncoder', 'params': params}
+    
+    def embedding_layer(self, items):
+        params = items[0]
+        return {'type': 'Embedding', 'params': params}
+
 
     def execution_config(self, items: List[Tree]) -> Dict[str, Any]:
         """Processes execution configuration block."""
@@ -805,6 +795,9 @@ class ModelTransformer(lark.Transformer):
                 if item.data == 'device_param':
                     config.update(self.device_param(item.children))
         return config
+
+# Shape Propagation ##########################
+
 def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any]) -> Tuple[Optional[int], ...]:
     """
     Propagates the input shape through a neural network layer to calculate the output shape.

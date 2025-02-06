@@ -48,6 +48,8 @@
 
 - Creating executable neural files
 - Enhance parallelization in neural
+- Shape propagations and code generations in separate files
+- Add mathematics formulations to shape propagation on research paper and visualizations
 - Create parallelization layers and unique parallelization techniques
 - Add all pytorch and tensorflow syntax to neural
 - Add more researchs capabilities for neural
