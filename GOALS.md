@@ -48,7 +48,7 @@
 - Debugging all day, great improvements but still bugs.
 06 02 25
 - 15h of Debugging (Still, some errors)
-- 
+- Enhance and test the research paper creation of neural
 
 
 - Creating executable neural files
