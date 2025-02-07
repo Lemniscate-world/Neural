@@ -170,7 +170,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         # Convolutional layers 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
         conv1d: "Conv1D(" param_style1 ")"
-        conv2d: "Conv2D(" (param_style1 | NUMBER | value)? ")"
+        conv2d: "Conv2D(" (param_style1 | value | ESCAPED_STRING)? ")"
         conv3d: "Conv3D(" named_params ")"
         conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
         conv1d_transpose: "Conv1DTranspose(" named_params ")"
@@ -378,11 +378,16 @@ class ModelTransformer(lark.Transformer):
             if isinstance(items[0], (int, tuple)):
                 params['filters'] = items[0]
             elif isinstance(items[0], lark.lexer.Token):
-                if items[0].type == 'NUMBER':
-                    params['filters'] = int(items[0])
-                else:  # Assuming it's a string for now
-                    params['filters'] = items[0].value.strip('"')
-
+                    if items[0].type == "ESCAPED_STRING":
+                        parts = [p.strip() for p in items[0].value.strip('"').split(",")]
+                        for part in parts:
+                            if "=" in part:
+                                key, value = part.split("=")
+                                params[key.strip('"')] = value.strip('"')
+                            elif part.isdigit():
+                                params['filters'] = int(part)
+                            else:
+                                params['activation'] = part
             else:
                 params = items[0]
 
