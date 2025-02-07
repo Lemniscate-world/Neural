@@ -34,9 +34,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         rnr_file: research
 
         # Parameter & Properties
-        named_params: named_param ("," named_param)*
-        value: ESCAPED_STRING | tuple_ | number | BOOL  
-        activation_param: "activation" "=" ESCAPED_STRING
+        ?value: ESCAPED_STRING_VALUE | tuple_ | number | BOOL  
+        ESCAPED_STRING_VALUE: ESCAPED_STRING
+        activation_param: "activation" "=" ESCAPED_STRING_VALUE
         ordered_params: value ("," value)* 
         tuple_: "(" WS_INLINE* number WS_INLINE* "," WS_INLINE* number WS_INLINE* ")"  
         number: NUMBER  
@@ -46,7 +46,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         bool_value: BOOL  // Example: true or false
         named_return_sequences: "return_sequences" "=" bool_value
         named_units: "units" "=" NUMBER  // Example: units=64
-        named_activation: "activation" "=" ESCAPED_STRING  
+        named_activation: "activation" "=" ESCAPED_STRING_VALUE  
         named_filters: "filters" "=" NUMBER  // Example: filters=32
         named_kernel_size: "kernel_size" "=" value  
         named_strides: "strides" "=" value  // Example: strides=(1, 1) or strides=1
@@ -66,20 +66,20 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_epsilon: "epsilon" "=" FLOAT  // Example: epsilon=1e-05
         named_center: "center" "=" BOOL  // Example: center=true
         named_scale: "scale" "=" BOOL  // Example: scale=true
-        named_beta_initializer: "beta_initializer" "=" ESCAPED_STRING  // Example: beta_initializer="zeros"
-        named_gamma_initializer: "gamma_initializer" "=" ESCAPED_STRING  // Example: gamma_initializer="ones"
-        named_moving_mean_initializer: "moving_mean_initializer" "=" ESCAPED_STRING  // Example: moving_mean_initializer="zeros"
-        named_moving_variance_initializer: "moving_variance_initializer" "=" ESCAPED_STRING  // Example: moving_variance_initializer="ones"
+        named_beta_initializer: "beta_initializer" "=" ESCAPED_STRING_VALUE  // Example: beta_initializer="zeros"
+        named_gamma_initializer: "gamma_initializer" "=" ESCAPED_STRING_VALUE  // Example: gamma_initializer="ones"
+        named_moving_mean_initializer: "moving_mean_initializer" "=" ESCAPED_STRING_VALUE  // Example: moving_mean_initializer="zeros"
+        named_moving_variance_initializer: "moving_variance_initializer" "=" ESCAPED_STRING_VALUE  // Example: moving_variance_initializer="ones"
         named_training: "training" "=" BOOL  // Example: training=true
         named_trainable: "trainable" "=" BOOL  // Example: trainable=false
         named_use_bias: "use_bias" "=" BOOL  // Example: use_bias=true
-        named_kernel_initializer: "kernel_initializer" "=" ESCAPED_STRING  // Example: kernel_initializer="glorot_uniform"
-        named_bias_initializer: "bias_initializer" "=" ESCAPED_STRING  // Example: bias_initializer="zeros"
-        named_kernel_regularizer: "kernel_regularizer" "=" ESCAPED_STRING  // Example: kernel_regularizer="l2"
-        named_bias_regularizer: "bias_regularizer" "=" ESCAPED_STRING  // Example: bias_regularizer="l1"
-        named_activity_regularizer: "activity_regularizer" "=" ESCAPED_STRING  // Example: activity_regularizer="l1_l2"
-        named_kernel_constraint: "kernel_constraint" "=" ESCAPED_STRING  // Example: kernel_constraint="max_norm"
-        named_bias_constraint: "bias_constraint" "=" ESCAPED_STRING  // Example: bias_constraint="min_max_norm"
+        named_kernel_initializer: "kernel_initializer" "=" ESCAPED_STRING_VALUE  // Example: kernel_initializer="glorot_uniform"
+        named_bias_initializer: "bias_initializer" "=" ESCAPED_STRING_VALUE  // Example: bias_initializer="zeros"
+        named_kernel_regularizer: "kernel_regularizer" "=" ESCAPED_STRING_VALUE  // Example: kernel_regularizer="l2"
+        named_bias_regularizer: "bias_regularizer" "=" ESCAPED_STRING_VALUE  // Example: bias_regularizer="l1"
+        named_activity_regularizer: "activity_regularizer" "=" ESCAPED_STRING_VALUE  // Example: activity_regularizer="l1_l2"
+        named_kernel_constraint: "kernel_constraint" "=" ESCAPED_STRING_VALUE  // Example: kernel_constraint="max_norm"
+        named_bias_constraint: "bias_constraint" "=" ESCAPED_STRING_VALUE  // Example: bias_constraint="min_max_norm"
         named_return_state: "return_state" "=" BOOL  // Example: return_state=true
         named_go_backwards: "go_backwards" "=" BOOL  // Example: go_backwards=false
         named_stateful: "stateful" "=" BOOL  // Example: stateful=true
@@ -87,8 +87,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_unroll: "unroll" "=" BOOL  // Example: unroll=true
         named_input_shape: "input_shape" "=" value  // Example: input_shape=(28, 28, 1)
         named_batch_input_shape: "batch_input_shape" "=" value  // Example: batch_input_shape=(None, 32, 32, 3)
-        named_dtype: "dtype" "=" ESCAPED_STRING  // Example: dtype="float32"
-        named_name: "name" "=" ESCAPED_STRING  // Example: name="my_layer"
+        named_dtype: "dtype" "=" ESCAPED_STRING_VALUE  // Example: dtype="float32"
+        named_name: "name" "=" ESCAPED_STRING_VALUE  // Example:
         named_weights: "weights" "=" value  // Example: weights=[...]
         named_embeddings_initializer: "embeddings_initializer" "=" ESCAPED_STRING  // Example: embeddings_initializer="uniform"
         named_mask_zero: "mask_zero" "=" BOOL  // Example: mask_zero=true
@@ -119,17 +119,16 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_l1: "l1" "=" FLOAT  // Example: l1=0.01
         named_l2: "l2" "=" FLOAT  // Example: l2=0.001
         named_l1_l2: "l1_l2" "=" tuple_  // Example: l1_l2=(0.01, 0.001)
-        ?named_param: (named_units | named_activation | named_filters | named_kernel_size | kernel_size_tuple | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_pool_size | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | number_param | string_param)  // Added string_param
-        number_param: NUMBER
+        ?named_param: (named_units | named_activation | named_filters | named_kernel_size | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_pool_size | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | string_param)
         string_param: ESCAPED_STRING
         named_int: NAME "=" INT
         named_float: NAME "=" FLOAT
         named_number: NAME "=" NUMBER
-        kernel_size_tuple: tuple_
 
-        layer_param: named_param | number_param | string_param | kernel_size_tuple | bool_value
+        layer_param: named_param |  string_param | bool_value
 
         # Layer parameter styles
+        named_params: named_param ("," named_param)*
         ?param_style1: named_params    // Dense(units=128, activation="relu")
                     | ordered_params 
 
@@ -156,7 +155,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         wrapper_layer_type: "TimeDistributed" 
 
         # Basic layers group
-        ?basic: conv | pooling | dropout | flatten | dense | output
+        ?basic: conv | pooling | dropout | flatten | dense | output | explicit_filters_conv2d
         dropout: "Dropout(" named_params ")"
 
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2 
@@ -170,8 +169,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Convolutional layers 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
-        conv1d: "Conv1D(" named_params ")"
-        conv2d: "Conv2D(" named_params ")"
+        conv1d: "Conv1D(" param_style1 ")"
+        conv2d: "Conv2D(" (param_style1 | filters_param) ")"
+        explicit_filters_conv2d: "Conv2D(" filters_param ")"
+        filters_param: NUMBER
         conv3d: "Conv3D(" named_params ")"
         conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
         conv1d_transpose: "Conv1DTranspose(" named_params ")"
@@ -374,8 +375,18 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Conv1D', 'params': items[0]}
 
     def conv2d(self, items):
-        return {'type': 'Conv2D', 'params': items[0]}
+        params = {}
+        if isinstance(items[0], int):
+            params['filters'] = items[0]
+        else:
+            params = items[0]
+        return {'type': 'Conv2D', 'params': params}
 
+    def explicit_filters_conv2d(self, items):
+        return {'type': 'Conv2D', 'params': {'filters': items[0]}}
+
+    def filters_param(self, items):
+        return int(items[0])
     def conv3d(self, items):
         return {'type': 'Conv3D', 'params': items[0]}
     
