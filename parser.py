@@ -1389,7 +1389,7 @@ def generate_code(model_data,backend):
                 layers_code.append(f"{layer_name}_flatten = nn.Flatten(start_dim=1)")
                 forward_code_body.append(f"x = self.layer{i+1}_flatten(x)")
                 current_input_shape = propagate_shape(current_input_shape, layer_config)
-            elif layer_type in ['Attention', 'TransformerEncoder', 'ResidualConnection', 'InceptionModule', 'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
+            elif layer_type in ['Attention', 'TransformerEncoder', 'Residual', 'InceptionModule', 'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
                 NUMBER(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for PyTorch might require manual implementation. Skipping layer code generation for now.")
             else:
                 raise ValueError(f"Unsupported layer type: {layer_type} for PyTorch backend.")
