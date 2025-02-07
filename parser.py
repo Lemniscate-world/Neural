@@ -345,40 +345,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 network_parser = create_parser('network')
 layer_parser = create_parser('layer')
 research_parser = create_parser('research')
-
-class ModelTransformer(lark.Transformer):
-    """
-    Transforms the parsed tree NUMBERo a structured dictionary representing the neural network model.
-    """
-    def layer(self, items):
-        layer_type = items[0].data
-        params = self.visit(items[0].children[0]) if items[0].children else {}
-        return {'type': layer_type, 'params': params}
-        
-    def wrapper(self, items):
-        wrapper_type = items[0]
-        layer = items[1]
-        params = items[2]
-        # Merge layer params with wrapper params
-        layer['params'].update(params)
-        return {'type': f"{wrapper_type}({layer['type']})", 'params': layer['params']}
-
-    # Basic Layers & Properties ###################
-
-    def input_layer(self, items):
-        shape = tuple(items[0])
-        return {'type': 'Input', 'shape': shape}
-
-    def output(self, items):
-        return {'type': 'Output', 'params': items[0]}
-    
-    def regularization(self, items):  # Added method to handle regularization layers
-        return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
-
-    ### Convolutional Layers ####################
-    def conv1d(self, items):
-        return {'type': 'Conv1D', 'params': items[0]}
-
     
 class ModelTransformer(lark.Transformer):
     """
@@ -414,30 +380,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Conv1D', 'params': items[0]}
 
     def conv2d(self, items):
-        params = {}
-        positional_params = []
+        return {'type': 'Conv2D', 'params': self.extract_value(items)}
 
-        for item in items:
-            if isinstance(item, list):
-                positional_params.extend(item)
-            elif isinstance(item, dict):
-                params.update(item)
-
-        if positional_params:
-            if 'filters' not in params:
-                params['filters'] = int(positional_params.pop(0))
-
-            if 'kernel_size' not in params and len(positional_params) > 0:
-                kernel_size = positional_params.pop(0)
-                if isinstance(kernel_size, str):
-                    kernel_size = eval(kernel_size.strip('()'))
-                params['kernel_size'] = kernel_size
-
-            if 'activation' not in params and len(positional_params) > 0:
-                params['activation'] = positional_params.pop(0).strip('"')
-
-
-        return {'type': 'Conv2D', 'params': params}
     def conv3d(self, items):
         return {'type': 'Conv3D', 'params': items[0]}
     
@@ -677,28 +621,28 @@ class ModelTransformer(lark.Transformer):
 
     ### Parameters  #######################################################
 
-    def _extract_value(self, item):  # Helper function to extract values from tokens and tuples
-        if isinstance(item, Token):
+    def _extract_value(self, item):
+        """Extracts values from tokens, lists, tuples, and dictionaries."""
+        if isinstance(item, lark.Token):
             if item.type in ('INT', 'FLOAT', 'NUMBER', 'SIGNED_NUMBER'):
-                try:
-                    return int(item)
-                except ValueError:
-                    return float(item)
+                return int(item) if item.type == 'INT' else float(item)
             elif item.type == 'BOOL':
                 return item.value.lower() == 'true'
             elif item.type == 'ESCAPED_STRING':
                 return item.value.strip('"')
-        elif isinstance(item, list):  # Handles nested lists
+            return item.value
+        elif isinstance(item, list):
             return [self._extract_value(elem) for elem in item]
-        elif isinstance(item, dict):  # Handles nested dictionaries
+        elif isinstance(item, tuple):  # Handle tuples directly
+            return tuple(self._extract_value(elem) for elem in item)
+        elif isinstance(item, dict):
             return {k: self._extract_value(v) for k, v in item.items()}
-        elif isinstance(item, Tree):  # Handles all Tree types, not just tuple_
+        elif isinstance(item, lark.Tree):
             if item.data == 'tuple_':
                 return tuple(self._extract_value(child) for child in item.children)
-            else:  # Extract values from other tree types
-                return {k: self._extract_value(v) for k, v in zip(item.children[::2], item.children[1::2])}
-
+            return self.named_params(item.children)  # Use named_params for other Tree types
         return item
+
     
     def named_param(self, items):  # Corrected to use _extract_value and return a dictionary
         name = str(items[0])
@@ -756,15 +700,7 @@ class ModelTransformer(lark.Transformer):
 
     def value(self, items):
         """Extracts the value from different token types."""
-        item = items[0]
-        if isinstance(item, Tree) and item.data == 'tuple_':
-            return self.tuple_(item.children)
-        elif isinstance(item, Token):
-            if item.type == 'ESCAPED_STRING':
-                return item.value.strip('"')
-            elif item.type in ('NUMBER', 'FLOAT', 'BOOL'):
-                return eval(item.value)  # Evaluate numeric and boolean literals
-        return item
+        return self._extract_value(items[0])
 
     def tuple_(self, items):
         """Extracts tuple values."""
