@@ -260,7 +260,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ?advanced: attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic
         attention: "Attention(" named_params ")"
         transformer: "Transformer(" named_params ")" | "TransformerEncoder(" named_params ")" | "TransformerDecoder(" named_params ")"
-        residual: "Residual(" [named_params] ")"
+        residual: "ResidualConnection" "(" [named_params] ")"
         inception: "Inception(" named_params ")"
         capsule: "Capsule(" named_params ")"
         squeeze_excitation: "SqueezeExcitation(" named_params ")"
