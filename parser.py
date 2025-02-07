@@ -172,7 +172,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         conv2d: "Conv2D(" param_style1 ")"
         conv3d: "Conv3D(" param_style1 ")"
         conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
-        convd1_transpose: "Conv1DTranspose(" param_style1 ")"
+        conv1d_transpose: "Conv1DTranspose(" param_style1 ")"
         conv2d_transpose: "Conv2DTranspose(" param_style1 ")"
         conv3d_transpose: "Conv3DTranspose(" param_style1 ")"
         depthwise_conv2d: "DepthwiseConv2D(" param_style1 ")"
@@ -183,6 +183,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         max_pooling1d: "MaxPooling1D(" param_style1 ")"
         max_pooling2d: "MaxPooling2D(" param_style1 ")"
         max_pooling3d: "MaxPooling3D(" param_style1 ")"
+        average_pooling: average_pooling1d | average_pooling2d | average_pooling3d
         average_pooling1d: "AveragePooling1D(" param_style1 ")"
         average_pooling2d: "AveragePooling2D(" param_style1 ")"
         average_pooling3d: "AveragePooling3D(" param_style1 ")"
