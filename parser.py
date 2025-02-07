@@ -796,14 +796,16 @@ class ModelTransformer(lark.Transformer):
     #### Advanced Layers #################################
 
     def attention(self, items):
-        return {'type': 'Attention', 'params': items[0]}
+        params = items[0] if items else None
+        return {'type': 'Attention', 'params': params}
 
     def residual(self, items):
         params = items[0] if items else None
         return {'type': 'ResidualConnection', 'params': params}
 
     def inception(self, items):
-        return {'type': 'Inception', 'params': items[0]}
+        params = items[0] if items else None
+        return {'type': 'Inception', 'params': params}
 
     
     def graph_layer(self, items):
@@ -813,7 +815,8 @@ class ModelTransformer(lark.Transformer):
             return {'type': 'GraphAttention', 'params': items[0].children[0]}
 
     def dynamic(self, items):
-        return {'type': 'DynamicLayer', 'params': items[0]}
+        params = items[0] if items else None
+        return {'type': 'DynamicLayer', 'params': params}
     
     def noise_layer(self, items):
         return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
@@ -825,7 +828,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
 
     def custom_layer(self, items):
-        return {'type': items[0], 'params': items[1]}
+        params = items[0] if items else None
+        return {'type': items[0], 'params': params}
 
     def activation_layer(self, items):
         activation_type = items[0].value.strip('"')
@@ -833,16 +837,19 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Activation', 'activation': activation_type, 'params': params}
     
     def capsule(self, items):
-        return {'type': 'Capsule', 'params': items[0]}
+        params = items[0] if items else None
+        return {'type': 'Capsule', 'params': params}
 
     def squeeze_excitation(self, items):
         return {'type': 'SqueezeExcitation', 'params': items[0]}
 
     def graph_conv(self, items):
-        return {'type': 'GraphConv', 'params': items[0]}
+        params = items[0] if items else None
+        return {'type': 'GraphConv', 'params': params}
 
     def quantum(self, items):
-        return {'type': 'QuantumLayer', 'params': items[0]}
+        params = items[0] if items else None
+        return {'type': 'QuantumLayer', 'params': params}
 
     def transformer_layer(self, items):
         if items[0].data == 'transformer_encoder':
@@ -853,10 +860,12 @@ class ModelTransformer(lark.Transformer):
             return {'type': 'Transformer', 'params': items[0].children[0]}
 
     def embedding(self, items):
-        return {'type': 'Embedding', 'params': items[0]}
+        params = items[0] if items else None
+        return {'type': 'Embedding', 'params': params}
     
     def graph_attention(self, items):
-        return {'type': 'GraphAttention', 'params': items[0]}
+        params = items[0] if items else None
+        return {'type': 'GraphAttention', 'params': params}
 
     def execution_config(self, items: List[Tree]) -> Dict[str, Any]:
         """Processes execution configuration block."""
