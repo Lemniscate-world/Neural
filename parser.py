@@ -155,7 +155,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         wrapper_layer_type: "TimeDistributed" 
 
         # Basic layers group
-        ?basic: conv | pooling | dropout | flatten | dense | output | explicit_filters_conv2d
+        ?basic: conv | pooling | dropout | flatten | dense | output 
         dropout: "Dropout(" named_params ")"
 
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2 
@@ -170,9 +170,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         # Convolutional layers 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
         conv1d: "Conv1D(" param_style1 ")"
-        conv2d: "Conv2D(" (param_style1 | filters_param) ")"
-        explicit_filters_conv2d: "Conv2D(" filters_param ")"
-        filters_param: NUMBER
+        conv2d: "Conv2D(" (param_style1 | NUMBER | value)? ")"
         conv3d: "Conv3D(" named_params ")"
         conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
         conv1d_transpose: "Conv1DTranspose(" named_params ")"
@@ -376,17 +374,20 @@ class ModelTransformer(lark.Transformer):
 
     def conv2d(self, items):
         params = {}
-        if isinstance(items[0], int):
-            params['filters'] = items[0]
-        else:
-            params = items[0]
+        if items:
+            if isinstance(items[0], (int, tuple)):
+                params['filters'] = items[0]
+            elif isinstance(items[0], lark.lexer.Token):
+                if items[0].type == 'NUMBER':
+                    params['filters'] = int(items[0])
+                else:  # Assuming it's a string for now
+                    params['filters'] = items[0].value.strip('"')
+
+            else:
+                params = items[0]
+
         return {'type': 'Conv2D', 'params': params}
-
-    def explicit_filters_conv2d(self, items):
-        return {'type': 'Conv2D', 'params': {'filters': items[0]}}
-
-    def filters_param(self, items):
-        return int(items[0])
+   
     def conv3d(self, items):
         return {'type': 'Conv3D', 'params': items[0]}
     
