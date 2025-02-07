@@ -38,10 +38,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         activation_param: "activation" "=" ESCAPED_STRING
         ordered_params: value ("," value)* 
         tuple_: "(" WS_INLINE* value WS_INLINE* "," WS_INLINE* value WS_INLINE* ")"
-        explicit_tuple: "(" value ("," value)+ ")"
-        value: ESCAPED_STRING | tuple_ | explicit_tuple | number | BOOL
         number: NUMBER  
         BOOL: "true" | "false"
+        named_size: NAME ":" "(" value ("," value)+ ")"  # Direct tuple definition
+        explicit_tuple: "(" value ("," value)+ ")"
+        value: ESCAPED_STRING | tuple_ | explicit_tuple | number | BOOL
 
 
         # name_param rules
@@ -49,7 +50,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_return_sequences: "return_sequences" "=" bool_value
         named_units: "units" "=" NUMBER  // Example: units=64
         named_activation: "activation" "=" ESCAPED_STRING
-        named_size: NAME ":" explicit_tuple  
         named_filters: "filters" "=" NUMBER  // Example: filters=32
         named_strides: "strides" "=" value  // Example: strides=(1, 1) or strides=1
         named_padding: "padding" "=" value  // Example: padding="same" or padding="valid"
