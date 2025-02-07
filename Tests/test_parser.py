@@ -176,7 +176,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
     ],
     ids=["complex-model", "simple-model", "no-layers", "invalid-input"]
 )
-def test_network_parsing(network_parser, transformer, network_string, expected_name, expected_input_shape, expected_layers, expected_loss, expected_optimizer, expected_training_config, id):
+def test_network_parsing(network_parser, transformer, network_string, expected_name, expected_input_shape, expected_layers, expected_loss, expected_optimizer, expected_training_config):
 
     # Act
     if expected_name is None:
@@ -246,7 +246,7 @@ def test_network_parsing(network_parser, transformer, network_string, expected_n
     ],
     ids=["complete-research", "no-name-no-ref", "empty-research", "invalid-metrics"]
 )
-def test_research_parsing(research_parser, transformer, research_string, expected_name, expected_metrics, expected_references, id):
+def test_research_parsing(research_parser, transformer, research_string, expected_name, expected_metrics, expected_references):
 
     # Act
     if expected_name is None:
