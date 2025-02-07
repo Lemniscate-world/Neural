@@ -119,9 +119,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_l1: "l1" "=" FLOAT  // Example: l1=0.01
         named_l2: "l2" "=" FLOAT  // Example: l2=0.001
         named_l1_l2: "l1_l2" "=" tuple_  // Example: l1_l2=(0.01, 0.001)
-        ?named_param: (named_units | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | number_param | string_param)  // Added string_param
-        number_param: NUMBER
-        string_param: ESCAPED_STRING 
+        ?named_param: (named_units | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | NAME ":" value)
         named_int: NAME "=" INT
         named_float: NAME "=" FLOAT
         named_number: NAME "=" NUMBER
@@ -180,6 +178,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Pooling layer parameters
         pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
+        max_pooling: max_pooling1d | max_pooling2d | max_pooling3d
         max_pooling1d: "MaxPooling1D(" param_style1 ")"
         max_pooling2d: "MaxPooling2D(" param_style1 ")"
         max_pooling3d: "MaxPooling3D(" param_style1 ")"
@@ -630,11 +629,6 @@ class ModelTransformer(lark.Transformer):
         value = self._extract_value(items[2])  # Extract the value using the helper function
         return {name: self._extract_value(value)}
     
-    def number_param(self, items):
-        return {"units": self._extract_value(items[0])}
-
-    def string_param(self, items):
-        return {"activation": self._extract_value(items[0])}
 
     def number(self, items):
         return self._extract_value(items[0])
