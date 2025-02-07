@@ -56,7 +56,7 @@ def transformer():
         ('LSTMDropoutWrapper(units=64, dropout=0.5)', {'type': 'LSTMDropoutWrapper', 'params': {'units': 64, 'dropout': 0.5}}, "lstm-dropout"),
         ('Attention()', {'type': 'Attention', 'params': {}}, "attention"),
         ('TransformerEncoder(num_heads=8, ff_dim=512)', {'type': 'TransformerEncoder', 'params': {'num_heads': 8, 'ff_dim': 512}}, "transformer"),
-        ('ResidualConnection()', {'type': 'ResidualConnection', 'params': {}}, "residual"),
+        ('ResidualConnection()', {'type': 'ResidualConnection', 'params': None}, "residual"),
         ('InceptionModule()', {'type': 'InceptionModule', 'params': {}}, "inception"),
         ('CapsuleLayer()', {'type': 'CapsuleLayer', 'params': {}}, "capsule"),
         ('SqueezeExcitation()', {'type': 'SqueezeExcitation', 'params': {}}, "squeeze"),
