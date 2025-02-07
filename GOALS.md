@@ -33,7 +33,7 @@
 (Done)
 - TESTING THE MVP and debugging (1) (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.) (Done)
 
-04 02 25
+
 - GPU-optimized inference
   To make Neural a high-performance framework, we will:
 ✅ Implement GPU acceleration using CUDA & TensorRT (for NVIDIA GPUs)
@@ -43,13 +43,7 @@
 - Add visualizer
 - Make neural generate research paper (No AI) on model i'm using or training with benchmarks and stats etc in the its IDE + visualizer and interactive solver and nodes explorers with details
 - Create very basic deepseek model with neural and even fine-tune to showcase all neural functionalities.and in the same time testing if they are working.
-
-05 02 25
-- Debugging all day, great improvements but still bugs.
-06 02 25
-- 15h of Debugging (Still, some errors)
 - Enhance and test the research paper creation of neural
-- Then debugging again.
 
 - Creating executable neural files
 - Neural Syntax

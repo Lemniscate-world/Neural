@@ -348,8 +348,14 @@ research_parser = create_parser('research')
     
 class ModelTransformer(lark.Transformer):
     """
-    Transforms the parsed tree NUMBERo a structured dictionary representing the neural network model.
+    Transforms the parsed tree into a structured dictionary representing the neural network model.
     """
+
+    def make_layer(self, layer_type, items, use_extract=False):
+        """Helper to create a layer dictionary with the given type."""
+        params = self._extract_value(items) if use_extract else items[0]
+        return {'type': layer_type, 'params': params}
+    
     def layer(self, items):
         layer_type = items[0].data
         params = self.visit(items[0].children[0]) if items[0].children else {}
@@ -376,35 +382,72 @@ class ModelTransformer(lark.Transformer):
         return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
 
     ### Convolutional Layers ####################
-    def conv1d(self, items):
-        return {'type': 'Conv1D', 'params': items[0]}
+    def _extract_value(items):
+        extracted = {}
+        params = []
+        for item in items:
+            if isinstance(item, dict) and 'positional' in item:
+                pos = item.pop('positional')
+                if len(pos) >= 1:
+                    params['filters'] = pos[0]  # First positional arg is filters
+                if len(pos) >= 2:
+                    kernel_size = pos[1]
+                    if isinstance(kernel_size, tuple):
+                        # Clean up kernel size tuple by removing whitespace
+                        kernel_size = tuple(x for x in kernel_size if not (isinstance(x, str) and x.isspace()))
+                    params['kernel_size'] = kernel_size
+                if len(pos) >= 3:
+                    params['activation'] = pos[2]  # Third positional arg is activation
+            extracted.update(item)
+        return extracted
 
     def conv2d(self, items):
-        return {'type': 'Conv2D', 'params': self.extract_value(items)}
+        # Extract parameters from items
+        extracted = self._extract_value(items)
+        params = {}
 
+        # If positional arguments were provided as a list:
+        if isinstance(extracted, dict) and 'positional' in extracted:
+            pos = extracted.pop('positional')
+            if len(pos) >= 1:
+                params['filters'] = pos[0]  # First positional arg is filters
+            if len(pos) >= 2:
+                kernel_size = pos[1]
+                if isinstance(kernel_size, tuple):
+                    # Clean up kernel size tuple by removing whitespace
+                    kernel_size = tuple(x for x in kernel_size if not (isinstance(x, str) and x.isspace()))
+                params['kernel_size'] = kernel_size
+            if len(pos) >= 3:
+                params['activation'] = pos[2]  # Third positional arg is activation
+        else:
+            params = extracted
+
+        # Return the layer with proper string type and cleaned parameters
+        return {'type': 'Conv2D', 'params': params}
+    
+    def conv1d(self, items):
+        return self.make_layer('Conv1D', items)
+    
     def conv3d(self, items):
-        return {'type': 'Conv3D', 'params': items[0]}
+        return self.make_layer('Conv3D', items)
     
     def conv1d_transpose(self, items):
-        return {'type': 'Conv1DTranspose', 'params': items[0]}
-
+        return self.make_layer('Conv1DTranspose', items)
+    
     def conv2d_transpose(self, items):
-        return {'type': 'Conv2DTranspose', 'params': items[0]}
-
+        return self.make_layer('Conv2DTranspose', items)
+    
     def conv3d_transpose(self, items):
-        return {'type': 'Conv3DTranspose', 'params': items[0]}
-
+        return self.make_layer('Conv3DTranspose', items)
+    
     def depthwise_conv2d(self, items):
-        return {'type': 'DepthwiseConv2D', 'params': items[0]}
-
+        return self.make_layer('DepthwiseConv2D', items)
+    
     def separable_conv2d(self, items):
-        return {'type': 'SeparableConv2D', 'params': items[0]}
+        return self.make_layer('SeparableConv2D', items)
     
     def dense(self, items):
-        return {
-            'type': 'Dense',
-            'params': items[0]
-        }
+        return self.make_layer('Dense', items)
 
     def loss(self, items):
         return items[0].value.strip('"')
@@ -421,7 +464,7 @@ class ModelTransformer(lark.Transformer):
     def dropout(self, items):
         return {'type': 'Dropout', 'params': items[0]}
 
-    ### Training Configurations ############################""
+    ### Training Configurations ############################
 
     def training_config(self, items):
         config = {}
@@ -513,8 +556,6 @@ class ModelTransformer(lark.Transformer):
     def simple_rnn(self, items):
         return {'type': 'SimpleRNN', 'params': items[0]}
     
-
-    
     def conv_lstm(self, items):
         return {'type': 'ConvLSTM2D', 'params': items[0]}
 
@@ -577,14 +618,12 @@ class ModelTransformer(lark.Transformer):
     def inception(self, items):
         return {'type': 'Inception', 'params': items[0]}
 
-
     ### Everything Research ##################
 
     def research(self, items):
         name = items[0].value if items and isinstance(items[0], Token) else None
         params = items[1] if len(items) > 1 else {}
         return {'type': 'Research', 'name': name, 'params': params}
-
 
     # NETWORK ACTIVATION ##############################
 
@@ -618,32 +657,27 @@ class ModelTransformer(lark.Transformer):
             'execution_config': execution_config
         }
 
-
     ### Parameters  #######################################################
 
     def _extract_value(self, item):
         """Extracts values from tokens, lists, tuples, and dictionaries."""
+        import lark  # ensure lark is imported here
         if isinstance(item, lark.Token):
-            if item.type in ('INT', 'FLOAT', 'NUMBER', 'SIGNED_NUMBER'):
-                return int(item) if item.type == 'INT' else float(item)
-            elif item.type == 'BOOL':
-                return item.value.lower() == 'true'
-            elif item.type == 'ESCAPED_STRING':
-                return item.value.strip('"')
-            return item.value
+            value = item.value
+            # Remove surrounding quotes even if token type is not STRING.
+            if value.startswith('"') and value.endswith('"'):
+                return value[1:-1]
+            return value
         elif isinstance(item, list):
-            return [self._extract_value(elem) for elem in item]
-        elif isinstance(item, tuple):  # Handle tuples directly
-            return tuple(self._extract_value(elem) for elem in item)
+            return [self._extract_value(i) for i in item]
+        elif isinstance(item, tuple):
+            return tuple(self._extract_value(i) for i in item)
         elif isinstance(item, dict):
             return {k: self._extract_value(v) for k, v in item.items()}
         elif isinstance(item, lark.Tree):
-            if item.data == 'tuple_':
-                return tuple(self._extract_value(child) for child in item.children)
-            return self.named_params(item.children)  # Use named_params for other Tree types
+            return self.visit(item)
         return item
 
-    
     def named_param(self, items):  # Corrected to use _extract_value and return a dictionary
         name = str(items[0])
         value = self._extract_value(items[2])  # Extract the value using the helper function
@@ -666,7 +700,7 @@ class ModelTransformer(lark.Transformer):
     def number_or_none(self, items):
         if items[0].value.lower() == 'none':
             return None
-        return int(items[0])  # Convert to int after checking for 'none'
+        return int(items[0].value)  # Convert to int after checking for 'none'
 
     def named_params(self, items):
         """Handles named parameters, extracting values and converting to a dictionary."""
@@ -674,99 +708,76 @@ class ModelTransformer(lark.Transformer):
         positional_params = []
 
         for item in items:
-            if isinstance(item, Tree):
-                item = self.visit(item)
             if isinstance(item, dict):
                 params.update(item)
-            elif isinstance(item, (int, float, str, tuple)):
-                positional_params.append(item)
+            else:
+                positional_params.append(self._extract_value(item))
 
         if positional_params:
-            if 'filters' not in params:
-                params['filters'] = positional_params.pop(0)
-            if positional_params and 'kernel_size' not in params and len(positional_params) == 1 and isinstance(positional_params[0], tuple) and len(positional_params[0]) == 2:
-                params['kernel_size'] = positional_params.pop(0)
-
-            # Only add positional arguments to 'value' if they haven't been processed already
-            if positional_params:
-                if 'value' not in params:
-                    params['value'] = positional_params if len(positional_params) > 1 else positional_params[0]
-                else:
-                    if not isinstance(params['value'], list):
-                        params['value'] = [params['value']]
-                    params['value'].extend(positional_params)
-
+            params['positional'] = positional_params
         return params
 
     def value(self, items):
-        """Extracts the value from different token types."""
-        return self._extract_value(items[0])
+        if len(items) == 1:
+            return self._extract_value(items[0])
+        return [self._extract_value(item) for item in items]
 
     def tuple_(self, items):
-        """Extracts tuple values."""
-        return tuple(eval(item.value) for item in items if isinstance(item, Token) and item.type in ('NUMBER', 'FLOAT'))
+        return tuple(self._extract_value(item) for item in items)
     
     def groups_param(self, items):
-        return {'groups': items[2]}
-
+        return {'groups': self._extract_value(items[0])}
 
     def research_params(self, items):
-        params = {}
-        for item in items:
-            params.update(item)
-        return params
+        return {'research': self._extract_value(items[0])}
 
     def metrics(self, items):
-        return {'metrics': items}
-
+        return {'metrics': [self._extract_value(item) for item in items]}
 
     def accuracy_param(self, items):
-        return {'accuracy': float(items[0].value)}
+        return {'accuracy': self._extract_value(items[0])}
 
     def loss_param(self, items):
-        return {'loss': float(items[0].value)}
+        return {'loss': self._extract_value(items[0])}
 
     def precision_param(self, items):
-        return {'precision': float(items[0].value)}
+        return {'precision': self._extract_value(items[0])}
 
     def recall_param(self, items):
-        return {'recall': float(items[0].value)}
-
+        return {'recall': self._extract_value(items[0])}
 
     def references(self, items):
-        return {'references': items}
+        return {'references': [self._extract_value(item) for item in items]}
 
     def paper_param(self, items):
-        return items[0].value.strip('"')
+        return {'paper': self._extract_value(items[0])}
 
     def epochs_param(self, items):
-        return {'epochs': int(items[0].value)}
+        return {'epochs': self._extract_value(items[0])}
 
     def batch_size_param(self, items):
-        return {'batch_size': int(items[0].value)}
+        return {'batch_size': self._extract_value(items[0])}
 
     def device_param(self, items):
-        return {'device': items[0].value.strip('"')}
+        return {'device': self._extract_value(items[0])}
     
     # Named_params & Their Properties ##################################################
 
     def bool_value(self, items):
-        return self._extract_value(items[0])
-    
+        val = items[0].value.lower()
+        return True if val == 'true' else False
+
     def kernel_size_tuple(self, items):
-        """Handles kernel size specified as a tuple directly."""
-        return self.tuple_(items)  # Directly return the tuple
-
-
+        return tuple(self._extract_value(item) for item in items)
 
     def named_filters(self, items):
-        return {"filters": self._extract_value(items[2])}
+        return {'filters': self._extract_value(items[0])}
 
     def named_units(self, items):  
-        return {"units": self._extract_value(items[0])}
+        return {'units': self._extract_value(items[0])}
 
-    def named_activation(self, items): 
-        return {"activation": self._extract_value(items[0])}
+    def named_activation(self, items):
+        return {'activation': self._extract_value(items[0])}
 
     def named_kernel_size(self, items):
         return {"kernel_size": self._extract_value(items[2])}
