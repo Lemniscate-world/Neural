@@ -35,13 +35,14 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Parameter & Properties
         named_params: named_param ("," named_param)*
-        value: ESCAPED_STRING | tuple_ | number | BOOL  
         activation_param: "activation" "=" ESCAPED_STRING
         ordered_params: value ("," value)* 
-        tuple_: "(" WS_INLINE* number WS_INLINE* "," WS_INLINE* number WS_INLINE* ")"  
+        tuple_: "(" WS_INLINE* value WS_INLINE* "," WS_INLINE* value WS_INLINE* ")"
+        explicit_tuple: "(" value ("," value)+ ")"
+        value: ESCAPED_STRING | tuple_ | explicit_tuple | number | BOOL
         number: NUMBER  
         BOOL: "true" | "false"
-        explicit_tuple: "(" value ("," value)+ ")"
+
 
         # name_param rules
         bool_value: BOOL  // Example: true or false
