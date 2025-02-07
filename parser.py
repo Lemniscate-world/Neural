@@ -41,20 +41,20 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         tuple_: "(" WS_INLINE* number WS_INLINE* "," WS_INLINE* number WS_INLINE* ")"  
         number: NUMBER  
         BOOL: "true" | "false"
+        explicit_tuple: "(" value ("," value)+ ")"
 
         # name_param rules
         bool_value: BOOL  // Example: true or false
         named_return_sequences: "return_sequences" "=" bool_value
         named_units: "units" "=" NUMBER  // Example: units=64
-        named_activation: "activation" "=" ESCAPED_STRING  
+        named_activation: "activation" "=" ESCAPED_STRING
+        named_size: NAME ":" explicit_tuple  
         named_filters: "filters" "=" NUMBER  // Example: filters=32
-        named_kernel_size: "kernel_size" "=" value  
         named_strides: "strides" "=" value  // Example: strides=(1, 1) or strides=1
         named_padding: "padding" "=" value  // Example: padding="same" or padding="valid"
         named_dilation_rate: "dilation_rate" "=" value  // Example: dilation_rate=(2, 2) or dilation_rate=2
         named_groups: "groups" "=" NUMBER  // Example: groups=32
         named_channels: "channels" "=" NUMBER  // Example: channels=3
-        named_pool_size: "pool_size" "=" value  // Example: pool_size=(2, 2) or pool_size=2
         named_num_heads: "num_heads" "=" NUMBER  // Example: num_heads=8
         named_ff_dim: "ff_dim" "=" NUMBER  // Example: ff_dim=512
         named_input_dim: "input_dim" "=" NUMBER  // Example: input_dim=1000
@@ -119,7 +119,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_l1: "l1" "=" FLOAT  // Example: l1=0.01
         named_l2: "l2" "=" FLOAT  // Example: l2=0.001
         named_l1_l2: "l1_l2" "=" tuple_  // Example: l1_l2=(0.01, 0.001)
-        ?named_param: (named_units | named_activation | named_filters | named_kernel_size | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_pool_size | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | number_param | string_param)  // Added string_param
+        ?named_param: (named_units | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | number_param | string_param)  // Added string_param
         number_param: NUMBER
         string_param: ESCAPED_STRING 
         named_int: NAME "=" INT
@@ -168,26 +168,24 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Convolutional layers 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
-        conv1d: "Conv1D(" named_params ")"
-        conv2d: "Conv2D(" named_params ")"
-        conv3d: "Conv3D(" named_params ")"
+        conv1d: "Conv1D(" param_style1 ")"
+        conv2d: "Conv2D(" param_style1 ")"
+        conv3d: "Conv3D(" param_style1 ")"
         conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
-        conv1d_transpose: "Conv1DTranspose(" named_params ")"
-        conv2d_transpose: "Conv2DTranspose(" named_params ")"
-        conv3d_transpose: "Conv3DTranspose(" named_params ")"
-        depthwise_conv2d: "DepthwiseConv2D(" named_params ")"
-        separable_conv2d: "SeparableConv2D(" named_params ")"
+        convd1_transpose: "Conv1DTranspose(" param_style1 ")"
+        conv2d_transpose: "Conv2DTranspose(" param_style1 ")"
+        conv3d_transpose: "Conv3DTranspose(" param_style1 ")"
+        depthwise_conv2d: "DepthwiseConv2D(" param_style1 ")"
+        separable_conv2d: "SeparableConv2D(" param_style1 ")"
 
         # Pooling layer parameters
         pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
-        max_pooling: max_pooling1d | max_pooling2d | max_pooling3d
-        max_pooling1d: "MaxPooling1D(" named_params ")"
-        max_pooling2d: "MaxPooling2D(" named_params ")"
-        max_pooling3d: "MaxPooling3D(" named_params ")"
-        average_pooling: average_pooling1d | average_pooling2d | average_pooling3d
-        average_pooling1d: "AveragePooling1D(" named_params ")"
-        average_pooling2d: "AveragePooling2D(" named_params ")"
-        average_pooling3d: "AveragePooling3D(" named_params ")"
+        max_pooling1d: "MaxPooling1D(" param_style1 ")"
+        max_pooling2d: "MaxPooling2D(" param_style1 ")"
+        max_pooling3d: "MaxPooling3D(" param_style1 ")"
+        average_pooling1d: "AveragePooling1D(" param_style1 ")"
+        average_pooling2d: "AveragePooling2D(" param_style1 ")"
+        average_pooling3d: "AveragePooling3D(" param_style1 ")"
         global_pooling: global_max_pooling | global_average_pooling
         global_max_pooling: global_max_pooling1d | global_max_pooling2d | global_max_pooling3d
         global_max_pooling1d: "GlobalMaxPooling1D(" named_params ")"
@@ -216,7 +214,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         
 
         # Basic layer types
-        dense: "Dense(" named_params ")"
+        dense: "Dense(" param_style1 ")"
         flatten: "Flatten(" [named_params] ")"
 
         # Recurrent layers section - includes all RNN variants
@@ -654,19 +652,12 @@ class ModelTransformer(lark.Transformer):
         return params
 
     def value(self, items):
-        item = items[0]
-        if isinstance(item, Tree) and item.data == 'tuple_':
-            return self.tuple_(item.children)
-        elif isinstance(item, Token):
-            if item.type == 'ESCAPED_STRING':
-                return item.value.strip('"')
-            elif item.type in ('NUMBER', 'FLOAT', 'BOOL'):
-                return eval(item.value)
-        return item
+        if isinstance(items[0], Token):
+            return items[0].value
+        return items[0]
 
-    def tuple_(self, items):
-        return tuple(eval(item.value) for item in items if isinstance(item, Token) and item.type == 'NUMBER')
-    
+    def explicit_tuple(self, items):
+        return tuple(self._extract_value(x) for x in items[0].children)
     def groups_param(self, items):
         return {'groups': items[2]}
 
@@ -723,9 +714,6 @@ class ModelTransformer(lark.Transformer):
     def named_activation(self, items): 
         return {"activation": self._extract_value(items[0])}
 
-    def named_kernel_size(self, items):
-        return {"kernel_size": self._extract_value(items[0])}
-
     def named_padding(self, items):
         return {"padding": self._extract_value(items[0])}
 
@@ -741,8 +729,10 @@ class ModelTransformer(lark.Transformer):
     def named_groups(self, items):
         return {"groups": self._extract_value(items[0])}
 
-    def named_pool_size(self, items):
-        return {"pool_size": self._extract_value(items[0])}
+    def named_size(self, items):
+        name = str(items[0])
+        value = tuple(int(x) for x in items[2].children)
+        return {name: value}
 
     def named_dropout(self, items):
         return {"dropout": self._extract_value(items[0])}
@@ -999,16 +989,21 @@ def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any
         params = layer.get('params', layer) # Check both 'params' and direct layer for config
 
         filters = params.get('filters')
-        kernel_size = params.get('kernel_size')
+        kernel_size = params.get('kernel_size', (1, 1))
         strides = params.get('strides', (1, 1)) # Default strides to 1x1
         padding_mode = params.get('padding', 'valid').lower() # Default to 'valid' padding
         dilation_rate = params.get('dilation_rate', (1, 1)) # Default dilation rate to 1x1
 
-        if not filters or not kernel_size:
-            raise ValueError("Conv2D layer requires 'filters' and 'kernel_size' parameters.")
-
+        if not filters:
+            raise ValueError("Conv2D layer requires 'filters' parameter.")
         try:
-            filters = NUMBER(filters)
+            filters = int(filters)
+            if isinstance(kernel_size, (tuple, list)):
+                kernel_h, kernel_w = map(int, kernel_size)
+            elif isinstance(kernel_size, int):
+                kernel_h = kernel_w = kernel_size
+            else:
+                raise ValueError("kernel_size must be an int, tuple, or list.")
             kernel_h, kernel_w = map(NUMBER, kernel_size)
             stride_h, stride_w = map(NUMBER, strides)
             dilation_h, dilation_w = map(NUMBER, dilation_rate)
@@ -1033,16 +1028,19 @@ def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any
         validate_input_dims(4, 'MaxPooling2D') # Expecting (batch, height, width, channels)
         params = layer.get('params', layer)
 
-        pool_size = params.get('pool_size')
+        pool_size = params.get('pool_size', (2, 2))
         strides = params.get('strides', pool_size) # Default stride to pool_size if not provided
         padding_mode = params.get('padding', 'valid').lower() # Default to 'valid' padding
 
-        if not pool_size:
-            raise ValueError("MaxPooling2D layer requires 'pool_size' parameter.")
-
+        if not isinstance(pool_size, (tuple, list, int)):
+            raise ValueError("pool_size must be an int, tuple, or list.")
         try:
-            pool_h, pool_w = map(NUMBER, pool_size)
-            stride_h, stride_w = map(NUMBER, strides) if strides else map(NUMBER, pool_size) # If strides is None, use pool_size
+            if isinstance(pool_size, (tuple, list)):
+                pool_h, pool_w = map(int, pool_size)
+            elif isinstance(pool_size, int):
+                pool_h = pool_w = pool_size
+            else:
+                raise ValueError("pool_size must be an int, tuple, or list.")
         except (ValueError, TypeError) as e:
             raise ValueError(f"Invalid MaxPooling2D parameter format: {e}") from e
 
