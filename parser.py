@@ -558,18 +558,7 @@ class ModelTransformer(lark.Transformer):
     def lstm_dropout(self, items):
         return {"type": "LSTMDropoutWrapper", 'params': items[0]}
 
-    #### Advanced Layers #################################
-
-    def attention(self, items):
-        return {'type': 'Attention', 'params': items[0]}
-
-    def residual(self, items):
-        params = items[0] if items else {}
-        return {'type': 'Residual', 'params': params}
-
-    def inception(self, items):
-        return {'type': 'Inception', 'params': items[0]}
-
+    
 
     ### Everything Research ##################
 
@@ -803,7 +792,19 @@ class ModelTransformer(lark.Transformer):
 
     ### End named_params ################################################
 
-    ### Advanced layers ###############################
+    
+    #### Advanced Layers #################################
+
+    def attention(self, items):
+        return {'type': 'Attention', 'params': items[0]}
+
+    def residual(self, items):
+        params = items[0] if items else {}
+        return {'type': 'ResidualConnection', 'params': params}
+
+    def inception(self, items):
+        return {'type': 'Inception', 'params': items[0]}
+
     
     def graph_layer(self, items):
         if items[0].data == 'graph_conv':
