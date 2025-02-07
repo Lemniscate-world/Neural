@@ -34,24 +34,19 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         rnr_file: research
 
         # Parameter & Properties
-        ?value: ESCAPED_STRING_VALUE | tuple_ | number | BOOL
-        ESCAPED_STRING_VALUE: ESCAPED_STRING
+        named_params: named_param ("," named_param)*
+        value: ESCAPED_STRING | tuple_ | number | BOOL  
         activation_param: "activation" "=" ESCAPED_STRING
-        ordered_params: positional_param ("," positional_param)*
-        positional_param: _positional_number | _positional_tuple | _positional_string
-        _positional_number: /\d+(\.\d+)?/
-        _positional_tuple: "(" WS_INLINE* _positional_number WS_INLINE* "," WS_INLINE* _positional_number WS_INLINE* ")"
-        _positional_string: /\"[^\"]*\"/
+        ordered_params: value ("," value)* 
         tuple_: "(" WS_INLINE* number WS_INLINE* "," WS_INLINE* number WS_INLINE* ")"  
-        number: NUMBER
+        number: NUMBER  
         BOOL: "true" | "false"
-
 
         # name_param rules
         bool_value: BOOL  // Example: true or false
         named_return_sequences: "return_sequences" "=" bool_value
         named_units: "units" "=" NUMBER  // Example: units=64
-        named_activation: "activation" "=" ESCAPED_STRING_VALUE  
+        named_activation: "activation" "=" ESCAPED_STRING  
         named_filters: "filters" "=" NUMBER  // Example: filters=32
         named_kernel_size: "kernel_size" "=" value  
         named_strides: "strides" "=" value  // Example: strides=(1, 1) or strides=1
@@ -71,20 +66,20 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_epsilon: "epsilon" "=" FLOAT  // Example: epsilon=1e-05
         named_center: "center" "=" BOOL  // Example: center=true
         named_scale: "scale" "=" BOOL  // Example: scale=true
-        named_beta_initializer: "beta_initializer" "=" ESCAPED_STRING_VALUE  // Example: beta_initializer="zeros"
-        named_gamma_initializer: "gamma_initializer" "=" ESCAPED_STRING_VALUE  // Example: gamma_initializer="ones"
-        named_moving_mean_initializer: "moving_mean_initializer" "=" ESCAPED_STRING_VALUE  // Example: moving_mean_initializer="zeros"
-        named_moving_variance_initializer: "moving_variance_initializer" "=" ESCAPED_STRING_VALUE  // Example: moving_variance_initializer="ones"
+        named_beta_initializer: "beta_initializer" "=" ESCAPED_STRING  // Example: beta_initializer="zeros"
+        named_gamma_initializer: "gamma_initializer" "=" ESCAPED_STRING  // Example: gamma_initializer="ones"
+        named_moving_mean_initializer: "moving_mean_initializer" "=" ESCAPED_STRING  // Example: moving_mean_initializer="zeros"
+        named_moving_variance_initializer: "moving_variance_initializer" "=" ESCAPED_STRING  // Example: moving_variance_initializer="ones"
         named_training: "training" "=" BOOL  // Example: training=true
         named_trainable: "trainable" "=" BOOL  // Example: trainable=false
         named_use_bias: "use_bias" "=" BOOL  // Example: use_bias=true
-        named_kernel_initializer: "kernel_initializer" "=" ESCAPED_STRING_VALUE  // Example: kernel_initializer="glorot_uniform"
-        named_bias_initializer: "bias_initializer" "=" ESCAPED_STRING_VALUE  // Example: bias_initializer="zeros"
-        named_kernel_regularizer: "kernel_regularizer" "=" ESCAPED_STRING_VALUE  // Example: kernel_regularizer="l2"
-        named_bias_regularizer: "bias_regularizer" "=" ESCAPED_STRING_VALUE  // Example: bias_regularizer="l1"
-        named_activity_regularizer: "activity_regularizer" "=" ESCAPED_STRING_VALUE  // Example: activity_regularizer="l1_l2"
-        named_kernel_constraint: "kernel_constraint" "=" ESCAPED_STRING_VALUE  // Example: kernel_constraint="max_norm"
-        named_bias_constraint: "bias_constraint" "=" ESCAPED_STRING_VALUE  // Example: bias_constraint="min_max_norm"
+        named_kernel_initializer: "kernel_initializer" "=" ESCAPED_STRING  // Example: kernel_initializer="glorot_uniform"
+        named_bias_initializer: "bias_initializer" "=" ESCAPED_STRING  // Example: bias_initializer="zeros"
+        named_kernel_regularizer: "kernel_regularizer" "=" ESCAPED_STRING  // Example: kernel_regularizer="l2"
+        named_bias_regularizer: "bias_regularizer" "=" ESCAPED_STRING  // Example: bias_regularizer="l1"
+        named_activity_regularizer: "activity_regularizer" "=" ESCAPED_STRING  // Example: activity_regularizer="l1_l2"
+        named_kernel_constraint: "kernel_constraint" "=" ESCAPED_STRING  // Example: kernel_constraint="max_norm"
+        named_bias_constraint: "bias_constraint" "=" ESCAPED_STRING  // Example: bias_constraint="min_max_norm"
         named_return_state: "return_state" "=" BOOL  // Example: return_state=true
         named_go_backwards: "go_backwards" "=" BOOL  // Example: go_backwards=false
         named_stateful: "stateful" "=" BOOL  // Example: stateful=true
@@ -92,8 +87,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_unroll: "unroll" "=" BOOL  // Example: unroll=true
         named_input_shape: "input_shape" "=" value  // Example: input_shape=(28, 28, 1)
         named_batch_input_shape: "batch_input_shape" "=" value  // Example: batch_input_shape=(None, 32, 32, 3)
-        named_dtype: "dtype" "=" ESCAPED_STRING_VALUE  // Example: dtype="float32"
-        named_name: "name" "=" ESCAPED_STRING_VALUE  // Example:
+        named_dtype: "dtype" "=" ESCAPED_STRING  // Example: dtype="float32"
+        named_name: "name" "=" ESCAPED_STRING  // Example: name="my_layer"
         named_weights: "weights" "=" value  // Example: weights=[...]
         named_embeddings_initializer: "embeddings_initializer" "=" ESCAPED_STRING  // Example: embeddings_initializer="uniform"
         named_mask_zero: "mask_zero" "=" BOOL  // Example: mask_zero=true
@@ -124,20 +119,17 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_l1: "l1" "=" FLOAT  // Example: l1=0.01
         named_l2: "l2" "=" FLOAT  // Example: l2=0.001
         named_l1_l2: "l1_l2" "=" tuple_  // Example: l1_l2=(0.01, 0.001)
-        ?named_param: (named_units | named_activation | named_filters | named_kernel_size | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_pool_size | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | string_param | value)
-        string_param: ESCAPED_STRING
+        ?named_param: (named_units | named_activation | named_filters | named_kernel_size | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_pool_size | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | number_param | string_param)  // Added string_param
+        number_param: NUMBER
+        string_param: ESCAPED_STRING 
         named_int: NAME "=" INT
         named_float: NAME "=" FLOAT
-        named_number: NAME "=" number
-        
-        layer_param: named_param | string_param
+        named_number: NAME "=" NUMBER
 
-        # Layer parameter styles
-        named_params: named_param ("," named_param)*
 
         # Layer parameter styles
         ?param_style1: named_params    // Dense(units=128, activation="relu")
-                    | ordered_params 
+                    | ordered_params   // Dense(128, "relu")
 
         # Top-level network definition - defines the structure of an entire neural network
         network: "network" NAME "{" input_layer layers loss optimizer [training_config] [execution_config] "}" 
@@ -162,7 +154,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         wrapper_layer_type: "TimeDistributed" 
 
         # Basic layers group
-        ?basic: conv | pooling | dropout | flatten | dense | output 
+        ?basic: conv | pooling | dropout | flatten | dense | output
         dropout: "Dropout(" named_params ")"
 
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2 
@@ -177,7 +169,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         # Convolutional layers 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
         conv1d: "Conv1D(" named_params ")"
-        conv2d: "Conv2D(" (named_params | ordered_params) ")"
+        conv2d: "Conv2D(" named_params ")"
         conv3d: "Conv3D(" named_params ")"
         conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
         conv1d_transpose: "Conv1DTranspose(" named_params ")"
@@ -345,17 +337,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 network_parser = create_parser('network')
 layer_parser = create_parser('layer')
 research_parser = create_parser('research')
-    
+
 class ModelTransformer(lark.Transformer):
     """
-    Transforms the parsed tree into a structured dictionary representing the neural network model.
+    Transforms the parsed tree NUMBERo a structured dictionary representing the neural network model.
     """
-
-    def make_layer(self, layer_type, items, use_extract=False):
-        """Helper to create a layer dictionary with the given type."""
-        params = self._extract_value(items) if use_extract else items[0]
-        return {'type': layer_type, 'params': params}
-    
     def layer(self, items):
         layer_type = items[0].data
         params = self.visit(items[0].children[0]) if items[0].children else {}
@@ -382,72 +368,35 @@ class ModelTransformer(lark.Transformer):
         return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
 
     ### Convolutional Layers ####################
-    def _extract_value(items):
-        extracted = {}
-        params = []
-        for item in items:
-            if isinstance(item, dict) and 'positional' in item:
-                pos = item.pop('positional')
-                if len(pos) >= 1:
-                    params['filters'] = pos[0]  # First positional arg is filters
-                if len(pos) >= 2:
-                    kernel_size = pos[1]
-                    if isinstance(kernel_size, tuple):
-                        # Clean up kernel size tuple by removing whitespace
-                        kernel_size = tuple(x for x in kernel_size if not (isinstance(x, str) and x.isspace()))
-                    params['kernel_size'] = kernel_size
-                if len(pos) >= 3:
-                    params['activation'] = pos[2]  # Third positional arg is activation
-            extracted.update(item)
-        return extracted
+    def conv1d(self, items):
+        return {'type': 'Conv1D', 'params': items[0]}
 
     def conv2d(self, items):
-        # Extract parameters from items
-        extracted = self._extract_value(items)
-        params = {}
+        return {'type': 'Conv2D', 'params': items[0]}
 
-        # If positional arguments were provided as a list:
-        if isinstance(extracted, dict) and 'positional' in extracted:
-            pos = extracted.pop('positional')
-            if len(pos) >= 1:
-                params['filters'] = pos[0]  # First positional arg is filters
-            if len(pos) >= 2:
-                kernel_size = pos[1]
-                if isinstance(kernel_size, tuple):
-                    # Clean up kernel size tuple by removing whitespace
-                    kernel_size = tuple(x for x in kernel_size if not (isinstance(x, str) and x.isspace()))
-                params['kernel_size'] = kernel_size
-            if len(pos) >= 3:
-                params['activation'] = pos[2]  # Third positional arg is activation
-        else:
-            params = extracted
-
-        # Return the layer with proper string type and cleaned parameters
-        return {'type': 'Conv2D', 'params': params}
-    
-    def conv1d(self, items):
-        return self.make_layer('Conv1D', items)
-    
     def conv3d(self, items):
-        return self.make_layer('Conv3D', items)
+        return {'type': 'Conv3D', 'params': items[0]}
     
     def conv1d_transpose(self, items):
-        return self.make_layer('Conv1DTranspose', items)
-    
+        return {'type': 'Conv1DTranspose', 'params': items[0]}
+
     def conv2d_transpose(self, items):
-        return self.make_layer('Conv2DTranspose', items)
-    
+        return {'type': 'Conv2DTranspose', 'params': items[0]}
+
     def conv3d_transpose(self, items):
-        return self.make_layer('Conv3DTranspose', items)
-    
+        return {'type': 'Conv3DTranspose', 'params': items[0]}
+
     def depthwise_conv2d(self, items):
-        return self.make_layer('DepthwiseConv2D', items)
-    
+        return {'type': 'DepthwiseConv2D', 'params': items[0]}
+
     def separable_conv2d(self, items):
-        return self.make_layer('SeparableConv2D', items)
+        return {'type': 'SeparableConv2D', 'params': items[0]}
     
     def dense(self, items):
-        return self.make_layer('Dense', items)
+        return {
+            'type': 'Dense',
+            'params': items[0]
+        }
 
     def loss(self, items):
         return items[0].value.strip('"')
@@ -464,7 +413,7 @@ class ModelTransformer(lark.Transformer):
     def dropout(self, items):
         return {'type': 'Dropout', 'params': items[0]}
 
-    ### Training Configurations ############################
+    ### Training Configurations ############################""
 
     def training_config(self, items):
         config = {}
@@ -556,6 +505,8 @@ class ModelTransformer(lark.Transformer):
     def simple_rnn(self, items):
         return {'type': 'SimpleRNN', 'params': items[0]}
     
+
+    
     def conv_lstm(self, items):
         return {'type': 'ConvLSTM2D', 'params': items[0]}
 
@@ -618,12 +569,14 @@ class ModelTransformer(lark.Transformer):
     def inception(self, items):
         return {'type': 'Inception', 'params': items[0]}
 
+
     ### Everything Research ##################
 
     def research(self, items):
         name = items[0].value if items and isinstance(items[0], Token) else None
         params = items[1] if len(items) > 1 else {}
         return {'type': 'Research', 'name': name, 'params': params}
+
 
     # NETWORK ACTIVATION ##############################
 
@@ -657,27 +610,24 @@ class ModelTransformer(lark.Transformer):
             'execution_config': execution_config
         }
 
+
     ### Parameters  #######################################################
 
-    def _extract_value(self, item):
-        """Extracts values from tokens, lists, tuples, and dictionaries."""
-        import lark  # ensure lark is imported here
-        if isinstance(item, lark.Token):
-            value = item.value
-            # Remove surrounding quotes even if token type is not STRING.
-            if value.startswith('"') and value.endswith('"'):
-                return value[1:-1]
-            return value
-        elif isinstance(item, list):
-            return [self._extract_value(i) for i in item]
-        elif isinstance(item, tuple):
-            return tuple(self._extract_value(i) for i in item)
-        elif isinstance(item, dict):
-            return {k: self._extract_value(v) for k, v in item.items()}
-        elif isinstance(item, lark.Tree):
-            return self.visit(item)
+    def _extract_value(self, item):  # Helper function to extract values from tokens and tuples
+        if isinstance(item, Token):
+            if item.type in ('INT', 'FLOAT', 'NUMBER', 'SIGNED_NUMBER'):
+                try:
+                    return int(item)
+                except ValueError:
+                    return float(item)
+            elif item.type == 'BOOL':
+                return item.value.lower() == 'true'
+            elif item.type == 'ESCAPED_STRING':
+                return item.value.strip('"')
+        elif isinstance(item, Tree) and item.data == 'tuple_':
+            return tuple(self._extract_value(child) for child in item.children)
         return item
-
+    
     def named_param(self, items):  # Corrected to use _extract_value and return a dictionary
         name = str(items[0])
         value = self._extract_value(items[2])  # Extract the value using the helper function
@@ -690,94 +640,85 @@ class ModelTransformer(lark.Transformer):
         return {"activation": self._extract_value(items[0])}
 
     def number(self, items):
-        """Handles standalone numbers."""
-        return eval(items[0].value)  # Evaluate the number
-
-    def string(self, items):
-        """Handles standalone strings."""
-        return items[0].value.strip('"')
+        return self._extract_value(items[0])
     
     def number_or_none(self, items):
         if items[0].value.lower() == 'none':
             return None
-        return int(items[0].value)  # Convert to int after checking for 'none'
+        return int(items[0])  # Convert to int after checking for 'none'
 
     def named_params(self, items):
-        """Handles named parameters, extracting values and converting to a dictionary."""
         params = {}
-        positional_params = []
-
         for item in items:
-            if isinstance(item, dict):
-                params.update(item)
-            else:
-                positional_params.append(self._extract_value(item))
-
-        if positional_params:
-            params['positional'] = positional_params
+            params.update(item)
         return params
 
     def value(self, items):
-        if len(items) == 1:
-            return self._extract_value(items[0])
-        return [self._extract_value(item) for item in items]
+        item = items[0]
+        if isinstance(item, Tree) and item.data == 'tuple_':
+            return self.tuple_(item.children)
+        elif isinstance(item, Token):
+            if item.type == 'ESCAPED_STRING':
+                return item.value.strip('"')
+            elif item.type in ('NUMBER', 'FLOAT', 'BOOL'):
+                return eval(item.value)
+        return item
 
     def tuple_(self, items):
-        return tuple(self._extract_value(item) for item in items)
+        return tuple(eval(item.value) for item in items if isinstance(item, Token) and item.type == 'NUMBER')
     
     def groups_param(self, items):
-        return {'groups': self._extract_value(items[0])}
+        return {'groups': items[2]}
+
 
     def research_params(self, items):
-        return {'research': self._extract_value(items[0])}
+        params = {}
+        for item in items:
+            params.update(item)
+        return params
 
     def metrics(self, items):
-        return {'metrics': [self._extract_value(item) for item in items]}
+        return {'metrics': items}
+
 
     def accuracy_param(self, items):
-        return {'accuracy': self._extract_value(items[0])}
+        return {'accuracy': float(items[0].value)}
 
     def loss_param(self, items):
-        return {'loss': self._extract_value(items[0])}
+        return {'loss': float(items[0].value)}
 
     def precision_param(self, items):
-        return {'precision': self._extract_value(items[0])}
+        return {'precision': float(items[0].value)}
 
     def recall_param(self, items):
-        return {'recall': self._extract_value(items[0])}
+        return {'recall': float(items[0].value)}
+
 
     def references(self, items):
-        return {'references': [self._extract_value(item) for item in items]}
+        return {'references': items}
 
     def paper_param(self, items):
-        return {'paper': self._extract_value(items[0])}
+        return items[0].value.strip('"')
 
     def epochs_param(self, items):
-        return {'epochs': self._extract_value(items[0])}
+        return {'epochs': int(items[0].value)}
 
     def batch_size_param(self, items):
-        return {'batch_size': self._extract_value(items[0])}
+        return {'batch_size': int(items[0].value)}
 
     def device_param(self, items):
-        return {'device': self._extract_value(items[0])}
+        return {'device': items[0].value.strip('"')}
     
     # Named_params & Their Properties ##################################################
 
     def bool_value(self, items):
-        val = items[0].value.lower()
-        return True if val == 'true' else False
-
-    def kernel_size_tuple(self, items):
-        return tuple(self._extract_value(item) for item in items)
+        return self._extract_value(items[0])
 
     def named_filters(self, items):
-        return {'filters': self._extract_value(items[0])}
-
-    def named_units(self, items):  
-        return {'units': self._extract_value(items[0])}
+        return {"filters": self._extract_value(items[2])}
 
     def named_activation(self, items):
-        return {'activation': self._extract_value(items[0])}
+        return {"activation": self._extract_value(items[2])}
 
     def named_kernel_size(self, items):
         return {"kernel_size": self._extract_value(items[2])}
