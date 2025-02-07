@@ -35,12 +35,12 @@ def transformer():
         ('Conv2D(filters=32, kernel_size=3, activation="relu", padding="same")', {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': 3, 'activation': 'relu', 'padding': 'same'}}, "conv2d-padding"),
         ('MaxPooling2D(pool_size=(2, 2))', {'type': 'MaxPooling2D', 'params': {'pool_size': (2, 2)}}, "maxpooling2d"),
         ('MaxPooling2D((3, 3), strides=2, padding="valid")', {'type': 'MaxPooling2D', 'params': {'pool_size': (3, 3), 'strides': 2, 'padding': 'valid'}}, "maxpooling2d-strides"),
-        ('Flatten()', {'type': 'Flatten', 'params': {}}, "flatten"),
+        ('Flatten()', {'type': 'Flatten', 'params': None}, "flatten"),
         ('Dropout(0.5)', {'type': 'Dropout', 'params': {'rate': 0.5}}, "dropout"),
         ('Dropout(rate=0.25)', {'type': 'Dropout', 'params': {'rate': 0.25}}, "dropout-named"),
-        ('BatchNormalization()', {'type': 'BatchNormalization', 'params': {}}, "batchnorm"),
-        ('LayerNormalization()', {'type': 'LayerNormalization', 'params': {}}, "layernorm"),
-        ('InstanceNormalization()', {'type': 'InstanceNormalization', 'params': {}}, "instancenorm"),
+        ('BatchNormalization()', {'type': 'BatchNormalization', 'params': None}, "batchnorm"),
+        ('LayerNormalization()', {'type': 'LayerNormalization', 'params': None}, "layernorm"),
+        ('InstanceNormalization()', {'type': 'InstanceNormalization', 'params': None}, "instancenorm"),
         ('GroupNormalization(groups=32)', {'type': 'GroupNormalization', 'params': {'groups': 32}}, "groupnorm"),
         ('LSTM(units=64)', {'type': 'LSTM', 'params': {'units': 64}}, "lstm"),
         ('LSTM(units=128, return_sequences=true)', {'type': 'LSTM', 'params': {'units': 128, 'return_sequences': True}}, "lstm-return"),
@@ -54,16 +54,16 @@ def transformer():
         ('SimpleRNNDropoutWrapper(units=16, dropout=0.3)', {'type': 'SimpleRNNDropoutWrapper', 'params': {'units': 16, 'dropout': 0.3}}, "simplernn-dropout"),
         ('GRUDropoutWrapper(units=32, dropout=0.4)', {'type': 'GRUDropoutWrapper', 'params': {'units': 32, 'dropout': 0.4}}, "gru-dropout"),
         ('LSTMDropoutWrapper(units=64, dropout=0.5)', {'type': 'LSTMDropoutWrapper', 'params': {'units': 64, 'dropout': 0.5}}, "lstm-dropout"),
-        ('Attention()', {'type': 'Attention', 'params': {}}, "attention"),
+        ('Attention()', {'type': 'Attention', 'params': None}, "attention"),
         ('TransformerEncoder(num_heads=8, ff_dim=512)', {'type': 'TransformerEncoder', 'params': {'num_heads': 8, 'ff_dim': 512}}, "transformer"),
         ('ResidualConnection()', {'type': 'ResidualConnection', 'params': None}, "residual"),
-        ('InceptionModule()', {'type': 'InceptionModule', 'params': {}}, "inception"),
-        ('CapsuleLayer()', {'type': 'CapsuleLayer', 'params': {}}, "capsule"),
-        ('SqueezeExcitation()', {'type': 'SqueezeExcitation', 'params': {}}, "squeeze"),
-        ('GraphConv()', {'type': 'GraphConv', 'params': {}}, "graphconv"),
+        ('InceptionModule()', {'type': 'InceptionModule', 'params': None}, "inception"),
+        ('CapsuleLayer()', {'type': 'CapsuleLayer', 'params': None}, "capsule"),
+        ('SqueezeExcitation()', {'type': 'SqueezeExcitation', 'params': None}, "squeeze"),
+        ('GraphConv()', {'type': 'GraphConv', 'params': None}, "graphconv"),
         ('Embedding(input_dim=1000, output_dim=128)', {'type': 'Embedding', 'params': {'input_dim': 1000, 'output_dim': 128}}, "embedding"),
-        ('QuantumLayer()', {'type': 'QuantumLayer', 'params': {}}, "quantum"),
-        ('DynamicLayer()', {'type': 'DynamicLayer', 'params': {}}, "dynamic"),
+        ('QuantumLayer()', {'type': 'QuantumLayer', 'params': None}, "quantum"),
+        ('DynamicLayer()', {'type': 'DynamicLayer', 'params': None}, "dynamic"),
         ('Output(units=10, activation="softmax")', {'type': 'Output', 'params': {'units': 10, 'activation': 'softmax'}}, "output-softmax"),
         ('Output(units=1, activation="sigmoid")', {'type': 'Output', 'params': {'units': 1, 'activation': 'sigmoid'}}, "output-sigmoid"),
         # Edge Cases
@@ -123,7 +123,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
             [
                 {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': (3, 3), 'activation': 'relu'}},
                 {'type': 'MaxPooling2D', 'params': {'pool_size': (2, 2)}},
-                {'type': 'Flatten', 'params': {}},
+                {'type': 'Flatten', 'params': None},
                 {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}},
                 {'type': 'Output', 'params': {'units': 10, 'activation': 'softmax'}}
             ],
@@ -142,10 +142,10 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
             """,
             "SimpleModel", (28, 28, 1),
             [
-                {'type': 'Flatten', 'params': {}},
+                {'type': 'Flatten', 'params': None},
                 {'type': 'Output', 'params': {'units': 1, 'activation': 'sigmoid'}}
             ],
-            "binary_crossentropy", "SGD", {}  # Empty training config
+            "binary_crossentropy", "SGD", None  # Empty training config
         ),
         (
             # Edge case: No layers
@@ -158,7 +158,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
                 optimizer: "rmsprop"
             }
             """,
-            "NoLayers", (10,), [], "mse", "rmsprop", {}  # No layers, empty training config
+            "NoLayers", (10,), [], "mse", "rmsprop", None  # No layers, empty training config
         ),
         (
             # Error case: Invalid input shape
@@ -228,9 +228,9 @@ def test_network_parsing(network_parser, transformer, network_string, expected_n
         (
             # Edge case: Empty research block
             """
-            research EmptyResearch {}
+            research EmptyResearch None
             """,
-            "EmptyResearch", {}, []  # Empty metrics and references
+            "EmptyResearch", None, []  # Empty metrics and references
         ),
         (
             # Error case: Invalid metrics
