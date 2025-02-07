@@ -258,18 +258,18 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Advanced layers group
         ?advanced: attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic
-        attention: "Attention(" named_params ")"
-        transformer: "Transformer(" named_params ")" | "TransformerEncoder(" named_params ")" | "TransformerDecoder(" named_params ")"
+        attention: "Attention" "(" [named_params] ")"
+        transformer: "Transformer" "(" [named_params] ")" | "TransformerEncoder" "(" [named_params] ")" | "TransformerDecoder" "(" [named_params] ")"
         residual: "ResidualConnection" "(" [named_params] ")"
-        inception: "Inception(" named_params ")"
-        capsule: "Capsule(" named_params ")"
-        squeeze_excitation: "SqueezeExcitation(" named_params ")"
+        inception: "Inception" "(" [named_params] ")"
+        capsule: "Capsule" "(" [named_params] ")"
+        squeeze_excitation: "SqueezeExcitation" "(" [named_params] ")"
         graph: graph_conv | graph_attention
-        graph_conv: "GraphConv(" named_params ")"
-        graph_attention: "GraphAttention(" named_params ")"
-        embedding: "Embedding(" named_params ")"
-        quantum: "QuantumLayer(" named_params ")"
-        dynamic: "DynamicLayer(" named_params ")"
+        graph_conv: "GraphConv" "(" [named_params] ")"
+        graph_attention: "GraphAttention" "(" [named_params] ")"
+        embedding: "Embedding" "(" [named_params] ")"
+        quantum: "QuantumLayer" "(" [named_params] ")"
+        dynamic: "DynamicLayer" "(" [named_params] ")"
 
         merge: add | subtract | multiply | average | maximum | concatenate | dot
         add: "Add(" named_params ")"
@@ -799,7 +799,7 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Attention', 'params': items[0]}
 
     def residual(self, items):
-        params = items[0] if items else {}
+        params = items[0] if items else None
         return {'type': 'ResidualConnection', 'params': params}
 
     def inception(self, items):
