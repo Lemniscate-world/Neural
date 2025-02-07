@@ -217,7 +217,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Basic layer types
         dense: "Dense(" named_params ")"
-        flatten: "Flatten(" named_params ")"
+        flatten: "Flatten(" [named_params] ")"
 
         # Recurrent layers section - includes all RNN variants
         ?recurrent: rnn | bidirectional_rnn | conv_rnn | rnn_cell  
@@ -260,7 +260,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ?advanced: attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic
         attention: "Attention(" named_params ")"
         transformer: "Transformer(" named_params ")" | "TransformerEncoder(" named_params ")" | "TransformerDecoder(" named_params ")"
-        residual: "Residual(" named_params ")"
+        residual: "Residual(" [named_params] ")"
         inception: "Inception(" named_params ")"
         capsule: "Capsule(" named_params ")"
         squeeze_excitation: "SqueezeExcitation(" named_params ")"
@@ -564,7 +564,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Attention', 'params': items[0]}
 
     def residual(self, items):
-        return {'type': 'Residual', 'params': items[0]}
+        params = items[0] if items else {}
+        return {'type': 'Residual', 'params': params}
 
     def inception(self, items):
         return {'type': 'Inception', 'params': items[0]}
