@@ -624,8 +624,16 @@ class ModelTransformer(lark.Transformer):
                 return item.value.lower() == 'true'
             elif item.type == 'ESCAPED_STRING':
                 return item.value.strip('"')
-        elif isinstance(item, Tree) and item.data == 'tuple_':
-            return tuple(self._extract_value(child) for child in item.children)
+        elif isinstance(item, list):  # Handles nested lists
+            return [self._extract_value(elem) for elem in item]
+        elif isinstance(item, dict):  # Handles nested dictionaries
+            return {k: self._extract_value(v) for k, v in item.items()}
+        elif isinstance(item, Tree):  # Handles all Tree types, not just tuple_
+            if item.data == 'tuple_':
+                return tuple(self._extract_value(child) for child in item.children)
+            else:  # Extract values from other tree types
+                return {k: self._extract_value(v) for k, v in zip(item.children[::2], item.children[1::2])}
+
         return item
     
     def named_param(self, items):  # Corrected to use _extract_value and return a dictionary
@@ -650,6 +658,8 @@ class ModelTransformer(lark.Transformer):
     def named_params(self, items):
         params = {}
         for item in items:
+            if isinstance(item, Tree):
+                item = self.visit(item)
             params.update(item)
         return params
 
@@ -717,8 +727,11 @@ class ModelTransformer(lark.Transformer):
     def named_filters(self, items):
         return {"filters": self._extract_value(items[2])}
 
-    def named_activation(self, items):
-        return {"activation": self._extract_value(items[2])}
+    def named_units(self, items):  
+        return {"units": self._extract_value(items[0])}
+
+    def named_activation(self, items): 
+        return {"activation": self._extract_value(items[0])}
 
     def named_kernel_size(self, items):
         return {"kernel_size": self._extract_value(items[2])}
