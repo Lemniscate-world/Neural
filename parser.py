@@ -724,46 +724,46 @@ class ModelTransformer(lark.Transformer):
         return {"activation": self._extract_value(items[0])}
 
     def named_kernel_size(self, items):
-        return {"kernel_size": self._extract_value(items[2])}
+        return {"kernel_size": self._extract_value(items[0])}
 
     def named_padding(self, items):
-        return {"padding": self._extract_value(items[2])}
+        return {"padding": self._extract_value(items[0])}
 
     def named_strides(self, items):
-        return {"strides": self._extract_value(items[2])}
+        return {"strides": self._extract_value(items[0])}
 
     def named_rate(self, items):
-        return {"rate": self._extract_value(items[2])}
+        return {"rate": self._extract_value(items[0])}
 
     def named_dilation_rate(self, items):
-        return {"dilation_rate": self._extract_value(items[2])}
+        return {"dilation_rate": self._extract_value(items[0])}
 
     def named_groups(self, items):
-        return {"groups": self._extract_value(items[2])}
+        return {"groups": self._extract_value(items[0])}
 
     def named_pool_size(self, items):
-        return {"pool_size": self._extract_value(items[2])}
+        return {"pool_size": self._extract_value(items[0])}
 
     def named_dropout(self, items):
-        return {"dropout": self._extract_value(items[2])}
+        return {"dropout": self._extract_value(items[0])}
 
     def named_return_sequences(self, items):
-        return {"return_sequences": self._extract_value(items[2])}
+        return {"return_sequences": self._extract_value(items[0])}
 
     def named_num_heads(self, items):
-        return {"num_heads": self._extract_value(items[2])}
+        return {"num_heads": self._extract_value(items[0])}
 
     def named_ff_dim(self, items):
-        return {"ff_dim": self._extract_value(items[2])}
+        return {"ff_dim": self._extract_value(items[0])}
 
     def named_input_dim(self, items):
-        return {"input_dim": self._extract_value(items[2])}
+        return {"input_dim": self._extract_value(items[0])}
 
     def named_output_dim(self, items):
-        return {"output_dim": self._extract_value(items[2])}
+        return {"output_dim": self._extract_value(items[0])}
 
     def groups_param(self, items):
-        return {'groups': self._extract_value(items[2])}
+        return {'groups': self._extract_value(items[0])}
 
     def epochs_param(self, items):
         return {'epochs': self._extract_value(items[0])}
