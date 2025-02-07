@@ -1112,7 +1112,7 @@ def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any
             return (batch_size, units) # Shape is (batch, units) if return_sequences=False
 
 
-    elif layer_type in ['Attention', 'TransformerEncoder', 'ResidualConnection', 'InceptionModule',
+    elif layer_type in ['Attention', 'TransformerEncoder', 'Residual', 'InceptionModule',
                         'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
         return input_shape # Placeholder for advanced layers, needs specific shape logic
 
