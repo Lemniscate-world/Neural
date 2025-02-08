@@ -1,3 +1,4 @@
+from fastapi import params
 import lark
 from lark import Tree, Transformer, Token
 from typing import Any, Dict, List, Tuple, Union, Optional, Callable
@@ -280,7 +281,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         
         residual: "ResidualConnection" "(" [named_params] ")"
         inception: "Inception" "(" [named_params] ")"
-        capsule: "Capsule" "(" [named_params] ")"
+        capsule: "CapsuleLayer" "(" [named_params] ")"
         squeeze_excitation: "SqueezeExcitation" "(" [named_params] ")"
         graph: graph_conv | graph_attention
         graph_conv: "GraphConv" "(" [named_params] ")"
@@ -596,6 +597,16 @@ class ModelTransformer(lark.Transformer):
         name = self._extract_value(items[0])
         params = self._extract_value(items[1])
         return {'type': 'Research', 'name': name, 'params': params}
+    
+    def research_params(self, items):
+        params = {}
+        for item in items:
+            if isinstance(item, Tree):
+                item = self._extract_value(item)
+            elif isinstance(item, dict):
+                item = self._extract_value(item)
+                params.update(item)
+        return params
 
 
     # NETWORK ACTIVATION ##############################
@@ -686,12 +697,6 @@ class ModelTransformer(lark.Transformer):
 
     def explicit_tuple(self, items):
         return tuple(self._extract_value(x) for x in items[0].children)
-    
-    def research_params(self, items):
-        params = {}
-        for item in items:
-            params.update(item)
-        return params
 
     def metrics(self, items):
         return {'metrics': items}
@@ -876,12 +881,12 @@ class ModelTransformer(lark.Transformer):
         return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
 
     def custom_layer(self, items):
-        params = items[0] if items else None
-        return {'type': items[0], 'params': params}
+        params = self._extract_value(items[0])
+        return {'type': 'Capsule', 'params': params}
     
     def capsule(self, items):
         params = items[0] if items else None
-        return {'type': 'Capsule', 'params': params}
+        return {'type': 'CapsuleLayer', 'params': params}
 
     def squeeze_excitation(self, items):
         return {'type': 'SqueezeExcitation', 'params': items[0]}
