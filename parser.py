@@ -616,8 +616,29 @@ class ModelTransformer(lark.Transformer):
         return params
     
     def metrics(self, items):
-        return {'metrics': self._extract_value(items[0])}
-        
+        # If no metric items were provided, return an empty dictionary.
+        if not items:
+            return {'metrics': {}}
+        result = {}
+        for item in items:
+            # Skip any None values
+            if item is None:
+                continue
+            # If the item is already a dictionary (as produced by individual metric rules), update the result.
+            if isinstance(item, dict):
+                result.update(item)
+            else:
+                # Otherwise, attempt to extract a string value and split it by colon
+                val = self._extract_value(item)
+                if val and ':' in val:
+                    key, v = str(val).split(':', 1)
+                    try:
+                        result[key.strip()] = float(v.strip())
+                    except ValueError:
+                        result[key.strip()] = v.strip()
+        return {'metrics': result}
+
+
     def paper_param(self, items):
         return self._extract_value(items[0])
 
