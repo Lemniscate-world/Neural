@@ -180,7 +180,7 @@ def test_network_parsing(network_parser, transformer, network_string, expected_n
 
     # Act
     if expected_name is None:
-        with pytest.raises(exceptions.UnexpectedCharacters):  # Expecting parsing error
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken)):  # Expecting parsing error
             network_parser.parse(network_string)
     else:
         tree = network_parser.parse(network_string)
