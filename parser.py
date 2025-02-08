@@ -232,7 +232,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         
 
         # Basic layer types
-        dense: "Dense" "(" param_style1 ")"
+        dense: "Dense(" ( "units=" INT "," "activation=" ESCAPED_STRING | INT "," ESCAPED_STRING ) ")"
         flatten: "Flatten" "(" [named_params] ")"
 
         # Recurrent layers section - includes all RNN variants
@@ -398,7 +398,12 @@ class ModelTransformer(lark.Transformer):
 
     def conv2d(self, items):
         params = {}
-        params = items._extract_value(items)
+        if len(items) >= 1:
+            params['filters'] = self._extract_value(items[0])
+        if len(items) >= 2:
+            params['kernel_size'] = self._extract_value(items[1])
+        if len(items) >= 3:
+            params['activation'] = self._extract_value(items[2])
         return {'type': 'Conv2D', 'params': params}
 
     def conv3d(self, items):
@@ -593,6 +598,8 @@ class ModelTransformer(lark.Transformer):
 
     ### Everything Research ##################
 
+    
+
     def research(self, items):
         name = self._extract_value(items[0])
         params = self._extract_value(items[1])
@@ -607,6 +614,24 @@ class ModelTransformer(lark.Transformer):
                 item = self._extract_value(item)
                 params.update(item)
         return params
+    
+    def metrics(self, items):
+        return {'metrics': self._extract_value(items[0])}
+        
+    def paper_param(self, items):
+        return self._extract_value(items[0])
+
+    def accuracy_param(self, items):
+        return {'accuracy': self._extract_value(items[0])}
+
+    def loss_param(self, items):
+        return {'loss': self._extract_value(items[0])}
+
+    def precision_param(self, items):
+        return {'precision': self._extract_value(items[0])}
+
+    def recall_param(self, items):
+        return {'recall': self._extract_value(items[0])}
 
 
     # NETWORK ACTIVATION ##############################
@@ -628,6 +653,9 @@ class ModelTransformer(lark.Transformer):
         output_shape = output_layer.get('params', {}).get('units')
         if output_shape is not None:
             output_shape = (output_shape,)
+        elif output_shape.get() == str:
+            raise ValueError
+        
 
         return {
             'type': 'model',
@@ -671,8 +699,7 @@ class ModelTransformer(lark.Transformer):
                 return {k: self._extract_value(v) for k, v in zip(item.children[::2], item.children[1::2])}
 
         return item
-    
-    
+
 
     def number(self, items):
         return self._extract_value(items[0])
@@ -697,9 +724,6 @@ class ModelTransformer(lark.Transformer):
 
     def explicit_tuple(self, items):
         return tuple(self._extract_value(x) for x in items[0].children)
-
-    def metrics(self, items):
-        return {'metrics': items}
     
     def bool_value(self, items):
         return self._extract_value(items[0])
@@ -724,9 +748,9 @@ class ModelTransformer(lark.Transformer):
             if isinstance(params, list):
                 param_dict = {}
                 if len(params) >= 1:
-                    param_dict['units'] = params[0]
+                    param_dict['units'] = self._extract_value(items[0])
                 if len(params) >= 2:
-                    param_dict['activation'] = params[1]
+                    param_dict['activation'] = self._extract_value(items[1])
                 params = param_dict
             return {'type': 'Dense', 'params': params}
 
@@ -819,22 +843,6 @@ class ModelTransformer(lark.Transformer):
 
     def device_param(self, items):
         return {'device': self._extract_value(items[0])}
-
-    def paper_param(self, items):
-        return self._extract_value(items[0])
-
-    def accuracy_param(self, items):
-        return {'accuracy': self._extract_value(items[0])}
-
-    def loss_param(self, items):
-        return {'loss': self._extract_value(items[0])}
-
-    def precision_param(self, items):
-        return {'precision': self._extract_value(items[0])}
-
-    def recall_param(self, items):
-        return {'recall': self._extract_value(items[0])}
-
 
     ### End named_params ################################################
 
