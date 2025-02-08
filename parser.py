@@ -129,7 +129,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_float: NAME "=" FLOAT
         named_number: NAME "=" NUMBER
         named_tuple_: NAME "=" tuple_
-        pool_size : "pool_size" "=" NUMBER
+        pool_size : "pool_size" "=" value
         simple_number: number1
         simple_string: "STRING"
         simple_float: FLOAT
@@ -332,7 +332,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Research-specific configurations
         research: "research" NAME? "{" [research_params] "}"
-        research_params: metrics | references
+        research_params: (metrics | references)*
 
         # Metrics tracking
         metrics: "metrics" "{" [accuracy_param] [loss_param] [precision_param] [recall_param] "}"
@@ -712,6 +712,46 @@ class ModelTransformer(lark.Transformer):
                 params.update(item)
         return params
     
+    def ordered_params(self, items):
+
+        def dense(self, items):
+            params = items[0]
+            if isinstance(params, list):
+                param_dict = {}
+                if len(params) >= 1:
+                    param_dict['units'] = params[0]
+                if len(params) >= 2:
+                    param_dict['activation'] = params[1]
+                params = param_dict
+            return {'type': 'Dense', 'params': params}
+
+        def conv2d(self, items):
+            params = items[0]
+            if isinstance(params, list):
+                param_dict = {}
+                if len(params) >= 1:
+                    param_dict['filters'] = params[0]
+                if len(params) >= 2:
+                    param_dict['kernel_size'] = params[1]
+                if len(params) >= 3:
+                    param_dict['activation'] = params[2]
+                params = param_dict
+            return {'type': 'Conv2D', 'params': params}
+
+        def max_pooling2d(self, items):
+            params = items[0]
+            if isinstance(params, list):
+                param_dict = {}
+                if len(params) >= 1:
+                    param_dict['pool_size'] = params[0]
+                if len(params) >= 2:
+                    param_dict['strides'] = params[1]
+                if len(params) >= 3:
+                    param_dict['padding'] = params[2]
+                params = param_dict
+            return {'type': 'MaxPooling2D', 'params': params}
+            
+        
     def named_kernel_size(self, items):
         return {"kernel_size": self._extract_value(items[0])}
 
