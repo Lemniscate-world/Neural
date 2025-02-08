@@ -64,6 +64,9 @@
 - compiler optimizations
 - Integrate Hugging Face
 - AutoML features.
+ dynamic graph visualizations, something like neural topology evolution, or real-time training analysis?
+
+Also, are you encoding propagation in terms of differential geometry, variational methods, or alternative tensor representations? That could lead to new ways of thinking about deep learning structures.
 - Compiler stack for deployment
 - Create a memory file to resume for neural
 - Create a standalone interpreter for neural
