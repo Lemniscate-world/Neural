@@ -34,6 +34,7 @@
 - TESTING THE MVP and debugging (1) (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.) (Done)
 
 
+- Add one layer daily
 - GPU-optimized inference
   To make Neural a high-performance framework, we will:
 ✅ Implement GPU acceleration using CUDA & TensorRT (for NVIDIA GPUs)

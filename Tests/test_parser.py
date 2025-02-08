@@ -57,7 +57,7 @@ def transformer():
         ('Attention()', {'type': 'Attention', 'params': None}, "attention"),
         ('TransformerEncoder(num_heads=8, ff_dim=512)', {'type': 'TransformerEncoder', 'params': {'num_heads': 8, 'ff_dim': 512}}, "transformer"),
         ('ResidualConnection()', {'type': 'ResidualConnection', 'params': None}, "residual"),
-        ('InceptionModule()', {'type': 'InceptionModule', 'params': None}, "inception"),
+        ('Inception()', {'type': 'Inception', 'params': None}, "inception"),
         ('CapsuleLayer()', {'type': 'CapsuleLayer', 'params': None}, "capsule"),
         ('SqueezeExcitation()', {'type': 'SqueezeExcitation', 'params': None}, "squeeze"),
         ('GraphConv()', {'type': 'GraphConv', 'params': None}, "graphconv"),
