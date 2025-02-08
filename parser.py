@@ -21,7 +21,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         %import common.WS_INLINE             # Inline whitespace
         %import common.INT
         %import common.CNAME -> NAME         # Names/identifiers
-        %import common.FLOAT                 # Floating poNUMBER numbers
+        %import common.FLOAT  
+        %import common.TUPLE                            # Floating poNUMBER numbers
+        %import common.STRING
         %import common.ESCAPED_STRING        # Quoted strings
         %import common.WS                    # All whitespace
         %ignore WS   
@@ -35,24 +37,25 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Parameter & Properties
         named_params: named_param ("," named_param)*
+        value: number | ESCAPED_STRING | tuple_ | BOOL  
+        
         activation_param: "activation" "=" ESCAPED_STRING
         ordered_params: value ("," value)* 
-        tuple_: "(" WS_INLINE* value WS_INLINE* "," WS_INLINE* value WS_INLINE* ")"
+        tuple_: "("  number  ","  number  ")"  
         number: NUMBER  
+        number1: INT
         BOOL: "true" | "false"
-        named_size: NAME ":" "(" value ("," value)+ ")"  # Direct tuple definition
         explicit_tuple: "(" value ("," value)+ ")"
-        value: ESCAPED_STRING | tuple_ | explicit_tuple | number | BOOL
-
 
         # name_param rules
         bool_value: BOOL  // Example: true or false
         named_return_sequences: "return_sequences" "=" bool_value
-        named_units: "units" "=" NUMBER  // Example: units=64
+        named_units: "units" "=" value  // Example: units=64
         named_activation: "activation" "=" ESCAPED_STRING
+        named_size: NAME ":" explicit_tuple  
         named_filters: "filters" "=" NUMBER  // Example: filters=32
         named_strides: "strides" "=" value  // Example: strides=(1, 1) or strides=1
-        named_padding: "padding" "=" value  // Example: padding="same" or padding="valid"
+        named_padding: "padding" "=" ESCAPED_STRING  // Example: padding="same" or padding="valid"
         named_dilation_rate: "dilation_rate" "=" value  // Example: dilation_rate=(2, 2) or dilation_rate=2
         named_groups: "groups" "=" NUMBER  // Example: groups=32
         named_channels: "channels" "=" NUMBER  // Example: channels=3
@@ -80,6 +83,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_bias_regularizer: "bias_regularizer" "=" ESCAPED_STRING  // Example: bias_regularizer="l1"
         named_activity_regularizer: "activity_regularizer" "=" ESCAPED_STRING  // Example: activity_regularizer="l1_l2"
         named_kernel_constraint: "kernel_constraint" "=" ESCAPED_STRING  // Example: kernel_constraint="max_norm"
+        named_kernel_size: "kernel_size" "=" value // Example:
         named_bias_constraint: "bias_constraint" "=" ESCAPED_STRING  // Example: bias_constraint="min_max_norm"
         named_return_state: "return_state" "=" BOOL  // Example: return_state=true
         named_go_backwards: "go_backwards" "=" BOOL  // Example: go_backwards=false
@@ -120,10 +124,17 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_l1: "l1" "=" FLOAT  // Example: l1=0.01
         named_l2: "l2" "=" FLOAT  // Example: l2=0.001
         named_l1_l2: "l1_l2" "=" tuple_  // Example: l1_l2=(0.01, 0.001)
-        ?named_param: (named_units | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | NAME ":" value)
+        ?named_param: ( rate | simple_float | simple_string | explicit_tuple | simple_number| named_units | pool_size | named_kernel_size | named_tuple_ | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | named_number | NAME ":" value )
         named_int: NAME "=" INT
         named_float: NAME "=" FLOAT
         named_number: NAME "=" NUMBER
+        named_tuple_: NAME "=" tuple_
+        pool_size : "pool_size" "=" NUMBER
+        simple_number: number1
+        simple_string: "STRING"
+        simple_float: FLOAT
+        rate: "rate" ":" FLOAT
+        
 
 
         # Layer parameter styles
@@ -137,7 +148,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         config: training_config | execution_config
 
         # Input layer definition - specifies the shape of input data
-        input_layer: "input" ":" "(" shape ")"
+        input_layer: ( multid_input_layer | input1d_layer )
+        multid_input_layer: "input" ":" "(" shape ")"
+        input1d_layer: "input" ":" "(" shape "," [shape] ")"
+
+
         # Shape can contain multiple dimensions, each being a number or None
         shape: number_or_none ("," number_or_none)*
         # Dimensions can be specific NUMBERegers or None (for variable dimensions)
@@ -147,15 +162,16 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         layers: "layers" ":" _NL* layer+ _NL*
 
         # All possible layer types that can be used in the network
-        ?layer: (basic | recurrent | advanced | activation | merge | noise | normalization | regularization | custom | wrapper | lambda_ )  
+        ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_ )  
         lambda_: "Lambda(" ESCAPED_STRING ")"
         wrapper: wrapper_layer_type "(" layer "," named_params ")"  
         wrapper_layer_type: "TimeDistributed" 
 
         # Basic layers group
         ?basic: conv | pooling | dropout | flatten | dense | output
-        dropout: "Dropout(" named_params ")"
+        dropout: "Dropout(" named_params ")" 
 
+        # Regularization layers group
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2 
         l1: "L1(" named_params ")"
         l2: "L2(" named_params ")"
@@ -208,15 +224,15 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         # Normalization layers
         ?norm_layer: batch_norm | layer_norm | instance_norm | group_norm
-        batch_norm: "BatchNormalization(" named_params ")"
-        layer_norm: "LayerNormalization(" named_params ")"
-        instance_norm: "InstanceNormalization(" named_params ")"
-        group_norm: "GroupNormalization(" named_params ")"
+        batch_norm: "BatchNormalization" "(" [named_params] ")"
+        layer_norm: "LayerNormalization" "(" [named_params] ")"
+        instance_norm: "InstanceNormalization" "(" [named_params] ")"
+        group_norm: "GroupNormalization" "(" [named_params] ")"
         
 
         # Basic layer types
-        dense: "Dense(" param_style1 ")"
-        flatten: "Flatten(" [named_params] ")"
+        dense: "Dense" "(" param_style1 ")"
+        flatten: "Flatten" "(" [named_params] ")"
 
         # Recurrent layers section - includes all RNN variants
         ?recurrent: rnn | bidirectional_rnn | conv_rnn | rnn_cell  
@@ -256,9 +272,12 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         gru_cell_layer: "GRUCell(" named_params ")"
 
         # Advanced layers group
-        ?advanced: attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic
+        ?advanced: ( attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic )
         attention: "Attention" "(" [named_params] ")"
+
+        # Transformers
         transformer: "Transformer" "(" [named_params] ")" | "TransformerEncoder" "(" [named_params] ")" | "TransformerDecoder" "(" [named_params] ")"
+        
         residual: "ResidualConnection" "(" [named_params] ")"
         inception: "Inception" "(" [named_params] ")"
         capsule: "Capsule" "(" [named_params] ")"
@@ -284,11 +303,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         gaussian_dropout: "GaussianDropout(" named_params ")"
         alpha_dropout: "AlphaDropout(" named_params ")"
 
-        normalization: batch_normalization | layer_normalization | instance_normalization | group_normalization
-        batch_normalization: "BatchNormalization(" named_params ")"
-        layer_normalization: "LayerNormalization(" named_params ")"
-        instance_normalization: "InstanceNormalization(" named_params ")"
-        group_normalization: "GroupNormalization(" named_params ")"
 
         spatial_dropout1d: "SpatialDropout1D(" named_params ")"
         spatial_dropout2d: "SpatialDropout2D(" named_params ")"
@@ -308,16 +322,17 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         batch_size_param: "batch_size:" INT
 
         # Loss and optimizer specifications
-        loss: "loss:" ESCAPED_STRING
+        loss: "loss" ":" ESCAPED_STRING
         optimizer: "optimizer:" ESCAPED_STRING
 
         # Execution environment configuration
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" ESCAPED_STRING
+        
 
         # Research-specific configurations
         research: "research" NAME? "{" [research_params] "}"
-        research_params: (metrics | references)*
+        research_params: metrics | references
 
         # Metrics tracking
         metrics: "metrics" "{" [accuracy_param] [loss_param] [precision_param] [recall_param] "}"
@@ -357,21 +372,33 @@ class ModelTransformer(lark.Transformer):
     # Basic Layers & Properties ###################
 
     def input_layer(self, items):
-        shape = tuple(items[0])
+        shape = self._extract_value(items[0])
         return {'type': 'Input', 'shape': shape}
 
     def output(self, items):
         return {'type': 'Output', 'params': items[0]}
     
-    def regularization(self, items):  # Added method to handle regularization layers
+    def regularization(self, items):  
         return {'type': items[0].data.capitalize(), 'params': items[0].children[0]}
+    
+    def execution_config(self, items):
+        params = self._extract_value(items[0])
+        return {'type': 'execution_config', 'params':params}
+    
+    def dense(self, items):
+        return {
+            'type': 'Dense',
+            'params': self._extract_value(items[0]),
+        }
 
     ### Convolutional Layers ####################
     def conv1d(self, items):
         return {'type': 'Conv1D', 'params': items[0]}
 
     def conv2d(self, items):
-        return {'type': 'Conv2D', 'params': items[0]}
+        params = {}
+        params = items._extract_value(items)
+        return {'type': 'Conv2D', 'params': params}
 
     def conv3d(self, items):
         return {'type': 'Conv3D', 'params': items[0]}
@@ -391,11 +418,6 @@ class ModelTransformer(lark.Transformer):
     def separable_conv2d(self, items):
         return {'type': 'SeparableConv2D', 'params': items[0]}
     
-    def dense(self, items):
-        return {
-            'type': 'Dense',
-            'params': items[0]
-        }
 
     def loss(self, items):
         return items[0].value.strip('"')
@@ -410,7 +432,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Flatten', 'params': items[0]}
 
     def dropout(self, items):
-        return {'type': 'Dropout', 'params': items[0]}
+        params = self._extract_value(items[0])
+        return {'type': 'Dropout', 'params': params}
 
     ### Training Configurations ############################""
 
@@ -425,14 +448,22 @@ class ModelTransformer(lark.Transformer):
     
     ### Pooling Layers #############################
 
+    def pool_size(self, items):
+        params = self._extract_value(items[0])
+        return {'pool_size': params}
+
+
     def max_pooling1d(self, items):
-        return {'type': 'MaxPooling1D', 'params': items[0]}
+        params = self._extract_value(items[0])
+        return {'type': 'MaxPooling1D', 'params': params}
 
     def max_pooling2d(self, items):
-        return {'type': 'MaxPooling2D', 'params': items[0]}
+        params = self._extract_value(items[0])
+        return {'type': 'MaxPooling2D', 'params': params}
 
     def max_pooling3d(self, items):
-        return {'type': 'MaxPooling3D', 'params': items[0]}
+        params = self._extract_value(items[0])
+        return {'type': 'MaxPooling3D', 'params': params}
     
     def average_pooling1d(self, items):
         return {'type': 'AveragePooling1D', 'params': items[0]}
@@ -562,8 +593,8 @@ class ModelTransformer(lark.Transformer):
     ### Everything Research ##################
 
     def research(self, items):
-        name = items[0].value if items and isinstance(items[0], Token) else None
-        params = items[1] if len(items) > 1 else {}
+        name = self._extract_value(items[0])
+        params = self._extract_value(items[1])
         return {'type': 'Research', 'name': name, 'params': params}
 
 
@@ -576,7 +607,8 @@ class ModelTransformer(lark.Transformer):
         loss_config = items[3]
         optimizer_config = items[4]
         training_config = next((item for item in items[5:] if isinstance(item, dict)), {})
-        execution_config = next((item for item in items[5:] if 'device' in item), {'device': 'auto'})
+        # execution_config = next((item for item in items[6:] if 'device' in item), {'device': 'auto'})
+        execution_config = self._extract_value(items[0])
 
         output_layer = next((layer for layer in reversed(layers_config) if layer['type'] == 'Output'), None)
         if output_layer is None:
@@ -613,6 +645,10 @@ class ModelTransformer(lark.Transformer):
                 return item.value.lower() == 'true'
             elif item.type == 'ESCAPED_STRING':
                 return item.value.strip('"')
+            elif item.type == 'WS_INLINE':
+                return item.value.strip()
+                   
+        
         elif isinstance(item, list):  # Handles nested lists
             return [self._extract_value(elem) for elem in item]
         elif isinstance(item, dict):  # Handles nested dictionaries
@@ -625,27 +661,23 @@ class ModelTransformer(lark.Transformer):
 
         return item
     
-    def named_param(self, items):  # Corrected to use _extract_value and return a dictionary
-        name = str(items[0])
-        value = self._extract_value(items[2])  # Extract the value using the helper function
-        return {name: self._extract_value(value)}
     
 
     def number(self, items):
         return self._extract_value(items[0])
     
+    def rate(self, items):
+        params = self._extract_value(items[0])
+        return {'type': 'rate', 'params': params}
+    
+    def simple_float(self, items):
+        params = self._extract_value(items[0])
+        return {'rate': params}
+    
     def number_or_none(self, items):
-        if items[0].value.lower() == 'none':
+        if self._extract_value(items[0]) == 'none':
             return None
         return int(items[0])  # Convert to int after checking for 'none'
-
-    def named_params(self, items):
-        params = {}
-        for item in items:
-            if isinstance(item, Tree):
-                item = self.visit(item)
-            params.update(item)
-        return params
 
     def value(self, items):
         if isinstance(items[0], Token):
@@ -654,10 +686,7 @@ class ModelTransformer(lark.Transformer):
 
     def explicit_tuple(self, items):
         return tuple(self._extract_value(x) for x in items[0].children)
-    def groups_param(self, items):
-        return {'groups': items[2]}
-
-
+    
     def research_params(self, items):
         params = {}
         for item in items:
@@ -666,46 +695,32 @@ class ModelTransformer(lark.Transformer):
 
     def metrics(self, items):
         return {'metrics': items}
-
-
-    def accuracy_param(self, items):
-        return {'accuracy': float(items[0].value)}
-
-    def loss_param(self, items):
-        return {'loss': float(items[0].value)}
-
-    def precision_param(self, items):
-        return {'precision': float(items[0].value)}
-
-    def recall_param(self, items):
-        return {'recall': float(items[0].value)}
-
-
-    def references(self, items):
-        return {'references': items}
-
-    def paper_param(self, items):
-        return items[0].value.strip('"')
-
-    def epochs_param(self, items):
-        return {'epochs': int(items[0].value)}
-
-    def batch_size_param(self, items):
-        return {'batch_size': int(items[0].value)}
-
-    def device_param(self, items):
-        return {'device': items[0].value.strip('"')}
     
-    # Named_params & Their Properties ##################################################
-
     def bool_value(self, items):
         return self._extract_value(items[0])
+    
+    def simple_number(self, items):
+        return self._extract_value(items[0])
+    
+    def named_params(self, items):
+        params = {}
+        for item in items:
+            if isinstance(item, Tree):
+                item = self._extract_value(item)
+            elif isinstance(item, dict):
+                item = self._extract_value(item)
+                params.update(item)
+        return params
+    
+    def named_kernel_size(self, items):
+        return {"kernel_size": self._extract_value(items[0])}
 
     def named_filters(self, items):
-        return {"filters": self._extract_value(items[2])}
+        return {"filters": self._extract_value(items[0])}
 
     def named_units(self, items):  
         return {"units": self._extract_value(items[0])}
+
 
     def named_activation(self, items): 
         return {"activation": self._extract_value(items[0])}
@@ -794,12 +809,19 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Inception', 'params': params}
 
     
-    def graph_layer(self, items):
-        if items[0].data == 'graph_conv':
-            return {'type': 'GraphConv', 'params': items[0].children[0]}
-        elif items[0].data == 'graph_attention':
-            return {'type': 'GraphAttention', 'params': items[0].children[0]}
+    def graph(self, items):
+        return items[0]
 
+    def graph_conv(self, items):
+        params = self._extract_value(items[0])
+        return {'type': 'GraphConv', 'params': params}
+    
+    def graph_attention(self, items):
+        params = self._extract_value(items[0])
+        return {'type': 'GraphAttention', 'params': params}
+
+
+    
     def dynamic(self, items):
         params = items[0] if items else None
         return {'type': 'DynamicLayer', 'params': params}
@@ -816,11 +838,6 @@ class ModelTransformer(lark.Transformer):
     def custom_layer(self, items):
         params = items[0] if items else None
         return {'type': items[0], 'params': params}
-
-    def activation_layer(self, items):
-        activation_type = items[0].value.strip('"')
-        params = items[1] if len(items) > 1 else {}
-        return {'type': 'Activation', 'activation': activation_type, 'params': params}
     
     def capsule(self, items):
         params = items[0] if items else None
@@ -829,38 +846,18 @@ class ModelTransformer(lark.Transformer):
     def squeeze_excitation(self, items):
         return {'type': 'SqueezeExcitation', 'params': items[0]}
 
-    def graph_conv(self, items):
-        params = items[0] if items else None
-        return {'type': 'GraphConv', 'params': params}
-
     def quantum(self, items):
         params = items[0] if items else None
         return {'type': 'QuantumLayer', 'params': params}
 
-    def transformer_layer(self, items):
-        if items[0].data == 'transformer_encoder':
-            return {'type': 'TransformerEncoder', 'params': items[0].children[0]}
-        elif items[0].data == 'transformer_decoder':
-            return {'type': 'TransformerDecoder', 'params': items[0].children[0]}
-        else:  # Handle the base 'Transformer' case
-            return {'type': 'Transformer', 'params': items[0].children[0]}
-
+    def transformer(self, items):
+        params = self._extract_value(items[0])
+        return {'type': 'TransformerEncoder', 'params': params}
+    
     def embedding(self, items):
         params = items[0] if items else None
         return {'type': 'Embedding', 'params': params}
     
-    def graph_attention(self, items):
-        params = items[0] if items else None
-        return {'type': 'GraphAttention', 'params': params}
-
-    def execution_config(self, items: List[Tree]) -> Dict[str, Any]:
-        """Processes execution configuration block."""
-        config: Dict[str, Any] = {'type': 'ExecutionConfig'}
-        if items:
-            for item in items:
-                if item.data == 'device_param':
-                    config.update(self.device_param(item.children))
-        return config
     
     def lambda_(self, items):
         return {'type': 'Lambda', 'params': {'function': items[0].value.strip('"')}}
@@ -925,11 +922,6 @@ class ModelTransformer(lark.Transformer):
 
     def custom(self, items):
         return {'type': items[0], 'params': items[1]}
-
-    def activation(self, items):
-        activation_type = items[0].value.strip('"') if isinstance(items[0], Token) else None
-        params = items[1] if len(items) > 1 else {}
-        return {'type': 'Activation', 'activation': activation_type, 'params': params}
 
 ### Shape Propagation ##########################
 
