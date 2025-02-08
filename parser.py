@@ -386,11 +386,11 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0])
         return {'type': 'execution_config', 'params':params}
     
-    def dense(self, items):
-        return {
-            'type': 'Dense',
-            'params': self._extract_value(items[0]),
-        }
+    def dense_layer(self, items):
+        # items: [INT, ESCAPED_STRING] regardless of alternative
+        units = self._extract_value(items[0])
+        activation = self._extract_value(items[1])
+        return {"type": "Dense", "params": {"units": units, "activation": activation}}
 
     ### Convolutional Layers ####################
     def conv1d(self, items):
@@ -1516,40 +1516,15 @@ def save_file(filename: str, content: str) -> None:
     return None
 
 
-def load_file(filename: str) -> Tree:
-    """
-    Loads and parses a neural network or research file based on its extension.
-    if not os.path.exists(filename):
-    Args:
-        filename (str): The path to the file to load.
-
-    Returns:
-        Tree: A Lark parse tree representing the file content.
-
-    Raises:
-        ValueError: If the file type is unsupported or parsing fails.
-        FileNotFoundError: If the file does not exist.
-    """
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f"File not found: {filename}")
-
-        try:
-            with open(filename, 'r') as f:
-                content = f.read()
-        except Exception as e:
-            raise IOError(f"Error reading file: {filename}. {e}") from e
-            return parser.parse(content)
-            parser = network_parser # Use network parser for .neural and .nr files
+def load_file(filename):
+    with open(filename, 'r') as f:
+        content = f.read()
+        
+    if filename.endswith('.neural') or filename.endswith('.nr'):
+        # Parse as a network file.
+        return create_parser('neural_file').parse(content)
     elif filename.endswith('.rnr'):
-        parser = research_parser # Use research parser for .rnr files
-    elif filename.endswith('.layer'):
-        parser = layer_parser # Use layer parser for individual layer files
+        # Parse as a research file.
+        return create_parser('rnr_file').parse(content)
     else:
-        raise ValueError(f"Unsupported file type: {filename}. Supported types are .neural, .nr, .rnr, .layer.")
-
-        try:
-            parse_tree = parser.parse(content)
-            return parse_tree
-        except lark.exceptions.LarkError as e: # Catch parsing errors specifically
-            raise ValueError(f"Parsing error in file: {filename}. {e}") from e
-
+        raise ValueError(f"Unsupported file type: {filename}")
