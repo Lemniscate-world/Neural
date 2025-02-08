@@ -228,9 +228,10 @@ def test_network_parsing(network_parser, transformer, network_string, expected_n
         (
             # Edge case: Empty research block
             """
-            research EmptyResearch None
+            research EmptyResearch {
+            }
             """,
-            "EmptyResearch", None, []  # Empty metrics and references
+            "EmptyResearch", None, []
         ),
         (
             # Error case: Invalid metrics
