@@ -185,7 +185,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         # Convolutional layers 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
         conv1d: "Conv1D(" param_style1 ")"
-        conv2d: "Conv2D(" param_style1 ")"
+        conv2d: "Conv2D(" ( "filters=" INT "," "kernel_size=" "(" INT "," INT ")" "," "activation=" ESCAPED_STRING | INT "," "(" INT "," INT ")" "," ESCAPED_STRING ) ")"
         conv3d: "Conv3D(" param_style1 ")"
         conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
         conv1d_transpose: "Conv1DTranspose(" param_style1 ")"
