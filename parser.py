@@ -386,9 +386,9 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0])
         return {'type': 'execution_config', 'params':params}
     
-    def dense_layer(self, items):
+    def dense(self, items):
         # items: [INT, ESCAPED_STRING] regardless of alternative
-        units = self._extract_value(items[0])
+        units = int(self._extract_value(items[0]))
         activation = self._extract_value(items[1])
         return {"type": "Dense", "params": {"units": units, "activation": activation}}
 

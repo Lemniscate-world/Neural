@@ -1,3 +1,0 @@
-- Visualizing Layers
-- How to make neural more concise and readable ?
-- Neural Logo
