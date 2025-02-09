@@ -15,28 +15,30 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
     """
     grammar = r"""
 
-         # Import common tokens from Lark
-        %import common.NEWLINE -> _NL        # Newline characters
+        %ignore /\#[^\n]*/  // Ignore line comments              
+        // Import common tokens from Lark
+        %import common.NEWLINE -> _NL        
+        // Newline characters
         %import common.CNAME -> NAME
         %import common.SIGNED_NUMBER -> NUMBER
-        %import common.WS_INLINE             # Inline whitespace
+        %import common.WS_INLINE             // Inline whitespace
         %import common.INT
-        %import common.CNAME -> NAME         # Names/identifiers
+        %import common.CNAME -> NAME         // Names/identifiers
         %import common.FLOAT  
-        %import common.TUPLE                            # Floating poNUMBER numbers
+        %import common.TUPLE                            // Floating poNUMBER numbers
         %import common.STRING
-        %import common.ESCAPED_STRING        # Quoted strings
-        %import common.WS                    # All whitespace
+        %import common.ESCAPED_STRING        // Quoted strings
+        %import common.WS                    // All whitespace
         %ignore WS   
 
-        ?start: network | layer | research  # Allow parsing either networks or research files
+        ?start: network | layer | research  // Allow parsing either networks or research files
 
-        # File type rules
+        // File type rules
         neural_file: network
         nr_file: network
         rnr_file: research
 
-        # Parameter & Properties
+        // Parameter & Properties
         named_params: named_param ("," named_param)*
         value: number | ESCAPED_STRING | tuple_ | BOOL  
         
@@ -48,7 +50,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         BOOL: "true" | "false"
         explicit_tuple: "(" value ("," value)+ ")"
 
-        # name_param rules
+        // name_param rules
         bool_value: BOOL  // Example: true or false
         named_return_sequences: "return_sequences" "=" bool_value
         named_units: "units" "=" value  // Example: units=64
@@ -138,51 +140,51 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         
 
 
-        # Layer parameter styles
+        // Layer parameter styles
         ?param_style1: named_params    // Dense(units=128, activation="relu")
                     | ordered_params   // Dense(128, "relu")
 
-        # Top-level network definition - defines the structure of an entire neural network
+        // Top-level network definition - defines the structure of an entire neural network
         network: "network" NAME "{" input_layer layers loss optimizer [training_config] [execution_config] "}" 
 
-        # Configuration can be either training-related or execution-related
+        // Configuration can be either training-related or execution-related
         config: training_config | execution_config
 
-        # Input layer definition - specifies the shape of input data
+        // Input layer definition - specifies the shape of input data
         input_layer: ( multid_input_layer | input1d_layer )
         multid_input_layer: "input" ":" "(" shape ")"
         input1d_layer: "input" ":" "(" shape "," [shape] ")"
 
 
-        # Shape can contain multiple dimensions, each being a number or None
+        // Shape can contain multiple dimensions, each being a number or None
         shape: number_or_none ("," number_or_none)*
-        # Dimensions can be specific NUMBERegers or None (for variable dimensions)
+        // Dimensions can be specific NUMBERegers or None (for variable dimensions)
         number_or_none: number | "None"
 
-        # Layers section - contains all layer definitions separated by newlines
+        // Layers section - contains all layer definitions separated by newlines
         layers: "layers" ":" _NL* layer+ _NL*
 
-        # All possible layer types that can be used in the network
+        // All possible layer types that can be used in the network
         ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_ )  
         lambda_: "Lambda(" ESCAPED_STRING ")"
         wrapper: wrapper_layer_type "(" layer "," named_params ")"  
         wrapper_layer_type: "TimeDistributed" 
 
-        # Basic layers group
+        // Basic layers group
         ?basic: conv | pooling | dropout | flatten | dense | output
         dropout: "Dropout(" named_params ")" 
 
-        # Regularization layers group
+        // Regularization layers group
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2 
         l1: "L1(" named_params ")"
         l2: "L2(" named_params ")"
         l1_l2: "L1L2(" named_params ")" 
 
 
-        # Output layer 
+        // Output layer 
         output: "Output(" named_params ")"
 
-        # Convolutional layers 
+        // Convolutional layers 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
         conv1d: "Conv1D(" param_style1 ")"
         conv2d: "Conv2D(" ( "filters=" INT "," "kernel_size=" "(" INT "," INT ")" "," "activation=" ESCAPED_STRING | INT "," "(" INT "," INT ")" "," ESCAPED_STRING ) ")"
@@ -194,7 +196,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         depthwise_conv2d: "DepthwiseConv2D(" param_style1 ")"
         separable_conv2d: "SeparableConv2D(" param_style1 ")"
 
-        # Pooling layer parameters
+        // Pooling layer parameters
         pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
         max_pooling: max_pooling1d | max_pooling2d | max_pooling3d
         max_pooling1d: "MaxPooling1D(" param_style1 ")"
@@ -223,7 +225,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         adaptive_average_pooling2d: "AdaptiveAveragePooling2D(" named_params ")"
         adaptive_average_pooling3d: "AdaptiveAveragePooling3D(" named_params ")"
 
-        # Normalization layers
+        // Normalization layers
         ?norm_layer: batch_norm | layer_norm | instance_norm | group_norm
         batch_norm: "BatchNormalization" "(" [named_params] ")"
         layer_norm: "LayerNormalization" "(" [named_params] ")"
@@ -231,11 +233,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         group_norm: "GroupNormalization" "(" [named_params] ")"
         
 
-        # Basic layer types
+        // Basic layer types
         dense: "Dense(" ( "units=" INT "," "activation=" ESCAPED_STRING | INT "," ESCAPED_STRING ) ")"
         flatten: "Flatten" "(" [named_params] ")"
 
-        # Recurrent layers section - includes all RNN variants
+        // Recurrent layers section - includes all RNN variants
         ?recurrent: rnn | bidirectional_rnn | conv_rnn | rnn_cell  
         bidirectional_rnn: "Bidirectional(" rnn "," named_params ")" 
         rnn: simple_rnn | lstm | gru
@@ -255,7 +257,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         
 
-        # Dropout wrapper layers for RNNs
+        // Dropout wrapper layers for RNNs
         dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
         simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" named_params ")"
         gru_dropout: "GRUDropoutWrapper" "(" named_params ")"
@@ -265,18 +267,18 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         bidirectional_lstm_layer: "Bidirectional(LSTM(" named_params "))"
         bidirectional_gru_layer: "Bidirectional(GRU(" named_params "))"
         conv_rnn_layer: conv_lstm_layer | conv_gru_layer
-        conv_lstm_layer: "ConvLSTM2D(" named_params ")"  # Add 2D for clarity
-        conv_gru_layer: "ConvGRU2D(" named_params ")"  # Add 2D for clarity
+        conv_lstm_layer: "ConvLSTM2D(" named_params ")"  // Add 2D for clarity
+        conv_gru_layer: "ConvGRU2D(" named_params ")"  // Add 2D for clarity
         rnn_cell_layer: simple_rnn_cell_layer | lstm_cell_layer | gru_cell_layer
         simple_rnn_cell_layer: "SimpleRNNCell(" named_params ")"
         lstm_cell_layer: "LSTMCell(" named_params ")"
         gru_cell_layer: "GRUCell(" named_params ")"
 
-        # Advanced layers group
+        // Advanced layers group
         ?advanced: ( attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic )
         attention: "Attention" "(" [named_params] ")"
 
-        # Transformers
+        // Transformers
         transformer: "Transformer" "(" [named_params] ")" | "TransformerEncoder" "(" [named_params] ")" | "TransformerDecoder" "(" [named_params] ")"
         
         residual: "ResidualConnection" "(" [named_params] ")"
@@ -316,37 +318,37 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         activation_with_params: "Activation(" ESCAPED_STRING "," named_params ")"
         activation_without_params: "Activation(" ESCAPED_STRING ")"
 
-        # Training configuration block
+        // Training configuration block
         training_config: "train" "{" training_params "}"
         training_params: (epochs_param | batch_size_param)*
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" INT
 
-        # Loss and optimizer specifications
+        // Loss and optimizer specifications
         loss: "loss" ":" ESCAPED_STRING
         optimizer: "optimizer:" ESCAPED_STRING
 
-        # Execution environment configuration
+        // Execution environment configuration
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" ESCAPED_STRING
         
 
-        # Research-specific configurations
+        // Research-specific configurations
         research: "research" NAME? "{" [research_params] "}"
         research_params: (metrics | references)*
 
-        # Metrics tracking
+        // Metrics tracking
         metrics: "metrics" "{" [accuracy_param] [loss_param] [precision_param] [recall_param] "}"
         accuracy_param: "accuracy:" FLOAT
         loss_param: "loss:" FLOAT
         precision_param: "precision:" FLOAT
         recall_param: "recall:" FLOAT
 
-        # Paper references
+        // Paper references
         references: "references" "{" paper_param+ "}"
         paper_param: "paper:" ESCAPED_STRING
 
-        # Custom Shape Propagation
+        // Custom Shape Propagation
         custom_shape: "CustomShape" "(" NAME "," explicit_tuple ")"
 
 
