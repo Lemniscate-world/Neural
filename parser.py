@@ -1200,9 +1200,22 @@ def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any
                         'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
         return input_shape # Placeholder for advanced layers, needs specific shape logic
 
+    elif layer_type == 'MyCustomLayer':
+        # Example: custom logic for a custom layer
+        params = layer.get('params', {})
+        factor = params.get('scale_factor', 1)
+        # Let’s say the custom layer scales spatial dimensions by 'scale_factor'
+        batch_size, h, w, channels = input_shape
+        new_h = int(h * factor)
+        new_w = int(w * factor)
+        return (batch_size, new_h, new_w, channels)
+
 
     else:
         raise ValueError(f"Unsupported layer type: {layer_type}")
+
+
+
 
 def generate_code(model_data,backend):
     """
