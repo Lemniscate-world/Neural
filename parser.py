@@ -1236,6 +1236,27 @@ def calculate_shape_propagation(model_data):
 # shape_history = calculate_shape_propagation(model_data)
 # Now shape_history is a list like [("Input", (32, 32, 3)), ("Conv2D", (32, 28, 28, 16)), ...]
 
+import matplotlib.pyplot as plt
+
+def plot_shape_propagation(shape_history, save_path="shape_propagation.png"):
+    layers = [f"{name}\n{shape}" for name, shape in shape_history]
+    # Use a simple bar chart to indicate progression—feel free to get more creative!
+    indices = list(range(len(layers)))
+    values = [1] * len(layers)  # Dummy values for horizontal bars
+    
+    plt.figure(figsize=(10, len(layers) * 0.8))
+    plt.barh(indices, values, color="skyblue")
+    plt.yticks(indices, layers)
+    plt.xlabel("Propagation (dummy axis)")
+    plt.title("Shape Propagation Through Layers")
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+    print(f"Visualization saved as {save_path}")
+
+# Usage:
+# plot_shape_propagation(shape_history)
+
 
 def generate_code(model_data,backend):
     """
