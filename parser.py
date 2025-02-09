@@ -346,6 +346,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         references: "references" "{" paper_param+ "}"
         paper_param: "paper:" ESCAPED_STRING
 
+        # Custom Shape Propagation
+        custom_shape: "CustomShape" "(" NAME "," explicit_tuple ")"
+
+
     """
     return lark.Lark(grammar, start=[start_rule], parser='lalr')
 
