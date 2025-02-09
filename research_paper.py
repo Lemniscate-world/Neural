@@ -92,17 +92,22 @@ This study demonstrates the effectiveness of the \textbf{{{model_name}}} model. 
 \end{document}
 """
 
+def format_shape_history_for_latex(shape_history):
+    items = ""
+    for layer_name, shape in shape_history:
+        items += f"\\item {layer_name}: {shape}\n"
+    return items
 
-def generate_research_paper(model_data, results):
-    """ Generates a research paper in LaTeX format based on the model and training stats. """
+
+def generate_research_paper(model_data, results, shape_history, shape_prop_img="shape_propagation.png"):
     model_name = model_data["name"]
     title = f"Training and Evaluation of {model_name}"
     author = "Neural Research Team"
     date = datetime.date.today().strftime("%B %d, %Y")
-
-    # Format layer details
+    
     layer_details = "\n".join([f"\\item {layer['type']} ({layer.get('params', {})})" for layer in model_data["layers"]])
-
+    shape_history_items = format_shape_history_for_latex(shape_history)
+    
     latex_content = RESEARCH_TEMPLATE.format(
         title=title,
         author=author,
@@ -117,8 +122,10 @@ def generate_research_paper(model_data, results):
         precision=results.get("precision", "N/A"),
         recall=results.get("recall", "N/A"),
         f1_score=results.get("f1_score", "N/A"),
+        shape_history_items=shape_history_items,
+        shape_prop_img=shape_prop_img
     )
-
+    
     filename = f"{model_name}_paper.tex"
     with open(filename, "w") as file:
         file.write(latex_content)
