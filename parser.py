@@ -1000,6 +1000,15 @@ class ModelTransformer(lark.Transformer):
 
     def custom(self, items):
         return {'type': items[0], 'params': items[1]}
+    
+    # Custom Shape Propagation
+    def custom_shape(self, items):
+    # Example: CustomShape(MyLayer, (32, 32))
+        layer_name = self._extract_value(items[0])
+        custom_dims = self._extract_value(items[1])
+        return {"type": "CustomShape", "layer": layer_name, "custom_dims": custom_dims}
+
+
 
 ### Shape Propagation ##########################
 
