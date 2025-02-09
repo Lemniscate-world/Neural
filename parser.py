@@ -1214,7 +1214,27 @@ def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any
     else:
         raise ValueError(f"Unsupported layer type: {layer_type}")
 
+## REAL-TIME SHAPE PROPAGATION CALCULATIONS ######################
 
+def calculate_shape_propagation(model_data):
+    shape_history = []
+    current_shape = model_data['input']['shape']
+    shape_history.append(("Input", current_shape))
+    
+    for layer in model_data['layers']:
+        try:
+            new_shape = propagate_shape(current_shape, layer)
+            shape_history.append((layer['type'], new_shape))
+            current_shape = new_shape
+        except Exception as e:
+            print(f"Error propagating shape through {layer['type']}: {e}")
+            shape_history.append((layer['type'], "Error"))
+    
+    return shape_history
+
+# Usage:
+# shape_history = calculate_shape_propagation(model_data)
+# Now shape_history is a list like [("Input", (32, 32, 3)), ("Conv2D", (32, 28, 28, 16)), ...]
 
 
 def generate_code(model_data,backend):
