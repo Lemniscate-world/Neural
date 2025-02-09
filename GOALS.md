@@ -33,6 +33,9 @@
 (Done)
 - TESTING THE MVP and debugging (1) (Writing a test logic documentation, test for validating the parser, shape propagation, and code generation.) (Done)
 
+09 02 25
+- Add mathematics formulations to shape propagation on research paper and visualizations (Done)
+
 
 - Add one layer daily
 - GPU-optimized inference
@@ -51,7 +54,7 @@
 - Enhance parallelization in neural
 - Arxiv and JOSS apI
 - Shape propagations and code generations in separate files
-- Add mathematics formulations to shape propagation on research paper and visualizations +++++++++
+
 - Create parallelization layers and unique parallelization techniques
 - Add all pytorch and tensorflow syntax to neural
 - Add more researchs capabilities for neural
