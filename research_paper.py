@@ -1,57 +1,97 @@
 import os
 import datetime
 
-RESEARCH_TEMPLATE = """
-    \\documentclass{article}
-    \\usepackage{graphicx}
-    \\usepackage{amsmath}
-    \\usepackage{hyperref}
+RESEARCH_TEMPLATE = r"""
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
 
-    \\title{{{title}}}
-    \\author{{{author}}}
-    \\date{{{date}}}
+\title{{{title}}}
+\author{{{author}}}
+\date{{{date}}}
 
-    \\begin{document}
+\begin{document}
 
-    \\maketitle
+\maketitle
 
-    \\section{Abstract}
-    This paper presents an in-depth analysis of the model \\textbf{{{model_name}}}, trained using the \\textbf{Neural Framework}. We provide architecture details, training configurations, benchmarks, and performance evaluations.
+\section{Abstract}
+This paper presents an in-depth analysis of the model \textbf{{{model_name}}}, trained using the \textbf{Neural Framework}. We provide architecture details, training configurations, benchmarks, performance evaluations, and a detailed analysis of shape propagation through the network.
 
-    \\section{Introduction}
-    Deep learning models have advanced significantly in recent years. This work documents the training process, evaluation metrics, and insights for the \\textbf{{{model_name}}} model.
+\section{Model Architecture}
+The model consists of the following layers:
+\begin{itemize}
+{layer_details}
+\end{itemize}
 
-    \\section{Model Architecture}
-    The model consists of the following layers:
-    \\begin{itemize}
-    {layer_details}
-    \\end{itemize}
+\section{Shape Propagation}
+For an input shape \( (B, H, W, C) \), the transformations are as follows:
 
-    \\section{Training Configuration}
-    \\begin{itemize}
-    \\item Loss Function: \\textbf{{{loss_function}}}
-    \\item Optimizer: \\textbf{{{optimizer}}}
-    \\item Device: \\textbf{{{device}}}
-    \\item Training Time: \\textbf{{{training_time}}}
-    \\end{itemize}
+\subsection{Convolutional Layers}
+For a Conv2D layer with kernel size \( k_h \times k_w \), stride \( s_h \) and \( s_w \), dilation \( d_h \) and \( d_w \), and padding \( p_h \) and \( p_w \):
+\[
+H_{out} = \frac{H + 2p_h - d_h (k_h - 1) - 1}{s_h} + 1, \quad
+W_{out} = \frac{W + 2p_w - d_w (k_w - 1) - 1}{s_w} + 1
+\]
+\[
+C_{out} = \text{filters}
+\]
 
-    \\section{Benchmark Results}
-    Model performance was evaluated on multiple datasets, with the following metrics:
-    \\begin{itemize}
-    \\item Accuracy: \\textbf{{{accuracy}}}%
-    \\item Precision: \\textbf{{{precision}}}%
-    \\item Recall: \\textbf{{{recall}}}%
-    \\item F1 Score: \\textbf{{{f1_score}}}
-    \\end{itemize}
+\subsection{Pooling Layers}
+\[
+H_{out} = \frac{H + 2p_h - k_h}{s_h} + 1, \quad
+W_{out} = \frac{W + 2p_w - k_w}{s_w} + 1
+\]
+\[
+C_{out} = C_{in}
+\]
 
-    \\section{Conclusion}
-    This study demonstrates the effectiveness of the \\textbf{{{model_name}}} model. Future work will explore hyperparameter tuning and model compression for real-time inference.
+\subsection{Dense Layers}
+A dense (fully-connected) layer transforms the input as:
+\[
+(B, D) \rightarrow (B, N)
+\]
 
-    \\bibliographystyle{plain}
-    \\bibliography{references}
+\subsection{Custom Propagation (if any)}
+% Insert custom propagation formulas here
 
-    \\end{document}
+\bigskip
+\textbf{Shape Propagation History:}\\
+\begin{itemize}
+{shape_history_items}
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{{{shape_prop_img}}}
+\caption{Visualization of shape propagation through the network.}
+\end{figure}
+
+\section{Training Configuration}
+\begin{itemize}
+\item Loss Function: \textbf{{{loss_function}}}
+\item Optimizer: \textbf{{{optimizer}}}
+\item Device: \textbf{{{device}}}
+\item Training Time: \textbf{{{training_time}}}
+\end{itemize}
+
+\section{Benchmark Results}
+\begin{itemize}
+\item Accuracy: \textbf{{{accuracy}}}\%
+\item Precision: \textbf{{{precision}}}\%
+\item Recall: \textbf{{{recall}}}\%
+\item F1 Score: \textbf{{{f1_score}}}
+\end{itemize}
+
+\section{Conclusion}
+This study demonstrates the effectiveness of the \textbf{{{model_name}}} model. Future work will explore hyperparameter tuning and model compression for real-time inference.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
 """
+
 
 def generate_research_paper(model_data, results):
     """ Generates a research paper in LaTeX format based on the model and training stats. """
