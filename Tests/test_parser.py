@@ -88,7 +88,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
 
     # Act
     if expected is None:
-        with pytest.raises(exceptions.UnexpectedCharacters):  # Expecting parsing error
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken)):  # Expecting parsing error
             layer_parser.parse(layer_string)
     else:
         tree = layer_parser.parse(layer_string)

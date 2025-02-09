@@ -69,6 +69,7 @@
 Also, are you encoding propagation in terms of differential geometry, variational methods, or alternative tensor representations? That could lead to new ways of thinking about deep learning structures.
 - Compiler stack for deployment
 - Create a memory file to resume for neural
+- Add support for automatic error calculation
 - Create a standalone interpreter for neural
 - Ability to load models and parses them into different backends  
 - Add Multi GPU training
