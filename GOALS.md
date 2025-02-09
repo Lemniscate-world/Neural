@@ -35,7 +35,7 @@
 
 09 02 25
 - Add mathematics formulations to shape propagation on research paper and visualizations (Done)
-
+- Make neural generate research paper (No AI) on model i'm using or training with benchmarks and stats etc in the its IDE + visualizer and interactive solver and nodes explorers with details
 
 - Add one layer daily
 - GPU-optimized inference
@@ -44,9 +44,8 @@
 ✅ Support multi-backend inference (CPU, GPU, and possibly future hardware like TPUs)
 ✅ Introduce automatic device selection based on available hardware
 - Implement ONNX export for deployment
-- Add visualizer
-- Make neural generate research paper (No AI) on model i'm using or training with benchmarks and stats etc in the its IDE + visualizer and interactive solver and nodes explorers with details
-- Create very basic deepseek model with neural and even fine-tune to showcase all neural functionalities.and in the same time testing if they are working.
+
+- Create very basic model with neural and even fine-tune to showcase all neural functionalities.and in the same time testing if they are working.
 - Enhance and test the research paper creation of neural
 
 - Creating executable neural files
