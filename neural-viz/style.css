@@ -1,0 +1,37 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+#toolbar {
+    padding: 10px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ccc;
+}
+
+.node {
+    cursor: move;
+    transition: fill 0.3s;
+}
+
+.link {
+    stroke: #999;
+    stroke-opacity: 0.6;
+}
+
+.node.Conv2D { fill: #ff6b6b; }
+.node.Dense { fill: #4ecdc4; }
+.node.Input { fill: #45b7d1; }
+.node.Output { fill: #96ceb4; }
+.node.Pooling { fill: #ffeead; }
+
+.tooltip {
+    position: absolute;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    pointer-events: none;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
