@@ -441,7 +441,8 @@ class ModelTransformer(lark.Transformer):
         return items
 
     def flatten(self, items):
-        return {'type': 'Flatten', 'params': items[0]}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'Flatten', 'params': params}
 
     def dropout(self, items):
         params = self._extract_value(items[0])
