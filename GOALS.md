@@ -292,3 +292,6 @@ Write documentation for users and contributors.
 - Testing Strategy
   - golden tests using popular architectures
   - Tree-sitter for syntax highlighting
+
+
+# Visualizer
