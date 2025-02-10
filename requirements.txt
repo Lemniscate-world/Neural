@@ -1,0 +1,4 @@
+graphviz>=0.20
+plotly>=5.18
+matplotlib>=3.8
+flask>=3.0

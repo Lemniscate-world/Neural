@@ -295,3 +295,6 @@ Write documentation for users and contributors.
 
 
 # Visualizer
+-  Start with static visualizations (Graphviz/Matplotlib), then add interactive options (Plotly/Web) as the project matures.
+- a JavaScript snippet to integrate the JSON into a D3-based visualization?
+- Continue with D3.js Implementation strategy
