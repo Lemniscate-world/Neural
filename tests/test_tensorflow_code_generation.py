@@ -1,3 +1,4 @@
+from html import parser
 import sys
 import os
 
@@ -24,8 +25,8 @@ network MyModel {
     }
 }
 """
-
-tree = create_parser.layer_parse(test_code)
+parser = create_parser("network")
+tree = parser.parse(test_code)
 print("Parsed tree: ", tree) # Debug Print
 transformer = ModelTransformer()
 model_data = transformer.transform(tree)
