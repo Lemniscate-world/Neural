@@ -739,18 +739,19 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0])
         return {'rate': params}
     
-    
     def number_or_none(self, items):
         if not items:
-            raise ValueError("Expected a number or 'None' but got no value.")
+            # Instead of raising an error, return None if no items are provided.
+            return None
         value = self._extract_value(items[0])
         if value == "None":
             return None
         try:
-            return int(value) if '.' not in value else float(value)
+            # Convert to int if there is no decimal point; otherwise, convert to float
+            return int(value) if '.' not in str(value) else float(value)
         except Exception as e:
-            raise ValueError(f"Error converting {value} to a number: {e}")  # Convert to int after checking for 'none'
-
+            raise ValueError(f"Error converting {value} to a number: {e}")
+        
     def value(self, items):
         if isinstance(items[0], Token):
             return items[0].value

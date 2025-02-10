@@ -36,6 +36,7 @@ print("Transformed data: ", model_data) # Debug Print
 print("Input shape:", model_data['input_shape'])
 print("First layer:", model_data['layers'][0])
 
+
 # Validate shapes
 input_shape = model_data['input_shape']
 for layer in model_data['layers']:
