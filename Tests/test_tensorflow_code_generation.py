@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import lark
-from parser import parser, ModelTransformer, propagate_shape, generate_code
+from neural.parser import parser, ModelTransformer, propagate_shape, generate_code
 
 test_code = """
 network MyModel {
