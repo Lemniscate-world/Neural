@@ -1655,51 +1655,46 @@ def load_file(filename):
 
 ### Converting layers data to json for D3 visualization ########
 
-def convert_to_d3_format(parsed_model):
+def model_to_d3_json(model_data):
+    """Convert parsed model data to D3 visualization format"""
     nodes = []
     links = []
-
-
-
-    # Process input layer
-    input_layer = parsed_model["input"]
-    input_node = {
+    
+    # Input Layer
+    nodes.append({
         "id": "input",
         "type": "Input",
-        "shape": str(input_layer.get("shape", "Unknown"))
-    }
-    nodes.append(input_node)
-
-    previous_id = "input"
-
-    # Process hidden layers
-    for i, layer in enumerate(parsed_model["layers"]):
-        layer_id = f"layer_{i}"
-        node = {
-            "id": layer_id,
-            "type": layer["type"],
-            "params": ", ".join(f"{k}={v}" for k, v in layer.get("params", {}).items())
-        }
-        nodes.append(node)
-        links.append({"source": previous_id, "target": layer_id})
-        previous_id = layer_id
-
-    # Process output layer
-    output_layer = parsed_model["output_layer"]
-    output_node = {
+        "shape": model_data['input']['shape']
+    })
+    
+    # Hidden Layers
+    for idx, layer in enumerate(model_data['layers']):
+        node_id = f"layer{idx+1}"
+        nodes.append({
+            "id": node_id,
+            "type": layer['type'],
+            "params": layer.get('params', {})
+        })
+        
+        # Create connections
+        prev_node = "input" if idx == 0 else f"layer{idx}"
+        links.append({
+            "source": prev_node,
+            "target": node_id
+        })
+    
+    # Output Layer
+    nodes.append({
         "id": "output",
-        "type": "Output",
-        "shape": str(output_layer.get("params", {}).get("units", "Unknown"))
-    }
-    nodes.append(output_node)
-    links.append({"source": previous_id, "target": "output"})
-
-    return json.dumps({"nodes": nodes, "links": links}, indent=4)
-
-# Example usage:
-# parsed_model = your_parser_function(network_code)  # Replace with actual parser call
-# d3_json = convert_to_d3_format(parsed_model)
-# print(d3_json)
+        "type": model_data['output_layer']['type'],
+        "params": model_data['output_layer'].get('params', {})
+    })
+    links.append({
+        "source": f"layer{len(model_data['layers'])}",
+        "target": "output"
+    })
+    
+    return {"nodes": nodes, "links": links}
 
 
 def export_for_tensorboard(model_data, backend='tensorflow'):
