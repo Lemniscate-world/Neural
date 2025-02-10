@@ -5,7 +5,7 @@ setup(
     version='0.1.0',
     description='A neural network framework with native .neural and .nr file support',
     author='Lemniscate-SHA-256',
-    packages=find_packages(),
+    packages=find_packages(where='.', exclude=["tests*", "docs"]),
     install_requires=[
         'lark-parser',
         'click',
