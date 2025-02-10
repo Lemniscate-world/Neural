@@ -2,6 +2,7 @@ from fastapi import params
 import lark
 from lark import Tree, Transformer, Token
 from typing import Any, Dict, List, Tuple, Union, Optional, Callable
+import json
 
 def create_parser(start_rule: str = 'network') -> lark.Lark:
     """
@@ -361,7 +362,7 @@ research_parser = create_parser('research')
 
 class ModelTransformer(lark.Transformer):
     """
-    Transforms the parsed tree NUMBERo a structured dictionary representing the neural network model.
+    Transforms the parsed tree NUMBER to a structured dictionary representing the neural network model.
     """
     def layer(self, items):
         layer_type = items[0].data
@@ -661,7 +662,7 @@ class ModelTransformer(lark.Transformer):
         return {'recall': self._extract_value(items[0])}
 
 
-    # NETWORK ACTIVATION ##############################
+    ### NETWORK ACTIVATION ##############################
 
     def network(self, items):
         name = str(items[0].value)
@@ -882,7 +883,7 @@ class ModelTransformer(lark.Transformer):
     ### End named_params ################################################
 
     
-    #### Advanced Layers #################################
+    ### Advanced Layers #################################
 
     def attention(self, items):
         params = items[0] if items else None
@@ -1267,6 +1268,30 @@ def plot_shape_propagation(shape_history, save_path="shape_propagation.png"):
 # Usage:
 # plot_shape_propagation(shape_history)
 
+import plotly.graph_objects as go
+
+def interactive_shape_plot(shape_history):
+    layers = [f"Layer {i}\n{name}" for i, (name, _) in enumerate(shape_history)]
+    shapes = [str(shape) for _, shape in shape_history]
+    
+    fig = go.Figure(go.Waterfall(
+        name="Shape Propagation",
+        orientation="v",
+        measure=["absolute"] + ["relative"]*(len(shapes)-1),
+        x=layers,
+        textposition="outside",
+        text=shapes,
+        y=[1]*len(shapes)  # Dummy values for visualization
+    ))
+    
+    fig.update_layout(
+        title="Interactive Shape Propagation",
+        showlegend=True,
+        waterfallgap=0.3
+    )
+    
+    fig.write_html("shape_propagation.html")
+    fig.show()
 
 def generate_code(model_data,backend):
     """
@@ -1626,3 +1651,116 @@ def load_file(filename):
         return create_parser('rnr_file').parse(content)
     else:
         raise ValueError(f"Unsupported file type: {filename}")
+
+
+### Converting layers data to json for D3 visualization ########
+
+def convert_to_d3_format(parsed_model):
+    nodes = []
+    links = []
+
+
+
+    # Process input layer
+    input_layer = parsed_model["input"]
+    input_node = {
+        "id": "input",
+        "type": "Input",
+        "shape": str(input_layer.get("shape", "Unknown"))
+    }
+    nodes.append(input_node)
+
+    previous_id = "input"
+
+    # Process hidden layers
+    for i, layer in enumerate(parsed_model["layers"]):
+        layer_id = f"layer_{i}"
+        node = {
+            "id": layer_id,
+            "type": layer["type"],
+            "params": ", ".join(f"{k}={v}" for k, v in layer.get("params", {}).items())
+        }
+        nodes.append(node)
+        links.append({"source": previous_id, "target": layer_id})
+        previous_id = layer_id
+
+    # Process output layer
+    output_layer = parsed_model["output_layer"]
+    output_node = {
+        "id": "output",
+        "type": "Output",
+        "shape": str(output_layer.get("params", {}).get("units", "Unknown"))
+    }
+    nodes.append(output_node)
+    links.append({"source": previous_id, "target": "output"})
+
+    return json.dumps({"nodes": nodes, "links": links}, indent=4)
+
+# Example usage:
+# parsed_model = your_parser_function(network_code)  # Replace with actual parser call
+# d3_json = convert_to_d3_format(parsed_model)
+# print(d3_json)
+
+
+def export_for_tensorboard(model_data, backend='tensorflow'):
+    # Generate backend-specific code
+    model_code = generate_code(model_data, backend)
+    
+    # Save temporary model
+    with open("temp_model.py", "w") as f:
+        f.write(model_code)
+    
+    # For TensorFlow
+    if backend == 'tensorflow':
+        from tensorflow.keras.models import load_model
+        model = load_model("temp_model.h5")
+        tf.keras.utils.plot_model(model, to_file='tensorboard_model.png')
+
+
+def visualize_conv_filters(layer_data):
+    if layer_data['type'] != 'Conv2D':
+        return
+    
+    filters = layer_data['params'].get('filters', 32)
+    kernel_size = layer_data['params'].get('kernel_size', (3,3))
+    
+    # Generate sample filter visualizations
+    fig, axes = plt.subplots(4, 8, figsize=(10,5))
+    for ax in axes.flatten():
+        img = np.random.randn(*kernel_size)
+        ax.imshow(img, cmap='viridis')
+        ax.axis('off')
+    
+    plt.suptitle(f"Conv2D Layer Visualization\n{filters} Filters ({kernel_size[0]}x{kernel_size[1]})")
+    plt.savefig("conv_filters.png")
+    plt.close()
+
+from graphviz import Digraph
+
+def visualize_model_architecture(model_data, filename="model_architecture"):
+    """Generates a Graphviz diagram of the model architecture."""
+    dot = Digraph(comment='Neural Network Architecture', format='png')
+    
+    # Input Layer
+    dot.node('input', f"Input\nShape: {model_data['input']['shape']}", shape='box')
+    
+    # Hidden Layers
+    for idx, layer in enumerate(model_data['layers']):
+        layer_label = (
+            f"{layer['type']}\n"
+            f"Params: {', '.join([f'{k}={v}' for k,v in layer.get('params', {}).items()])}"
+        )
+        dot.node(f'layer{idx}', layer_label, shape='ellipse')
+    
+    # Connections
+    prev_node = 'input'
+    for idx in range(len(model_data['layers'])):
+        dot.edge(prev_node, f'layer{idx}')
+        prev_node = f'layer{idx}'
+    
+    # Output Layer
+    dot.node('output', f"Output\nShape: {model_data['output_shape']}", shape='box')
+    dot.edge(prev_node, 'output')
+    
+    dot.render(filename, cleanup=True)
+    print(f"Saved architecture diagram to {filename}.png")
