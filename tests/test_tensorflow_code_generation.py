@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import lark
-from neural.parser import parser, ModelTransformer, propagate_shape, generate_code
+from neural.parser import create_parser, ModelTransformer, propagate_shape, generate_code
 
 test_code = """
 network MyModel {
@@ -25,7 +25,7 @@ network MyModel {
 }
 """
 
-tree = parser.parse(test_code)
+tree = create_parser.layer_parse(test_code)
 print("Parsed tree: ", tree) # Debug Print
 transformer = ModelTransformer()
 model_data = transformer.transform(tree)
