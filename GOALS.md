@@ -36,36 +36,26 @@
 09 02 25
 - Add mathematics formulations to shape propagation on research paper and visualizations (Done)
 - Make neural generate research paper (No AI) on model i'm using or training with benchmarks and stats etc in the its IDE + visualizer and interactive solver and nodes explorers with details
-
 - Add one layer daily
 - GPU-optimized inference
   To make Neural a high-performance framework, we will:
 ✅ Implement GPU acceleration using CUDA & TensorRT (for NVIDIA GPUs)
 ✅ Support multi-backend inference (CPU, GPU, and possibly future hardware like TPUs)
 ✅ Introduce automatic device selection based on available hardware
-- Implement ONNX export for deployment
 
+
+- Implement ONNX export for deployment
 - Create very basic model with neural and even fine-tune to showcase all neural functionalities.and in the same time testing if they are working.
 - Enhance and test the research paper creation of neural
-
 - Creating executable neural files
-- Neural Syntax
-- Enhance parallelization in neural
+
+
 - Arxiv and JOSS apI
 - Shape propagations and code generations in separate files
 
-- Create parallelization layers and unique parallelization techniques
 - Add all pytorch and tensorflow syntax to neural
 - Add more researchs capabilities for neural
-- Create my bennchmark module with all possible and disponibles statistic and analysis capabilities
-- Syntax highlight neural IDE
-- Mathematical formulas and modeling  extraction and visualization on the dashboard
-- High-level API
-- Implement and create my own neural tester
-- Make neural more faster - Faster analyzer, analyzer code with the goal to make everything faster
-- compiler optimizations
-- Integrate Hugging Face
-- AutoML features.
+
  dynamic graph visualizations, something like neural topology evolution, or real-time training analysis?
 
 Also, are you encoding propagation in terms of differential geometry, variational methods, or alternative tensor representations? That could lead to new ways of thinking about deep learning structures.
@@ -73,7 +63,7 @@ Also, are you encoding propagation in terms of differential geometry, variationa
 - Create a memory file to resume for neural
 - Add support for automatic error calculation
 - Create a standalone interpreter for neural
-- Ability to load models and parses them into different backends  
+ 
 - Add Multi GPU training
 - DSL for image processing (Add image processing)
 - Optimize and enhance Automatic Shape Validation to the best
@@ -100,7 +90,7 @@ How can i enhance the training configuration ?
 How can i make neural the less boilerplate possible ?
 How can i enhance my grammar ?
 Create requirements.txt
-Write full neural language syntax documentation
+
 Create requirements-dev.txt
 
 
@@ -293,8 +283,27 @@ Write documentation for users and contributors.
   - golden tests using popular architectures
   - Tree-sitter for syntax highlighting
 
+# Parser
+- Write full neural language syntax documentation
+- Enhance parallelization in neural
+- Create parallelization layers and unique parallelization techniques
+- Ability to load models and parses them into different backends 
+- Create my bennchmark module with all possible and disponibles statistic and analysis capabilities
+- Syntax highlight neural IDE
+- Mathematical formulas and modeling  extraction and visualization on the dashboard
+- High-level API
+- Implement and create my own neural tester
+- Make neural more faster - Faster analyzer, analyzer code with the goal to make everything faster
+- compiler optimizations
+- Integrate Hugging Face
+- AutoML features.
+
 
 # Visualizer
 -  Start with static visualizations (Graphviz/Matplotlib), then add interactive options (Plotly/Web) as the project matures.
 - a JavaScript snippet to integrate the JSON into a D3-based visualization?
 - Continue with D3.js Implementation strategy
+- Export json for D3.js
+
+# DSL
+- Neural Syntax
