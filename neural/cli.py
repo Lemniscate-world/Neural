@@ -7,8 +7,8 @@ import click
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from .parser import create_parser, ModelTransformer, generate_code
-
+from .parser import create_parser, ModelTransformer
+from .code_generator import generate_code
 
 
 @click.group()

@@ -1,4 +1,10 @@
-d3.json("model.json").then(data => {
+d3.json("/parse", {
+  method: "POST",
+  body: nrContent,  // Get from file input/textarea
+  headers: {
+      "Content-Type": "text/plain"
+  }
+}).then(data => {
     const simulation = d3.forceSimulation(data.nodes)
       .force("link", d3.forceLink(data.links).id(d => d.id))
       .force("charge", d3.forceManyBody().strength(-1000))

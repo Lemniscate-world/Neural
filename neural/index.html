@@ -2,3 +2,28 @@
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <!-- Container for visualization -->
 <div id="network-viz"></div>
+
+
+<div id="toolbar">
+    <input type="file" id="nr-upload" accept=".nr">
+    <button onclick="loadModel()">Visualize</button>
+</div>
+
+<script>
+function loadModel() {
+    const file = document.getElementById('nr-upload').files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        const nrContent = e.target.result;
+        // Send to parser endpoint
+        d3.json("/parse", {
+            method: "POST",
+            body: nrContent,
+            headers: {"Content-Type": "text/plain"}
+        }).then(updateVisualization);
+    };
+    
+    reader.readAsText(file);
+}
+</script>
