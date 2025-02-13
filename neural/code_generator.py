@@ -1,4 +1,4 @@
-from .shape_propagator import propagate_shape
+from shape_propagator import propagate_shape
 from typing import Any, Dict, List, Tuple, Union, Optional, Callable
 
 def NUMBER(x):

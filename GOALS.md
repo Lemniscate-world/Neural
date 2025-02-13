@@ -308,3 +308,9 @@ Write documentation for users and contributors.
 
 # DSL
 - Neural Syntax
+
+
+# TOOLS
+- Intelligent terminal with Dark them
+- d3.json
+- Book on Flask
