@@ -6,6 +6,41 @@ class NetworkRenderer {
         this.simulation = null;
     }
 
+    async parseAndVisualize(code) {
+        try {
+            const response = await fetch('http://localhost:5000/parse', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ code })
+            });
+
+            if (!response.ok) {
+                throw new Error('Parser API request failed');
+            }
+
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            this.render(data);
+        } catch (error) {
+            console.error('Error:', error);
+            this.showError(error.message);
+        }
+    }
+
+    showError(message) {
+        const errorDiv = document.getElementById('error-message') || 
+            document.createElement('div');
+        errorDiv.id = 'error-message';
+        errorDiv.style.color = 'red';
+        errorDiv.textContent = message;
+        this.svg.node().parentNode.appendChild(errorDiv);
+    }
+
     render(data) {
         this.svg.selectAll("*").remove();
 
@@ -87,27 +122,9 @@ class NetworkRenderer {
 // Initialize the renderer
 const renderer = new NetworkRenderer('network-svg');
 
-// Example visualization function
+// Update visualization function
 function visualize() {
     const codeEditor = document.getElementById('code-editor');
     const code = codeEditor.value;
-    
-    // For testing, use sample data
-    const sampleData = {
-        nodes: [
-            { id: "input", type: "Input", shape: [28, 28, 1] },
-            { id: "layer1", type: "Conv2D", params: { filters: 32, kernel_size: [3, 3] } },
-            { id: "layer2", type: "MaxPooling2D", params: { pool_size: [2, 2] } },
-            { id: "layer3", type: "Dense", params: { units: 128 } },
-            { id: "output", type: "Output", params: { units: 10 } }
-        ],
-        links: [
-            { source: "input", target: "layer1" },
-            { source: "layer1", target: "layer2" },
-            { source: "layer2", target: "layer3" },
-            { source: "layer3", target: "output" }
-        ]
-    };
-
-    renderer.render(sampleData);
+    renderer.parseAndVisualize(code);
 }
