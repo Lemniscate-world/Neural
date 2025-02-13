@@ -315,22 +315,21 @@ Write documentation for users and contributors.
 
 
 # TOOLS
-- Intelligent terminal with Dark them
 - d3.json
-- Book on Flask
 - BloomDB Books & Tools
 - Python main function
 - fix calculate_shape_propagation
 - Add pytest
 - Review real-time shape propagation calculations, plot and interactive shape plot
 - Directly include parsed model data conversion to json file for D3 Viwsualization format in the parser
-- Anki
 
 
-- Export parsed model data to json for D3.js (parser, visualizer)
-  - <__main__.NeuralVisualizer object at 0x7dabec6b53a0>
-  - <bound method NeuralVisualizer.model_to_d3_json of <__main__.NeuralVisualizer object at 0x7dabec6b53a0>> in Visualizer.py
-  -  File "/home/gad/Documents/OFFLINE REPOS/neural/neural/visualizer.py", line 32, in model_to_d3_json
-    "shape": model_data['input']['shape']
-             ~~~~~~~~~~^^^^^^^^^
-TypeError: 'Lark' object is not subscriptable
+- Why use .get() in visualizer.py
+- renderer.js:30 Error: Error: Parser API request failed
+    at NetworkRenderer.parseAndVisualize (renderer.js:20:23)
+overrideMethod	@	hook.js:608
+parseAndVisualize	@	renderer.js:30
+await in parseAndVisualize		
+visualize	@	renderer.js:129
+onclick	@	(index):60
+

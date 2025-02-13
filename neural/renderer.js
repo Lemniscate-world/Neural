@@ -11,9 +11,9 @@ class NetworkRenderer {
             const response = await fetch('http://localhost:5000/parse', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain',
                 },
-                body: JSON.stringify({ code })
+                body: code
             });
 
             if (!response.ok) {
