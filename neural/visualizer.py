@@ -65,9 +65,26 @@ class NeuralVisualizer:
         return  {"nodes": nodes, "links": links}
   
 
-if __name__ == '__main__':
 
-    model_data = create_parser('network')
-    Visualizer = NeuralVisualizer(model_data)
-    print(Visualizer)
-    print(Visualizer.model_to_d3_json(model_data))
+if __name__ == '__main__':
+    # Example usage
+    nr_content = """
+    network TestNet {
+        input: (None, 28, 28, 1)
+        layers:
+            Conv2D(filters=32, kernel_size=(3,3), activation="relu")
+            MaxPooling2D(pool_size=(2,2))
+            Flatten()
+            Dense(128, "relu")
+            Output(10, "softmax")
+        loss: "categorical_crossentropy"
+        optimizer: "adam"
+    }
+    """
+    
+    parser = create_parser('network')
+    parsed = parser.parse(nr_content)
+    model_data = ModelTransformer().transform(parsed)
+    
+    visualizer = NeuralVisualizer(model_data)
+    print(visualizer.model_to_d3_json())

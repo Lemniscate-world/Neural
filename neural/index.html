@@ -9,19 +9,36 @@
 </div>
 
 <script>
-function loadModel() {
+async function loadModel() {
     const file = document.getElementById('nr-upload').files[0];
     const reader = new FileReader();
     
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         const nrContent = e.target.result;
-        // Send to parser endpoint
-        d3.json("/parse").then(data => {
-            const simulation = d3.forceSimulation(data.nodes)
-            .force("link", d3.forceLink(data.links).id(d => d.id))
-            .force("charge", d3.forceManyBody().strength(-1000))
-            .force("center", d3.forceCenter(width/2, height/2));
+        
+        // Send to backend for parsing
+        const response = await fetch('/parse', {
+            method: 'POST',
+            body: nrContent,
+            headers: {'Content-Type': 'text/plain'}
+        });
+        
+        const data = await response.json();
+        renderVisualization(data);
+    }
+    reader.readAsText(file);
+}
 
+function renderVisualization(data) {
+    // Clear previous visualization
+    d3.select("#network-container").html("");
+    
+    // Your D3 rendering code here
+    const simulation = d3.forceSimulation(data.nodes)
+        .force("link", d3.forceLink(data.links).id(d => d.id))
+        .force("charge", d3.forceManyBody().strength(-1000))
+        .force("center", d3.forceCenter(width/2, height/2));
+    
         node.append("title") // Tooltip
             .text(d => `${d.type}\nParams: ${d.params}`);
 
@@ -29,10 +46,5 @@ function loadModel() {
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended));
-        });
-    
-    reader.readAsText(file);
-    }
-
 }
 </script>
