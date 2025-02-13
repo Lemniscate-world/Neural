@@ -20,24 +20,26 @@ class NeuralVisualizer:
     
     ### Converting layers data to json for D3 visualization ########
 
-    def model_to_d3_json(self, model_data):
+    def model_to_d3_json(self):  # Remove model_data parameter since we have it in self
         """Convert parsed model data to D3 visualization format"""
         nodes = []
         links = []
         
         # Input Layer
+        input_data = self.model_data.get('input', {})
         nodes.append({
             "id": "input",
             "type": "Input",
-            "shape": model_data['input']['shape']
+            "shape": input_data.get('shape', None)
         })
         
         # Hidden Layers
-        for idx, layer in enumerate(model_data['layers']):
+        layers = self.model_data.get('layers', [])
+        for idx, layer in enumerate(layers):
             node_id = f"layer{idx+1}"
             nodes.append({
                 "id": node_id,
-                "type": layer['type'],
+                "type": layer.get('type', 'Unknown'),
                 "params": layer.get('params', {})
             })
             
@@ -49,20 +51,20 @@ class NeuralVisualizer:
             })
         
         # Output Layer
+        output_layer = self.model_data.get('output_layer', {})
         nodes.append({
             "id": "output",
-            "type": model_data['output_layer']['type'],
-            "params": model_data['output_layer'].get('params', {})
+            "type": output_layer.get('type', 'Output'),
+            "params": output_layer.get('params', {})
         })
-        links.append({
-            "source": f"layer{len(model_data['layers'])}",
-            "target": "output"
-        })
-
-        print(nodes)
-        print(links)
         
-        return  {"nodes": nodes, "links": links}
+        if layers:  # Only add final link if there are layers
+            links.append({
+                "source": f"layer{len(layers)}",
+                "target": "output"
+            })
+
+        return {"nodes": nodes, "links": links}
   
 
 
