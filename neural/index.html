@@ -1,50 +1,51 @@
-<!-- Include D3.js -->
-<script src="/src/d3.v7.js"></script>
-<!-- Container for visualization -->
-<div id="network-viz"></div>
-
-<div id="toolbar">
-    <input type="file" id="nr-upload" accept=".nr">
-    <button onclick="loadModel()">Visualize</button>
-</div>
-
-<script>
-async function loadModel() {
-    const file = document.getElementById('nr-upload').files[0];
-    const reader = new FileReader();
-    
-    reader.onload = async function(e) {
-        const nrContent = e.target.result;
-        
-        // Send to backend for parsing
-        const response = await fetch('/parse', {
-            method: 'POST',
-            body: nrContent,
-            headers: {'Content-Type': 'text/plain'}
-        });
-        
-        const data = await response.json();
-        renderVisualization(data);
-    }
-    reader.readAsText(file);
-}
-
-function renderVisualization(data) {
-    // Clear previous visualization
-    d3.select("#network-container").html("");
-    
-    // Your D3 rendering code here
-    const simulation = d3.forceSimulation(data.nodes)
-        .force("link", d3.forceLink(data.links).id(d => d.id))
-        .force("charge", d3.forceManyBody().strength(-1000))
-        .force("center", d3.forceCenter(width/2, height/2));
-    
-        node.append("title") // Tooltip
-            .text(d => `${d.type}\nParams: ${d.params}`);
-
-        node.call(d3.drag() // Dragging
-            .on("start", dragstarted)
-            .on("drag", dragged)
-            .on("end", dragended));
-}
-</script>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Neural Network Visualizer</title>
+    <style>
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .editor {
+            flex: 1;
+            padding: 20px;
+        }
+        .visualization {
+            flex: 2;
+            padding: 20px;
+        }
+        #code-editor {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+        }
+        #network-svg {
+            border: 1px solid #ccc;
+            background: white;
+        }
+    </style>
+    <script src="lib/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="editor">
+            <textarea id="code-editor">network TestNet {
+    input: (28, 28, 1)
+    layers:
+        Conv2D(32, (3,3), "relu")
+        MaxPooling2D(pool_size=(2,2))
+        Dense(128, "relu")
+        Output(10, "softmax")
+    loss: "categorical_crossentropy"
+    optimizer: "adam"
+}</textarea>
+            <button onclick="visualize()">Visualize</button>
+        </div>
+        <div class="visualization">
+            <svg id="network-svg" width="800" height="600"></svg>
+        </div>
+    </div>
+    <script src="renderer.js"></script>
+</body>
+</html>
