@@ -913,8 +913,6 @@ class ModelTransformer(lark.Transformer):
     def graph_attention(self, items):
         params = self._extract_value(items[0])
         return {'type': 'GraphAttention', 'params': params}
-
-
     
     def dynamic(self, items):
         params = items[0] if items else None

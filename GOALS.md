@@ -283,7 +283,7 @@ Write documentation for users and contributors.
   - golden tests using popular architectures
   - Tree-sitter for syntax highlighting
 
-# Parser
+# Parser
 - Write full neural language syntax documentation
 - Enhance parallelization in neural
 - Create parallelization layers and unique parallelization techniques
