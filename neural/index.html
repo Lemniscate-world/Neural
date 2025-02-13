@@ -24,6 +24,23 @@
             border: 1px solid #ccc;
             background: white;
         }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        #error-message {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ef5350;
+        }
     </style>
     <script src="lib/d3.v7.min.js"></script>
 </head>
@@ -44,6 +61,7 @@
         </div>
         <div class="visualization">
             <svg id="network-svg" width="800" height="600"></svg>
+            <div class="loading">Processing...</div>
         </div>
     </div>
     <script src="renderer.js"></script>
