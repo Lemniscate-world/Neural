@@ -4,6 +4,7 @@ import lark
 from numbers import Number
 import plotly.graph_objects as go
 from typing import Any, Dict, List, Tuple, Union, Optional, Callable
+from neural.parser import create_parser
 
 def NUMBER(x):
     try:
@@ -201,73 +202,3 @@ def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any
 
     else:
         raise ValueError(f"Unsupported layer type: {layer_type}")
-
-## REAL-TIME SHAPE PROPAGATION CALCULATIONS ######################
-
-def calculate_shape_propagation(model_data):
-    shape_history = []
-    current_shape = model_data['input']['shape']
-    shape_history.append(("Input", current_shape))
-    
-    for layer in model_data['layers']:
-        try:
-            new_shape = propagate_shape(current_shape, layer)
-            shape_history.append((layer['type'], new_shape))
-            current_shape = new_shape
-        except Exception as e:
-            print(f"Error propagating shape through {layer['type']}: {e}")
-            shape_history.append((layer['type'], "Error"))
-    
-    return shape_history
-
-# Usage:
-# shape_history = calculate_shape_propagation(model_data)
-# Now shape_history is a list like [("Input", (32, 32, 3)), ("Conv2D", (32, 28, 28, 16)), ...]
-
-import matplotlib.pyplot as plt
-
-def plot_shape_propagation(shape_history, save_path="shape_propagation.png"):
-    layers = [f"{name}\n{shape}" for name, shape in shape_history]
-    # Use a simple bar chart to indicate progression—feel free to get more creative!
-    indices = list(range(len(layers)))
-    values = [1] * len(layers)  # Dummy values for horizontal bars
-    
-    plt.figure(figsize=(10, len(layers) * 0.8))
-    plt.barh(indices, values, color="skyblue")
-    plt.yticks(indices, layers)
-    plt.xlabel("Propagation (dummy axis)")
-    plt.title("Shape Propagation Through Layers")
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
-    print(f"Visualization saved as {save_path}")
-
-# Usage:
-# plot_shape_propagation(shape_history)
-
-
-
-def interactive_shape_plot(shape_history):
-    layers = [f"Layer {i}\n{name}" for i, (name, _) in enumerate(shape_history)]
-    shapes = [str(shape) for _, shape in shape_history]
-    
-    fig = go.Figure(go.Waterfall(
-        name="Shape Propagation",
-        orientation="v",
-        measure=["absolute"] + ["relative"]*(len(shapes)-1),
-        x=layers,
-        textposition="outside",
-        text=shapes,
-        y=[1]*len(shapes)  # Dummy values for visualization
-    ))
-    
-    fig.update_layout(
-        title="Interactive Shape Propagation",
-        showlegend=True,
-        waterfallgap=0.3
-    )
-    
-    fig.write_html("shape_propagation.html")
-    fig.show()
-
-

@@ -17,8 +17,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         lark.Lark: A Lark parser object configured with the defined grammar.
     """
 
-    model_data = {}
-
     grammar = r"""
 
         %ignore /\#[^\n]*/  // Ignore line comments              
@@ -436,7 +434,6 @@ class ModelTransformer(lark.Transformer):
     def separable_conv2d(self, items):
         return {'type': 'SeparableConv2D', 'params': items[0]}
     
-
     def loss(self, items):
         return items[0].value.strip('"')
 
@@ -453,7 +450,7 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0])
         return {'type': 'Dropout', 'params': params}
 
-    ### Training Configurations ############################""
+    ### Training Configurations ############################
 
     def training_config(self, items):
         config = {}
@@ -469,7 +466,6 @@ class ModelTransformer(lark.Transformer):
     def pool_size(self, items):
         params = self._extract_value(items[0])
         return {'pool_size': params}
-
 
     def max_pooling1d(self, items):
         params = self._extract_value(items[0])
@@ -553,8 +549,6 @@ class ModelTransformer(lark.Transformer):
     def simple_rnn(self, items):
         return {'type': 'SimpleRNN', 'params': items[0]}
     
-
-    
     def conv_lstm(self, items):
         return {'type': 'ConvLSTM2D', 'params': items[0]}
 
@@ -606,11 +600,7 @@ class ModelTransformer(lark.Transformer):
     def lstm_dropout(self, items):
         return {"type": "LSTMDropoutWrapper", 'params': items[0]}
 
-    
-
     ### Everything Research ##################
-
-    
 
     def research(self, items):
         name = self._extract_value(items[0])

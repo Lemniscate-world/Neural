@@ -66,7 +66,11 @@ Also, are you encoding propagation in terms of differential geometry, variationa
  
 - Add Multi GPU training
 - DSL for image processing (Add image processing)
+
+
 - Optimize and enhance Automatic Shape Validation to the best
+
+
 - Optimize for low-latency real-time inference
 - Create my own neural machine learning model based on graph theory, with benchmarks and research papers wto showcase neural functionalities.
 - Create model for autoevolving music with neural
@@ -314,3 +318,19 @@ Write documentation for users and contributors.
 - Intelligent terminal with Dark them
 - d3.json
 - Book on Flask
+- BloomDB Books & Tools
+- Python main function
+- fix calculate_shape_propagation
+- Add pytest
+- Review real-time shape propagation calculations, plot and interactive shape plot
+- Directly include parsed model data conversion to json file for D3 Viwsualization format in the parser
+- Anki
+
+
+- Export parsed model data to json for D3.js (parser, visualizer)
+  - <__main__.NeuralVisualizer object at 0x7dabec6b53a0>
+  - <bound method NeuralVisualizer.model_to_d3_json of <__main__.NeuralVisualizer object at 0x7dabec6b53a0>> in Visualizer.py
+  -  File "/home/gad/Documents/OFFLINE REPOS/neural/neural/visualizer.py", line 32, in model_to_d3_json
+    "shape": model_data['input']['shape']
+             ~~~~~~~~~~^^^^^^^^^
+TypeError: 'Lark' object is not subscriptable

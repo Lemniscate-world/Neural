@@ -5,19 +5,18 @@ from graphviz import Digraph
 import numpy as np
 import os
 import sys
+import json
 
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from shape_propagator import calculate_shape_propagation
 from parser import ModelTransformer, create_parser
 
 class NeuralVisualizer:
     def __init__(self, model_data):
-        self.model_data = create_parser('network')
-        self.shape_history = calculate_shape_propagation(model_data)
+        self.model_data = model_data
     
     ### Converting layers data to json for D3 visualization ########
 
@@ -60,15 +59,15 @@ class NeuralVisualizer:
             "target": "output"
         })
 
-        ### Nodes Shape Info ########
-        shape_history = calculate_shape_propagation(model_data)
-        for node, shape in zip(nodes[1:-1], shape_history[1:-1]):
-            node['shape'] = shape[1]
-        
         print(nodes)
         print(links)
+        
+        return  {"nodes": nodes, "links": links}
+  
 
-        return {"nodes": nodes, "links": links}
+if __name__ == '__main__':
 
-
-    
+    model_data = create_parser('network')
+    Visualizer = NeuralVisualizer(model_data)
+    print(Visualizer)
+    print(Visualizer.model_to_d3_json(model_data))
