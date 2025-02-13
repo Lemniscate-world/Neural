@@ -359,7 +359,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
     """
-    return model_data = lark.Lark(grammar, start=[start_rule], parser='lalr')
+    return  lark.Lark(grammar, start=[start_rule], parser='lalr')
 
 network_parser = create_parser('network')
 layer_parser = create_parser('layer')
