@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start the Flask API server
-python neural/api.py &
+python api.py &
 API_PID=$!
 
 # Start the static file server
