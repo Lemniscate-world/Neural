@@ -4,12 +4,13 @@ from parser import create_parser, ModelTransformer
 from visualizer import NeuralVisualizer
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/parse": {"origins": "*"}})
 
 @app.route('/parse', methods=['POST'])
 def parse_network():
     try:
-        code = request.json['code']
+        # Get raw text data instead of JSON
+        code = request.data.decode('utf-8')
         parser = create_parser('network')
         tree = parser.parse(code)
         model_data = ModelTransformer().transform(tree)

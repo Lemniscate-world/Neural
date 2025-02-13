@@ -669,9 +669,15 @@ class ModelTransformer(lark.Transformer):
         # execution_config = next((item for item in items[6:] if 'device' in item), {'device': 'auto'})
         execution_config = self._extract_value(items[0])
 
-        output_layer = next((layer for layer in reversed(layers_config) if layer['type'] == 'Output'), None)
-        if output_layer is None:
-            output_layer = {'type': 'Output', 'params': {'units': 1, 'activation': 'linear'}}
+        # Ensure output_layer exists
+        output_layer = next((layer for layer in reversed(items[2]) 
+                        if layer['type'] == 'Output'), None)
+        if not output_layer:
+            output_layer = {
+                'type': 'Output',
+                'params': {'units': 1, 'activation': 'linear'}
+            }
+            items[2].append(output_layer)
 
         output_shape = output_layer.get('params', {}).get('units')
         if output_shape is not None:
