@@ -174,9 +174,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         wrapper: wrapper_layer_type "(" layer "," named_params ")"  
         wrapper_layer_type: "TimeDistributed" 
 
-        // Basic layers group
-        ?basic: conv | pooling | dropout | flatten | dense | output
-        dropout: "Dropout(" named_params ")" 
 
         // Regularization layers group
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2 
@@ -237,7 +234,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         group_norm: "GroupNormalization" "(" [named_params] ")"
         
 
-        // Basic layer types
+        // Basic layer types & group
+        ?basic: conv | pooling | dropout | flatten | dense | output
+        dropout: "Dropout(" named_params ")" 
         dense: "Dense(" ( "units=" INT "," "activation=" ESCAPED_STRING | INT "," ESCAPED_STRING ) ")"
         flatten: "Flatten" "(" [named_params] ")"
 
@@ -260,7 +259,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         gru_cell: "GRUCell(" named_params ")"
 
         
-
         // Dropout wrapper layers for RNNs
         dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
         simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" named_params ")"
@@ -444,7 +442,11 @@ class ModelTransformer(lark.Transformer):
         return items
 
     def flatten(self, items):
-        return {'type': 'Flatten', 'params': items[0]}
+        if items:
+            params = self._extract_value(items[0])
+        else:
+            params = None
+        return {'type': 'Flatten', 'params': params}
 
     def dropout(self, items):
         params = self._extract_value(items[0])
@@ -715,7 +717,6 @@ class ModelTransformer(lark.Transformer):
                 return item.value.strip('"')
             elif item.type == 'WS_INLINE':
                 return item.value.strip()
-                   
         
         elif isinstance(item, list):  # Handles nested lists
             return [self._extract_value(elem) for elem in item]

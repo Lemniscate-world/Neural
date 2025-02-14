@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Add neural visualizer path
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "neural"))
 
-# Test the NeuralVisualizer class
+# Test the model_to_d3_json method
 
 
 def test_neural_visualizer_basic():
