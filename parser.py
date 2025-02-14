@@ -464,8 +464,7 @@ class ModelTransformer(lark.Transformer):
     ### Training Configurations ############################
 
     def training_config(self, items):
-        params = self._extract_value(items[0])
-        return {'type': 'training_config', 'params': params}
+        return items[0]
     
     def training_params(self, items):
         params = {}
