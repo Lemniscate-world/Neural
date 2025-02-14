@@ -158,8 +158,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         input_layer: ( multid_input_layer | input1d_layer )
         multid_input_layer: "input" ":" "(" shape ")"
         input1d_layer: "input" ":" "(" shape "," [shape] ")"
-
-
         // Shape can contain multiple dimensions, each being a number or None
         shape: number_or_none ("," number_or_none)*
         // Dimensions can be specific NUMBERegers or None (for variable dimensions)
@@ -383,6 +381,14 @@ class ModelTransformer(lark.Transformer):
     def input_layer(self, items):
         shape = self._extract_value(items[0])
         return {'type': 'Input', 'shape': shape}
+    
+    def multid_input_layer(self, items):
+        # Delegate to input_layer since both should yield the same result.
+        return self.input_layer(items)
+
+    def input1d_layer(self, items):
+        # Delegate to input_layer for consistency.
+        return self.input_layer(items)
 
     def output(self, items):
         return {'type': 'Output', 'params': items[0]}
@@ -455,10 +461,24 @@ class ModelTransformer(lark.Transformer):
     ### Training Configurations ############################
 
     def training_config(self, items):
-        config = {}
+        params = self._extract_value(items[0])
+        return {'type': 'training_config', 'params': params}
+    
+    def training_params(self, items):
+        params = {}
         for item in items:
-            config.update(item)
-        return config
+            if isinstance(item, Tree):
+                item = self._extract_value(item)
+            elif isinstance(item, dict):
+                item = self._extract_value(item)
+                params.update(item)
+        return params
+    
+    def epochs_param(self, items):
+        return {'epochs': self._extract_value(items[0])}
+
+    def batch_size_param(self, items):
+        return {'batch_size': self._extract_value(items[0])}
 
     def shape(self, items):
         return tuple(items)
@@ -873,11 +893,6 @@ class ModelTransformer(lark.Transformer):
     def groups_param(self, items):
         return {'groups': self._extract_value(items[0])}
 
-    def epochs_param(self, items):
-        return {'epochs': self._extract_value(items[0])}
-
-    def batch_size_param(self, items):
-        return {'batch_size': self._extract_value(items[0])}
 
     def device_param(self, items):
         return {'device': self._extract_value(items[0])}
@@ -899,7 +914,6 @@ class ModelTransformer(lark.Transformer):
         params = items[0] if items else None
         return {'type': 'Inception', 'params': params}
 
-    
     def graph(self, items):
         return items[0]
 
@@ -947,11 +961,9 @@ class ModelTransformer(lark.Transformer):
         params = items[0] if items else None
         return {'type': 'Embedding', 'params': params}
     
-    
     def lambda_(self, items):
         return {'type': 'Lambda', 'params': {'function': items[0].value.strip('"')}}
 
-    
     def add(self, items):
         return {'type': 'Add', 'params': items[0]}
 
