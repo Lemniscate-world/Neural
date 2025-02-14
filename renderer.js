@@ -8,7 +8,7 @@ class NetworkRenderer {
 
     async parseAndVisualize(code) {
         try {
-            const response = await fetch('http://localhost:3000/parse', {
+            const response = await fetch('http://localhost:5000/parse', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/plain',

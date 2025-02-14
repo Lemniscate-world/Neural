@@ -14,7 +14,9 @@ def parse_network():
         print("Received code:", code)
         parser = create_parser('network')
         tree = parser.parse(code)
+        print(tree.pretty())
         model_data = ModelTransformer().transform(tree)
+        print(model_data)
         
         visualizer = NeuralVisualizer(model_data)
         visualization_data = visualizer.model_to_d3_json()
@@ -25,4 +27,4 @@ def parse_network():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000)
+    app.run(port=5000)

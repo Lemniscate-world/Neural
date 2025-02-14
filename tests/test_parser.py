@@ -6,7 +6,7 @@ from lark import Lark, exceptions
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from neural.parser import ModelTransformer, create_parser
+from parser import ModelTransformer, create_parser
 
 @pytest.fixture
 def layer_parser():
