@@ -189,7 +189,7 @@ def test_network_parsing(network_parser, transformer, network_string, expected_n
         # Assert
         assert result['type'] == 'model'
         assert result['name'] == expected_name
-        assert result['input']['shape'] == expected_input_shape
+        assert result['input'] == {'type': 'Input', 'shape': expected_input_shape}
         assert result['layers'] == expected_layers
         assert result['loss'] == expected_loss
         assert result['optimizer'] == expected_optimizer

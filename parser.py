@@ -376,19 +376,34 @@ class ModelTransformer(lark.Transformer):
         layer['params'].update(params)
         return {'type': f"{wrapper_type}({layer['type']})", 'params': layer['params']}
 
-    # Basic Layers & Properties ###################
+    ### Basic Layers & Properties ###################
 
     def input_layer(self, items):
-        shape = self._extract_value(items[0])
-        return {'type': 'Input', 'shape': shape}
+        return items[0]
+
+    
+    def layers(self, items):
+        return items
+
+    def flatten(self, items):
+        if items:
+            params = self._extract_value(items[0])
+        else:
+            params = None
+        return {'type': 'Flatten', 'params': params}
+
+    def dropout(self, items):
+        params = self._extract_value(items[0])
+        return {'type': 'Dropout', 'params': params}
     
     def multid_input_layer(self, items):
-        # Delegate to input_layer since both should yield the same result.
-        return self.input_layer(items)
+        shape = self._extract_value(items[0])
+        return {'type': 'Input', 'shape': shape}
 
     def input1d_layer(self, items):
-        # Delegate to input_layer for consistency.
-        return self.input_layer(items)
+        # Handle 1D input case (no extra nesting)
+        shape = self._extract_value(items[0])
+        return {'type': 'Input', 'shape': shape}
 
     def output(self, items):
         return {'type': 'Output', 'params': items[0]}
@@ -444,19 +459,7 @@ class ModelTransformer(lark.Transformer):
     def optimizer(self, items):
         return items[0].value.strip('"')
 
-    def layers(self, items):
-        return items
-
-    def flatten(self, items):
-        if items:
-            params = self._extract_value(items[0])
-        else:
-            params = None
-        return {'type': 'Flatten', 'params': params}
-
-    def dropout(self, items):
-        params = self._extract_value(items[0])
-        return {'type': 'Dropout', 'params': params}
+    
 
     ### Training Configurations ############################
 
@@ -738,6 +741,9 @@ class ModelTransformer(lark.Transformer):
             elif item.type == 'WS_INLINE':
                 return item.value.strip()
         
+        # Add handling for shape tuples
+        elif isinstance(item, Tree) and item.data == 'shape':
+            return tuple(self._extract_value(child) for child in item.children)
         elif isinstance(item, list):  # Handles nested lists
             return [self._extract_value(elem) for elem in item]
         elif isinstance(item, dict):  # Handles nested dictionaries
