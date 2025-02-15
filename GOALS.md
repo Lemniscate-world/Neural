@@ -371,6 +371,8 @@ To extract and visualize mathematical formulas, you might want to add a section 
 
 - Build a highly advanced dashboard for neural, visualizers, benchmarks, researchs, etc, shape propagation calculations, maths, etc. (Insp Optuna dashboard, tensorboard)
 - Add option for trying multiple searching methods
+- Memetic algorithm
+- Gradient descent
 
 One Bug - One Enhancement
 

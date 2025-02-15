@@ -417,22 +417,30 @@ class ModelTransformer(lark.Transformer):
     def execution_config(self, items):
         params = self._extract_value(items[0])
         return {'type': 'execution_config', 'params':params}
-    
+
     def dense(self, items):
-        # Extract children from the dense_params Tree
         param_nodes = items[0].children
         param_dict = {}
         
-        # First parameter is always units (NUMBER)
-        if len(param_nodes) >= 1:
-            param_dict['units'] = self._extract_value(param_nodes[0])
+        # Extract parameters from param_nodes
+        params = []
+        for child in param_nodes:
+            param = self._extract_value(child)
+            params.append(param)
         
-        # Second parameter (if exists) is activation (STRING)
-        if len(param_nodes) >= 2:
-            param_dict['activation'] = self._extract_value(param_nodes[1])
+        # Check if all parameters are dictionaries (named parameters)
+        if all(isinstance(p, dict) for p in params):
+            param_dict = {}
+            for p in params:
+                param_dict.update(p)
+        else:
+            # Handle ordered parameters (e.g., Dense(256, "sigmoid"))
+            if len(params) >= 1:
+                param_dict['units'] = params[0]
+            if len(params) >= 2:
+                param_dict['activation'] = params[1]
         
         return {"type": "Dense", "params": param_dict}
-    
     
     ### Convolutional Layers ####################
     def conv1d(self, items):
@@ -471,8 +479,6 @@ class ModelTransformer(lark.Transformer):
 
     def optimizer(self, items):
         return items[0].value.strip('"')
-
-    
 
     ### Training Configurations ############################
 
