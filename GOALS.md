@@ -360,3 +360,31 @@ await in parseAndVisualize
 visualize	@	renderer.js:129
 onclick	@	(index):60
 
+1.
+For enhancing parallelization in Neural, you might want to consider adding specific parallelization layers or attributes to existing layers. This could involve creating new layer types or adding parameters to existing layers that specify how they should be parallelized.
+2.
+To create a benchmark module, you could add a new section to your grammar for defining benchmarks and their configurations. This could include specifying metrics to track, datasets to use, and hardware configurations.
+3.
+For syntax highlighting in a Neural IDE, you can use the grammar you've defined here as a basis for creating syntax highlighting rules. Many IDEs and text editors allow you to define custom syntax highlighting based on grammar rules.
+4.
+To extract and visualize mathematical formulas, you might want to add a section to your grammar for defining mathematical expressions. These could then be parsed and rendered using a library like MathJax or KaTeX in your visualization dashboard.
+
+- Build a highly advanced dashboard for neural, visualizers, benchmarks, researchs, etc, shape propagation calculations, maths, etc. (Insp Optuna dashboard, tensorboard)
+- Add option for trying multiple searching methods
+
+One Bug - One Enhancement
+
+15 02 2025
+- Both PyTorch & TF require external tools (Optuna, KerasTuner) for hyperparameter tuning.
+  - Extend train {} to support hyperparameters
+    - Use grid search or Bayesian optimization to find the best config.
+    - Auto-generate best model selection.
+    -  DSL will make hyperparameter tuning seamless
+- HPO automates finding the best hyperparameters instead of manual tuning!
+- Instead of manually trying different learning rates (0.001, 0.01, 0.1...),
+- HPO searches for the best combination automatically.
+- Grid search - Random Search - Bayesian Optimization - Genetic Algorithms - Hyperband
+
+
+- What is model complexity ?
+- What is an optimizer ?

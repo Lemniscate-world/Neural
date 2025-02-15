@@ -19,7 +19,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
     grammar = r"""
 
-
+        VARIABLE: /[a-zA-Z_][a-zA-Z0-9_]*/
         STRING: "\"" /[^"]+/ "\"" | "\'" /[^']+/ "\'"
         %ignore /\#[^\n]*/  // Ignore line comments              
         // Import common tokens from Lark
@@ -45,7 +45,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_params: named_param ("," named_param)*
         activation_param: "activation" "=" STRING
         ordered_params: value ("," value)* 
-        dense_ordered_params: value ("," value)*  // Allow any valid 'value'
         ?value: STRING | number | tuple_ | BOOL  
         tuple_: "("  number  ","  number  ")"  
         number: NUMBER  
@@ -171,7 +170,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ?basic: conv | pooling | dropout | flatten | dense | output
         dropout: "Dropout(" named_params ")" 
         dense: "Dense" "(" dense_params ")"
-        dense_params: NUMBER ("," (NUMBER | STRING))*
+        dense_params: NUMBER ("," (NUMBER | STRING))* | named_params 
+        dense_ordered_params: value ("," value)*  // Allow any valid 'value'
         flatten: "Flatten" "(" [named_params] ")"
         // Recurrent layers section - includes all RNN variants
         ?recurrent: rnn | bidirectional_rnn | conv_rnn | rnn_cell  
@@ -312,9 +312,16 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Training configuration block
         training_config: "train" "{" training_params "}"
-        training_params: (epochs_param | batch_size_param)*
+        training_params: (epochs_param | batch_size_param | optimizer_param | learning_rate_param | search_method_param)*
         epochs_param: "epochs:" INT
-        batch_size_param: "batch_size:" INT
+        batch_size_param: "batch_size:" values_list
+        values_list: "[" value ("," value)* "]"
+        optimizer_param: "optimizer:" tries
+        tries : "[" STRING ("," STRING)* "]"
+        learning_rate_param: "learning_rate:" range_param
+        range_param: "range(" value "," value "," "log_scale=" STRING ")"
+        search_method_param: "search_method:" STRING
+
 
         // Loss and optimizer specifications
         loss: "loss" ":" STRING
@@ -323,12 +330,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Execution environment configuration
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" STRING
-        
-
         // Research-specific configurations
         research: "research" NAME? "{" [research_params] "}"
         research_params: (metrics | references)*
-
         // Metrics tracking
         metrics: "metrics" "{" [accuracy_param] [loss_param] [precision_param] [recall_param] "}"
         accuracy_param: "accuracy:" FLOAT
@@ -343,6 +347,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Custom Shape Propagation
         custom_shape: "CustomShape" "(" NAME "," explicit_tuple ")"
 
+        // Math Expressions
+        math_expr: term (("+"|"-") term)*
+        term: factor (("*"|"/") factor)*
+        factor: NUMBER | VARIABLE | "(" math_expr ")" | function_call
+        function_call: NAME "(" math_expr ("," math_expr)* ")"
+
+        
 
     """
     return  lark.Lark(grammar, start=[start_rule], parser='lalr', lexer='contextual')
@@ -408,20 +419,20 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'execution_config', 'params':params}
     
     def dense(self, items):
-        params = items[0]
+        # Extract children from the dense_params Tree
+        param_nodes = items[0].children
         param_dict = {}
-        if isinstance(params, list):  # Ordered parameters case
-            if len(params) >= 1:
-                param_dict['units'] = self._extract_value(params[0])
-            if len(params) >= 2:
-                param_dict['activation'] = self._extract_value(params[1])
-        else:  # Named parameters case
-            param_dict = params
+        
+        # First parameter is always units (NUMBER)
+        if len(param_nodes) >= 1:
+            param_dict['units'] = self._extract_value(param_nodes[0])
+        
+        # Second parameter (if exists) is activation (STRING)
+        if len(param_nodes) >= 2:
+            param_dict['activation'] = self._extract_value(param_nodes[1])
+        
         return {"type": "Dense", "params": param_dict}
     
-    def dense_params(self, items):
-        params = self._extract_value(items[0])
-        return params
     
     ### Convolutional Layers ####################
     def conv1d(self, items):
