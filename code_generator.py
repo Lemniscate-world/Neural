@@ -1,5 +1,6 @@
 from shape_propagator import propagate_shape
 from typing import Any, Dict, List, Tuple, Union, Optional, Callable
+import torch
 
 def NUMBER(x):
     try:
@@ -177,6 +178,7 @@ def generate_code(model_data,backend):
         return code
 
     elif backend == "pytorch":
+        train_loader = torch.utils.data.DataLoader(MNIST(), batch_size=batch_size, shuffle=True)
         code = "import torch\n"
         code += "import torch.nn as nn\n"
         code += "import torch.optim as optim\n\n"
