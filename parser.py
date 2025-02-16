@@ -131,8 +131,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_l1_l2: "l1_l2" "=" tuple_  // Example: l1_l2=(0.01, 0.001)
         ?named_param: ( rate | named_clipvalue | named_clipnorm | simple_float | explicit_tuple | simple_number| named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value )
         named_int: NAME "=" INT
-        named_float: NAME "=" FLOAT
-        pool_size : "pool_size" "=" value
+        named_float: NAME "=" FLOAT   
         simple_number: number1
         simple_float: FLOAT
         rate: "rate" ":" FLOAT
@@ -140,8 +139,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_clipnorm: "clipnorm=" FLOAT
 
         // Layer parameter styles
-        ?param_style1: named_params    // Dense(units=128, activation="relu")
-                    | dense_ordered_params   // Dense(128, "relu")
+        ?param_style1: named_params | (dense_ordered_params ["," named_params])
 
         // Top-level network definition - defines the structure of an entire neural network
         network: "network" NAME "{" input_layer layers loss optimizer [training_config] [execution_config] "}" 
@@ -207,9 +205,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Pooling layer parameters
         pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
         max_pooling: max_pooling1d | max_pooling2d | max_pooling3d
-        max_pooling1d: "MaxPooling1D(" param_style1 ")"
-        max_pooling2d: "MaxPooling2D(" param_style1 ")"
-        max_pooling3d: "MaxPooling3D(" param_style1 ")"
+        max_pooling1d: "MaxPooling1D" "(" param_style1 ")"
+        max_pooling2d: "MaxPooling2D" "(" param_style1 ")"
+        max_pooling3d: "MaxPooling3D" "(" param_style1 ")"
+        pool_size : "pool_size" "=" value
         average_pooling: average_pooling1d | average_pooling2d | average_pooling3d
         average_pooling1d: "AveragePooling1D(" param_style1 ")"
         average_pooling2d: "AveragePooling2D(" param_style1 ")"
@@ -299,7 +298,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         gaussian_dropout: "GaussianDropout(" named_params ")"
         alpha_dropout: "AlphaDropout(" named_params ")"
 
-
         spatial_dropout1d: "SpatialDropout1D(" named_params ")"
         spatial_dropout2d: "SpatialDropout2D(" named_params ")"
         spatial_dropout3d: "SpatialDropout3D(" named_params ")"
@@ -326,7 +324,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Loss and optimizer specifications
         loss: "loss" ":" STRING
-        optimizer: "optimizer:" NAME ["(" named_params ")"]
+        optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
         schedule: NAME "(" params ")"
         params: [value ("," value)*]
 
@@ -370,9 +368,8 @@ class ModelTransformer(lark.Transformer):
     Transforms the parsed tree NUMBER to a structured dictionary representing the neural network model.
     """
     def layer(self, items):
-        layer_type = items[0].data
-        params = self.visit(items[0].children[0]) if items[0].children else {}
-        return {'type': layer_type, 'params': params}
+        return self.visit(items[0])
+
         
     def wrapper(self, items):
         wrapper_type = items[0]
@@ -450,13 +447,23 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Conv1D', 'params': items[0]}
 
     def conv2d(self, items):
+        param_style = items[0]
         params = {}
-        if len(items) >= 1:
-            params['filters'] = self._extract_value(items[0])
-        if len(items) >= 2:
-            params['kernel_size'] = self._extract_value(items[1])
-        if len(items) >= 3:
-            params['activation'] = self._extract_value(items[2])
+        if isinstance(param_style, list):
+            # Process ordered parameters
+            ordered_params = [self._extract_value(p) for p in param_style if not isinstance(p, dict)]
+            if ordered_params:
+                params['filters'] = ordered_params[0]
+            if len(ordered_params) > 1:
+                params['kernel_size'] = ordered_params[1]
+            if len(ordered_params) > 2:
+                params['activation'] = ordered_params[2]
+            # Merge any named parameters
+            for item in param_style:
+                if isinstance(item, dict):
+                    params.update(item)
+        elif isinstance(param_style, dict):
+            params = param_style.copy()
         return {'type': 'Conv2D', 'params': params}
 
     def conv3d(self, items):
@@ -520,20 +527,63 @@ class ModelTransformer(lark.Transformer):
     ### Pooling Layers #############################
 
     def pool_size(self, items):
-        params = self._extract_value(items[0])
-        return {'pool_size': params}
+        # items[0] is "pool_size", items[1] is "=", items[2] is the value
+        value = self._extract_value(items[2])
+        return {'pool_size': value}
 
     def max_pooling1d(self, items):
-        params = self._extract_value(items[0])
-        return {'type': 'MaxPooling1D', 'params': params}
+        param_nodes = items[0].children
+        param_dict = {}
+        params = [self._extract_value(child) for child in param_nodes]
+
+        if all(isinstance(p, dict) for p in params):
+            for p in params:
+                param_dict.update(p)
+        else:
+            if len(params) >= 1:
+                param_dict["pool_size"] = params[0]
+            if len(params) >= 2:
+                param_dict["strides"] = params[1]
+            if len(params) >= 3:
+                param_dict["padding"] = params[2]
+
+        return {'type': 'MaxPooling1D', 'params': param_dict}
 
     def max_pooling2d(self, items):
-        params = self._extract_value(items[0])
+        param_style = items[0]
+        params = {}
+        if isinstance(param_style, list):
+            ordered_params = [self._extract_value(p) for p in param_style if not isinstance(p, dict)]
+            if ordered_params:
+                params['pool_size'] = ordered_params[0]
+            if len(ordered_params) > 1:
+                params['strides'] = ordered_params[1]
+            if len(ordered_params) > 2:
+                params['padding'] = ordered_params[2]
+            for item in param_style:
+                if isinstance(item, dict):
+                    params.update(item)
+        elif isinstance(param_style, dict):
+            params = param_style.copy()
         return {'type': 'MaxPooling2D', 'params': params}
 
     def max_pooling3d(self, items):
-        params = self._extract_value(items[0])
-        return {'type': 'MaxPooling3D', 'params': params}
+        param_nodes = items[0].children
+        param_dict = {}
+        params = [self._extract_value(child) for child in param_nodes]
+
+        if all(isinstance(p, dict) for p in params):
+            for p in params:
+                param_dict.update(p)
+        else:
+            if len(params) >= 1:
+                param_dict["pool_size"] = params[0]
+            if len(params) >= 2:
+                param_dict["strides"] = params[1]
+            if len(params) >= 3:
+                param_dict["padding"] = params[2]
+
+        return {"type": "MaxPooling3D", "params": param_dict}
     
     def average_pooling1d(self, items):
         return {'type': 'AveragePooling1D', 'params': items[0]}
@@ -583,16 +633,19 @@ class ModelTransformer(lark.Transformer):
     ### End Basic Layers & Properties #########################
 
     def batch_norm(self, items):
-        return {'type': 'BatchNormalization', 'params': items[0]}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'BatchNormalization', 'params': params}
 
     def layer_norm(self, items):
-        return {'type': 'LayerNormalization', 'params': items[0]}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'LayerNormalization', 'params': params}
 
     def instance_norm(self, items):
-        return {'type': 'InstanceNormalization', 'params': items[0]}
-
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'InstanceNormalization', 'params': params}
     def group_norm(self, items):
-        return {'type': 'GroupNormalization', 'params': items[0]}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'GroupNormalization', 'params': params}
 
     def lstm(self, items):
         return {'type': 'LSTM', 'params': items[0]}
@@ -659,8 +712,8 @@ class ModelTransformer(lark.Transformer):
     ### Everything Research ##################
 
     def research(self, items):
-        name = self._extract_value(items[0])
-        params = self._extract_value(items[1])
+        name = self._extract_value(items[0]) if items else None
+        params = self._extract_value(items[1]) if len(items) > 1 else {}
         return {'type': 'Research', 'name': name, 'params': params}
     
     def research_params(self, items):
@@ -760,6 +813,8 @@ class ModelTransformer(lark.Transformer):
 
     def _extract_value(self, item):  # Helper function to extract values from tokens and tuples
         if isinstance(item, Token):
+            if item.type == 'NAME':
+                return item.value
             if item.type in ('INT', 'FLOAT', 'NUMBER', 'SIGNED_NUMBER'):
                 try:
                     return int(item)
@@ -775,6 +830,19 @@ class ModelTransformer(lark.Transformer):
         # Add handling for shape tuples
         elif isinstance(item, Tree) and item.data == 'shape':
             return tuple(self._extract_value(child) for child in item.children)
+        # Add handling for pool_size tuples
+        elif isinstance(item, Tree) and item.data == 'pool_size':
+            return tuple(self._extract_value(child) for child in item.children)
+        # Add handling for strides tuples
+        elif isinstance(item, Tree) and item.data =='strides':
+            return tuple(self._extract_value(child) for child in item.children)
+        # Add handling for padding tuples
+        elif isinstance(item, Tree) and item.data == 'padding':
+            return tuple(self._extract_value(child) for child in item.children)
+        # Add handling for dilation tuples
+        elif isinstance(item, Tree) and item.data == 'dilation':
+            return tuple(self._extract_value(child) for child in item.children)
+        # Add handling for kernel_size tuples
         elif isinstance(item, list):  # Handles nested lists
             return [self._extract_value(elem) for elem in item]
         elif isinstance(item, dict):  # Handles nested dictionaries
@@ -784,7 +852,8 @@ class ModelTransformer(lark.Transformer):
                 return tuple(self._extract_value(child) for child in item.children)
             else:  # Extract values from other tree types
                 return {k: self._extract_value(v) for k, v in zip(item.children[::2], item.children[1::2])}
-
+        elif isinstance(item, Tree) and item.data == 'explicit_tuple':
+            return tuple(self._extract_value(child) for child in item.children)
         return item
 
     def number(self, items):
@@ -890,11 +959,13 @@ class ModelTransformer(lark.Transformer):
     def named_activation(self, items): 
         return {"activation": self._extract_value(items[0])}
 
-    def named_padding(self, items):
-        return {"padding": self._extract_value(items[0])}
-
     def named_strides(self, items):
-        return {"strides": self._extract_value(items[0])}
+        value = self._extract_value(items[0])
+        return {"strides": value}
+
+    def named_padding(self, items):
+        value = self._extract_value(items[0])
+        return {"padding": value}
 
     def named_rate(self, items):
         return {"rate": self._extract_value(items[0])}
@@ -999,8 +1070,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Embedding', 'params': params}
     
     def lambda_(self, items):
-        return {'type': 'Lambda', 'params': {'function': items[0].value.strip('"')}}
-
+        return {'type': 'Lambda', 'params': {'function': self._extract_value(items[0])}}
+    
     def add(self, items):
         return {'type': 'Add', 'params': items[0]}
 

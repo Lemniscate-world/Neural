@@ -386,9 +386,10 @@ GPU/TPU Acceleration
 Automatic Differentiation	
 Pre-trained Models	
 Production Deployment
+- Input must adhere to positional-first or all-named conventions.
 
 
-One Bug - One Enhancement - Micro Learning - Mindmap - Wiki
+One Bug - One Enhancement - Micro Learning - Mindmap - Wiki - Maths
 
 - Both PyTorch & TF require external tools (Optuna, KerasTuner) for hyperparameter tuning.
 - Extend train {} to support hyperparameters (Done)

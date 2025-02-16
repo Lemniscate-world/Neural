@@ -34,7 +34,7 @@ def transformer():
         ('Conv2D(filters=64, kernel_size=(5, 5), activation="tanh")', {'type': 'Conv2D', 'params': {'filters': 64, 'kernel_size': (5, 5), 'activation': 'tanh'}}, "conv2d-tanh"),
         ('Conv2D(filters=32, kernel_size=3, activation="relu", padding="same")', {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': 3, 'activation': 'relu', 'padding': 'same'}}, "conv2d-padding"),
         ('MaxPooling2D(pool_size=(2, 2))', {'type': 'MaxPooling2D', 'params': {'pool_size': (2, 2)}}, "maxpooling2d"),
-        ('MaxPooling2D((3, 3), strides=2, padding="valid")', {'type': 'MaxPooling2D', 'params': {'pool_size': (3, 3), 'strides': 2, 'padding': 'valid'}}, "maxpooling2d-strides"),
+        ('MaxPooling2D((3, 3), 2, "valid")', {'type': 'MaxPooling2D', 'params': {'pool_size': (3, 3), 'strides': 2, 'padding': 'valid'}}, "maxpooling2d-strides"),
         ('Flatten()', {'type': 'Flatten', 'params': None}, "flatten"),
         ('Dropout(0.5)', {'type': 'Dropout', 'params': {'rate': 0.5}}, "dropout"),
         ('Dropout(rate=0.25)', {'type': 'Dropout', 'params': {'rate': 0.25}}, "dropout-named"),
