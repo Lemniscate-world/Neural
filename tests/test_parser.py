@@ -263,3 +263,105 @@ def test_research_parsing(research_parser, transformer, research_string, expecte
         assert result['params'].get('metrics') == expected_metrics
         assert result['params'].get('references') == expected_references
 
+@pytest.mark.parametrize(
+    "wrapper_string, expected, test_id",
+    [
+        (
+            'TimeDistributed(Dense(128, activation="relu"), dropout=0.5)',
+            {'type': 'TimeDistributed(Dense)', 'params': {'units': 128, 'activation': 'relu', 'dropout': 0.5}},
+            "timedistributed-dense"
+        )
+    ],
+    ids=["timedistributed-dense"]
+)
+def test_wrapper_parsing(layer_parser, transformer, wrapper_string, expected, test_id):
+    tree = layer_parser.parse(wrapper_string)
+    result = transformer.transform(tree)
+    assert result == expected
+
+@pytest.mark.parametrize(
+    "lambda_string, expected, test_id",
+    [
+        (
+            'Lambda("x: x * 2")',
+            {'type': 'Lambda', 'params': {'function': 'x: x * 2'}},
+            "lambda-layer"
+        )
+    ],
+    ids=["lambda-layer"]
+)
+def test_lambda_parsing(layer_parser, transformer, lambda_string, expected, test_id):
+    tree = layer_parser.parse(lambda_string)
+    result = transformer.transform(tree)
+    assert result == expected
+
+@pytest.mark.parametrize(
+    "custom_shape_string, expected, test_id",
+    [
+        (
+            'CustomShape(MyLayer, (32, 32))',
+            {"type": "CustomShape", "layer": "MyLayer", "custom_dims": (32, 32)},
+            "custom-shape"
+        )
+    ],
+    ids=["custom-shape"]
+)
+def test_custom_shape_parsing(layer_parser, transformer, custom_shape_string, expected, test_id):
+    tree = layer_parser.parse(custom_shape_string)
+    result = transformer.transform(tree)
+    assert result == expected
+
+@pytest.mark.parametrize(
+    "comment_string, expected, test_id",
+    [
+        (
+            'Dense(128, "relu")  # Dense layer with ReLU activation',
+            {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}},
+            "dense-with-comment"
+        )
+    ],
+    ids=["dense-with-comment"]
+)
+def test_comment_parsing(layer_parser, transformer, comment_string, expected, test_id):
+    tree = layer_parser.parse(comment_string)
+    result = transformer.transform(tree)
+    assert result == expected
+
+@pytest.mark.parametrize(
+    "network_string, expected_name, expected_input_shape, expected_layers, expected_loss, expected_optimizer, expected_training_config",
+    [
+        (
+            """
+            network OptimizerModel {
+                input: (28, 28, 1)
+                layers:
+                    Dense(64, "relu")
+                    Output(units=10, activation="softmax")
+                loss: "categorical_crossentropy"
+                optimizer: SGD(learning_rate=0.01)
+                train {
+                    epochs: 20
+                    batch_size: 64
+                }
+            }
+            """,
+            "OptimizerModel", (28, 28, 1),
+            [
+                {'type': 'Dense', 'params': {'units': 64, 'activation': 'relu'}},
+                {'type': 'Output', 'params': {'units': 10, 'activation': 'softmax'}}
+            ],
+            "categorical_crossentropy", {'type': 'SGD', 'params': {'learning_rate': 0.01}}, {'epochs': 20, 'batch_size': 64}
+        )
+    ],
+    ids=["network-optimizer-params"]
+)
+def test_network_with_optimizer_params(network_parser, transformer, network_string, expected_name, expected_input_shape, expected_layers, expected_loss, expected_optimizer, expected_training_config):
+    tree = network_parser.parse(network_string)
+    result = transformer.transform(tree)
+    assert result['type'] == 'model'
+    assert result['name'] == expected_name
+    assert result['input'] == {'type': 'Input', 'shape': expected_input_shape}
+    assert result['layers'] == expected_layers
+    assert result['loss'] == expected_loss
+    assert result['optimizer'] == expected_optimizer
+    assert result['training_config'] == expected_training_config

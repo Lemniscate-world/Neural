@@ -382,12 +382,16 @@ To extract and visualize mathematical formulas, you might want to add a section 
 - Design a high-level API for Neural.
 - Implement a custom neural tester.
 - Optimize Neural for faster analysis and performance.
+GPU/TPU Acceleration	
+Automatic Differentiation	
+Pre-trained Models	
+Production Deployment
 
 
-One Bug - One Enhancement - Micro Learning
+One Bug - One Enhancement - Micro Learning - Mindmap - Wiki
 
 - Both PyTorch & TF require external tools (Optuna, KerasTuner) for hyperparameter tuning.
-  - Extend train {} to support hyperparameters
+- Extend train {} to support hyperparameters (Done)
     - Use grid search or Bayesian optimization to find the best config.
     - Auto-generate best model selection.
     -  DSL will make hyperparameter tuning seamless
@@ -413,3 +417,6 @@ https://www.wikiwand.com/fr/articles/Th%C3%A9orie_des_jeux
 https://www.wikiwand.com/fr/articles/Th%C3%A9orie_du_contr%C3%B4le
 https://www.wikiwand.com/fr/articlesFonction_de_test_pour_l'optimisation
 https://www.wikiwand.com/fr/articles/Algorithme_du_gradient_stochastique
+https://www.wikiwand.com/fr/articles/Calcul_diff%C3%A9rentiel
+https://www.wikiwand.com/fr/articles/Calcul_des_variations
+https://www.wikiwand.com/fr/articles/Multiplicateurs_de_Lagrange
