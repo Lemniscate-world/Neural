@@ -373,10 +373,19 @@ To extract and visualize mathematical formulas, you might want to add a section 
 - Add option for trying multiple searching methods
 - Memetic algorithm
 - Gradient descent
+- Test functions for optimization
+-  DSL allows you to define constructs and workflows that align precisely with your project's requirements
+-  Implement architecture search (not just hyperparameters)
+ - My compiler can generate multiple architectures and find the best one!
+- Add automatic shape propagation + debugging to avoid errors.
+- Implement model interpretability tools like Grad-CAM inside DSL.
+- Design a high-level API for Neural.
+- Implement a custom neural tester.
+- Optimize Neural for faster analysis and performance.
 
-One Bug - One Enhancement
 
-15 02 2025
+One Bug - One Enhancement - Micro Learning
+
 - Both PyTorch & TF require external tools (Optuna, KerasTuner) for hyperparameter tuning.
   - Extend train {} to support hyperparameters
     - Use grid search or Bayesian optimization to find the best config.
@@ -390,3 +399,17 @@ One Bug - One Enhancement
 
 - What is model complexity ?
 - What is an optimizer ?
+- SGD ?
+- Adam ?
+
+# Prompts
+- this is my code generator code_generator and validation.py and AFPO.py
+
+
+https://www.wikiwand.com/fr/articles/Optimisation_(math%C3%A9matiques)
+https://www.wikiwand.com/fr/articles/Optimisation_lin%C3%A9aire
+https://www.wikiwand.com/fr/articles/Distribution_(math%C3%A9matiques)
+https://www.wikiwand.com/fr/articles/Th%C3%A9orie_des_jeux
+https://www.wikiwand.com/fr/articles/Th%C3%A9orie_du_contr%C3%B4le
+https://www.wikiwand.com/fr/articlesFonction_de_test_pour_l'optimisation
+https://www.wikiwand.com/fr/articles/Algorithme_du_gradient_stochastique
