@@ -2,6 +2,7 @@ import tensorflow as tf
 import keras
 from matplotlib import pyplot as plt
 from graphviz import Digraph
+import plotly.graph_objects as go
 import numpy as np
 import os
 import sys
@@ -17,6 +18,7 @@ from parser import ModelTransformer, create_parser
 class NeuralVisualizer:
     def __init__(self, model_data):
         self.model_data = model_data
+        self.figures = []
     
     ### Converting layers data to json for D3 visualization ########
 
@@ -65,6 +67,28 @@ class NeuralVisualizer:
             })
 
         return {"nodes": nodes, "links": links}
+        
+    def create_3d_visualization(self, shape_history):
+        fig = go.Figure()
+        
+        for i, (name, shape) in enumerate(shape_history):
+            fig.add_trace(go.Scatter3d(
+                x=[i]*len(shape),
+                y=list(range(len(shape))),
+                z=shape,
+                mode='markers+text',
+                text=[str(d) for d in shape],
+                name=name
+            ))
+        
+        fig.update_layout(
+            scene=dict(
+                xaxis_title='Layer Depth',
+                yaxis_title='Dimension Index',
+                zaxis_title='Dimension Size'
+            )
+        )
+        return fig
   
 
 

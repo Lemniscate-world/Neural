@@ -1,204 +1,236 @@
-import os
+import logging
 import numpy as np
-import lark
-from numbers import Number
 import plotly.graph_objects as go
-from typing import Any, Dict, List, Tuple, Union, Optional, Callable
-from neural.parser import create_parser
+from graphviz import Digraph
+from typing import Dict, Tuple, Optional, Any, List
 
-def NUMBER(x):
-    try:
-        return int(x)
-    except ValueError:
-        return float(x)
+from parser import ModelTransformer
 
-def propagate_shape(input_shape: Tuple[Optional[int], ...], layer: Dict[str, Any]) -> Tuple[Optional[int], ...]:
-    """
-    Propagates the input shape through a neural network layer to calculate the output shape.
-    Supports various layer types and handles shape transformations accordingly.
+class ShapePropagator:
+    
+    def __init__(self, debug=False):
+        self.debug = debug
+        self.shape_history = []
+        self.layer_connections = []
+        self.current_layer = 0
+        
+        # Framework compatibility mappings
+        self.param_aliases = {
+            'Conv2D': {'filters': 'out_channels', 'kernel_size': 'kernel_size'},
+            'BatchNormalization': {'axis': 'dim'},
+            'Dense': {'units': 'out_features'}
+        }
+        
+        # Initialize visualization
+        self.dot = Digraph(comment='Neural Network Architecture')
+        self.dot.attr('node', shape='record', style='filled', fillcolor='lightgrey')
 
-    Parameters:
-    input_shape (tuple): The shape of the input to the layer.
-    layer (dict): A dictionary containing the layer configuration, including 'type' and 'params'.
+    def propagate(self, input_shape: Tuple[Optional[int], ...], 
+                layer: Dict[str, Any], 
+                framework: str = 'tensorflow') -> Tuple[Optional[int], ...]:
+        
+        # Store initial shape
+        self._log_shape(input_shape, 'input')
+        self._visualize_layer('input', input_shape)
+        
+        output_shape = self._process_layer(input_shape, layer, framework)
+        
+        self._log_shape(output_shape, 'output')
+        self._create_connection('input', layer['type'])
+        return output_shape
 
-    Returns:
-    tuple: The output shape of the layer.
+    def _process_layer(self, input_shape, layer, framework):
+        layer_type = layer['type']
+        params = self._standardize_params(layer['params'], layer_type, framework)
+        
+        # Unified parameter handling
+        handler_name = f"_handle_{layer_type.lower()}"
+        if hasattr(self, handler_name):
+            output_shape = getattr(self, handler_name)(input_shape, params)
+        else:
+            output_shape = self._handle_default(input_shape, params)
+        
+        # Visualization
+        self._visualize_layer(layer_type, output_shape)
+        self._create_connection(self.current_layer-1, self.current_layer)
+        return output_shape
 
-    Raises:
-    TypeError: If layer is not a dictionary or input_shape is not a tuple.
-    ValueError: If layer type is unsupported, or layer parameters are invalid, or input shape is incompatible.
-    """
-    if not isinstance(layer, dict):
-        raise TypeError(f"Layer must be a dictionary, got {type(layer)}")
-    if not isinstance(input_shape, tuple):
-        raise TypeError(f"Input shape must be a tuple, got {type(input_shape)}")
-
-    layer_type = layer.get('type')
-    if not layer_type:
-        raise ValueError("Layer dictionary must contain a 'type' key.")
-
-    layer_type = str(layer_type) # Ensure layer_type is string
-
-
-    def validate_input_dims(expected_dims: NUMBER, layer_name: str):
-        """Helper function to validate input dimensions."""
-        if len(input_shape) != expected_dims:
-            raise ValueError(f"{layer_name} layer expects {expected_dims}D input (including batch), got {len(input_shape)}D input with shape {input_shape}")
-
-    if layer_type == 'Input':
-        return layer.get('shape', input_shape) # Input layer can optionally override shape
-
-    elif layer_type == 'Conv2D':
-        validate_input_dims(4, 'Conv2D') # Expecting (batch, height, width, channels)
-        params = layer.get('params', layer) # Check both 'params' and direct layer for config
-
-        filters = params.get('filters')
-        kernel_size = params.get('kernel_size', (1, 1))
-        strides = params.get('strides', (1, 1)) # Default strides to 1x1
-        padding_mode = params.get('padding', 'valid').lower() # Default to 'valid' padding
-        dilation_rate = params.get('dilation_rate', (1, 1)) # Default dilation rate to 1x1
-
-        if not filters:
-            raise ValueError("Conv2D layer requires 'filters' parameter.")
-        try:
-            filters = int(filters)
-            if isinstance(kernel_size, (tuple, list)):
-                kernel_h, kernel_w = map(int, kernel_size)
-            elif isinstance(kernel_size, int):
-                kernel_h = kernel_w = kernel_size
+    def _standardize_params(self, params, layer_type, framework):
+        # Convert framework-specific parameters to canonical form
+        standardized = {}
+        aliases = self.param_aliases.get(layer_type, {})
+        
+        for k, v in params.items():
+            if framework == 'pytorch' and k in aliases.values():
+                standardized[aliases[k]] = v
             else:
-                raise ValueError("kernel_size must be an int, tuple, or list.")
-            kernel_h, kernel_w = map(NUMBER, kernel_size)
-            stride_h, stride_w = map(NUMBER, strides)
-            dilation_h, dilation_w = map(NUMBER, dilation_rate)
-        except ValueError as e:
-            raise ValueError(f"Invalid Conv2D parameter format: {e}") from e
-
-        batch_size, in_h, in_w, in_channels = input_shape
-
-        # Calculate output dimensions based on padding mode
-        if padding_mode == 'valid':
-            out_h = ((in_h - dilation_h * (kernel_h - 1) - 1) // stride_h) + 1
-            out_w = ((in_w - dilation_w * (kernel_w - 1) - 1) // stride_w) + 1
-        elif padding_mode == 'same':
-            out_h = in_h # Output height is same as input height
-            out_w = in_w # Output width is same as input width
+                standardized[k] = v
+                
+        # Add framework-specific defaults
+        if framework == 'pytorch':
+            standardized.setdefault('data_format', 'channels_first')
         else:
-            raise ValueError(f"Unsupported padding mode for Conv2D: {padding_mode}. Valid modes are 'valid' or 'same'.")
+            standardized.setdefault('data_format', 'channels_last')
+            
+        return standardized
 
-        return (batch_size, out_h, out_w, filters)
-
-    elif layer_type == 'MaxPooling2D':
-        validate_input_dims(4, 'MaxPooling2D') # Expecting (batch, height, width, channels)
-        params = layer.get('params', layer)
-
-        pool_size = params.get('pool_size', (2, 2))
-        strides = params.get('strides', pool_size) # Default stride to pool_size if not provided
-        padding_mode = params.get('padding', 'valid').lower() # Default to 'valid' padding
-
-        if not isinstance(pool_size, (tuple, list, int)):
-            raise ValueError("pool_size must be an int, tuple, or list.")
-        try:
-            if isinstance(pool_size, (tuple, list)):
-                pool_h, pool_w = map(int, pool_size)
-            elif isinstance(pool_size, int):
-                pool_h = pool_w = pool_size
-            else:
-                raise ValueError("pool_size must be an int, tuple, or list.")
-        except (ValueError, TypeError) as e:
-            raise ValueError(f"Invalid MaxPooling2D parameter format: {e}") from e
+    def _handle_conv2d(self, input_shape, params):
+        # Unified convolution handler for TF/PyTorch
+        data_format = params['data_format']
+        channels_dim = 1 if data_format == 'channels_first' else 3
+        
+        # Calculate output shape using framework-agnostic formula
+        kernel = params['kernel_size']
+        stride = params.get('stride', 1)
+        padding = self._calculate_padding(params, input_shape[channels_dim])
+        
+        output_shape = [
+            (dim + 2*padding - kernel) // stride + 1 
+            for dim in input_shape[2:]  # Spatial dimensions
+        ]
+        
+        # Reconstruct full shape
+        if data_format == 'channels_first':
+            return (input_shape[0], params['out_channels'], *output_shape)
+        return (input_shape[0], *output_shape, params['out_channels'])
 
 
-        batch_size, in_h, in_w, in_channels = input_shape
-
-        # Calculate output dimensions based on padding mode
-        if padding_mode == 'valid':
-            out_h = ((in_h - pool_h) // stride_h) + 1
-            out_w = ((in_w - pool_w) // stride_w) + 1
-        elif padding_mode == 'same':
-            out_h = in_h // stride_h if in_h % stride_h == 0 else (in_h // stride_h) + 1 # Ceil division for 'same'
-            out_w = in_w // stride_w if in_w % stride_w == 0 else (in_w // stride_w) + 1 # Ceil division for 'same'
+    # Handle default helper
+    def _handle_default(self, input_shape, params):
+        # Default handler for unsupported layers
+        return input_shape
+    
+    # Padding calculation
+    def _calculate_padding(self, params, input_dim):
+        if isinstance(params.get('padding'), int):
+            return params['padding']
+        elif isinstance(params.get('padding'), list):
+            return tuple(params['padding'])
         else:
-            raise ValueError(f"Unsupported padding mode for MaxPooling2D: {padding_mode}. Valid modes are 'valid' or 'same'.")
+            return [params['padding']]*(input_dim-2)
 
+    def _visualize_layer(self, layer_name, shape):
+        label = f"{layer_name}\n{shape}"
+        self.dot.node(str(self.current_layer), label)
+        self.shape_history.append((layer_name, shape))
+        self.current_layer += 1
 
-        return (batch_size, out_h, out_w, in_channels) # Channels remain the same
+    def _create_connection(self, from_id, to_id):
+        self.layer_connections.append((from_id, to_id))
+        self.dot.edge(str(from_id), str(to_id))
 
-    elif layer_type == 'Flatten':
-        validate_input_dims(4, 'Flatten') # Expecting (batch, height, width, channels)
-        batch_size = input_shape[0]
-        return (batch_size, np.prod(input_shape[1:]),) # Flatten spatial dimensions, keep batch
+    def generate_report(self):
+        """Generate interactive visualization and shape report"""
+        # Plotly visualization
+        fig = go.Figure()
+        
+        # Add shape dimensions as bar chart
+        shapes = [str(s[1]) for s in self.shape_history]
+        fig.add_trace(go.Bar(
+            x=[s[0] for s in self.shape_history],
+            y=[np.prod(s[1]) for s in self.shape_history],
+            text=shapes,
+            name='Parameter Count'
+        ))
+        
+        fig.update_layout(
+            title='Network Shape Propagation',
+            xaxis_title='Layer',
+            yaxis_title='Parameters',
+            template='plotly_white'
+        )
+        
+        return {
+            'dot_graph': self.dot,
+            'plotly_chart': fig,
+            'shape_history': self.shape_history
+        }
 
-    elif layer_type == 'Dense':
-        validate_input_dims(2, 'Dense') # Expecting (batch, features_in)
-        params = layer.get('params', layer)
-        units = params.get('units')
+    def _log_shape(self, shape, stage):
+        if self.debug:
+            logging.info(f"{stage.upper()} SHAPE: {shape}")
+            logging.debug(f"Shape details: {self._shape_analysis(shape)}")
 
-        if not units:
-            raise ValueError("Dense layer requires 'units' parameter.")
-        try:
-            units = NUMBER(units)
-        except ValueError as e:
-            raise ValueError(f"Invalid Dense units parameter: {e}") from e
+    def _shape_analysis(self, shape):
+        return {
+            'total_parameters': np.prod([d for d in shape if d]),
+            'spatial_dims': shape[2:-1] if len(shape) > 2 else None,
+            'channel_dim': shape[1] if len(shape) > 1 else None
+        }
+    
 
-        batch_size = input_shape[0]
-        return (batch_size, units,)
+### Shape Validation for Error Handling ###
 
-    elif layer_type == 'Dropout':
-        return input_shape # Dropout does not change shape
+class ShapeValidator:
+    @staticmethod
+    def validate_layer(layer_type, input_shape, params):
+        validators = {
+            'Conv2D': lambda: ShapeValidator._validate_conv(input_shape, params),
+            'Dense': lambda: ShapeValidator._validate_dense(input_shape, params)
+        }
+        
+        if validator := validators.get(layer_type):
+            validator()
+            
+    @staticmethod
+    def _validate_conv(input_shape, params):
+        if len(input_shape) != 4:
+            raise ValueError(f"Conv layers need 4D input. Got {len(input_shape)}D")
+        if params['kernel_size'] > input_shape[2]:
+            raise ValueError(f"Kernel size {params['kernel_size']} "
+                           f"exceeds input dimension {input_shape[2]}")
+        
+    @staticmethod
+    def _validate_dense(input_shape, params):
+        if len(input_shape) > 2:
+            raise ValueError(f"Dense layers only accept 2D input. Got {len(input_shape)}D")
 
-    elif layer_type == 'Output':
-        validate_input_dims(2, 'Output') # Assuming output layer also takes 2D input (batch, features_in)
-        params = layer.get('params', layer)
-        units = params.get('units')
-        if not units:
-            raise ValueError("Output layer requires 'units' parameter.")
-        try:
-            units = NUMBER(units)
-        except ValueError as e:
-            raise ValueError(f"Invalid Output units parameter: {e}") from e
-        batch_size = input_shape[0]
-        return (batch_size, units,)
+# Unified parameter handling for TF/PyTorch
+FRAMEWORK_DEFAULTS = {
+    'tensorflow': {
+        'data_format': 'channels_last',
+        'padding': 'same'
+    },
+    'pytorch': {
+        'data_format': 'channels_first',
+        'padding': 0
+    }
+}
 
-    elif layer_type in ['BatchNormalization', 'LayerNormalization', 'InstanceNormalization', 'GroupNormalization']:
-        return input_shape # Normalization layers typically preserve shape
+def get_framework_params(framework):
+    return FRAMEWORK_DEFAULTS.get(framework.lower(), FRAMEWORK_DEFAULTS['tensorflow'])
 
-    # Recurrent Layers - Assuming input is (batch, time_steps, features) for simplicity
-    elif layer_type in ['LSTM', 'GRU', 'SimpleRNN', 'CuDNNLSTM', 'CuDNNGRU', 'RNNCell', 'LSTMCell', 'GRUCell',
-                        'SimpleRNNDropoutWrapper', 'GRUDropoutWrapper', 'LSTMDropoutWrapper']:
-        validate_input_dims(3, layer_type) # Expecting (batch, time_steps, features)
-        params = layer.get('params', layer)
-        units = params.get('units')
-        return_sequences = params.get('return_sequences', False)
+########################### Examples Usages #################################
 
-        if not units:
-            raise ValueError(f"{layer_type} layer requires 'units' parameter.")
-        try:
-            units = NUMBER(units)
-        except ValueError as e:
-            raise ValueError(f"Invalid {layer_type} units parameter: {e}") from e
+# Full workflow example
+config = '''
+network MyNetwork {
+    input: (None, 28, 28, 1)
+    layers:
+        Conv2D(filters=32, kernel_size=3)
+        MaxPooling2D(pool_size=2)
+        Flatten()
+        Dense(units=128)
+        Output(units=10)
+    loss: "categorical_crossentropy"
+    optimizer: Adam(lr=0.001)
+}
+'''
 
-        batch_size, time_steps, _ = input_shape
-        if return_sequences:
-            return (batch_size, time_steps, units) # Shape is (batch, time_steps, units) if return_sequences=True
-        else:
-            return (batch_size, units) # Shape is (batch, units) if return_sequences=False
+# Parse and propagate
+parser = ModelTransformer()
+model = parser.parse_network(config)
+propagator = ShapePropagator(debug=True)
 
+current_shape = model['input']['shape']
+for layer in model['layers']:
+    current_shape = propagator.propagate(
+        current_shape, 
+        layer,
+        model['framework']
+    )
 
-    elif layer_type in ['Attention', 'TransformerEncoder', 'Residual', 'InceptionModule',
-                        'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
-        return input_shape # Placeholder for advanced layers, needs specific shape logic
-
-    elif layer_type == 'MyCustomLayer':
-        # Example: custom logic for a custom layer
-        params = layer.get('params', {})
-        factor = params.get('scale_factor', 1)
-        # Let’s say the custom layer scales spatial dimensions by 'scale_factor'
-        batch_size, h, w, channels = input_shape
-        new_h = int(h * factor)
-        new_w = int(w * factor)
-        return (batch_size, new_h, new_w, channels)
-
-
-    else:
-        raise ValueError(f"Unsupported layer type: {layer_type}")
+# Generate interactive report
+report = propagator.generate_report()
+report['dot_graph'].render('network_architecture')
+report['plotly_chart'].show()

@@ -6,9 +6,10 @@ Neural is a domain-specific language (DSL) designed for defining, training, and 
 
 - **Declarative Syntax**: Define neural networks with a clean, YAML-like syntax.
 - **Shape Validation**: Automatic tensor shape propagation and validation.
-- **Multi-Backend Support**: Generate code for TensorFlow, PyTorch, and ONNX.
+- **Multi-Backend Support**: Generate code for TensorFlow and PyTorch.
 - **Training Configuration**: Built-in support for epochs, batch size, and optimizers.
 - **Extensible**: Easily add custom layers, activations, and loss functions.
+- **Visualization**: Built-in network architecture visualization tools.
 
 ## Installation
 
@@ -85,14 +86,6 @@ Check out the `examples/` directory for sample `.neural` files and their generat
 - [Simple GAN](examples/gan.neural)
 - [Transformer Model](examples/transformer.neural)
 
-## Contributing
-
-We welcome contributions! Here’s how you can help:
-
-1. **Report Issues**: Found a bug? Open an issue on GitHub.
-2. **Suggest Features**: Have an idea for a new feature? Let us know!
-3. **Submit Pull Requests**: Fix a bug or add a feature? Submit a PR.
-
 ### Development Setup
 
 1. Fork the repository and clone it locally.
@@ -110,14 +103,15 @@ We welcome contributions! Here’s how you can help:
 
 4. Submit your changes as a pull request.
 
-## Roadmap
+### Documentation
 
-- [x] Basic CNN support
-- [x] TensorFlow code generation
-- [ ] PyTorch code generation
-- [ ] ONNX export
-- [ ] Hyperparameter tuning
-- [ ] IDE integration (VSCode, PyCharm)
+For detailed documentation on Neural syntax, available layers, and advanced features, please visit the wiki.
+
+### Community
+
+Join our Discord server for discussions and support.
+
+Follow us on Twitter for updates.
 
 ## License
 
