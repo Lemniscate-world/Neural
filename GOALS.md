@@ -405,10 +405,10 @@ Automatic Differentiation
 -  Integrating with platforms like Hugging Face for model sharing could boost adoption.
 - Input must adhere to positional-first or all-named conventions.
 - Testing is crucial. They should add unit tests for each pre-trained model, efficiency benchmarks, and compatibility checks. Continuous integration can automate this.
-
+- All examples of neural networks from scratch with my DSL and add optimizations and performance au fur et à mesure
 
 # WORKFLOW
-**One Bug - One Enhancement - Community - Micro Learning/Mindmap/Wiki - Maths - Coding Learn/Code Understanding - Code Refactoring?**
+**One Bug - One Enhancement - Community(NeuralLang - Lambda-section) - Micro Learning/Mindmap/Wiki - Maths - Coding Learn/Code Understanding - Code Refactoring?**
 
 - Both PyTorch & TF require external tools (Optuna, KerasTuner) for hyperparameter tuning.
 - Extend train {} to support hyperparameters (Done)
