@@ -1,118 +1,118 @@
 # Neural: A Neural Network Programming Language
 
-Neural is a domain-specific language (DSL) designed for defining, training, and deploying neural networks. With an intuitive syntax and powerful abstractions, Neural makes it easy to experiment with complex architectures like CNNs, RNNs, GANs, and Transformers.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-green.svg)](https://www.python.org/)
+[![Discord](https://img.shields.io/badge/Chat-Discord-7289DA)](https://discord.gg/your-invite-link)
 
-## Features
+Neural is a domain-specific language (DSL) designed for defining, training, and deploying neural networks. With **declarative syntax** and **cross-framework support**, it simplifies building complex architectures while automating error-prone tasks like shape validation.
 
-- **Declarative Syntax**: Define neural networks with a clean, YAML-like syntax.
-- **Shape Validation**: Automatic tensor shape propagation and validation.
-- **Multi-Backend Support**: Generate code for TensorFlow and PyTorch.
-- **Training Configuration**: Built-in support for epochs, batch size, and optimizers.
-- **Extensible**: Easily add custom layers, activations, and loss functions.
-- **Visualization**: Built-in network architecture visualization tools.
+![Network Visualization Demo]()  
+*Example: Auto-generated architecture diagram and shape propagation report*
 
-## Installation
+## 🚀 Features
 
-To use Neural, clone the repository and install the required dependencies:
+- **YAML-like Syntax**: Define models intuitively without framework boilerplate.
+- **Shape Propagation**: Catch dimension mismatches *before* runtime.
+- **Multi-Backend Export**: Generate code for **TensorFlow**, **PyTorch**, or **ONNX**.
+- **Training Orchestration**: Configure optimizers, schedulers, and metrics in one place.
+- **Visual Debugging**: Render interactive 3D architecture diagrams.
+- **Extensible**: Add custom layers/losses via Python plugins.
+
+## 📦 Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/yourusername/neural.git
 cd neural
+
+# Create a virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Usage
+**Prerequisites**: Python 3.8+, pip
 
-### Define a Neural Network
+## 🛠️ Quick Start
 
-Create a `.neural` file to define your model:
+### 1. Define a Model
 
-```plaintext
-network MyModel {
-    input: (28, 28, 1)
-    layers:
-        Conv2D(filters=32, kernel_size=(3, 3), activation="relu")
-        MaxPooling2D(pool_size=(2, 2))
-        Flatten()
-        Dense(units=128, activation="relu")
-        Dropout(rate=0.5)
-        Output(units=10, activation="softmax")
-    loss: "categorical_crossentropy"
-    optimizer: "adam"
-    train {
-        epochs: 10
-        batch_size: 32
-    }
+Create `mnist.neural`:
+```yaml
+network MNISTClassifier {
+  input: (28, 28, 1)  # Channels-last format
+  layers:
+    Conv2D(filters=32, kernel_size=(3,3), activation="relu")
+    MaxPooling2D(pool_size=(2,2))
+    Flatten()
+    Dense(units=128, activation="relu")
+    Dropout(rate=0.5)
+    Output(units=10, activation="softmax")
+  
+  loss: "sparse_categorical_crossentropy"
+  optimizer: Adam(learning_rate=0.001)
+  metrics: ["accuracy"]
+  
+  train {
+    epochs: 15
+    batch_size: 64
+    validation_split: 0.2
+  }
 }
 ```
 
-### Parse and Generate Code
-
-Use the Neural CLI to parse the model and generate code for your preferred backend:
+### 2. Generate Framework Code
 
 ```bash
-python neural.py compile --input my_model.neural --backend tensorflow
+# For TensorFlow
+python neural.py compile mnist.neural --backend tensorflow --output mnist_tf.py
+
+# For PyTorch
+python neural.py compile mnist.neural --backend pytorch --output mnist_torch.py
 ```
 
-This will generate the following TensorFlow code:
+### 3. Visualize Architecture
 
-```python
-import tensorflow as tf
+```bash
+python neural.py visualize mnist.neural --format png
+```
+![MNIST Architecture]()
 
-model = tf.keras.Sequential([
-    tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
-    tf.keras.layers.MaxPooling2D((2, 2)),
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.5),
-    tf.keras.layers.Dense(10, activation='softmax')
-])
+## 🌟 Why Neural?
 
-model.compile(optimizer='adam', loss='categorical_crossentropy')
-model.fit(data, epochs=10, batch_size=32)
+| Feature               | Neural      | Raw TensorFlow/PyTorch |
+|-----------------------|-------------|-------------------------|
+| Shape Validation      | ✅ Auto     | ❌ Manual               |
+| Framework Switching   | 1-line flag | Days of rewriting       |
+| Architecture Diagrams | Built-in    | Third-party tools       |
+| Training Config       | Unified     | Fragmented configs      |
+
+## 📚 Documentation
+
+Explore advanced features:
+- [Custom Layers Guide]()
+- [ONNX Export Tutorial]()
+- [Training Configuration]()
+
+## 🤝 Contributing
+
+We welcome contributions! See our:
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Roadmap](ROADMAP.md)
+
+To set up a development environment:
+```bash
+git clone https://github.com/yourusername/neural.git
+cd neural
+pip install -r requirements-dev.txt  # Includes linter, formatter, etc.
+pre-commit install  # Auto-format code on commit
 ```
 
-### Supported Backends
+## 📬 Community
 
-- **TensorFlow**: Generate TensorFlow/Keras code.
-- **PyTorch**: Generate PyTorch code.
-- **ONNX**: Export models to ONNX for interoperability.
-
-## Examples
-
-Check out the `examples/` directory for sample `.neural` files and their generated code:
-
-- [MNIST Classifier](examples/mnist.neural)
-- [Simple GAN](examples/gan.neural)
-- [Transformer Model](examples/transformer.neural)
-
-### Development Setup
-
-1. Fork the repository and clone it locally.
-2. Install development dependencies:
-
-   ```bash
-   pip install -r requirements-dev.txt
-   ```
-
-3. Run tests:
-
-   ```bash
-   pytest tests/
-   ```
-
-4. Submit your changes as a pull request.
-
-### Documentation
-
-For detailed documentation on Neural syntax, available layers, and advanced features, please visit the wiki.
-
-### Community
-
-Join our Discord server for discussions and support.
-
-Follow us on Twitter for updates.
-
-## License
-
-Neural is released under the [MIT License](LICENSE).
+- [Discord Server](https://discord.gg/your-invite-link): Chat with developers
+- [Twitter @NeuralLang](https://twitter.com/NeuralLang): Updates & announcements
