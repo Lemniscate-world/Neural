@@ -408,7 +408,7 @@ Automatic Differentiation
 
 
 # WORKFLOW
-**One Bug - One Enhancement - Micro Learning/Mindmap/Wiki - Maths - Coding Learn/Code Understanding - Code Refactoring?**
+**One Bug - One Enhancement - Community - Micro Learning/Mindmap/Wiki - Maths - Coding Learn/Code Understanding - Code Refactoring?**
 
 - Both PyTorch & TF require external tools (Optuna, KerasTuner) for hyperparameter tuning.
 - Extend train {} to support hyperparameters (Done)
