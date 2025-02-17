@@ -340,7 +340,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         loss_param: "loss:" FLOAT
         precision_param: "precision:" FLOAT
         recall_param: "recall:" FLOAT
-
         // Paper references
         references: "references" "{" paper_param+ "}"
         paper_param: "paper:" STRING
@@ -633,18 +632,18 @@ class ModelTransformer(lark.Transformer):
     ### End Basic Layers & Properties #########################
 
     def batch_norm(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'BatchNormalization', 'params': params}
 
     def layer_norm(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'LayerNormalization', 'params': params}
 
     def instance_norm(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'InstanceNormalization', 'params': params}
     def group_norm(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'GroupNormalization', 'params': params}
 
     def lstm(self, items):
@@ -749,10 +748,6 @@ class ModelTransformer(lark.Transformer):
                         result[key.strip()] = v.strip()
         return {'metrics': result}
 
-
-    def paper_param(self, items):
-        return self._extract_value(items[0])
-
     def accuracy_param(self, items):
         return {'accuracy': self._extract_value(items[0])}
 
@@ -764,6 +759,32 @@ class ModelTransformer(lark.Transformer):
 
     def recall_param(self, items):
         return {'recall': self._extract_value(items[0])}
+    
+    def references(self, items):
+        # If no metric items were provided, return an empty dictionary.
+        if not items:
+            return {'references': {}}
+        result = {}
+        for item in items:
+            # Skip any None values
+            if item is None:
+                continue
+            # If the item is already a dictionary (as produced by individual references rules), update the result.
+            if isinstance(item, dict):
+                result.update(item)
+            else:
+                # Otherwise, attempt to extract a string value and split it by colon
+                val = self._extract_value(item)
+                if val and ':' in val:
+                    key, v = str(val).split(':', 1)
+                    try:
+                        result[key.strip()] = float(v.strip())
+                    except ValueError:
+                        result[key.strip()] = v.strip()
+        return {'references': result}
+    
+    def paper_param(self, items):
+        return self._extract_value(items[0])
 
 
     ### NETWORK ACTIVATION ##############################
@@ -1055,7 +1076,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'CapsuleLayer', 'params': params}
 
     def squeeze_excitation(self, items):
-        return {'type': 'SqueezeExcitation', 'params': items[0]}
+        params = self._extract_value(items[0]) if items else None
+        return {'type': 'SqueezeExcitation', 'params': params}
 
     def quantum(self, items):
         params = items[0] if items else None
@@ -1139,6 +1161,28 @@ class ModelTransformer(lark.Transformer):
         custom_dims = self._extract_value(items[1])
         return {"type": "CustomShape", "layer": layer_name, "custom_dims": custom_dims}
 
+### Frameworks Detection ###
+    def parse_network(self, config: str, framework: str = 'auto'):
+        tree = create_parser.parse(config)
+        model = self.transform(tree)
+        
+        # Auto-detect framework
+        if framework == 'auto':
+            framework = self._detect_framework(model)
+            
+        # Add framework-specific metadata
+        model['framework'] = framework
+        model['shape_info'] = []
+        
+        return model
 
+    def _detect_framework(self, model):
+        # Detect framework based on layer types and parameters
+        for layer in model['layers']:
+            if 'torch' in layer.get('params', {}).values():
+                return 'pytorch'
+            if 'keras' in layer.get('params', {}).values():
+                return 'tensorflow'
+        return 'tensorflow'  # default
 
 

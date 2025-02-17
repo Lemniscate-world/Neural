@@ -369,27 +369,46 @@ For syntax highlighting in a Neural IDE, you can use the grammar you've defined 
 4.
 To extract and visualize mathematical formulas, you might want to add a section to your grammar for defining mathematical expressions. These could then be parsed and rendered using a library like MathJax or KaTeX in your visualization dashboard.
 
-- Build a highly advanced dashboard for neural, visualizers, benchmarks, researchs, etc, shape propagation calculations, maths, etc. (Insp Optuna dashboard, tensorboard)
+- Build a highly advanced dashboard for neural, static and dynamic visualizers, benchmarks, researchs, etc, shape propagation calculations, maths, etc. (Inspiration Optuna dashboard, tensorboard)
 - Add option for trying multiple searching methods
 - Memetic algorithm
 - Gradient descent
 - Test functions for optimization
--  DSL allows you to define constructs and workflows that align precisely with your project's requirements
--  Implement architecture search (not just hyperparameters)
- - My compiler can generate multiple architectures and find the best one!
-- Add automatic shape propagation + debugging to avoid errors.
+- DSL allows you to define constructs and workflows that align precisely with your project's requirements
+- Implement architecture search (not just hyperparameters)
+- My compiler can generate multiple architectures and find the best one!
+- Shape propagation logging information to research data
+- Add realtime execution to neural
+- Add documentation site
+- Add automatic shape propagation + debugging to avoid errors. (Done)
+- Make neural a super logging frameworks for researchs
 - Implement model interpretability tools like Grad-CAM inside DSL.
 - Design a high-level API for Neural.
 - Implement a custom neural tester.
 - Optimize Neural for faster analysis and performance.
+- Add papers with code integration +++++
+- Neural Logo
+- Writing DSL Syntax Documentation (Done)
 GPU/TPU Acceleration	
+Automatic kernel optimization based on target hardware
+Hybrid precision training (FP32/FP16/INT8)
+Built-in model compression tools
+Unified API for research and production
+Zero-cost framework conversion
+Enhancing the tests and debugging
+Consider adding a method to ShapePropagator to visualize the entire network at once, rather than layer by layer.
+The _standardize_params method could be simplified by directly using the get method with a default value instead of setdefault
 Automatic Differentiation	
-Pre-trained Models	
-Production Deployment
+- Pre-trained Models	++++++
+- Production Deployment
+- I need to create a database and hub for my simple pretrained models (I should make it different for what exists sinon ça ne sert à rien, huggingface est déjà là)
+-  Integrating with platforms like Hugging Face for model sharing could boost adoption.
 - Input must adhere to positional-first or all-named conventions.
+- Testing is crucial. They should add unit tests for each pre-trained model, efficiency benchmarks, and compatibility checks. Continuous integration can automate this.
 
 
-One Bug - One Enhancement - Micro Learning - Mindmap - Wiki - Maths
+# WORKFLOW
+**One Bug - One Enhancement - Micro Learning/Mindmap/Wiki - Maths - Coding Learn/Code Understanding - Code Refactoring?**
 
 - Both PyTorch & TF require external tools (Optuna, KerasTuner) for hyperparameter tuning.
 - Extend train {} to support hyperparameters (Done)
@@ -402,14 +421,30 @@ One Bug - One Enhancement - Micro Learning - Mindmap - Wiki - Maths
 - Grid search - Random Search - Bayesian Optimization - Genetic Algorithms - Hyperband
 
 
+
+# Micro-Learning
 - What is model complexity ?
 - What is an optimizer ?
 - SGD ?
 - Adam ?
+- Foreign Function Interface
+- ResNet, VGG, BERT
+- model compression
+- pruning
+- quantization
+- Gpu operations
+- triton
+- kernel fusion
+- just-in-time compilation
+- kernel fusion
+- What is @staticmethod
+- BERT
 
 # Prompts
 - this is my code generator code_generator and validation.py and AFPO.py
 
+# Wiki
+- 
 
 https://www.wikiwand.com/fr/articles/Optimisation_(math%C3%A9matiques)
 https://www.wikiwand.com/fr/articles/Optimisation_lin%C3%A9aire
