@@ -1,6 +1,6 @@
 import pytest
 import torch
-from execution import run_inference
+from execution_optimization.execution import run_inference
 
 @pytest.mark.parametrize("device", ["cpu", "gpu", "auto"])
 def test_device_selection(device):

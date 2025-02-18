@@ -34,7 +34,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         %import common.WS                    // All whitespace
         %ignore WS   
 
-        ?start: network | layer | research  // Allow parsing either networks or research files
+        ?start: network | layer | research   // Allow parsing either networks or research files
 
         // File type rules
         neural_file: network
@@ -148,13 +148,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         config: training_config | execution_config
 
         // Input layer definition - specifies the shape of input data
-        input_layer: ( multid_input_layer | input1d_layer )
-        multid_input_layer: "input" ":" "(" shape ")"
-        input1d_layer: "input" ":" "(" shape "," [shape] ")"
-        // Shape can contain multiple dimensions, each being a number or None
-        shape: number_or_none ("," number_or_none)*
-        // Dimensions can be specific NUMBERegers or None (for variable dimensions)
-        number_or_none: number | "None"
+        input_layer: "input" ":" shape ("," shape)*
+        shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
+        number_or_none: number | "NONE" | "None"
 
         // Layers section - contains all layer definitions separated by newlines
         layers: "layers" ":" _NL* layer+ _NL*
@@ -323,7 +319,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         // Loss and optimizer specifications
-        loss: "loss" ":" STRING
+        COLON: ":"
+        loss: "loss" COLON STRING 
         optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
         schedule: NAME "(" params ")"
         params: [value ("," value)*]
@@ -335,9 +332,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         research: "research" NAME? "{" [research_params] "}"
         research_params: (metrics | references)*
         // Metrics tracking
-        metrics: "metrics" "{" [accuracy_param] [loss_param] [precision_param] [recall_param] "}"
+        metrics: "metrics" "{" [accuracy_param] [metrics_loss_param] [precision_param] [recall_param] "}"
         accuracy_param: "accuracy:" FLOAT
-        loss_param: "loss:" FLOAT
+        metrics_loss_param: "loss:" FLOAT
         precision_param: "precision:" FLOAT
         recall_param: "recall:" FLOAT
         // Paper references
@@ -356,7 +353,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         
 
     """
-    return  lark.Lark(grammar, start=[start_rule], parser='lalr', lexer='contextual')
+    return  lark.Lark(grammar, start=[start_rule], parser='lalr', lexer='contextual', cache=False)
 
 network_parser = create_parser('network')
 layer_parser = create_parser('layer')
@@ -381,8 +378,8 @@ class ModelTransformer(lark.Transformer):
     ### Basic Layers & Properties ###################
 
     def input_layer(self, items):
-        return items[0]
-
+        shapes = [self._extract_value(item) for item in items]
+        return {'type': 'Input', 'shapes': shapes}
     
     def layers(self, items):
         return items
@@ -397,15 +394,6 @@ class ModelTransformer(lark.Transformer):
     def dropout(self, items):
         params = self._extract_value(items[0])
         return {'type': 'Dropout', 'params': params}
-    
-    def multid_input_layer(self, items):
-        shape = self._extract_value(items[0])
-        return {'type': 'Input', 'shape': shape}
-
-    def input1d_layer(self, items):
-        # Handle 1D input case (no extra nesting)
-        shape = self._extract_value(items[0])
-        return {'type': 'Input', 'shape': shape}
 
     def output(self, items):
         return {'type': 'Output', 'params': items[0]}
@@ -484,7 +472,9 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'SeparableConv2D', 'params': items[0]}
     
     def loss(self, items):
-        return items[0].value.strip('"')
+        # items[0] is the literal "loss", items[1] is the COLON token, and items[2] is the STRING token.
+        return items[2].value.strip('"')
+
 
     ### Optimization ##############
 
@@ -796,8 +786,7 @@ class ModelTransformer(lark.Transformer):
         loss_config = items[3]
         optimizer_config = items[4]
         training_config = next((item for item in items[5:] if isinstance(item, dict)), {})
-        # execution_config = next((item for item in items[6:] if 'device' in item), {'device': 'auto'})
-        execution_config = self._extract_value(items[0])
+        execution_config = next((item for item in items[5:] if isinstance(item, dict) and 'params' in item and 'device' in item['params']), {'params': {'device': 'auto'}})['params']
 
         # Ensure output_layer exists
         output_layer = next((layer for layer in reversed(items[2]) 
@@ -847,6 +836,11 @@ class ModelTransformer(lark.Transformer):
                 return item.value.strip('"')
             elif item.type == 'WS_INLINE':
                 return item.value.strip()
+            
+        elif isinstance(item, Tree) and item.data == 'number_or_none':
+            child = item.children[0]
+            if isinstance(child, Token) and child.type == 'STRING' and child.value.upper() == 'NONE':
+                return None
         
         # Add handling for shape tuples
         elif isinstance(item, Tree) and item.data == 'shape':
