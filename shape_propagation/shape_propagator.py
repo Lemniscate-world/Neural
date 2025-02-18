@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from graphviz import Digraph
 from typing import Dict, Tuple, Optional, Any, List
 
-from parser import ModelTransformer
+from parser.parser import ModelTransformer
 
 class ShapePropagator:
     

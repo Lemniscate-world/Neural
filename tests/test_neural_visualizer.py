@@ -1,4 +1,4 @@
-from visualizer import NeuralVisualizer
+from visualization.visualizer import NeuralVisualizer
 
 # Add absolute path to the parent directory
 import sys

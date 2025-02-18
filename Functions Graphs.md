@@ -1,1 +1,0 @@
-propagate_shape() ->
