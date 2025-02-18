@@ -1,0 +1,14 @@
+network ThreeInputNeuron {
+    input: (3)
+    layers:
+        Dense(1, "linear")
+}
+
+network ThreeInputNeuron {
+    input: (3)
+    layers:
+        Dense(units=1, activation="linear", use_bias=true)
+}
+
+
+

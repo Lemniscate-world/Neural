@@ -307,21 +307,20 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Training configuration block
         training_config: "train" "{" training_params "}"
-        training_params: (epochs_param | batch_size_param | optimizer_param | learning_rate_param | search_method_param)*
+        training_params: (epochs_param | batch_size_param | optimizer_param | search_method_param)*
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" values_list
-        values_list: "[" value ("," value)* "]"
-        optimizer_param: "optimizer:" tries
-        tries : "[" STRING ("," STRING)* "]"
-        learning_rate_param: "learning_rate:" range_param
-        range_param: "range(" value "," value "," "log_scale=" STRING ")"
+        values_list: "[" value ("," value)* "]" | value ("," value)*
+        optimizer_param: "optimizer:" named_optimizer | optimizer
+        named_optimizer : "named_optimizer(" learning_rate_param ")"
+        learning_rate_param: "learning_rate=" FLOAT
         search_method_param: "search_method:" STRING
 
 
         // Loss and optimizer specifications
         COLON: ":"
         loss: "loss" COLON STRING 
-        optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
+        optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"] 
         schedule: NAME "(" params ")"
         params: [value ("," value)*]
 
@@ -378,8 +377,9 @@ class ModelTransformer(lark.Transformer):
     ### Basic Layers & Properties ###################
 
     def input_layer(self, items):
-        shapes = [self._extract_value(item) for item in items]
-        return {'type': 'Input', 'shapes': shapes}
+        for item in items:
+            shapes = self._extract_value(item)
+        return {'type': 'Input', 'shape': shapes}
     
     def layers(self, items):
         return items
@@ -473,14 +473,17 @@ class ModelTransformer(lark.Transformer):
     
     def loss(self, items):
         # items[0] is the literal "loss", items[1] is the COLON token, and items[2] is the STRING token.
-        return items[2].value.strip('"')
+        return items[1].value.strip('"')
 
 
     ### Optimization ##############
 
     def optimizer(self, items):
         name = str(items[0].value)
-        params = items[1] if len(items) > 1 else {}
+        # Strip surrounding quotes if present
+        if (name.startswith('"') and name.endswith('"')) or (name.startswith("'") and name.endswith("'")):
+            name = name[1:-1]
+        params = self._extract_value(items[1]) if len(items) > 1 else {}
         return {"type": name, "params": params}
 
     def schedule(self, items):
@@ -492,7 +495,9 @@ class ModelTransformer(lark.Transformer):
     ### Training Configurations ############################
 
     def training_config(self, items):
-        return items[0]
+        for item in items:
+            params = self._extract_value(item) if items else None
+        return params
     
     def training_params(self, items):
         params = {}
@@ -509,7 +514,16 @@ class ModelTransformer(lark.Transformer):
 
     def batch_size_param(self, items):
         return {'batch_size': self._extract_value(items[0])}
+    
+    def optimizer_param(self, items):
+        return {'optimizer': self._extract_value(items[0])}
+    
+    def named_optimizer(self, items):
+        return {'named_optimizer': self._extract_value(items[0])}
 
+    def learning_rate_param(self,items):
+        return {'learning_rate': self._extract_value(items[0])}
+    
     def shape(self, items):
         return tuple(items)
     
@@ -785,7 +799,7 @@ class ModelTransformer(lark.Transformer):
         layers_config = items[2]
         loss_config = items[3]
         optimizer_config = items[4]
-        training_config = next((item for item in items[5:] if isinstance(item, dict)), {})
+        training_config = next((item for item in items[5:] if isinstance(item, dict)), None)
         execution_config = next((item for item in items[5:] if isinstance(item, dict) and 'params' in item and 'device' in item['params']), {'params': {'device': 'auto'}})['params']
 
         # Ensure output_layer exists
