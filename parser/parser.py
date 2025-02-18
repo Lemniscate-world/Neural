@@ -130,11 +130,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_l2: "l2" "=" FLOAT  // Example: l2=0.001
         named_l1_l2: "l1_l2" "=" tuple_  // Example: l1_l2=(0.01, 0.001)
         ?named_param: ( rate | named_clipvalue | named_clipnorm | simple_float | explicit_tuple | simple_number| named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value )
-        named_int: NAME "=" INT
-        named_float: NAME "=" FLOAT   
+        named_int: NAME "=" INT | NAME ":" INT
+        named_float: NAME "=" FLOAT | NAME ":" FLOAT
         simple_number: number1
-        simple_float: FLOAT
         rate: "rate" ":" FLOAT
+        simple_float: FLOAT
         named_clipvalue: "clipvalue=" FLOAT
         named_clipnorm: "clipnorm=" FLOAT
 
@@ -311,7 +311,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" values_list
         values_list: "[" value ("," value)* "]" | value ("," value)*
-        optimizer_param: "optimizer:" named_optimizer | optimizer
+        optimizer_param: "optimizer:" named_optimizer 
         named_optimizer : "named_optimizer(" learning_rate_param ")"
         learning_rate_param: "learning_rate=" FLOAT
         search_method_param: "search_method:" STRING
@@ -484,6 +484,10 @@ class ModelTransformer(lark.Transformer):
         if (name.startswith('"') and name.endswith('"')) or (name.startswith("'") and name.endswith("'")):
             name = name[1:-1]
         params = self._extract_value(items[1]) if len(items) > 1 else {}
+        
+        # if name == "SGD" and "learning_rate" not in params:
+           # params["learning_rate"] = 0.01
+
         return {"type": name, "params": params}
 
     def schedule(self, items):
@@ -514,6 +518,11 @@ class ModelTransformer(lark.Transformer):
 
     def batch_size_param(self, items):
         return {'batch_size': self._extract_value(items[0])}
+
+    def values_list(self, items):
+        for x in items:
+            params = self._extract_value(x)
+        return params
     
     def optimizer_param(self, items):
         return {'optimizer': self._extract_value(items[0])}
@@ -835,6 +844,16 @@ class ModelTransformer(lark.Transformer):
 
     ### Parameters  #######################################################
 
+    def named_params(self, items):
+        params = {}
+        for item in items:
+            if isinstance(item, Tree):
+                item = self._extract_value(item)
+            elif isinstance(item, dict):
+                item = self._extract_value(item)
+                params.update(item)
+        return params
+    
     def _extract_value(self, item):  # Helper function to extract values from tokens and tuples
         if isinstance(item, Token):
             if item.type == 'NAME':
@@ -855,7 +874,8 @@ class ModelTransformer(lark.Transformer):
             child = item.children[0]
             if isinstance(child, Token) and child.type == 'STRING' and child.value.upper() == 'NONE':
                 return None
-        
+
+
         # Add handling for shape tuples
         elif isinstance(item, Tree) and item.data == 'shape':
             return tuple(self._extract_value(child) for child in item.children)
@@ -885,6 +905,19 @@ class ModelTransformer(lark.Transformer):
             return tuple(self._extract_value(child) for child in item.children)
         return item
 
+    def named_float(self, items):
+        # items = [NAME, '='|':', FLOAT] 
+        return {items[0].value: self._extract_value(items[1])}
+
+    def named_int(self, items):
+        # items = [NAME, '=', INT]
+        return {items[0].value: self._extract_value(items[1])}
+
+    def named_param(self, items):
+        # Generic NAME "=" value rule (e.g., activation="relu")
+        # items = [NAME, '=', value]
+        return {items[0].value: self._extract_value(items[1])}
+    
     def number(self, items):
         return self._extract_value(items[0])
     
@@ -922,16 +955,7 @@ class ModelTransformer(lark.Transformer):
     
     def simple_number(self, items):
         return self._extract_value(items[0])
-    
-    def named_params(self, items):
-        params = {}
-        for item in items:
-            if isinstance(item, Tree):
-                item = self._extract_value(item)
-            elif isinstance(item, dict):
-                item = self._extract_value(item)
-                params.update(item)
-        return params
+
     
     def ordered_params(self, items):
 
@@ -983,7 +1007,6 @@ class ModelTransformer(lark.Transformer):
 
     def named_units(self, items):  
         return {"units": self._extract_value(items[0])}
-
 
     def named_activation(self, items): 
         return {"activation": self._extract_value(items[0])}
