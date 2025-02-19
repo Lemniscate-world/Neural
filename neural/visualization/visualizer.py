@@ -13,7 +13,7 @@ import json
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from parser.parser import ModelTransformer, create_parser
+from neural.parser.parser import ModelTransformer, create_parser
 
 class NeuralVisualizer:
     def __init__(self, model_data):

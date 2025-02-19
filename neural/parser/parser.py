@@ -131,6 +131,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_l1_l2: "l1_l2" "=" tuple_  // Example: l1_l2=(0.01, 0.001)
         ?named_param: ( rate | named_clipvalue | named_clipnorm | simple_float | explicit_tuple | simple_number| named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value )
         named_int: NAME "=" INT | NAME ":" INT
+        named_string: NAME "=" STRING | NAME ":" STRING
         named_float: NAME "=" FLOAT | NAME ":" FLOAT
         simple_number: number1
         rate: "rate" ":" FLOAT
@@ -158,13 +159,16 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // All possible layer types that can be used in the network
         ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_ )  
         lambda_: "Lambda(" STRING ")"
+
+        // Wrapper Layer Functions
         wrapper: wrapper_layer_type "(" layer "," named_params ")"  
         wrapper_layer_type: "TimeDistributed" 
+        
         // Basic layer types & group
         ?basic: conv | pooling | dropout | flatten | dense | output
         dropout: "Dropout(" named_params ")" 
         dense: "Dense" "(" dense_params ")"
-        dense_params: NUMBER ("," (NUMBER | STRING))* | named_params 
+        dense_params: (NUMBER ("," (NUMBER | STRING | named_param))* ) | named_params
         dense_ordered_params: value ("," value)*  // Allow any valid 'value'
         flatten: "Flatten" "(" [named_params] ")"
         // Recurrent layers section - includes all RNN variants
@@ -301,9 +305,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         custom: NAME "(" named_params ")"
 
+        // Activation functions
         activation: activation_with_params | activation_without_params
-        activation_with_params: "Activation(" STRING "," named_params ")"
-        activation_without_params: "Activation(" STRING ")"
+        activation_with_params: "Activation(" STRING "," named_params ")"  
+        activation_without_params: "Activation(" STRING ")" 
 
         // Training configuration block
         training_config: "train" "{" training_params "}"
@@ -405,27 +410,28 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0])
         return {'type': 'execution_config', 'params':params}
 
+    # In the ModelTransformer class:
     def dense(self, items):
         param_nodes = items[0].children
         param_dict = {}
-        
-        # Extract parameters from param_nodes
-        params = []
+        ordered_params = []
+        named_params = {}
+
         for child in param_nodes:
             param = self._extract_value(child)
-            params.append(param)
+            if isinstance(param, dict):  # Named parameter
+                named_params.update(param)
+            else:  # Ordered parameter
+                ordered_params.append(param)
+
+        # Assign ordered params to 'units' and 'activation'
+        if ordered_params:
+            param_dict['units'] = ordered_params[0]
+            if len(ordered_params) > 1:
+                param_dict['activation'] = ordered_params[1]
         
-        # Check if all parameters are dictionaries (named parameters)
-        if all(isinstance(p, dict) for p in params):
-            param_dict = {}
-            for p in params:
-                param_dict.update(p)
-        else:
-            # Handle ordered parameters (e.g., Dense(256, "sigmoid"))
-            if len(params) >= 1:
-                param_dict['units'] = params[0]
-            if len(params) >= 2:
-                param_dict['activation'] = params[1]
+        # Merge named parameters
+        param_dict.update(named_params)
         
         return {"type": "Dense", "params": param_dict}
     
@@ -535,6 +541,11 @@ class ModelTransformer(lark.Transformer):
     
     def shape(self, items):
         return tuple(items)
+    
+    ### Wrapper Layers ###
+
+    def wrapper_layer_type(self, items):
+        return items[0].value.strip('"')
     
     ### Pooling Layers #############################
 
@@ -918,6 +929,10 @@ class ModelTransformer(lark.Transformer):
         # items = [NAME, '=', value]
         return {items[0].value: self._extract_value(items[1])}
     
+    def named_string(self, items):
+        # items = [NAME, '='|':', STRING]
+        return {items[0].value: self._extract_value(items[1])}
+    
     def number(self, items):
         return self._extract_value(items[0])
     
@@ -1007,6 +1022,9 @@ class ModelTransformer(lark.Transformer):
 
     def named_units(self, items):  
         return {"units": self._extract_value(items[0])}
+
+    def activation_param(self, units):
+        return {"activation": self._extract_value(units)}
 
     def named_activation(self, items): 
         return {"activation": self._extract_value(items[0])}
@@ -1194,7 +1212,7 @@ class ModelTransformer(lark.Transformer):
 
 ### Frameworks Detection ###
     def parse_network(self, config: str, framework: str = 'auto'):
-        tree = create_parser.parse(config)
+        tree = network_parser.parse(config)
         model = self.transform(tree)
         
         # Auto-detect framework

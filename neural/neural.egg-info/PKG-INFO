@@ -1,0 +1,7 @@
+Metadata-Version: 2.1
+Name: neural
+Version: 0.1.0
+Summary: A neural network framework with native .neural and .nr file support
+Author: Lemniscate-SHA-256
+Requires-Dist: lark
+Requires-Dist: click

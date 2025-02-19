@@ -1,0 +1,7 @@
+setup.py
+neural.egg-info/PKG-INFO
+neural.egg-info/SOURCES.txt
+neural.egg-info/dependency_links.txt
+neural.egg-info/entry_points.txt
+neural.egg-info/requires.txt
+neural.egg-info/top_level.txt
