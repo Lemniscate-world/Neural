@@ -1,6 +1,7 @@
 import pytest
 import torch
-from AHPO import TestModel, train_model, validate_optimizer, get_data
+import numpy as np
+from neural.automatic_hyperparameter_optimization.AHPO import TestModel, train_model, validate_optimizer, get_data, objective
 
 def test_model_forward():
     model = TestModel()
@@ -33,16 +34,15 @@ def test_optimizer_validation():
         })
 
 def test_hpo_objective():
-    import optuna
-    from AHPO import objective
     
-    # Mock trial
     class MockTrial:
         def suggest_categorical(self, name, choices):
             return choices[0]
+            
         def suggest_float(self, name, low, high, log=False):
             return 0.001
     
     trial = MockTrial()
     loss = objective(trial)
-    assert isinstance(loss, float)
+    assert not np.isnan(loss)
+    assert 0 <= loss < float("inf")
