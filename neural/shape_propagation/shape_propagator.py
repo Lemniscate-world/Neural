@@ -117,15 +117,36 @@ class ShapePropagator:
         # Default handler for unsupported layers
         return input_shape
     
-    # Padding calculation
+    ### Padding detection, extraction and calculation ###
     def _calculate_padding(self, params, input_dim):
-        if isinstance(params.get('padding'), int):
-            return params['padding']
-        elif isinstance(params.get('padding'), list):
-            return tuple(params['padding'])
-        else:
-            return [params['padding']]*(input_dim-2)
+        """Calculates padding based on provided parameters and input dimension.
 
+        This method handles different padding types: integer, list, or string.
+        It returns the appropriate padding value based on the input.
+
+        Args:
+            params (dict): Layer parameters containing padding information.
+            input_dim (int): Input dimension.
+
+        Returns:
+            int or tuple or list: Calculated padding value.
+        """
+        def _calculate_padding(self, params, input_dim):
+        padding = params.get('padding', 0)  # Default to 0 if missing
+        if isinstance(padding, int):
+            return padding
+        elif isinstance(padding, (list, tuple)):
+            return tuple(padding)
+        elif padding == 'same':
+            # Calculate "same" padding: (kernel_size - 1) // 2
+            return (params['kernel_size'] - 1) // 2
+        elif padding == 'valid':
+            return 0
+        else:
+            return [padding] * (input_dim - 2)  # Fallback (rarely used)
+    
+    
+    ### Layers Shape Propagation Visualization ###
     def _visualize_layer(self, layer_name, shape):
         label = f"{layer_name}\n{shape}"
         self.dot.node(str(self.current_layer), label)
