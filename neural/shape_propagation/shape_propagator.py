@@ -76,19 +76,39 @@ class ShapePropagator:
             
         return standardized
 
+### Shape propagation through 2 Dimensional Convolutional Layers ###
+
     def _handle_conv2d(self, input_shape, params):
-        # Unified convolution handler for TF/PyTorch
+        """Calculates the output shape for a Conv2D layer.
+
+        This method computes the output shape based on the input shape,
+        kernel size, stride, padding, and data format.
+
+        Args:
+            input_shape (tuple): Input tensor shape.
+            params (dict): Layer parameters.
+
+        Returns:
+            tuple: Output tensor shape.
+        """    
         data_format = params['data_format']
         channels_dim = 1 if data_format == 'channels_first' else 3
         
-        # Calculate output shape using framework-agnostic formula
+        # Handle kernel_size as tuple or integer
         kernel = params['kernel_size']
+        if isinstance(kernel, int):
+            kernel = (kernel,) * len(input_shape[2:])  # Repeat for all spatial dims
+        elif isinstance(kernel, tuple):
+            if len(kernel) != len(input_shape[2:]):
+                raise ValueError("Kernel size must match number of spatial dimensions")
+        
         stride = params.get('stride', 1)
         padding = self._calculate_padding(params, input_shape[channels_dim])
         
+        # Calculate output shape per spatial dimension
         output_shape = [
-            (dim + 2*padding - kernel) // stride + 1 
-            for dim in input_shape[2:]  # Spatial dimensions
+            (dim + 2*padding - k) // stride + 1 
+            for dim, k in zip(input_shape[2:], kernel)  # Pair dim with kernel
         ]
         
         # Reconstruct full shape
@@ -131,7 +151,6 @@ class ShapePropagator:
         Returns:
             int or tuple or list: Calculated padding value.
         """
-        def _calculate_padding(self, params, input_dim):
         padding = params.get('padding', 0)  # Default to 0 if missing
         if isinstance(padding, int):
             return padding
@@ -144,7 +163,7 @@ class ShapePropagator:
             return 0
         else:
             return [padding] * (input_dim - 2)  # Fallback (rarely used)
-    
+        
     
     ### Layers Shape Propagation Visualization ###
     def _visualize_layer(self, layer_name, shape):

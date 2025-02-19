@@ -11,7 +11,8 @@ from neural.shape_propagation.shape_propagator import ShapePropagator
 def test_shape_propagation():
     input_shape = (1, 28, 28, 1)  # Add batch dimension (1)
     layers = [
-        {"type": "Conv2D", "params": {"filters": 32, "kernel_size": (3, 3)}},
+        # Example Conv2D layer with explicit padding
+        {"type": "Conv2D", "params": {"filters": 32, "kernel_size": (3, 3), "padding": "same"}},
         {"type": "MaxPooling2D", "params": {"pool_size": (2, 2)}},
         {"type": "Flatten", "params": {}},
         {"type": "Dense", "params": {"units": 128}},
