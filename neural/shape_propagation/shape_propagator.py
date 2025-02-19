@@ -116,6 +116,7 @@ class ShapePropagator:
             return (input_shape[0], params['filters'], *output_shape)
         return (input_shape[0], *output_shape, params['filters'])
 
+
     def _handle_maxpooling2d(self, input_shape, params):
         pool_size = params['pool_size']
         stride = params.get('stride', pool_size)
@@ -151,19 +152,23 @@ class ShapePropagator:
         Returns:
             int or tuple or list: Calculated padding value.
         """
-        padding = params.get('padding', 0)  # Default to 0 if missing
+        padding = params.get('padding', 0)
+    
         if isinstance(padding, int):
             return padding
         elif isinstance(padding, (list, tuple)):
             return tuple(padding)
         elif padding == 'same':
-            # Calculate "same" padding: (kernel_size - 1) // 2
-            return (params['kernel_size'] - 1) // 2
+            # Handle kernel_size as tuple or integer
+            kernel = params['kernel_size']
+            if isinstance(kernel, int):
+                return (kernel - 1) // 2
+            elif isinstance(kernel, tuple):
+                return tuple((k - 1) // 2 for k in kernel)  # Process each dimension
         elif padding == 'valid':
             return 0
         else:
-            return [padding] * (input_dim - 2)  # Fallback (rarely used)
-        
+            return [padding] * (input_dim - 2)
     
     ### Layers Shape Propagation Visualization ###
     def _visualize_layer(self, layer_name, shape):
