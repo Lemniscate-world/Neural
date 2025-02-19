@@ -7,13 +7,13 @@ setup(
     author='Lemniscate-SHA-256',
     packages=find_packages(where='.', exclude=["tests*", "docs"]),
     install_requires=[
-        'lark-parser',
+        'lark',
         'click',
         # other dependencies like torch, tensorflow, etc. as needed
     ],
     entry_points={
         'console_scripts': [
-            'neural=neural.cli:cli',  # This creates the "neural" CLI command.
+            'neural=cli:cli',  # This creates the "neural" CLI command.
         ],
     },
 )

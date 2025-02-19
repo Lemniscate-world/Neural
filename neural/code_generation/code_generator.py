@@ -1,4 +1,5 @@
-from shape_propagation.shape_propagator import propagate_shape
+from neural.shape_propagation.shape_propagator import ShapePropagator
+from neural.parser.parser import ModelTransformer
 from typing import Any, Dict, List, Tuple, Union, Optional, Callable
 import torch
 
@@ -51,18 +52,18 @@ def generate_code(model_data,backend):
                 if not filters or not kernel_size:
                     raise ValueError("Conv2D layer config missing 'filters' or 'kernel_size'.")
                 code += f"{indent}tf.keras.layers.Conv2D(filters={filters}, kernel_size={kernel_size}, activation='{activation}'),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'MaxPooling2D':
                 pool_size = params.get('pool_size')
                 if not pool_size:
                     raise ValueError("MaxPooling2D layer config missing 'pool_size'.")
                 code += f"{indent}tf.keras.layers.MaxPool2D(pool_size={pool_size}),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'Flatten':
                 code += f"{indent}tf.keras.layers.Flatten(),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'Dense':
                 units = params.get('units')
@@ -70,14 +71,14 @@ def generate_code(model_data,backend):
                 if not units:
                     raise ValueError("Dense layer config missing 'units'.")
                 code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}'),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'Dropout':
                 rate = params.get('rate')
                 if rate is None:
                     raise ValueError("Dropout layer config missing 'rate'.")
                 code += f"{indent}tf.keras.layers.Dropout(rate={rate}),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'Output':
                 units = params.get('units')
@@ -85,19 +86,19 @@ def generate_code(model_data,backend):
                 if not units:
                     raise ValueError("Output layer config missing 'units'.")
                 code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}'),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'BatchNormalization':
                 code += f"{indent}tf.keras.layers.BatchNormalization(),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'LayerNormalization':
                 code += f"{indent}tf.keras.layers.LayerNormalization(),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'InstanceNormalization':
                 code += f"{indent}tf.keras.layers.InstanceNormalization(),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'GroupNormalization':
                 groups = params.get('groups')
@@ -120,7 +121,7 @@ def generate_code(model_data,backend):
                     tf_layer_name = 'CuDNNGRU'
 
                 code += f"{indent}tf.keras.layers.{tf_layer_name}(units={units}, return_sequences={str(return_sequences).lower()}),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'Embedding':
                 input_dim = params.get('input_dim')
@@ -128,17 +129,17 @@ def generate_code(model_data,backend):
                 if not input_dim or not output_dim:
                     raise ValueError("Embedding layer config missing 'input_dim' or 'output_dim'.")
                 code += f"{indent}tf.keras.layers.Embedding(input_dim={input_dim}, output_dim={output_dim}),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
                 print(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for TensorFlow might require manual implementation. Skipping layer code generation for now.")
                 code += f"{indent}tf.keras.layers.Attention(),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'TransformerEncoder':
                 num_heads = params.get('num_heads', 4)
                 ff_dim = params.get('ff_dim', 32)
                 code += f"{indent}tf.keras.layers.TransformerEncoder(num_heads={num_heads}, ffn_units={ff_dim}),\n"
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type in ['ResidualConnection', 'InceptionModule', 'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'QuantumLayer', 'DynamicLayer']:
                 NUMBER(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for TensorFlow might require manual implementation. Skipping layer code generation for now.")
@@ -213,7 +214,7 @@ def generate_code(model_data,backend):
                 layers_code.append(f"{layer_name}_activation = nn.ReLU() if '{activation_name}' == 'relu' else nn.Identity()")
                 forward_code_body.append(f"x = self.layer{i+1}_conv(x)")
                 forward_code_body.append(f"x = self.layer{i+1}_activation(x)")
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'MaxPooling2D':
                 pool_size = params.get('pool_size')
@@ -221,12 +222,12 @@ def generate_code(model_data,backend):
                     raise ValueError("MaxPooling2D layer config missing 'pool_size'.")
                 layers_code.append(f"{layer_name}_pool = nn.MaxPool2d(kernel_size={pool_size})")
                 forward_code_body.append(f"x = self.layer{i+1}_pool(x)")
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'Flatten':
                 layers_code.append(f"{layer_name}_flatten = nn.Flatten()")
                 forward_code_body.append(f"x = self.layer{i+1}_flatten(x)")
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'Dense':
                 units = params.get('units')
@@ -237,7 +238,7 @@ def generate_code(model_data,backend):
                 layers_code.append(f"{layer_name}_activation = nn.ReLU() if '{activation_name}' == 'relu' else nn.Identity()")
                 forward_code_body.append(f"x = self.layer{i+1}_dense(x)")
                 forward_code_body.append(f"x = self.layer{i+1}_activation(x)")
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'Dropout':
                 rate = params.get('rate')
@@ -245,7 +246,7 @@ def generate_code(model_data,backend):
                     raise ValueError("Dropout layer config missing 'rate'.")
                 layers_code.append(f"{layer_name}_dropout = nn.Dropout(p={rate})")
                 forward_code_body.append(f"x = self.layer{i+1}_dropout(x)")
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'Output':
                 units = params.get('units')
@@ -256,7 +257,7 @@ def generate_code(model_data,backend):
                 layers_code.append(f"{layer_name}_activation = nn.Sigmoid() if '{activation_name}' == 'sigmoid' else (nn.Softmax(dim=1) if '{activation_name}' == 'softmax' else nn.Identity())")
                 forward_code_body.append(f"x = self.layer{i+1}_output(x)")
                 forward_code_body.append(f"x = self.layer{i+1}_activation(x)")
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
 
             elif layer_type == 'BatchNormalization':
                 layers_code.append(f"{layer_name}_bn = nn.BatchNorm2d(num_features={current_input_shape[-1]})")
@@ -274,11 +275,11 @@ def generate_code(model_data,backend):
                 print(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for PyTorch might require manual implementation. Skipping layer code generation for now.")
                 layers_code.append(f"{layer_name}_rnn = nn.{torch_layer_name}(input_size={current_input_shape[-1]}, hidden_size={units}, batch_first=True, bidirectional=False)")
                 forward_code_body.append(f"x, _ = self.layer{i+1}_rnn(x)")
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
             elif layer_type == 'Flatten':
                 layers_code.append(f"{layer_name}_flatten = nn.Flatten(start_dim=1)")
                 forward_code_body.append(f"x = self.layer{i+1}_flatten(x)")
-                current_input_shape = propagate_shape(current_input_shape, layer_config)
+                current_input_shape = ShapePropagator(current_input_shape, layer_config)
             elif layer_type in ['Attention', 'TransformerEncoder', 'Residual', 'InceptionModule', 'CapsuleLayer', 'SqueezeExcitation', 'GraphConv', 'Embedding', 'QuantumLayer', 'DynamicLayer']:
                 NUMBER(f"Warning: {layer_type} is an advanced or custom layer type. Code generation for PyTorch might require manual implementation. Skipping layer code generation for now.")
             else:

@@ -200,37 +200,3 @@ FRAMEWORK_DEFAULTS = {
 def get_framework_params(framework):
     return FRAMEWORK_DEFAULTS.get(framework.lower(), FRAMEWORK_DEFAULTS['tensorflow'])
 
-########################### Examples Usages #################################
-
-# Full workflow example
-config = '''
-network MyNetwork {
-    input: (None, 28, 28, 1)
-    layers:
-        Conv2D(filters=32, kernel_size=3)
-        MaxPooling2D(pool_size=2)
-        Flatten()
-        Dense(units=128)
-        Output(units=10)
-    loss: "categorical_crossentropy"
-    optimizer: Adam(lr=0.001)
-}
-'''
-
-# Parse and propagate
-parser = ModelTransformer()
-model = parser.parse_network(config)
-propagator = ShapePropagator(debug=True)
-
-current_shape = model['input']['shape']
-for layer in model['layers']:
-    current_shape = propagator.propagate(
-        current_shape, 
-        layer,
-        model['framework']
-    )
-
-# Generate interactive report
-report = propagator.generate_report()
-report['dot_graph'].render('network_architecture')
-report['plotly_chart'].show()

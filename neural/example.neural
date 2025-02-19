@@ -1,0 +1,9 @@
+network MyModel {
+    input: (None, 28, 28)
+    layers:
+        Dense(128, activation="relu")
+        Dropout(rate=0.2)
+        Output(10, activation="softmax")
+    loss: "categorical_crossentropy"
+    optimizer: "Adam"
+}

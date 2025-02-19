@@ -1,4 +1,0 @@
-research DeepSeek1984 {
-    metrics { accuracy: 88.3 loss: 0.29 precision: 86.5 recall: 87.1 }
-    references { paper: "https://arxiv.org/abs/2301.01234" }
-}
