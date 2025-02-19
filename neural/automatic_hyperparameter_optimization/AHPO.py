@@ -2,34 +2,33 @@ import optuna
 import torch.optim as optim
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
+from neural.parser.parser import ModelTransformer  # Assume parser.py is in same directory
 
-# Fix: Make get_data accept batch_size as a parameter.
+# --- Data Loading ---
 def get_data(batch_size):
     return torch.utils.data.DataLoader(
         MNIST(root='./data', train=True, transform=ToTensor(), download=True),
         batch_size=batch_size, shuffle=True
     )
 
-# Placeholder TestModel: a simple fully connected network for MNIST.
+# --- Model Definition ---
 class TestModel(nn.Module):
-    def __init__(self):
+    def __init__(self, input_dim=784, output_dim=10):
         super(TestModel, self).__init__()
-        self.fc = nn.Linear(28 * 28, 10)  # MNIST images flattened to 784 features, 10 outputs
+        self.fc = nn.Linear(input_dim, output_dim)
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)
-        return self.fc(x)
+        return self.fc(x.view(x.size(0), -1))
 
-# Placeholder training function: runs one epoch and returns total loss.
+# --- Training Loop ---
 def train_model(model, optimizer, train_loader, device='cpu', epochs=1):
     model.to(device)
     model.train()
-    total_loss = 0.0
     criterion = nn.CrossEntropyLoss()
-    for epoch in range(epochs):
+    total_loss = 0.0
+    for _ in range(epochs):
         for data, target in train_loader:
             data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
@@ -40,37 +39,27 @@ def train_model(model, optimizer, train_loader, device='cpu', epochs=1):
             total_loss += loss.item()
     return total_loss
 
+# --- HPO Core ---
 def objective(trial):
-    # Parse the DSL config (assume `model_config` is loaded)
-    parsed_model = ModelTransformer().parse_network(model_config)
+    # Suggest hyperparameters
+    batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
+    lr = trial.suggest_float("learning_rate", 1e-4, 0.1, log=True)
+    optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "SGD"])
     
-    # Suggest hyperparameters based on HPO nodes
-    hpo_params = extract_hpo_params(parsed_model)  # Traverse layers/training config
+    # Model/optimizer setup
+    model = TestModel()
+    optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
     
-    # Example: Dynamically suggest parameters
-    for param in hpo_params:
-        if param["type"] == "categorical":
-            trial.suggest_categorical(param["name"], param["values"])
-        elif param["type"] == "range":
-            trial.suggest_int(param["name"], param["start"], param["end"], step=param["step"])
-        elif param["type"] == "log_range":
-            trial.suggest_float(param["name"], param["low"], param["high"], log=True)
-    
-    # Build model and train
-    model = build_model(parsed_model)  # Use parsed layers/optimizer
-    loss = train_model(model, ...)
+    # Training
+    train_loader = get_data(batch_size)
+    loss = train_model(model, optimizer, train_loader, epochs=1)
     return loss
 
-# Run HPO
+# --- Optimization ---
 study = optuna.create_study(direction="minimize")
 study.optimize(objective, n_trials=20)
 
-# Print best hyperparameters
-print("Best params:", study.best_params)
-
-
-### Optimizer Validation ###
-
+# --- Optimizer Validation ---
 VALID_OPTIMIZERS = {"Adam", "SGD", "RMSprop"}
 VALID_PARAMS = {
     "Adam": {"learning_rate", "beta_1", "beta_2", "epsilon"},
@@ -81,8 +70,6 @@ def validate_optimizer(config):
     opt_type = config["type"]
     if opt_type not in VALID_OPTIMIZERS:
         raise ValueError(f"Unknown optimizer: {opt_type}")
-    
-    # Check keys of the parameters dictionary.
-    invalid_params = set(config["params"].keys()) - VALID_PARAMS[opt_type]
+    invalid_params = set(config["params"].keys()) - VALID_PARAMS.get(opt_type, set())
     if invalid_params:
         raise ValueError(f"Invalid params for {opt_type}: {invalid_params}")
