@@ -160,9 +160,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_ )  
         lambda_: "Lambda(" STRING ")"
 
-        // Wrapper Layer Functions
-        wrapper: wrapper_layer_type "(" layer "," named_params ")"  
-        wrapper_layer_type: "TimeDistributed" 
+        // Wrapper Layer Functions 
+        wrapper: "TimeDistributed" "(" layer ["," named_params] ")"
+
         
         // Basic layer types & group
         ?basic: conv | pooling | dropout | flatten | dense | output
@@ -544,8 +544,12 @@ class ModelTransformer(lark.Transformer):
     
     ### Wrapper Layers ###
 
-    def wrapper_layer_type(self, items):
-        return items[0].value.strip('"')
+    def wrapper(self, items):
+        layer = items[0]
+        params = items[1] if len(items) > 1 else {}
+        layer['params'].update(params)
+        return {'type': f"TimeDistributed({layer['type']})", 'params': layer['params']}
+
     
     ### Pooling Layers #############################
 
