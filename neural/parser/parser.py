@@ -55,7 +55,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // name_param rules
         bool_value: BOOL  // Example: true or false
         named_return_sequences: "return_sequences" "=" bool_value
-        named_units: "units" "=" value  // Example: units=64
+        named_units: "units" "=" number  // Example: units=64
         named_activation: "activation" "=" STRING
         named_size: NAME ":" explicit_tuple  
         named_filters: "filters" "=" NUMBER  // Example: filters=32
@@ -158,7 +158,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // All possible layer types that can be used in the network
         ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_ )  
-        lambda_: "Lambda(" STRING ")"
+        
+        // Lambda functions
+        lambda_: "Lambda("  STRING  ")"
 
         // Wrapper Layer Functions 
         wrapper: "TimeDistributed" "(" layer ["," named_params] ")"
@@ -477,6 +479,10 @@ class ModelTransformer(lark.Transformer):
     def separable_conv2d(self, items):
         return {'type': 'SeparableConv2D', 'params': items[0]}
     
+    def graph_conv(self, items):
+        params = self._extract_value(items[0]) if items else None
+        return {'type': 'GraphConv', 'params': params}
+    
     def loss(self, items):
         # items[0] is the literal "loss", items[1] is the COLON token, and items[2] is the STRING token.
         return items[1].value.strip('"')
@@ -553,9 +559,16 @@ class ModelTransformer(lark.Transformer):
     
     ### Pooling Layers #############################
 
+    def pooling(self, items):
+        if isinstance(items, dict):
+            return {'type': items['type'], 'params': items}
+        return {'type': self._extract_value(items[0]), 'params': self._extract_value(items[0])}
+    
+    def max_pooling(self, items):
+        return self._extract_value(items[0])
+
     def pool_size(self, items):
-        # items[0] is "pool_size", items[1] is "=", items[2] is the value
-        value = self._extract_value(items[2])
+        value = self._extract_value(items[0])
         return {'pool_size': value}
 
     def max_pooling1d(self, items):
@@ -1099,9 +1112,6 @@ class ModelTransformer(lark.Transformer):
     def graph(self, items):
         return items[0]
 
-    def graph_conv(self, items):
-        params = self._extract_value(items[0])
-        return {'type': 'GraphConv', 'params': params}
     
     def graph_attention(self, items):
         params = self._extract_value(items[0])
