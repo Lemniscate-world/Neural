@@ -356,7 +356,15 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         factor: NUMBER | VARIABLE | "(" math_expr ")" | function_call
         function_call: NAME "(" math_expr ("," math_expr)* ")"
 
-        
+        // Automatic Hyperparameters Optimization
+        hpo_expr: "HPO(" (hpo_choice | hpo_range | hpo_log_range) ")"
+        hpo_choice: "choice(" value ("," value)* ")"
+        hpo_range: "range(" number "," number ("," step=number)? ")"
+        hpo_log_range: "log_range(" number "," number ")"
+        value: ... | hpo_expr  
+
+        // Neural Architecture Search
+        layer_choice: "HPO(choice(" layer ("," layer)* "))"
 
     """
     return  lark.Lark(grammar, start=[start_rule], parser='lalr', lexer='contextual', cache=False)
@@ -1223,6 +1231,31 @@ class ModelTransformer(lark.Transformer):
         layer_name = self._extract_value(items[0])
         custom_dims = self._extract_value(items[1])
         return {"type": "CustomShape", "layer": layer_name, "custom_dims": custom_dims}
+
+### Automatic Hyperparameters Optimization ###
+
+    def hpo_expr(self, items):
+        return {"hpo": items[0]}
+
+    def hpo_choice(self, items):
+        return {"type": "categorical", "values": [self._extract_value(x) for x in items]}
+
+    def hpo_range(self, items):
+        start = self._extract_value(items[0])
+        end = self._extract_value(items[1])
+        step = self._extract_value(items[2]) if len(items) > 2 else 1
+        return {"type": "range", "start": start, "end": end, "step": step}
+
+    def hpo_log_range(self, items):
+        low = self._extract_value(items[0])
+        high = self._extract_value(items[1])
+        return {"type": "log_range", "low": low, "high": high}
+
+### Neural Architecture Search ###
+
+    def layer_choice(self, items):
+        return {"hpo_type": "layer_choice", "options": items}
+
 
 ### Frameworks Detection ###
     def parse_network(self, config: str, framework: str = 'auto'):

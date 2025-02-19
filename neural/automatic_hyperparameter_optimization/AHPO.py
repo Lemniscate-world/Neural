@@ -41,21 +41,24 @@ def train_model(model, optimizer, train_loader, device='cpu', epochs=1):
     return total_loss
 
 def objective(trial):
-    # Suggest hyperparameters
-    batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
-    optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "SGD"])
-    learning_rate = trial.suggest_loguniform("learning_rate", 0.0001, 0.1)
-
-    # Get training data with the specified batch_size
-    train_loader = get_data(batch_size)
-
-    # Instantiate model and optimizer
-    model = TestModel()
-    optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=learning_rate)
+    # Parse the DSL config (assume `model_config` is loaded)
+    parsed_model = ModelTransformer().parse_network(model_config)
     
-    # Train the model for 1 epoch (adjust as needed)
-    loss = train_model(model, optimizer, train_loader, epochs=1)
+    # Suggest hyperparameters based on HPO nodes
+    hpo_params = extract_hpo_params(parsed_model)  # Traverse layers/training config
     
+    # Example: Dynamically suggest parameters
+    for param in hpo_params:
+        if param["type"] == "categorical":
+            trial.suggest_categorical(param["name"], param["values"])
+        elif param["type"] == "range":
+            trial.suggest_int(param["name"], param["start"], param["end"], step=param["step"])
+        elif param["type"] == "log_range":
+            trial.suggest_float(param["name"], param["low"], param["high"], log=True)
+    
+    # Build model and train
+    model = build_model(parsed_model)  # Use parsed layers/optimizer
+    loss = train_model(model, ...)
     return loss
 
 # Run HPO
