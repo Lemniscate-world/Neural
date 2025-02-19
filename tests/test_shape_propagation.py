@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from neural.shape_propagator import propagate_shape, calculate_shape_propagation
+from neural.neural.shape_propagator import propagate
 
 def test_shape_propagation():
     input_shape = (28, 28, 1)
