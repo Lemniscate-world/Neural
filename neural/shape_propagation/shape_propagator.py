@@ -18,7 +18,9 @@ class ShapePropagator:
         self.param_aliases = {
             'Conv2D': {'filters': 'out_channels', 'kernel_size': 'kernel_size'},
             'BatchNormalization': {'axis': 'dim'},
-            'Dense': {'units': 'out_features'}
+            'Dense': {'units': 'out_features'},
+            'LSTM': {'units': 'hidden_size'},
+            'BatchNormalization': {'momentum': 'decay'}
         }
         
         # Initialize visualization
@@ -91,9 +93,24 @@ class ShapePropagator:
         
         # Reconstruct full shape
         if data_format == 'channels_first':
-            return (input_shape[0], params['out_channels'], *output_shape)
-        return (input_shape[0], *output_shape, params['out_channels'])
+            return (input_shape[0], params['filters'], *output_shape)
+        return (input_shape[0], *output_shape, params['filters'])
 
+    def _handle_maxpooling2d(self, input_shape, params):
+        pool_size = params['pool_size']
+        stride = params.get('stride', pool_size)
+        return (
+            input_shape[0], 
+            input_shape[1], 
+            input_shape[2]//stride, 
+            input_shape[3]//stride
+        )
+    
+    def _handle_flatten(self, input_shape, params):
+        return (np.prod(input_shape),)
+
+    def _handle_dense(self, input_shape, params):
+        return (params['units'],)
 
     # Handle default helper
     def _handle_default(self, input_shape, params):
@@ -183,8 +200,10 @@ class ShapeValidator:
     @staticmethod
     def _validate_dense(input_shape, params):
         if len(input_shape) > 2:
-            raise ValueError(f"Dense layers only accept 2D input. Got {len(input_shape)}D")
-
+            raise ValueError(
+                f"Dense layer expects 2D input (batch, features). "
+                f"Got {len(input_shape)}D: {input_shape}"
+            )
 # Unified parameter handling for TF/PyTorch
 FRAMEWORK_DEFAULTS = {
     'tensorflow': {
