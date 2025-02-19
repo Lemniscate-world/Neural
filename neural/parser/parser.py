@@ -359,9 +359,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Automatic Hyperparameters Optimization
         hpo_expr: "HPO(" (hpo_choice | hpo_range | hpo_log_range) ")"
         hpo_choice: "choice(" value ("," value)* ")"
-        hpo_range: "range(" number "," number ("," step=number)? ")"
+        hpo_range: "range(" number "," number ("," "step="number)? ")"
         hpo_log_range: "log_range(" number "," number ")"
-        value: ... | hpo_expr  
+
 
         // Neural Architecture Search
         layer_choice: "HPO(choice(" layer ("," layer)* "))"

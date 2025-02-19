@@ -8,6 +8,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-green.svg)](https://www.python.org/)
 [![Discord](https://img.shields.io/badge/Chat-Discord-7289DA)](https://discord.gg/your-invite-link)
+[![Pylint](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pylint.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pylint.yml)
+[![Python package](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/python-package.yml)
+[![CodeQL Advanced](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml/badge.svg)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml)
 
 Neural is a domain-specific language (DSL) designed for defining, training, and deploying neural networks. With **declarative syntax** and **cross-framework support**, it simplifies building complex architectures while automating error-prone tasks like shape validation.
 
