@@ -594,9 +594,8 @@ class ModelTransformer(lark.Transformer):
     ### Pooling Layers #############################
 
     def pooling(self, items):
-        if isinstance(items, dict):
-            return {'type': items['type'], 'params': items}
-        return {'type': self._extract_value(items[0]), 'params': self._extract_value(items[0])}
+        # Simply return the child rule's result (like max_pooling2d's output)
+        return items[0]
     
     def max_pooling(self, items):
         return self._extract_value(items[0])
