@@ -450,24 +450,39 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Conv1D', 'params': items[0]}
 
     def conv2d(self, items):
-        param_style = items[0]
+        # Flatten all items into a single list of values.
+        # Each item can be a Tree, a Token, or even a list.
+        flattened = []
+        for item in items:
+            val = self._extract_value(item)
+            if isinstance(val, list):
+                flattened.extend(val)
+            else:
+                flattened.append(val)
+
+        # Separate ordered parameters from named parameters.
+        ordered = []
+        named = {}
+        for v in flattened:
+            # If the value is a dict, assume it's a named parameter.
+            if isinstance(v, dict):
+                named.update(v)
+            else:
+                ordered.append(v)
+
         params = {}
-        if isinstance(param_style, list):
-            # Process ordered parameters
-            ordered_params = [self._extract_value(p) for p in param_style if not isinstance(p, dict)]
-            if ordered_params:
-                params['filters'] = ordered_params[0]
-            if len(ordered_params) > 1:
-                params['kernel_size'] = ordered_params[1]
-            if len(ordered_params) > 2:
-                params['activation'] = ordered_params[2]
-            # Merge any named parameters
-            for item in param_style:
-                if isinstance(item, dict):
-                    params.update(item)
-        elif isinstance(param_style, dict):
-            params = param_style.copy()
+        if ordered:
+            params['filters'] = ordered[0]
+        if len(ordered) > 1:
+            params['kernel_size'] = ordered[1]
+        if len(ordered) > 2:
+            params['activation'] = ordered[2]
+
+        # Named parameters override the ordered ones if present.
+        params.update(named)
+        
         return {'type': 'Conv2D', 'params': params}
+
 
     def conv3d(self, items):
         return {'type': 'Conv3D', 'params': items[0]}
