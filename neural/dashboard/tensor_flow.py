@@ -2,6 +2,8 @@ import networkx as nx
 import plotly.graph_objects as go
 
 def create_animated_network(layer_data):
+    if not layer_data:
+        return go.Figure()
     G = nx.DiGraph()
     positions = {}
     

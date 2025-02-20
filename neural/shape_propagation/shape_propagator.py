@@ -1,6 +1,7 @@
 import logging
 import json
 import time
+import torch
 import numpy as np
 import plotly.graph_objects as go
 from graphviz import Digraph
@@ -39,12 +40,14 @@ class ShapePropagator:
 
         start_time = time.time()  # Measure execution time
 
-        # Compute FLOPs & memory usage
-        flops, mem_usage = self._compute_performance(layer, input_shape, output_shape)
-
+        
         
         output_shape = self._process_layer(input_shape, layer, framework)
         prev_layer = self.current_layer - 1 if self.current_layer > 0 else None
+
+        # Compute FLOPs & memory usage
+        flops, mem_usage = self._compute_performance(layer, input_shape, output_shape)
+
 
         # Capture nntrace log
         trace_entry = {
@@ -363,7 +366,10 @@ def get_framework_params(framework):
 ### Real-Time Shape Visualization ###
 def get_shape_data(self):
         """Returns shape history as JSON."""
-        return json.dumps(self.shape_history)
+        return json.dumps([
+        {"layer": layer[0], "output_shape": layer[1]} 
+        for layer in self.shape_history
+    ])
 
 def _calculate_shape(self, input_shape, layer):
     if layer["type"] == "Dense":
@@ -435,3 +441,18 @@ def detect_activation_anomalies(layer, input, output):
         "mean_activation": mean_activation,
         "anomaly": has_nan or is_exploding
     }
+
+
+######################
+### Step Debugging ###
+######################
+def step_debug_hook(module, input, output):
+    """Pauses execution at this layer for manual debugging."""
+    print(f"Paused at layer: {module.__class__.__name__}")
+    print(f"Input shape: {input[0].shape}, Output shape: {output.shape}")
+
+    # Wait for user input before continuing
+    input("Press Enter to continue...")
+
+for layer in model.children():
+    layer.register_forward_hook(step_debug_hook)
