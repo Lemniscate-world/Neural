@@ -319,3 +319,22 @@ def _calculate_shape(self, input_shape, layer):
     elif layer["type"] == "Flatten":
         return (input_shape[0], np.prod(input_shape[1:]))
     return input_shape
+
+### Compute FLOPs and memory usage for visualization ###
+def compute_flops_params(layer, input_shape):
+    """Estimate FLOPs and parameter counts for a given layer."""
+    if layer["type"] == "Dense":
+        units = layer["params"]["units"]
+        params = input_shape[1] * units + units  # Weights + biases
+        flops = 2 * params  # Two operations per weight (multiply + add)
+    
+    elif layer["type"] == "Conv2D":
+        filters = layer["params"]["filters"]
+        kernel_size = layer["params"]["kernel_size"]
+        stride = layer["params"].get("stride", 1)
+        params = (kernel_size[0] * kernel_size[1] * input_shape[-1] + 1) * filters
+        output_height = (input_shape[1] - kernel_size[0]) // stride + 1
+        output_width = (input_shape[2] - kernel_size[1]) // stride + 1
+        flops = params * output_height * output_width
+    
+    return params, flops
