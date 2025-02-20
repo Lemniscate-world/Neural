@@ -149,5 +149,71 @@ def update_graph(selected_model):
     return create_animated_network(shape_data)
 
 
+
+###########################
+### Gradient Flow Panel ###
+###########################
+@app.callback(
+    Output("gradient_flow_chart", "figure"),
+    Input("interval_component", "n_intervals")
+)
+def update_gradient_chart(n):
+    """Visualizes gradient flow per layer."""
+    response = requests.get("http://localhost:5001/trace")
+    trace_data = response.json()
+    
+    layers = [entry["layer"] for entry in trace_data]
+    grad_norms = [entry.get("grad_norm", 0) for entry in trace_data]
+
+    fig = go.Figure([go.Bar(x=layers, y=grad_norms, name="Gradient Magnitude")])
+    fig.update_layout(title="Gradient Flow", xaxis_title="Layers", yaxis_title="Gradient Magnitude")
+    
+    return fig
+
+#########################
+### Dead Neuron Panel ###
+#########################
+@app.callback(
+    Output("dead_neuron_chart", "figure"),
+    Input("interval_component", "n_intervals")
+)
+def update_dead_neurons(n):
+    """Displays percentage of dead neurons per layer."""
+    response = requests.get("http://localhost:5001/trace")
+    trace_data = response.json()
+
+    layers = [entry["layer"] for entry in trace_data]
+    dead_ratios = [entry.get("dead_ratio", 0) for entry in trace_data]
+
+    fig = go.Figure([go.Bar(x=layers, y=dead_ratios, name="Dead Neurons (%)")])
+    fig.update_layout(title="Dead Neuron Detection", xaxis_title="Layers", yaxis_title="Dead Ratio", yaxis_range=[0, 1])
+    
+    return fig
+
+##############################
+### Anomaly Detection Panel###
+##############################
+@app.callback(
+    Output("anomaly_chart", "figure"),
+    Input("interval_component", "n_intervals")
+)
+def update_anomaly_chart(n):
+    """Visualizes unusual activations per layer."""
+    response = requests.get("http://localhost:5001/trace")
+    trace_data = response.json()
+
+    layers = [entry["layer"] for entry in trace_data]
+    activations = [entry.get("mean_activation", 0) for entry in trace_data]
+    anomalies = [1 if entry.get("anomaly", False) else 0 for entry in trace_data]
+
+    fig = go.Figure([
+        go.Bar(x=layers, y=activations, name="Mean Activation"),
+        go.Bar(x=layers, y=anomalies, name="Anomaly Detected", marker_color="red")
+    ])
+    fig.update_layout(title="Activation Anomalies", xaxis_title="Layers", yaxis_title="Activation Magnitude")
+    
+    return fig
+
+
 if __name__ == "__main__":
     app.run_server(debug=True)
