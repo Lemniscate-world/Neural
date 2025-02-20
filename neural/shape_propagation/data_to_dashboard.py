@@ -86,4 +86,4 @@ def send_trace_update():
 
 if __name__ == "__main__":
     socketio.run(server, debug=True, port=5001)
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8050)

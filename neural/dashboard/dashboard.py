@@ -9,6 +9,9 @@ import requests
 from flask_socketio import SocketIO
 import threading
 
+from neural.shape_propagation.shape_propagator import ShapePropagator, propagate
+from neural.dashboard.tensor_flow import create_animated_network
+
 # Flask app for WebSocket integration (if needed later)
 server = Flask(__name__)
 
@@ -48,7 +51,7 @@ def fetch_trace_data():
     global trace_data
     response = requests.get("http://localhost:5001/trace")  # Ensure `data_to_dashboard.py` is running
     if response.status_code == 200:
-        trace_data = response.json()
+        return go.Figure()
 
 # Start WebSocket in a Separate Thread
 threading.Thread(target=socketio.run, args=("localhost", 5001), daemon=True).start()
@@ -143,11 +146,10 @@ def update_graph(selected_model):
     if selected_model == "A":
         layers = [{"type": "Conv2D", "params": {"filters": 32}}, {"type": "Dense", "params": {"units": 128}}]
     else:
-        layers = [{"type": "Dense", "params": {"units": 256"}}]
+        layers = [{"type": "Dense", "params": {"units": 256}}]
 
-    shape_data = propagate_shapes(layers)
+    shape_data = propagate(layers)
     return create_animated_network(shape_data)
-
 
 
 ###########################
@@ -213,6 +215,20 @@ def update_anomaly_chart(n):
     fig.update_layout(title="Activation Anomalies", xaxis_title="Layers", yaxis_title="Activation Magnitude")
     
     return fig
+
+###########################
+### Step Debugger Button###
+###########################
+@app.callback(
+    Output("step_debug_output", "children"),
+    Input("step_debug_button", "n_clicks")
+)
+def trigger_step_debug(n):
+    """Manually pauses execution at a layer."""
+    if n:
+        requests.get("http://localhost:5001/trigger_step_debug")
+        return "Paused. Check terminal for tensor inspection."
+    return "Click to pause execution."
 
 
 if __name__ == "__main__":
