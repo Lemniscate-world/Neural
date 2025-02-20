@@ -162,6 +162,14 @@ class ShapePropagator:
         else:
             return (params['units'],)
 
+    def _handle_output(self, input_shape, params):
+        # Preserves the batch dimension and converts the feature dimension to the number of output units.
+        if len(input_shape) >= 2:
+            return (input_shape[0], params['units'])
+        else:
+            return (params['units'],)
+
+
     # Handle default helper
     def _handle_default(self, input_shape, params):
         # Default handler for unsupported layers
