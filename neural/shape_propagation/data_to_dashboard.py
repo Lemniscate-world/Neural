@@ -84,8 +84,6 @@ def send_trace_update():
         socketio.emit("trace_update", json.dumps(trace_data))
         time.sleep(1)  # Send updates every second
 
-
-
 if __name__ == "__main__":
     socketio.run(server, debug=True, port=5001)
     app.run_server(debug=True)
