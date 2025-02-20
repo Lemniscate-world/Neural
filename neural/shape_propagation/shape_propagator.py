@@ -140,15 +140,19 @@ class ShapePropagator:
         return (
             input_shape[0], 
             input_shape[1], 
-            input_shape[2]//stride, 
-            input_shape[3]//stride
+            input_shape[2]//stride_h, 
+            input_shape[3]//stride_w
         )
     
     def _handle_flatten(self, input_shape, params):
         return (np.prod(input_shape),)
 
     def _handle_dense(self, input_shape, params):
-        return (params['units'],)
+        # If input_shape has two or more dimensions, preserve the batch dimension.
+        if len(input_shape) >= 2:
+            return (input_shape[0], params['units'])
+        else:
+            return (params['units'],)
 
     # Handle default helper
     def _handle_default(self, input_shape, params):
