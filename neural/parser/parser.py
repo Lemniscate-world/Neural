@@ -516,9 +516,10 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'GraphConv', 'params': params}
     
+    ### Loss Parameters ###
+
     def loss(self, items):
-        # items[0] is the literal "loss", items[1] is the COLON token, and items[2] is the STRING token.
-        return items[1].value.strip('"')
+        return items[0].value.strip('"')
 
 
     ### Optimization ##############
@@ -872,12 +873,7 @@ class ModelTransformer(lark.Transformer):
         # Ensure output_layer exists
         output_layer = next((layer for layer in reversed(items[2]) 
                         if layer['type'] == 'Output'), None)
-        if not output_layer:
-            output_layer = {
-                'type': 'Output',
-                'params': {'units': 1, 'activation': 'linear'}
-            }
-            items[2].append(output_layer)
+        
 
         output_shape = output_layer.get('params', {}).get('units')
         if output_shape is not None:
