@@ -361,7 +361,6 @@ def get_framework_params(framework):
     return FRAMEWORK_DEFAULTS.get(framework.lower(), FRAMEWORK_DEFAULTS['tensorflow'])
 
 ### Real-Time Shape Visualization ###
-
 def get_shape_data(self):
         """Returns shape history as JSON."""
         return json.dumps(self.shape_history)
@@ -393,3 +392,46 @@ def compute_flops_params(layer, input_shape):
         flops = params * output_height * output_width
     
     return params, flops
+
+#######################################
+### Gradient Flow Visualization #######
+#######################################
+def register_gradient_hooks(model):
+    """Attaches hooks to capture gradient magnitudes during backprop."""
+    gradient_trace = []
+
+    def hook(module, grad_input, grad_output):
+        if grad_output[0] is not None:
+            grad_norm = grad_output[0].detach().abs().mean().item()
+            gradient_trace.append({"layer": module.__class__.__name__, "grad_norm": grad_norm})
+
+    for layer in model.children():
+        layer.register_backward_hook(hook)
+
+    return gradient_trace
+
+#####################################
+### Dead Neurons Detection ##########
+#####################################
+def detect_dead_neurons(layer, input, output):
+    """Detects inactive neurons (dead neurons)."""
+    dead_neurons = (output.detach() == 0).sum().item()
+    total_neurons = output.numel()
+    dead_ratio = dead_neurons / total_neurons
+
+    return {"layer": layer.__class__.__name__, "dead_ratio": dead_ratio}
+
+######################################
+### Activation Anomalies Detection ###
+######################################
+def detect_activation_anomalies(layer, input, output):
+    """Flags NaNs, extremely high activations, or overflows."""
+    mean_activation = output.detach().abs().mean().item()
+    has_nan = torch.isnan(output).sum().item() > 0
+    is_exploding = mean_activation > 1000  # Arbitrary threshold for huge activations
+
+    return {
+        "layer": layer.__class__.__name__,
+        "mean_activation": mean_activation,
+        "anomaly": has_nan or is_exploding
+    }
