@@ -12,7 +12,8 @@
 [![Python package](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/python-package.yml)
 [![CodeQL Advanced](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml/badge.svg)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml)
 
-Neural is a domain-specific language (DSL) designed for defining, training, and deploying neural networks. With **declarative syntax** and **cross-framework support**, it simplifies building complex architectures while automating error-prone tasks like shape validation.
+Neural is a domain-specific language (DSL) designed for defining, training, debugging, and deploying neural networks. With **declarative syntax**, **cross-framework support**, and **built-in execution tracing (NeuralDbg)**, it simplifies deep learning development.
+
 
 ![Network Visualization Demo]()  
 *Example: Auto-generated architecture diagram and shape propagation report*
@@ -25,6 +26,17 @@ Neural is a domain-specific language (DSL) designed for defining, training, and 
 - **Training Orchestration**: Configure optimizers, schedulers, and metrics in one place.
 - **Visual Debugging**: Render interactive 3D architecture diagrams.
 - **Extensible**: Add custom layers/losses via Python plugins.
+
+### **🛠 NeuralDbg: Built-in Neural Network Debugger**
+NeuralDbg provides **real-time execution tracing, profiling, and debugging**, allowing you to visualize and analyze deep learning models in action.
+
+✅ **Real-Time Execution Monitoring** – Track activations, gradients, memory usage, and FLOPs.  
+✅ **Shape Propagation Debugging** – Visualize tensor transformations at each layer.  
+✅ **Gradient Flow Analysis** – Detect **vanishing & exploding gradients**.  
+✅ **Dead Neuron Detection** – Identify inactive neurons in deep networks.  
+✅ **Anomaly Detection** – Spot **NaNs, extreme activations, and weight explosions**.  
+✅ **Step Debugging Mode** – Pause execution and inspect tensors manually.
+
 
 ## 📦 Installation
 
@@ -89,6 +101,46 @@ python neural.py visualize mnist.neural --format png
 ```
 ![MNIST Architecture]()
 
+
+---
+
+## **🛠 Debugging with NeuralDbg**
+
+### **🔹 1️⃣ Start Real-Time Execution Tracing**
+```bash
+python neural.py debug mnist.neural
+```
+**Features:**  
+✅ Layer-wise execution trace  
+✅ Memory & FLOP profiling  
+✅ Live performance monitoring  
+
+### **🔹 2️⃣ Analyze Gradient Flow**
+```bash
+python neural.py debug --gradients mnist.neural
+```
+🚀 **Detect vanishing/exploding gradients** with interactive charts.
+
+### **🔹 3️⃣ Identify Dead Neurons**
+```bash
+python neural.py debug --dead-neurons mnist.neural
+```
+🛠 **Find layers with inactive neurons (common in ReLU networks).**
+
+### **🔹 4️⃣ Detect Training Anomalies**
+```bash
+python neural.py debug --anomalies mnist.neural
+```
+🔥 **Flag NaNs, weight explosions, and extreme activations.**
+
+### **🔹 5️⃣ Step Debugging (Interactive Tensor Inspection)**
+```bash
+python neural.py debug --step mnist.neural
+```
+🔍 **Pause execution at any layer and inspect tensors manually.**
+
+---
+
 ## 🌟 Why Neural?
 
 | Feature               | Neural      | Raw TensorFlow/PyTorch |
@@ -104,6 +156,10 @@ Explore advanced features:
 - [Custom Layers Guide]()
 - [ONNX Export Tutorial]()
 - [Training Configuration]()
+- [NeuralDbg Debugging Features]()
+
+---
+
 
 ## 🤝 Contributing
 
@@ -123,4 +179,4 @@ pre-commit install  # Auto-format code on commit
 ## 📬 Community
 
 - [Discord Server](https://discord.gg/your-invite-link): Chat with developers
-- [Twitter @NeuralLang](https://twitter.com/NeuralLang): Updates & announcements
+- [Twitter @NLang4438](https://x.com/NLang4438): Updates & announcements
