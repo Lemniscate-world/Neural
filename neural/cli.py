@@ -102,7 +102,10 @@ def visualize(file, format):
 
     # Propagate shapes
     propagator = ShapePropagator()
-    input_shape = (1, 28, 28, 1)  # Default input shape
+    input_shape = model_data['input']['shape']  # Get from parsed model
+    if not input_shape:
+        click.echo("Error: Input shape not defined in model!")
+        sys.exit(1) 
     shape_history = []
 
     for layer in model_data['layers']:
