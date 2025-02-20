@@ -1,9 +1,11 @@
 import dash
+import time
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import json
 import plotly.graph_objects as go
-from flask import Flask
+from flask import Flask, jsonify, request
+from flask_socketio import SocketIO
 
 from neural.shape_propagation.shape_propagator import ShapePropagator
 
@@ -25,6 +27,7 @@ for layer in layers:
 # Flask server
 server = Flask(__name__)
 app = dash.Dash(__name__, server=server)
+socketio = SocketIO(server, cors_allowed_origins="*")
 
 app.layout = html.Div([
     html.H1("Neural Shape Propagation Dashboard"),
@@ -67,5 +70,22 @@ def update_graph(n):
     fig.update_layout(title="Shape Propagation", showlegend=False)
     return fig
 
+### NNTRACE DATA ###
+@server.route("/trace", methods=["GET"])
+def get_nntrace():
+    """API endpoint to fetch the latest execution trace for dashboard."""
+    return jsonify(propagator.get_trace())
+
+@socketio.on("request_trace_update")
+def send_trace_update():
+    """Streams real-time execution traces to the dashboard via WebSockets."""
+    while True:
+        trace_data = propagator.get_trace()
+        socketio.emit("trace_update", json.dumps(trace_data))
+        time.sleep(1)  # Send updates every second
+
+
+
 if __name__ == "__main__":
+    socketio.run(server, debug=True, port=5001)
     app.run_server(debug=True)
