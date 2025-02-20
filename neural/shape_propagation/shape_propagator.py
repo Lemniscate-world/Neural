@@ -93,24 +93,34 @@ class ShapePropagator:
         """    
         data_format = params['data_format']
         channels_dim = 1 if data_format == 'channels_first' else 3
-        
+
         # Handle kernel_size as tuple or integer
         kernel = params['kernel_size']
         if isinstance(kernel, int):
-            kernel = (kernel,) * len(input_shape[2:])  # Repeat for all spatial dims
+            kernel = (kernel,) * len(input_shape[2:])  # Expand to spatial dimensions
         elif isinstance(kernel, tuple):
             if len(kernel) != len(input_shape[2:]):
-                raise ValueError("Kernel size must match number of spatial dimensions")
-        
+                raise ValueError("Kernel size must match spatial dimensions")
+
         stride = params.get('stride', 1)
         padding = self._calculate_padding(params, input_shape[channels_dim])
-        
-        # Calculate output shape per spatial dimension
+
+        # Ensure padding is a tuple matching spatial dimensions
+        if isinstance(padding, int):
+            padding = (padding,) * len(kernel)
+        elif isinstance(padding, (list, tuple)):
+            if len(padding) != len(kernel):
+                raise ValueError(f"Padding length {len(padding)} != kernel dimensions {len(kernel)}")
+            padding = tuple(padding)
+        else:
+            raise TypeError(f"Invalid padding type: {type(padding)}")
+
+        # Calculate output shape per dimension (dim, k, pad)
         output_shape = [
-            (dim + 2*padding - k) // stride + 1 
-            for dim, k in zip(input_shape[2:], kernel)  # Pair dim with kernel
+            (dim + 2*pad - k) // stride + 1
+            for dim, k, pad in zip(input_shape[2:], kernel, padding)
         ]
-        
+
         # Reconstruct full shape
         if data_format == 'channels_first':
             return (input_shape[0], params['filters'], *output_shape)
