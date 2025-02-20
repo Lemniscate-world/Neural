@@ -130,6 +130,13 @@ class ShapePropagator:
     def _handle_maxpooling2d(self, input_shape, params):
         pool_size = params['pool_size']
         stride = params.get('stride', pool_size)
+
+        # If stride is a tuple, unpack it; otherwise, use the same stride for both dimensions.
+        if isinstance(stride, (tuple, list)):
+            stride_h, stride_w = stride
+        else:
+            stride_h = stride_w = stride
+
         return (
             input_shape[0], 
             input_shape[1], 
