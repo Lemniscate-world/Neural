@@ -32,14 +32,11 @@ class ShapePropagator:
                 layer: Dict[str, Any], 
                 framework: str = 'tensorflow') -> Tuple[Optional[int], ...]:
         
-        # Store initial shape
-        self._log_shape(input_shape, 'input')
-        self._visualize_layer('input', input_shape)
-        
         output_shape = self._process_layer(input_shape, layer, framework)
-        
-        self._log_shape(output_shape, 'output')
-        self._create_connection('input', layer['type'])
+        prev_layer = self.current_layer - 1 if self.current_layer > 0 else None
+        self._visualize_layer(layer['type'], output_shape)  # Creates node and increments self.current_layer
+        if prev_layer is not None:
+            self._create_connection(prev_layer, self.current_layer - 1)  # Connect previous to current
         return output_shape
 
     def _process_layer(self, input_shape, layer, framework):
@@ -52,10 +49,6 @@ class ShapePropagator:
             output_shape = getattr(self, handler_name)(input_shape, params)
         else:
             output_shape = self._handle_default(input_shape, params)
-        
-        # Visualization
-        self._visualize_layer(layer_type, output_shape)
-        self._create_connection(self.current_layer-1, self.current_layer)
         return output_shape
 
     def _standardize_params(self, params, layer_type, framework):

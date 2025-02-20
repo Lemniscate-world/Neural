@@ -24,17 +24,13 @@ def test_conv2d_shape():
 # Test 2: Test MaxPooling2D propagation (channels_last)
 def test_maxpooling2d_shape():
     propagator = ShapePropagator()
-    input_shape = (1, 28, 28, 32)
+    input_shape = (1, 28, 28, 32)  # channels_last
     layer = {
-        "type": "MaxPooling2D", 
-        "params": {
-            "pool_size": (2, 2)
-        }
+        "type": "MaxPooling2D",
+        "params": {"pool_size": (2, 2), "data_format": "channels_last"}
     }
     output_shape = propagator.propagate(input_shape, layer, framework="tensorflow")
-    # For channels_last, height and width should be halved; channels remain same.
-    # Expected: (1, 14, 14, 32)
-    assert output_shape == (1, 14, 14, 32)
+    assert output_shape == (1, 14, 14, 32)  # Correct output
 
 # Test 3: Test Flatten layer preserves batch dimension
 def test_flatten_shape():
@@ -88,6 +84,7 @@ def test_complete_network_propagation():
 def test_visualization_report():
     propagator = ShapePropagator(debug=True)
     input_shape = (1, 28, 28, 1)
+    propagator._visualize_layer('Input', input_shape)  # Visualize initial input
     layers = [
         {"type": "Conv2D", "params": {"filters": 32, "kernel_size": (3, 3), "padding": "same", "stride": 1}},
         {"type": "MaxPooling2D", "params": {"pool_size": (2, 2)}},
@@ -95,18 +92,15 @@ def test_visualization_report():
         {"type": "Dense", "params": {"units": 128}},
         {"type": "Output", "params": {"units": 10}}
     ]
+    current_shape = input_shape
     for layer in layers:
-        input_shape = propagator.propagate(input_shape, layer, framework="tensorflow")
+        current_shape = propagator.propagate(current_shape, layer, framework="tensorflow")
     
     report = propagator.generate_report()
-    # The report should have keys for 'dot_graph', 'plotly_chart', and 'shape_history'
     assert "dot_graph" in report
     assert "plotly_chart" in report
     assert "shape_history" in report
-    # And shape_history should record one entry per propagated layer plus the initial input.
-    # In our network, we visualize the initial input plus each layer.
-    # Here, we expect 1 (input) + 5 (layers) = 6 entries.
-    assert len(report["shape_history"]) == 6
+    assert len(report["shape_history"]) == 6  # Input + 5 layers
 
 if __name__ == "__main__":
     pytest.main([__file__])
