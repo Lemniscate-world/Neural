@@ -1,4 +1,5 @@
 import logging
+import json
 import numpy as np
 import plotly.graph_objects as go
 from graphviz import Digraph
@@ -304,3 +305,17 @@ FRAMEWORK_DEFAULTS = {
 def get_framework_params(framework):
     return FRAMEWORK_DEFAULTS.get(framework.lower(), FRAMEWORK_DEFAULTS['tensorflow'])
 
+### Real-Time Shape Visualization ###
+
+def get_shape_data(self):
+        """Returns shape history as JSON."""
+        return json.dumps(self.shape_history)
+
+def _calculate_shape(self, input_shape, layer):
+    if layer["type"] == "Dense":
+        return (input_shape[0], layer["params"]["units"])
+    elif layer["type"] == "Conv2D":
+        return (input_shape[0], input_shape[1], input_shape[2], layer["params"]["filters"])
+    elif layer["type"] == "Flatten":
+        return (input_shape[0], np.prod(input_shape[1:]))
+    return input_shape
