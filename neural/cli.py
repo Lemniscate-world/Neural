@@ -84,7 +84,7 @@ def visualize(file, format):
     """
     from neural.shape_propagation.shape_propagator import ShapePropagator
     from neural.parser.parser import create_parser
-    from neural.tensor_flow import create_animated_network
+    from neural.dashboard.tensor_flow import create_animated_network
 
     # Parse input file
     ext = os.path.splitext(file)[1].lower()

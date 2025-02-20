@@ -13,7 +13,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'neural=cli:cli',  # This creates the "neural" CLI command.
+            'neural=neural.cli:cli',  # This creates the "neural" CLI command.
         ],
     },
 )
