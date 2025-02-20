@@ -92,18 +92,21 @@ class ShapePropagator:
             tuple: Output tensor shape.
         """    
         data_format = params['data_format']
-        channels_dim = 1 if data_format == 'channels_first' else 3
+        if data_format == 'channels_first':
+            spatial_dims = input_shape[2:]  # (height, width)
+        else:  # channels_last
+            spatial_dims = input_shape[1:3]  # (height, width)
 
         # Handle kernel_size as tuple or integer
         kernel = params['kernel_size']
         if isinstance(kernel, int):
-            kernel = (kernel,) * len(input_shape[2:])  # Expand to spatial dimensions
+            kernel = (kernel,) * len(spatial_dims)
         elif isinstance(kernel, tuple):
-            if len(kernel) != len(input_shape[2:]):
+            if len(kernel) != len(spatial_dims):
                 raise ValueError("Kernel size must match spatial dimensions")
 
         stride = params.get('stride', 1)
-        padding = self._calculate_padding(params, input_shape[channels_dim])
+        padding = self._calculate_padding(params, input_shape[1] if data_format=='channels_last' else input_shape[2])
 
         # Ensure padding is a tuple matching spatial dimensions
         if isinstance(padding, int):
@@ -115,18 +118,18 @@ class ShapePropagator:
         else:
             raise TypeError(f"Invalid padding type: {type(padding)}")
 
-        # Calculate output shape per dimension (dim, k, pad)
-        output_shape = [
+        # Calculate output shape per spatial dimension
+        output_spatial = [
             (dim + 2*pad - k) // stride + 1
-            for dim, k, pad in zip(input_shape[2:], kernel, padding)
+            for dim, k, pad in zip(spatial_dims, kernel, padding)
         ]
 
         # Reconstruct full shape
         if data_format == 'channels_first':
-            return (input_shape[0], params['filters'], *output_shape)
-        return (input_shape[0], *output_shape, params['filters'])
-
-
+            return (input_shape[0], params['filters'], *output_spatial)
+        else:
+            return (input_shape[0], *output_spatial, params['filters'])
+        
     def _handle_maxpooling2d(self, input_shape, params):
         pool_size = params['pool_size']
         stride = params.get('stride', pool_size)
