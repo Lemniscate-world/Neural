@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from graphviz import Digraph
 from typing import Dict, Tuple, Optional, Any, List
 
-from parser.parser import ModelTransformer
+from neural.parser.parser import ModelTransformer
 
 class ShapePropagator:
     
