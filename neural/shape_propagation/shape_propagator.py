@@ -132,21 +132,27 @@ class ShapePropagator:
             return (input_shape[0], *output_spatial, params['filters'])
         
     def _handle_maxpooling2d(self, input_shape, params):
+        data_format = params.get('data_format', 'channels_last')
         pool_size = params['pool_size']
         stride = params.get('stride', pool_size)
 
-        # If stride is a tuple, unpack it; otherwise, use the same stride for both dimensions.
+        # Handle stride as tuple or integer
         if isinstance(stride, (tuple, list)):
             stride_h, stride_w = stride
         else:
             stride_h = stride_w = stride
 
-        return (
-            input_shape[0], 
-            input_shape[1], 
-            input_shape[2]//stride_h, 
-            input_shape[3]//stride_w
-        )
+        # Calculate spatial dimensions based on data format
+        if data_format == 'channels_last':
+            # TensorFlow: input_shape = (batch, height, width, channels)
+            new_height = input_shape[1] // stride_h
+            new_width = input_shape[2] // stride_w
+            return (input_shape[0], new_height, new_width, input_shape[3])
+        else:
+            # PyTorch: input_shape = (batch, channels, height, width)
+            new_height = input_shape[2] // stride_h
+            new_width = input_shape[3] // stride_w
+            return (input_shape[0], input_shape[1], new_height, new_width)
     
     def _handle_flatten(self, input_shape, params):
         # If there is a batch dimension, keep it.
