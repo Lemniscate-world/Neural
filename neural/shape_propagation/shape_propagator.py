@@ -1,5 +1,6 @@
 import logging
 import json
+import time
 import numpy as np
 import plotly.graph_objects as go
 from graphviz import Digraph
@@ -14,6 +15,7 @@ class ShapePropagator:
         self.shape_history = []
         self.layer_connections = []
         self.current_layer = 0
+        self.execution_trace = []  # Stores nntrace logs
         
         # Framework compatibility mappings
         self.param_aliases = {
@@ -31,13 +33,67 @@ class ShapePropagator:
     def propagate(self, input_shape: Tuple[Optional[int], ...], 
                 layer: Dict[str, Any], 
                 framework: str = 'tensorflow') -> Tuple[Optional[int], ...]:
+        """Processes a layer and logs shape changes for nntrace."""
+        layer_type = layer["type"]
+        params = layer.get("params", {})
+
+        start_time = time.time()  # Measure execution time
+
+        # Compute FLOPs & memory usage
+        flops, mem_usage = self._compute_performance(layer, input_shape, output_shape)
+
         
         output_shape = self._process_layer(input_shape, layer, framework)
         prev_layer = self.current_layer - 1 if self.current_layer > 0 else None
+
+        # Capture nntrace log
+        trace_entry = {
+            "layer": layer_type,
+            "input_shape": input_shape,
+            "output_shape": output_shape,
+            "flops": flops,
+            "memory": mem_usage,
+            "execution_time": time.time() - start_time, 
+        }
+        self.execution_trace.append(trace_entry)
+
+        # Store shape history for visualization
+        self.shape_history.append((layer_type, output_shape))
+
+        if self.debug:
+            print(f"TRACE: {trace_entry}")  # Debugging output
+
         self._visualize_layer(layer['type'], output_shape)  # Creates node and increments self.current_layer
         if prev_layer is not None:
             self._create_connection(prev_layer, self.current_layer - 1)  # Connect previous to current
         return output_shape
+
+### Performance Computation ###
+
+    def _compute_performance(self, layer, input_shape, output_shape):
+        """Estimates FLOPs and memory usage for nntrace."""
+        layer_type = layer["type"]
+        params = layer.get("params", {})
+
+        # Compute FLOPs
+        if layer_type == "Dense":
+            flops = input_shape[1] * output_shape[1] * 2  # Multiply + Add
+        elif layer_type == "Conv2D":
+            kernel_size = params.get("kernel_size", (3, 3))
+            filters = params.get("filters", 1)
+            flops = (kernel_size[0] * kernel_size[1] * input_shape[-1]) * filters * np.prod(output_shape[1:-1])
+        else:
+            flops = 0  # Default
+
+        # Estimate memory usage
+        memory_usage = np.prod(output_shape) * 4 / (1024 ** 2)  # Convert to MB
+
+        return flops, memory_usage
+
+### Send execution trace data to the dashboard ###
+    def get_trace(self):
+        """Returns execution trace data for the dashboard."""
+        return self.execution_trace
 
     def _process_layer(self, input_shape, layer, framework):
         layer_type = layer['type']
