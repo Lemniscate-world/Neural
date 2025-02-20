@@ -154,7 +154,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         number_or_none: number | "NONE" | "None"
 
         // Layers section - contains all layer definitions separated by newlines
-        layers: "layers" ":" _NL* layer+ _NL*
+        layers: "layers" ":" _NL* (layer _NL*)*
 
         // All possible layer types that can be used in the network
         ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_ )  
@@ -325,8 +325,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         // Loss and optimizer specifications
-        COLON: ":"
-        loss: "loss" COLON STRING 
+        loss: "loss" ":" (NAME | STRING) ["(" named_params ")"]
         optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"] 
         schedule: NAME "(" params ")"
         params: [value ("," value)*]
@@ -450,38 +449,49 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Conv1D', 'params': items[0]}
 
     def conv2d(self, items):
-        # Flatten all items into a single list of values.
-        # Each item can be a Tree, a Token, or even a list.
-        flattened = []
-        for item in items:
-            val = self._extract_value(item)
-            if isinstance(val, list):
-                flattened.extend(val)
+        # Recursively flatten a tree or list of items into a single list.
+        def flatten(item):
+            if isinstance(item, list):
+                result = []
+                for sub in item:
+                    result.extend(flatten(sub))
+                return result
+            elif isinstance(item, Tree):
+                return flatten(item.children)
             else:
-                flattened.append(val)
+                return [item]
 
-        # Separate ordered parameters from named parameters.
-        ordered = []
-        named = {}
-        for v in flattened:
-            # If the value is a dict, assume it's a named parameter.
-            if isinstance(v, dict):
-                named.update(v)
+        # Flatten the parameter tree.
+        flat_items = flatten(items[0])
+        
+        # Filter out any tokens that are just the literal "Conv2D"
+        flat_items = [it for it in flat_items if not (isinstance(it, Token) and it.type == "NAME" and it.value == "Conv2D")]
+
+        ordered_params = []
+        named_params = {}
+        
+        # Process each flattened item:
+        for item in flat_items:
+            value = self._extract_value(item)
+            if isinstance(value, dict):
+                named_params.update(value)
             else:
-                ordered.append(v)
-
+                ordered_params.append(value)
+        
         params = {}
-        if ordered:
-            params['filters'] = ordered[0]
-        if len(ordered) > 1:
-            params['kernel_size'] = ordered[1]
-        if len(ordered) > 2:
-            params['activation'] = ordered[2]
-
-        # Named parameters override the ordered ones if present.
-        params.update(named)
+        if ordered_params:
+            params['filters'] = ordered_params[0]
+        if len(ordered_params) > 1:
+            params['kernel_size'] = ordered_params[1]
+        if len(ordered_params) > 2:
+            params['activation'] = ordered_params[2]
+        
+        # Named parameters override any ordered ones
+        params.update(named_params)
         
         return {'type': 'Conv2D', 'params': params}
+
+
 
 
     def conv3d(self, items):
@@ -814,9 +824,6 @@ class ModelTransformer(lark.Transformer):
 
     def accuracy_param(self, items):
         return {'accuracy': self._extract_value(items[0])}
-
-    def loss_param(self, items):
-        return {'loss': self._extract_value(items[0])}
 
     def precision_param(self, items):
         return {'precision': self._extract_value(items[0])}
