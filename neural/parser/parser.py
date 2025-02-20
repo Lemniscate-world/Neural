@@ -207,14 +207,14 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Pooling layer parameters
         pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
         max_pooling: max_pooling1d | max_pooling2d | max_pooling3d
-        max_pooling1d: "MaxPooling1D" "(" param_style1 ")"
-        max_pooling2d: "MaxPooling2D" "(" param_style1 ")"
-        max_pooling3d: "MaxPooling3D" "(" param_style1 ")"
+        max_pooling1d: "MaxPooling1D" "(" named_params ")"
+        max_pooling2d: "MaxPooling2D" "(" named_params ")"
+        max_pooling3d: "MaxPooling3D" "(" named_params ")"
         pool_size : "pool_size" "=" value
         average_pooling: average_pooling1d | average_pooling2d | average_pooling3d
-        average_pooling1d: "AveragePooling1D(" param_style1 ")"
-        average_pooling2d: "AveragePooling2D(" param_style1 ")"
-        average_pooling3d: "AveragePooling3D(" param_style1 ")"
+        average_pooling1d: "AveragePooling1D(" named_params ")"
+        average_pooling2d: "AveragePooling2D(" named_params ")"
+        average_pooling3d: "AveragePooling3D(" named_params ")"
         global_pooling: global_max_pooling | global_average_pooling
         global_max_pooling: global_max_pooling1d | global_max_pooling2d | global_max_pooling3d
         global_max_pooling1d: "GlobalMaxPooling1D(" named_params ")"
