@@ -874,12 +874,12 @@ class ModelTransformer(lark.Transformer):
         output_layer = next((layer for layer in reversed(items[2]) 
                         if layer['type'] == 'Output'), None)
         
-
-        output_shape = output_layer.get('params', {}).get('units')
-        if output_shape is not None:
-            output_shape = (output_shape,)
-        elif output_shape.get() == str:
-            raise ValueError
+        output_shape = {}
+        if output_layer is None:
+            output_shape is None
+        elif output_layer is not None:
+            output_shape = output_layer.get('params', {}).get('units')
+        
         
 
         return {
