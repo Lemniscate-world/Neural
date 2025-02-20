@@ -145,7 +145,15 @@ class ShapePropagator:
         )
     
     def _handle_flatten(self, input_shape, params):
-        return (np.prod(input_shape),)
+        # If there is a batch dimension, keep it.
+        if len(input_shape) >= 1:
+            batch = input_shape[0]
+            # Multiply all dimensions after the batch dimension
+            flattened = np.prod(input_shape[1:])
+            return (batch, flattened)
+        else:
+            return (np.prod(input_shape),)
+
 
     def _handle_dense(self, input_shape, params):
         # If input_shape has two or more dimensions, preserve the batch dimension.
