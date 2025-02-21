@@ -19,10 +19,13 @@ def test_app():
 
 def test_update_trace_graph():
     """Ensures execution trace visualization updates correctly."""
+    global trace_data
+
     test_data = [
         {"layer": "Conv2D", "execution_time": 0.001},
         {"layer": "Dense", "execution_time": 0.005},
     ]
+    trace_data = test_data
     fig = update_trace_graph(1)
     
     assert len(fig.data) == 1  # Should contain one bar graph
