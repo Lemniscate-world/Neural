@@ -201,3 +201,17 @@ def test_model_comparison():
     assert fig_a is not None
     assert fig_b is not None
     assert fig_a != fig_b  # Different architectures should have different graphs
+
+##################
+### Empty Data ###
+##################
+
+@patch('neural.dashboard.dashboard.trace_data', [])
+def test_update_trace_graph_empty():
+    fig = update_trace_graph(1)
+    assert len(fig.data) == 0  # Expect empty figure
+    fig.write_html("test_trace_graph_empty.html")
+    try:
+        fig.write_image("test_trace_graph_empty.png")
+    except Exception as e:
+        print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
