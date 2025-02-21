@@ -32,7 +32,8 @@ def cli():
 @click.argument('file', type=click.Path(exists=True))
 @click.option('--backend', default='tensorflow', help='Target backend: tensorflow or pytorch', type=click.Choice(['tensorflow', 'pytorch']))
 @click.option('--verbose', is_flag=True, help='Show verbose output')
-def compile(file, backend, verbose):
+@click.option('--output', default=None, help='Output file path for generated code or visualizations')
+def compile(file, backend, verbose, output):
     """
     Compile a .neural or .nr file into an executable Python script.
     
@@ -69,7 +70,7 @@ def compile(file, backend, verbose):
         sys.exit(1)
 
     code = generate_code(model_data, backend)
-    output_file = os.path.splitext(file)[0] + f"_{backend}.py"
+    output_file = output or os.path.splitext(file)[0] + f"_{backend}.py"
     with open(output_file, 'w') as f:
         f.write(code)
     click.echo(f"Compiled {file} to {output_file} for backend {backend}")
