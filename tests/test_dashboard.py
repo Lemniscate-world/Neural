@@ -371,3 +371,21 @@ def test_update_trace_graph_large_data():
     # Assertions
     assert len(fig.data) == 1
     assert len(list(fig.data[0].x)) == 200  # 100 Conv2D + 100 Dense
+
+@patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
+def test_update_trace_graph_thresholds_annotations():
+    """Ensures bar chart with thresholds includes correct annotations."""
+    figs = update_trace_graph(1, "thresholds", ["Conv2D", "Dense"])
+    fig = figs[0]
+    
+    # Save visualization
+    fig.write_html("test_trace_graph_thresholds_annotations.html")
+    try:
+        fig.write_image("test_trace_graph_thresholds_annotations.png")
+    except Exception as e:
+        print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
+    
+    # Assertions
+    assert len(fig.data) == 1
+    assert len(fig.layout.annotations) == 1  # Only Dense should have an annotation (execution_time > 0.003)
+    assert fig.layout.annotations[0].text == "High: 0.005s"
