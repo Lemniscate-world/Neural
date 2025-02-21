@@ -372,6 +372,11 @@ def update_resource_graph(n):
 # Custom Theme
 app = Dash(__name__, external_stylesheets=[themes.DARKLY])  # Darkly theme for Dash Bootstrap
 
+# Custom CSS for additional styling
+app.css.append_css({
+    "external_url": "https://custom-theme.com/neural.css"  # Create this file or use inline CSS
+})
+
 
 ########################
 ### Principal Layout ###
