@@ -3,6 +3,9 @@
   ![Design sans titre (1) (1)](https://github.com/user-attachments/assets/cb351971-ba3d-4391-9401-25cf2ccfeca9)
 
 
+## Status
+Neural-dsl v0.1.0 is live on PyPI (`pip install neural-dsl`)! It’s a work-in-progress with bugs—see [CHANGELOG.md](CHANGELOG.md) for details. Feedback welcome!
+
 # Neural: A Neural Network Programming Language
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
