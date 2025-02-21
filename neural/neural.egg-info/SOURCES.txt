@@ -1,3 +1,4 @@
+README.md
 setup.py
 neural.egg-info/PKG-INFO
 neural.egg-info/SOURCES.txt

@@ -1,7 +1,7 @@
 import dash
 from dash import Dash, dcc, html
 import numpy as np
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 from flask import Flask
 from numpy import random
@@ -23,7 +23,7 @@ server = Flask(__name__)
 app = dash.Dash(__name__, server=server)
 
 # Initialize WebSocket Connection
-socketio = SocketIO(cors_allowed_origins="*")
+socketio = SocketIO(server, cors_allowed_origins=["http://localhost:8050"])
 
 # Configuration (load from config.yaml or set defaults)
 UPDATE_INTERVAL = 1000  # Default 1 second in milliseconds, configurable via env var or config file
@@ -365,7 +365,8 @@ def update_resource_graph(n):
         title="Resource Monitoring",
         xaxis_title="Resource",
         yaxis_title="Usage (%)",
-        template="plotly_white"
+        template="plotly_dark",
+        height=400
     )
     return [fig]
 
@@ -376,6 +377,11 @@ app = Dash(__name__, external_stylesheets=[themes.DARKLY])  # Darkly theme for D
 app.css.append_css({
     "external_url": "https://custom-theme.com/neural.css"  # Create this file or use inline CSS
 })
+
+###############################
+### 
+
+
 
 
 ########################

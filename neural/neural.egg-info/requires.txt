@@ -1,2 +1,12 @@
-lark
 click
+lark-parser
+dash
+plotly
+flask
+flask-socketio
+requests
+torch
+tensorflow
+onnx
+psutil
+graphviz
