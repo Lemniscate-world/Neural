@@ -90,23 +90,42 @@ network MNISTClassifier {
 }
 ```
 
-### 2. Generate Framework Code
+### 3. Run Or Compile The Model
 
 ```bash
-# For TensorFlow
-python neural.py compile mnist.neural --backend tensorflow --output mnist_tf.py
-
-# For PyTorch
-python neural.py compile mnist.neural --backend pytorch --output mnist_torch.py
+neural run mnist.neural --backend tensorflow --output mnist_tf.py
+# Or for PyTorch:
+neural run mnist.neural --backend pytorch --output mnist_torch.py
 ```
-
-### 3. Visualize Architecture
 
 ```bash
-python neural.py visualize mnist.neural --format png
+neural compile mnist.neural --backend tensorflow --output mnist_tf.py
+# Or for PyTorch:
+neural compile mnist.neural --backend pytorch --output mnist_torch.py
 ```
+
+### 4. Visualize Architecture
+
+```bash
+neural visualize mnist.neural --format png
+```
+This will create architecture.png, shape_propagation.html, and tensor_flow.html for inspecting the network structure and shape propagation.
+
 ![MNIST Architecture]()
 
+### 5. Debug with NeuralDbg
+
+```bash
+neural debug mnist.neural
+```
+Open your browser to http://localhost:8050 to monitor execution traces, gradients, and anomalies interactively.
+
+### 6. Use The No-Code Interface
+
+```bash
+neural --no_code
+```
+Open your browser to http://localhost:8051 to build and compile models via a graphical interface.
 
 ---
 
