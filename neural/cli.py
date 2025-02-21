@@ -7,14 +7,6 @@ import logging
 import hashlib
 import shutil
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-try:
-    tree = parser_instance.parse(content)
-except Exception as e:
-    logger.error(f"Error parsing {file}: {e}")
-    sys.exit(1)
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,6 +14,16 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from neural.parser.parser import create_parser, ModelTransformer
 from neural.code_generation.code_generator import generate_code
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    parser_instance = create_parser("network")
+    tree = parser_instance.parse(content)
+except Exception as e:
+    logger.error(f"Error parsing {file}: {e}")
+    sys.exit(1)
 
 
 @click.group()
