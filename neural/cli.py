@@ -165,5 +165,19 @@ def visualize(file, format):
             - tensor_flow.html (Data flow animation)
             """)
 
+@cli.command()
+def clean():
+    """Remove generated files (e.g., .py, .png, .html, cache)."""
+    for ext in ['.py', '.png', '.html']:
+        for file in os.listdir('.'):
+            if file.endswith(ext):
+                os.remove(file)
+                click.echo(f"Removed {file}")
+    if os.path.exists(".neural_cache"):
+        shutil.rmtree(".neural_cache")
+        click.echo("Removed cache directory")
+
+
+
 if __name__ == '__main__':
     cli()
