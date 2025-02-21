@@ -102,8 +102,10 @@ class ShapePropagator:
         transfer_time = (np.prod(input_shape) + np.prod(output_shape)) * 4 / (1024 ** 3)  # Bytes to seconds (simplified)
 
         return flops, memory_usage, compute_time, transfer_time
-
+    
+##################################################
 ### Send execution trace data to the dashboard ###
+##################################################
     def get_trace(self):
         """Returns execution trace data for the dashboard."""
         return self.execution_trace
