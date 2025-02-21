@@ -22,12 +22,30 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov selenium webdriver-manager
 
-      - name: Run Tests with Coverage
+      - name: Install Chrome & ChromeDriver
+        run: |
+          sudo apt update
+          sudo apt install -y google-chrome-stable
+          sudo apt install -y chromedriver
+
+      - name: Start NeuralDbg Dashboard (Background)
+        run: |
+          python dashboard.py & sleep 5
+
+      - name: Run Backend Tests (Pytest)
         run: pytest --cov=neural --cov-report=xml
+
+      - name: Run UI Tests (Selenium)
+        run: pytest tests/ui_tests.py --disable-warnings
 
       - name: Upload Coverage Report to Codecov
         uses: codecov/codecov-action@v2
         with:
           files: ./coverage.xml
+
+      - name: Send Alert on Failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"🚨 Tests Failed in NeuralDbg CI! Check GitHub Actions for details."}' ${{ secrets.DISCORD_WEBHOOK_URL }}
