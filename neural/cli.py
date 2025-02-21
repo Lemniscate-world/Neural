@@ -3,6 +3,16 @@ import os
 import sys
 import subprocess
 import click
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    tree = parser_instance.parse(content)
+except Exception as e:
+    logger.error(f"Error parsing {file}: {e}")
+    sys.exit(1)
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
