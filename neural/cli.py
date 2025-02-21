@@ -292,5 +292,25 @@ def export(file, format, output):
     click.echo(f"Exported {file} to {output}")
 
 
+###############################
+### Hacky Mode for Debugger ###
+###############################
+
+@cli.command()
+@click.argument('file', type=click.Path(exists=True))
+@click.option('--hacky', is_flag=True, help='Run NeuralDbg in hacky mode for security analysis')
+def debug(file, hacky):
+  """Debug a neural network model with NeuralDbg."""
+  # ... Existing debug code ...
+  if hacky:
+      from neural.hacky import hacky_mode
+      click.echo("Running NeuralDbg in hacky mode...")
+      hacky_mode(propagator, model_data)
+  else:
+      # Normal debug mode
+      click.echo("Running NeuralDbg in normal mode...")
+
+
+
 if __name__ == '__main__':
     cli()
