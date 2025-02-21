@@ -3,6 +3,8 @@
   ![Design sans titre (1) (1)](https://github.com/user-attachments/assets/cb351971-ba3d-4391-9401-25cf2ccfeca9)
 
 
+Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
+
 # Neural: A Neural Network Programming Language
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
