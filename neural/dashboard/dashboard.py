@@ -161,6 +161,9 @@ app.layout = html.Div([
     Input("architecture_selector", "value")
 )
 def update_graph(selected_model):
+    # Initialize input shape (e.g., for a 28x28 RGB image)
+    input_shape = (1, 28, 28, 3)  # Batch, height, width, channels
+    
     if selected_model == "A":
         layers = [{"type": "Conv2D", "params": {"filters": 32}}, {"type": "Dense", "params": {"units": 128}}]
     else:
@@ -168,8 +171,9 @@ def update_graph(selected_model):
 
     propagator = ShapePropagator()
     for layer in layers:
-        input_shape = propagator.propagate(input_shape, layer, framework='tensorflow')
-    return create_animated_network(input_shape)
+        input_shape = propagator.propagate(input_shape, layer, framework='tensorflow')  # Update input shape
+    
+    return create_animated_network(propagator.shape_history)  # Pass shape history
 
 
 ###########################
@@ -249,6 +253,10 @@ def trigger_step_debug(n):
         requests.get("http://localhost:5001/trigger_step_debug")
         return "Paused. Check terminal for tensor inspection."
     return "Click to pause execution."
+
+########################
+### Principal Layout ###
+########################
 
 app.layout = html.Div([
     html.H1("NeuralDbg: Real-Time Execution Monitoring"),
