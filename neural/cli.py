@@ -30,6 +30,7 @@ def cli():
 @cli.command()
 @click.argument('file', type=click.Path(exists=True))
 @click.option('--backend', default='tensorflow', help='Target backend: tensorflow or pytorch', type=click.Choice(['tensorflow', 'pytorch']))
+@click.option('--verbose', is_flag=True, help='Show verbose output')
 def compile(file, backend):
     """
     Compile a .neural or .nr file into an executable Python script.
@@ -118,12 +119,11 @@ def visualize(file, format):
         sys.exit(1) 
     shape_history = []
 
-    for layer in model_data['layers']:
-        input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
-        shape_history.append({
-            "layer": layer['type'],
-            "output_shape": input_shape
-        })
+    with click.progressbar(length=len(model_data['layers']), label="Propagating shapes") as bar:
+        for layer in model_data['layers']:
+            input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
+            shape_history.append({"layer": layer['type'], "output_shape": input_shape})
+            bar.update(1)
 
     # Generate visualizations
     report = propagator.generate_report()
