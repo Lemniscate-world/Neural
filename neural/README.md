@@ -1,28 +1,3 @@
-Metadata-Version: 2.1
-Name: neural
-Version: 0.1.0
-Summary: A domain-specific language and debugger for neural networks
-Home-page: https://github.com/Lemniscate-SHA-256/Neural
-Author: Lemniscate-SHA-256/SENOUVO Jacques-Charles Gad
-Author-email: Lemniscate_zero@proton.me
-Classifier: Programming Language :: Python :: 3
-Classifier: License :: OSI Approved :: MIT License
-Classifier: Operating System :: OS Independent
-Requires-Python: >=3.8
-Description-Content-Type: text/markdown
-Requires-Dist: click
-Requires-Dist: lark-parser
-Requires-Dist: dash
-Requires-Dist: plotly
-Requires-Dist: flask
-Requires-Dist: flask-socketio
-Requires-Dist: requests
-Requires-Dist: torch
-Requires-Dist: tensorflow
-Requires-Dist: onnx
-Requires-Dist: psutil
-Requires-Dist: graphviz
-
 
 
   ![Design sans titre (1) (1)](https://github.com/user-attachments/assets/cb351971-ba3d-4391-9401-25cf2ccfeca9)
