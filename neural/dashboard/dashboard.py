@@ -1,5 +1,6 @@
 import dash
 from dash import dcc, html
+import numpy as np
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 from flask import Flask
@@ -88,6 +89,11 @@ def update_trace_graph(n):
     times = [entry["execution_time"] for entry in sorted_data]
     fig = go.Figure([go.Bar(x=times, y=layers, orientation="h", name="Execution Time")])
     fig.update_layout(title="Layer Execution Time (Sorted)", xaxis_title="Time (s)", yaxis_title="Layers")
+
+    # Box Plots for Variability
+    times_by_layer = {layer: [entry["execution_time"] for entry in trace_data if entry["layer"] == layer] for layer in set(entry["layer"] for entry in trace_data)}
+    fig = go.Figure([go.Box(x=list(times_by_layer.keys()), y=list(times_by_layer.values()), name="Execution Time")])
+    fig.update_layout(title="Layer Execution Time Variability", xaxis_title="Layers", yaxis_title="Time (s)")
 
     return fig
 
