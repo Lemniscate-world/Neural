@@ -34,6 +34,8 @@ Neural is a domain-specific language (DSL) designed for defining, training, debu
 NeuralDbg provides **real-time execution tracing, profiling, and debugging**, allowing you to visualize and analyze deep learning models in action.
 
 ✅ **Real-Time Execution Monitoring** – Track activations, gradients, memory usage, and FLOPs.  
+![test_trace_graph](https://github.com/user-attachments/assets/15b1edd2-2643-4587-9843-aa4697ed2e4b)
+
 ✅ **Shape Propagation Debugging** – Visualize tensor transformations at each layer.  
 ✅ **Gradient Flow Analysis** – Detect **vanishing & exploding gradients**.  
 ✅ **Dead Neuron Detection** – Identify inactive neurons in deep networks.  
