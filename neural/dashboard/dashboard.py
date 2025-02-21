@@ -57,6 +57,10 @@ def fetch_trace_data():
 # Start WebSocket in a Separate Thread
 threading.Thread(target=socketio.run, args=("localhost", 5001), daemon=True).start()
 
+#################################################
+#### Layers Execution Trace & Others Subplots ###
+#################################################
+
 @app.callback(
     Output("trace_graph", "figure"),
     Input("interval_component", "n_intervals")
