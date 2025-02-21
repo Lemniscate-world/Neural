@@ -76,6 +76,12 @@ def update_trace_graph(n):
     fig = go.Figure([go.Bar(x=layers, y=execution_time, name="Execution Time (s)")])
     fig.update_layout(title="Layer Execution Time", xaxis_title="Layers", yaxis_title="Time (s)")
     
+    # Stacked Bar Chart
+    fig = go.Figure([
+    go.Bar(x=layers, y=[entry["compute_time"] for entry in trace_data], name="Compute Time"),
+    go.Bar(x=layers, y=[entry["transfer_time"] for entry in trace_data], name="Data Transfer"),])
+    fig.update_layout(barmode="stack", title="Layer Execution Time Breakdown", xaxis_title="Layers", yaxis_title="Time (s)")
+
     return fig
 
 @app.callback(
