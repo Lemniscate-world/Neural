@@ -1,19 +1,37 @@
+# setup.py
 from setuptools import setup, find_packages
 
 setup(
-    name='neural',
-    version='0.1.0',
-    description='A neural network framework with native .neural and .nr file support',
-    author='Lemniscate-SHA-256',
-    packages=find_packages(where='.', exclude=["tests*", "docs"]),
+    name="neural-dsl",
+    version="0.1.0",
+    packages=find_packages(),
     install_requires=[
-        'lark',
-        'click',
-        # other dependencies like torch, tensorflow, etc. as needed
+        "click",
+        "lark-parser",
+        "dash",
+        "plotly",
+        "flask",
+        "flask-socketio",
+        "requests",
+        "torch",
+        "tensorflow",
+        "onnx",
+        "psutil",
+        "graphviz"
     ],
     entry_points={
-        'console_scripts': [
-            'neural=neural.cli:cli',  # This creates the "neural" CLI command.
-        ],
+        "console_scripts": ["neural=neural.cli:cli"]
     },
+    author="Lemniscate-SHA-256/SENOUVO Jacques-Charles Gad",
+    author_email="Lemniscate_zero@proton.me",
+    description="A domain-specific language and debugger for neural networks",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    url="https://github.com/Lemniscate-SHA-256/Neural",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    python_requires=">=3.8",
 )
