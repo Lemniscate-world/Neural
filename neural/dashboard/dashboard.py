@@ -95,6 +95,12 @@ def update_trace_graph(n):
     fig = go.Figure([go.Box(x=list(times_by_layer.keys()), y=list(times_by_layer.values()), name="Execution Time")])
     fig.update_layout(title="Layer Execution Time Variability", xaxis_title="Layers", yaxis_title="Time (s)")
 
+    # Gantt Chart for Timeline
+    fig = go.Figure()
+    for i, entry in enumerate(trace_data):
+        fig.add_trace(go.Bar(x=[i, i], y=[0, entry["execution_time"]], orientation="v", name=entry["layer"]))
+    fig.update_layout(title="Layer Execution Timeline", xaxis_title="Layers", yaxis_title="Time (s)")
+
     return fig
 
 @app.callback(
