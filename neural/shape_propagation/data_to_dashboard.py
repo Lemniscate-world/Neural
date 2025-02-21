@@ -83,6 +83,7 @@ def update_graph(n):
 try:
     with open("config.yaml", "r") as f:
         config = yaml.safe_load(f)
+        users = {config["auth"]["username"]: generate_password_hash(config["auth"]["password"])}
 except:
     config = {"username": "admin", "password": "default"}
 
