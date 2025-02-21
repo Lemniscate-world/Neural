@@ -4,6 +4,8 @@ import os
 # Add the parent directory of 'neural' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from selenium import webdriver
+from dash.testing import DashTest
 import pytest
 from unittest.mock import Mock
 from pytest import approx
@@ -424,3 +426,22 @@ def test_update_trace_graph_thresholds_annotations():
     assert len(fig.data) == 1
     assert len(fig.layout.annotations) == 1  # Only Dense should have an annotation (execution_time > 0.003)
     assert fig.layout.annotations[0].text == "High: 0.005s"
+
+
+####################################
+#### Testing Total Visualization ###
+####################################
+
+
+
+@pytest.fixture
+def driver():
+    driver = webdriver.Chrome()
+    yield driver
+    driver.quit()
+
+def test_dashboard_visualization(driver, dash_duo):
+    dash_duo.start_server(app)
+    driver.get("http://localhost:8050")
+    driver.save_screenshot("dashboard_full.png")
+    assert driver.title == "NeuralDbg: Real-Time Execution Monitoring"
