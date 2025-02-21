@@ -70,7 +70,9 @@ def update_graph(n):
     fig.update_layout(title="Shape Propagation", showlegend=False)
     return fig
 
-### NNTRACE DATA ###
+############################
+### NNTRACE DATA SENDING ###
+############################
 @server.route("/trace", methods=["GET"])
 def get_nntrace():
     """API endpoint to fetch the latest execution trace for dashboard."""
