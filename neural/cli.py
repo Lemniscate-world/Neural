@@ -272,6 +272,25 @@ def debug(file, gradients, dead_neurons, anomalies, step):
             input("Press Enter to continue...")
 
 
+######################
+### Export Command ###
+######################
+@cli.command()
+@click.argument('file', type=click.Path(exists=True))
+@click.option('--format', default='onnx', help='Export format: onnx')
+@click.option('--output', default='model.onnx', help='Output file path')
+def export(file, format, output):
+    """Export a neural network model to ONNX or other formats."""
+    from neural.parser.parser import create_parser
+    from neural.code_generation.code_generator import generate_code
+    parser_instance = create_parser('network' if os.path.splitext(file)[1].lower() in ['.neural', '.nr'] else 'research')
+    with open(file, 'r') as f:
+        content = f.read()
+    tree = parser_instance.parse(content)
+    model_data = ModelTransformer().transform(tree)
+    generate_code(model_data, format)
+    click.echo(f"Exported {file} to {output}")
+
 
 if __name__ == '__main__':
     cli()

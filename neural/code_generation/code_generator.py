@@ -2,6 +2,9 @@ from neural.shape_propagation.shape_propagator import ShapePropagator
 from neural.parser.parser import ModelTransformer
 from typing import Any, Dict, List, Tuple, Union, Optional, Callable
 import torch
+import onnx
+from onnx import helper
+
 
 def NUMBER(x):
     try:
@@ -337,6 +340,8 @@ def generate_code(model_data,backend):
             code += "# No training configuration provided. Training loop needs manual implementation.\n"
             return code
     
+    elif backend == "onnx":
+            return export_onnx(model_data, "model.onnx")
     else:
         raise ValueError(f"Unsupported backend: {backend}. Choose 'tensorflow' or 'pytorch'.")
 
@@ -369,3 +374,35 @@ def load_file(filename):
         return create_parser('rnr_file').parse(content)
     else:
         raise ValueError(f"Unsupported file type: {filename}")
+
+######################
+### Export to ONNX ###
+######################
+
+def generate_onnx(model_data):
+    """Generate ONNX model from model_data."""
+    graph = helper.make_graph(
+        nodes=[],
+        name="NeuralModel",
+        inputs=[helper.make_tensor_value_info("input", onnx.TensorProto.FLOAT, model_data['input']['shape'])],
+        outputs=[helper.make_tensor_value_info("output", onnx.TensorProto.FLOAT, model_data['output_shape'])],
+    )
+    model = helper.make_model(graph, producer_name="Neural")
+    for layer in model_data['layers']:
+        # Add ONNX nodes for each layer (simplified, needs full implementation)
+        if layer['type'] == 'Conv2D':
+            node = helper.make_node(
+                'Conv', ['input'], [f"conv_{layer['type']}"],
+                kernel_shape=layer['params']['kernel_size'],
+                pads=[0, 0, 0, 0],  # Adjust padding
+                strides=layer['params'].get('strides', [1, 1])
+            )
+            graph.node.append(node)
+    onnx.checker.check_model(model)
+    return model
+
+def export_onnx(model_data, filename="model.onnx"):
+    """Export model to ONNX format."""
+    model = generate_onnx(model_data)
+    onnx.save(model, filename)
+    print(f"ONNX model saved to {filename}")
