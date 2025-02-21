@@ -3,18 +3,11 @@ import json
 import socketio
 import requests
 from dash.dependencies import Input, Output
-import sys
-import os
-
-# Add the parent directory of 'neural' to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from neural.dashboard.dashboard import app, update_trace_graph, update_flops_memory_chart, update_gradient_chart, update_dead_neurons, update_anomaly_chart, update_graph
 from unittest.mock import MagicMock, patch
 from flask_socketio import SocketIOTestClient
 import plotly.graph_objects as go
 import numpy as np
-
 
 @pytest.fixture
 def test_app():
@@ -45,7 +38,8 @@ TRACE_DATA = [
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_basic():
     """Ensures basic bar chart in execution trace visualization updates correctly."""
-    fig = update_trace_graph(1, "basic", ["Conv2D", "Dense"])
+    figs = update_trace_graph(1, "basic", ["Conv2D", "Dense"])
+    fig = figs[0]  # Extract the Figure object from the list
     
     # Save visualization
     fig.write_html("test_trace_graph_basic.html")
@@ -62,7 +56,8 @@ def test_update_trace_graph_basic():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_stacked():
     """Ensures stacked bar chart in execution trace visualization updates correctly."""
-    fig = update_trace_graph(1, "stacked", ["Conv2D", "Dense"])
+    figs = update_trace_graph(1, "stacked", ["Conv2D", "Dense"])
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_trace_graph_stacked.html")
@@ -81,7 +76,8 @@ def test_update_trace_graph_stacked():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_horizontal():
     """Ensures horizontal sorted bar chart in execution trace visualization updates correctly."""
-    fig = update_trace_graph(1, "horizontal", ["Conv2D", "Dense"])
+    figs = update_trace_graph(1, "horizontal", ["Conv2D", "Dense"])
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_trace_graph_horizontal.html")
@@ -98,7 +94,8 @@ def test_update_trace_graph_horizontal():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_box():
     """Ensures box plot for variability in execution trace visualization updates correctly."""
-    fig = update_trace_graph(1, "box", ["Conv2D", "Dense"])
+    figs = update_trace_graph(1, "box", ["Conv2D", "Dense"])
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_trace_graph_box.html")
@@ -115,7 +112,8 @@ def test_update_trace_graph_box():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_gantt():
     """Ensures Gantt chart for timeline in execution trace visualization updates correctly."""
-    fig = update_trace_graph(1, "gantt", ["Conv2D", "Dense"])
+    figs = update_trace_graph(1, "gantt", ["Conv2D", "Dense"])
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_trace_graph_gantt.html")
@@ -132,7 +130,8 @@ def test_update_trace_graph_gantt():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_heatmap():
     """Ensures heatmap of execution time over time in execution trace visualization updates correctly."""
-    fig = update_trace_graph(1, "heatmap", ["Conv2D", "Dense"])
+    figs = update_trace_graph(1, "heatmap", ["Conv2D", "Dense"])
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_trace_graph_heatmap.html")
@@ -150,7 +149,8 @@ def test_update_trace_graph_heatmap():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_thresholds():
     """Ensures bar chart with thresholds in execution trace visualization updates correctly."""
-    fig = update_trace_graph(1, "thresholds", ["Conv2D", "Dense"])
+    figs = update_trace_graph(1, "thresholds", ["Conv2D", "Dense"])
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_trace_graph_thresholds.html")
@@ -168,7 +168,8 @@ def test_update_trace_graph_thresholds():
 @patch('neural.dashboard.dashboard.trace_data', [])
 def test_update_trace_graph_empty():
     """Ensures execution trace visualization handles empty data correctly."""
-    fig = update_trace_graph(1, "basic", [])
+    figs = update_trace_graph(1, "basic", [])
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_trace_graph_empty.html")
@@ -187,7 +188,8 @@ def test_update_trace_graph_empty():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_flops_memory_chart():
     """Ensures FLOPs and memory usage visualization updates correctly."""
-    fig = update_flops_memory_chart(1)
+    figs = update_flops_memory_chart(1)
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_flops_memory_chart.html")
@@ -210,7 +212,8 @@ def test_update_flops_memory_chart():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_gradient_chart():
     """Ensures gradient flow visualization updates correctly."""
-    fig = update_gradient_chart(1)
+    figs = update_gradient_chart(1)
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_gradient_chart.html")
@@ -231,7 +234,8 @@ def test_update_gradient_chart():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_dead_neurons():
     """Ensures dead neuron detection panel updates correctly."""
-    fig = update_dead_neurons(1)
+    figs = update_dead_neurons(1)
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_dead_neurons.html")
@@ -252,7 +256,8 @@ def test_update_dead_neurons():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_anomaly_chart():
     """Ensures anomaly detection updates correctly."""
-    fig = update_anomaly_chart(1)
+    figs = update_anomaly_chart(1)
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_anomaly_chart.html")
@@ -311,8 +316,10 @@ def test_websocket_connection():
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_model_comparison():
     """Verify model architecture comparison dropdown."""
-    fig_a = update_graph("A")
-    fig_b = update_graph("B")
+    figs_a = update_graph("A")
+    fig_a = figs_a[0]  # Extract the Figure object
+    figs_b = update_graph("B")
+    fig_b = figs_b[0]
     
     # Save visualizations
     fig_a.write_html("test_model_comparison_a.html")
@@ -338,13 +345,15 @@ def test_update_trace_graph_invalid_data():
     # Test with invalid data (missing fields)
     invalid_data = [{"layer": "Conv2D", "execution_time": "invalid"}]  # Non-numeric execution_time
     with patch('neural.dashboard.dashboard.trace_data', invalid_data):
-        fig = update_trace_graph(1, "basic", ["Conv2D"])
+        figs = update_trace_graph(1, "basic", ["Conv2D"])
+        fig = figs[0]
         assert len(fig.data) == 0  # Should return empty figure
 
 @patch('neural.dashboard.dashboard.trace_data', [d for d in TRACE_DATA for _ in range(100)])  # Large dataset
 def test_update_trace_graph_large_data():
     """Ensures execution trace visualization handles large datasets correctly."""
-    fig = update_trace_graph(1, "basic", None)
+    figs = update_trace_graph(1, "basic", None)
+    fig = figs[0]
     
     # Save visualization
     fig.write_html("test_trace_graph_large.html")
