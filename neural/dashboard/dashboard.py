@@ -260,6 +260,22 @@ def trigger_step_debug(n):
 
 app.layout = html.Div([
     html.H1("NeuralDbg: Real-Time Execution Monitoring"),
+
+    # Visualization Selector
+    dcc.Dropdown(
+        id="viz_type",
+        options=[
+            {"label": "Basic Bar Chart", "value": "basic"},
+            {"label": "Stacked Bar Chart", "value": "stacked"},
+            {"label": "Sorted Horizontal Bar", "value": "horizontal"},
+            {"label": "Box Plot (Variability)", "value": "box"},
+            {"label": "Gantt Chart (Timeline)", "value": "gantt"},
+            {"label": "Heatmap (Over Time)", "value": "heatmap"},
+            {"label": "Bar with Thresholds", "value": "thresholds"},
+        ],
+        value="basic",  # Default visualization
+        multi=False
+    ),
     
     # Execution Trace Visualization
     dcc.Graph(id="trace_graph"),
