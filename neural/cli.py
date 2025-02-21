@@ -223,5 +223,55 @@ def dashboard(file):
     threading.Thread(target=socketio.run, args=(server, "localhost", 5001), daemon=True).start()
     app.run_server(debug=True, port=8050)
 
+@cli.command()
+@click.argument('file', type=click.Path(exists=True))
+@click.option('--gradients', is_flag=True, help='Analyze gradient flow')
+@click.option('--dead-neurons', is_flag=True, help='Detect dead neurons')
+@click.option('--anomalies', is_flag=True, help='Detect training anomalies')
+@click.option('--step', is_flag=True, help='Enable step debugging')
+def debug(file, gradients, dead_neurons, anomalies, step):
+    """Debug a neural network model with NeuralDbg."""
+    from neural.shape_propagation.shape_propagator import ShapePropagator, register_gradient_hooks, detect_dead_neurons, detect_activation_anomalies, step_debug_hook
+    from neural.parser.parser import create_parser
+
+    parser_instance = create_parser('network' if os.path.splitext(file)[1].lower() in ['.neural', '.nr'] else 'research')
+    with open(file, 'r') as f:
+        content = f.read()
+    tree = parser_instance.parse(content)
+    model_data = ModelTransformer().transform(tree)
+    
+    propagator = ShapePropagator(debug=True)
+    input_shape = model_data['input']['shape']
+    for layer in model_data['layers']:
+        input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
+
+    trace_data = propagator.get_trace()
+    if gradients:
+        model = ...  # Load or create the PyTorch/TensorFlow model from model_data
+        gradient_trace = register_gradient_hooks(model)
+        click.echo("Gradient flow analysis:")
+        for entry in gradient_trace:
+            click.echo(f"Layer {entry['layer']}: grad_norm = {entry['grad_norm']}")
+    if dead_neurons:
+        # Simulate or integrate with model to detect dead neurons
+        click.echo("Dead neuron detection:")
+        for entry in trace_data:
+            if 'dead_ratio' in entry:
+                click.echo(f"Layer {entry['layer']}: dead_ratio = {entry['dead_ratio']}")
+    if anomalies:
+        click.echo("Anomaly detection:")
+        for entry in trace_data:
+            if 'anomaly' in entry:
+                click.echo(f"Layer {entry['layer']}: anomaly = {entry['anomaly']}, mean_activation = {entry['mean_activation']}")
+    if step:
+        # Implement step debugging (e.g., using hooks or breakpoints)
+        click.echo("Step debugging mode: Pausing at each layer. Press Enter to continue...")
+        for layer in model_data['layers']:
+            input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
+            click.echo(f"Paused at {layer['type']}: input_shape = {input_shape}")
+            input("Press Enter to continue...")
+
+
+
 if __name__ == '__main__':
     cli()
