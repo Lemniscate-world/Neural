@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html
+from dash import Dash, dcc, html
 import numpy as np
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
@@ -7,6 +7,7 @@ from flask import Flask
 from numpy import random
 import json
 import requests
+import time
 from flask_socketio import SocketIO
 import threading
 
@@ -24,23 +25,44 @@ app = dash.Dash(__name__, server=server)
 # Initialize WebSocket Connection
 socketio = SocketIO(cors_allowed_origins="*")
 
+# Configuration (load from config.yaml or set defaults)
+UPDATE_INTERVAL = 1000  # Default 1 second in milliseconds, configurable via env var or config file
+try:
+    import yaml
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+        UPDATE_INTERVAL = config.get("websocket_interval", 1000)
+except:
+    pass  # Use default if config file not found
+
+
 # Store Execution Trace Data
 trace_data = []
 
-# WebSocket Listener for Live Updates
-@socketio.on("trace_update")
-def update_trace_data(data):
-    global trace_data
-    trace_data = json.loads(data)
+############################################
+#### WebSocket Listener for Live Updates ###
+############################################
 
-# Fetch Initial Data from API
-def fetch_trace_data():
+@socketio.on("request_trace_update")
+def send_trace_update():
+    """Streams real-time execution traces to the dashboard via WebSockets with configurable interval."""
     global trace_data
-    response = requests.get("http://localhost:5001/trace")  # Ensure `data_to_dashboard.py` is running
-    if response.status_code == 200:
-        return go.Figure()
+    while True:
+        trace_data = propagator.get_trace()  # Assume propagator is global or passed
+        socketio.emit("trace_update", json.dumps(trace_data))
+        time.sleep(UPDATE_INTERVAL / 1000)  # Convert milliseconds to seconds
+
+@app.callback(
+    [Output("interval_component", "interval")],
+    [Input("update_interval", "value")]
+)
+
+def update_interval(new_interval):
+    """Update the interval dynamically based on slider value."""
+    return [new_interval]
 
 # Start WebSocket in a Separate Thread
+propagator = ShapePropagator()
 threading.Thread(target=socketio.run, args=("localhost", 5001), daemon=True).start()
 
 #################################################
@@ -317,6 +339,40 @@ def trigger_step_debug(n):
         return "Paused. Check terminal for tensor inspection."
     return "Click to pause execution."
 
+####################################
+### Resource Monitoring Callback ###
+####################################
+
+@app.callback(
+    [Output("resource_graph", "figure")],
+    [Input("interval_component", "n_intervals")]
+)
+def update_resource_graph(n):
+    """Visualize CPU/GPU usage, memory, and I/O bottlenecks."""
+    import psutil
+    import torch
+
+    cpu_usage = psutil.cpu_percent()
+    memory_usage = psutil.virtual_memory().percent
+    gpu_memory = 0
+    if torch.cuda.is_available():
+        gpu_memory = torch.cuda.memory_allocated() / (1024 ** 3)  # GB
+
+    fig = go.Figure([
+        go.Bar(x=["CPU", "Memory", "GPU"], y=[cpu_usage, memory_usage, gpu_memory], name="Resource Usage (%)"),
+    ])
+    fig.update_layout(
+        title="Resource Monitoring",
+        xaxis_title="Resource",
+        yaxis_title="Usage (%)",
+        template="plotly_white"
+    )
+    return [fig]
+
+# Custom Theme
+app = Dash(__name__, external_stylesheets=[themes.DARKLY])  # Darkly theme for Dash Bootstrap
+
+
 ########################
 ### Principal Layout ###
 ########################
@@ -338,6 +394,19 @@ app.layout = html.Div([
         ],
         value="basic",  # Default visualization
         multi=False
+
+    ),
+    dcc.Slider(
+        id="update_interval",
+        min=500, max=5000, step=500, value=UPDATE_INTERVAL,
+        marks={i: f"{i}ms" for i in range(500, 5500, 500)},
+        tooltip={"placement": "bottom", "always_visible": True}
+    ),
+    dcc.Dropdown(
+        id="layer_filter",
+        options=[{"label": l, "value": l} for l in ["Conv2D", "Dense"]],
+        multi=True,
+        value=["Conv2D", "Dense"]
     ),
     
     # Execution Trace Visualization
@@ -367,8 +436,12 @@ app.layout = html.Div([
     ),
     dcc.Graph(id="architecture_graph"),
     
-    # Interval for updates
-    dcc.Interval(id="interval_component", interval=1000, n_intervals=0)
+    # Resource Monitoring
+    html.H1("Resource Monitoring"),
+    dcc.Graph(id="resource_graph"),
+    
+    # Interval for updates (initial value, updated dynamically)
+    dcc.Interval(id="interval_component", interval=UPDATE_INTERVAL, n_intervals=0)
 ])
 
 if __name__ == "__main__":
