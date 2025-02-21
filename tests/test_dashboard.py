@@ -215,3 +215,18 @@ def test_update_trace_graph_empty():
         fig.write_image("test_trace_graph_empty.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
+
+######################
+### Large Datasets ###
+######################
+
+@patch('neural.dashboard.dashboard.trace_data', [{"layer": f"Layer_{i}", "execution_time": i * 0.001} for i in range(100)])
+def test_update_trace_graph_large_data():
+    fig = update_trace_graph(1)
+    assert len(fig.data) == 1
+    assert len(list(fig.data[0].x)) == 100
+    fig.write_html("test_trace_graph_large.html")
+    try:
+        fig.write_image("test_trace_graph_large.png")
+    except Exception as e:
+        print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
