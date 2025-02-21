@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO
 
-from neural.shape_propagation.shape_propagator import ShapePropagator
+from shape_propagator import ShapePropagator
 
 # Backend shape propagator instance
 propagator = ShapePropagator()

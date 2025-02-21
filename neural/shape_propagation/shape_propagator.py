@@ -7,7 +7,13 @@ import plotly.graph_objects as go
 from graphviz import Digraph
 from typing import Dict, Tuple, Optional, Any, List
 
-from neural.parser.parser import ModelTransformer
+import sys
+import os
+
+# Add the parent directory of 'neural' to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from parser.parser import ModelTransformer
 
 class ShapePropagator:
     
