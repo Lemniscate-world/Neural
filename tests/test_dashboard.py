@@ -220,11 +220,20 @@ def test_update_flops_memory_chart():
 ### 🛠 Test Gradient Flow Visualization ###
 ###########################################
 
-@patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
-def test_update_gradient_chart():
+@patch("requests.get")
+def test_update_gradient_chart(mock_get):
     """Ensures gradient flow visualization updates correctly."""
+    # Create a mock response with status_code, text, and json method
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.text = json.dumps(TRACE_DATA)  # Set the response text as a JSON string
+    mock_response.json.return_value = TRACE_DATA  # Ensure json() returns the data
+
+    # Configure the mock to return the mock response
+    mock_get.return_value = mock_response
+
     figs = update_gradient_chart(1)
-    fig = figs[0]
+    fig = figs[0]  # Extract the Figure object from the list
     
     # Save visualization
     fig.write_html("test_gradient_chart.html")
