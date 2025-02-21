@@ -196,6 +196,14 @@ Explore advanced features:
 - [Training Configuration]()
 - [NeuralDbg Debugging Features]()
 
+## 📚 Examples
+
+Explore common use cases in `examples/` with step-by-step guides in `docs/examples/`:
+- [MNIST Classifier Guide](docs/examples/mnist_guide.md)
+- [Sentiment Analysis Guide](docs/examples/sentiment_guide.md)
+- [Transformer for NLP Guide](docs/examples/transformer_guide.md)
+
+
 ---
 
 
