@@ -257,7 +257,7 @@ def update_gradient_chart(n):
     fig = go.Figure([go.Bar(x=layers, y=grad_norms, name="Gradient Magnitude")])
     fig.update_layout(title="Gradient Flow", xaxis_title="Layers", yaxis_title="Gradient Magnitude")
     
-    return fig
+    return [fig]
 
 #########################
 ### Dead Neuron Panel ###
