@@ -1,0 +1,18 @@
+ network MNISTClassifier {
+    input: (28, 28, 1)
+    layers:
+      Conv2D(filters=32, kernel_size=(3,3), activation="relu")
+      MaxPooling2D(pool_size=(2,2))
+      Flatten()
+      Dense(units=128, activation="relu")
+      Dropout(rate=0.5)
+      Output(units=10, activation="softmax")
+    
+    loss: "sparse_categorical_crossentropy"
+    optimizer: Adam(learning_rate=0.001)
+    train {
+      epochs: 15
+      batch_size: 64
+      validation_split: 0.2
+    }
+  }
