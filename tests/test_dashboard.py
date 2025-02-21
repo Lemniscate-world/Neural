@@ -5,6 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pytest
+from pytest import approx
 import json
 import socketio
 import requests
@@ -59,6 +60,10 @@ def test_update_trace_graph_basic():
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
     assert list(fig.data[0].y) == [0.001, 0.005]
 
+##########################
+### Stacked Bar Chart ####
+##########################
+
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_stacked():
     """Ensures stacked bar chart in execution trace visualization updates correctly."""
@@ -76,8 +81,8 @@ def test_update_trace_graph_stacked():
     assert len(fig.data) == 2
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
     assert list(fig.data[1].x) == ["Conv2D", "Dense"]
-    assert list(fig.data[0].y) == [0.0007, 0.0035]  # Compute times
-    assert list(fig.data[1].y) == [0.0003, 0.0015]  # Transfer times
+    assert list(fig.data[0].y) == approx([0.0007, 0.0035], rel=1e-7)  # Compute times
+    assert list(fig.data[1].y) == approx([0.0003, 0.0015], rel=1e-7)  # Transfer times
 
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_horizontal():
