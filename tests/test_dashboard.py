@@ -5,6 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pytest
+from unittest.mock import Mock
 from pytest import approx
 import json
 import socketio
@@ -251,9 +252,18 @@ def test_update_gradient_chart(mock_get):
 ### 🛠 Test Dead Neuron Detection Panel ###
 ###########################################
 
-@patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
-def test_update_dead_neurons():
+@patch("requests.get")
+def test_update_dead_neurons(mock_get):
     """Ensures dead neuron detection panel updates correctly."""
+    # Create a mock response with status_code, text, and json method
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.text = json.dumps(TRACE_DATA)  # Set the response text as a JSON string
+    mock_response.json.return_value = TRACE_DATA  # Ensure json() returns the data
+
+    # Configure the mock to return the mock response
+    mock_get.return_value = mock_response
+
     figs = update_dead_neurons(1)
     fig = figs[0]
     
@@ -273,9 +283,18 @@ def test_update_dead_neurons():
 ### 🛠 Test Anomaly Detection Panel ###
 ###########################################
 
-@patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
-def test_update_anomaly_chart():
+@patch("requests.get")
+def test_update_anomaly_chart(mock_get):
     """Ensures anomaly detection updates correctly."""
+    # Create a mock response with status_code, text, and json method
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.text = json.dumps(TRACE_DATA)  # Set the response text as a JSON string
+    mock_response.json.return_value = TRACE_DATA  # Ensure json() returns the data
+
+    # Configure the mock to return the mock response
+    mock_get.return_value = mock_response
+
     figs = update_anomaly_chart(1)
     fig = figs[0]
     
