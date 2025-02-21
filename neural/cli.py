@@ -192,5 +192,36 @@ def version():
     click.echo(f"Python: {sys.version}")
     click.echo(f"Click: {click.__version__}")
 
+########################################
+### Dashboard Integration Or Command ###
+########################################
+
+
+@cli.command()
+@click.argument('file', type=click.Path(exists=True))
+def dashboard(file):
+    """Launch the Neural dashboard for real-time monitoring of the model."""
+    from neural.dashboard.dashboard import app, server, socketio
+    from neural.shape_propagation.shape_propagator import ShapePropagator
+    from neural.parser.parser import create_parser
+
+    # Parse and propagate shapes to populate trace_data
+    parser_instance = create_parser('network' if os.path.splitext(file)[1].lower() in ['.neural', '.nr'] else 'research')
+    with open(file, 'r') as f:
+        content = f.read()
+    tree = parser_instance.parse(content)
+    model_data = ModelTransformer().transform(tree)
+    propagator = ShapePropagator()
+    input_shape = model_data['input']['shape']
+    for layer in model_data['layers']:
+        input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
+
+    # Update trace_data for the dashboard
+    import threading
+    global trace_data
+    trace_data = propagator.get_trace()
+    threading.Thread(target=socketio.run, args=(server, "localhost", 5001), daemon=True).start()
+    app.run_server(debug=True, port=8050)
+
 if __name__ == '__main__':
     cli()
