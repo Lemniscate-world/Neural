@@ -3,11 +3,18 @@ import json
 import socketio
 import requests
 from dash.dependencies import Input, Output
+import sys
+import os
+
+# Add the parent directory of 'neural' to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from neural.dashboard.dashboard import app, update_trace_graph, update_flops_memory_chart, update_gradient_chart, update_dead_neurons, update_anomaly_chart, update_graph
 from unittest.mock import MagicMock, patch
 from flask_socketio import SocketIOTestClient
 import plotly.graph_objects as go
 import numpy as np
+
 
 @pytest.fixture
 def test_app():
