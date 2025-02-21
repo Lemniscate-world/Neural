@@ -208,7 +208,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
         max_pooling: max_pooling1d | max_pooling2d | max_pooling3d
         max_pooling1d: "MaxPooling1D" "(" named_params ")"
-        max_pooling2d: "MaxPooling2D" "(" named_params ")"
+        max_pooling2d: "MaxPooling2D" "(" param_style1 ")"
         max_pooling3d: "MaxPooling3D" "(" named_params ")"
         pool_size : "pool_size" "=" value
         average_pooling: average_pooling1d | average_pooling2d | average_pooling3d
@@ -473,24 +473,24 @@ class ModelTransformer(lark.Transformer):
         # Process each flattened item:
         for item in flat_items:
             value = self._extract_value(item)
-            if isinstance(value, dict):
+            if isinstance(value, dict):  # Named parameter
                 named_params.update(value)
-            else:
+            else:  # Ordered parameter or value
                 ordered_params.append(value)
         
         params = {}
-        if ordered_params:
+        # Assign ordered parameters: filters, kernel_size, activation
+        if len(ordered_params) >= 1:
             params['filters'] = ordered_params[0]
-        if len(ordered_params) > 1:
+        if len(ordered_params) >= 2:
             params['kernel_size'] = ordered_params[1]
-        if len(ordered_params) > 2:
+        if len(ordered_params) >= 3:
             params['activation'] = ordered_params[2]
         
-        # Named parameters override any ordered ones
+        # Merge with named parameters (override if needed)
         params.update(named_params)
         
         return {'type': 'Conv2D', 'params': params}
-
 
 
 
@@ -785,8 +785,20 @@ class ModelTransformer(lark.Transformer):
     ### Everything Research ##################
 
     def research(self, items):
-        name = self._extract_value(items[0]) if items else None
-        params = self._extract_value(items[1]) if len(items) > 1 else {}
+        name = None
+        params = {}
+        
+        # Check if the first item is a NAME token (research name)
+        if items and isinstance(items[0], Token) and items[0].type == 'NAME':
+            name = self._extract_value(items[0])
+            # Remaining items are research_params
+            if len(items) > 1:
+                params = self._extract_value(items[1])
+        else:
+            # No name, all items are research_params
+            if items:
+                params = self._extract_value(items[0])
+        
         return {'type': 'Research', 'name': name, 'params': params}
     
     def research_params(self, items):

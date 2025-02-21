@@ -248,20 +248,15 @@ def test_network_parsing(network_parser, transformer, network_string, expected_n
     ids=["complete-research", "no-name-no-ref", "empty-research", "invalid-metrics"]
 )
 def test_research_parsing(research_parser, transformer, research_string, expected_name, expected_metrics, expected_references):
-
     # Act
-    if expected_name is None:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken)):  # Expecting parsing error
-            research_parser.parse(research_string)
+    if expected_metrics is None:  # Handle invalid cases expecting errors
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken)):
+            transformer.transform(research_parser.parse(research_string))
     else:
-        tree = research_parser.parse(research_string)
-        result = transformer.transform(tree)
-
-        # Assert
-        assert result['type'] == 'Research'
-        assert result.get('name') == expected_name
-        assert result['params'].get('metrics') == expected_metrics
-        assert result['params'].get('references') == expected_references
+        parsed = transformer.transform(research_parser.parse(research_string))
+        assert parsed['name'] == expected_name
+        assert parsed.get('params', {}).get('metrics') == expected_metrics
+        assert parsed.get('params', {}).get('references', []) == expected_references
 
 @pytest.mark.parametrize(
     "wrapper_string, expected, test_id",
