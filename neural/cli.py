@@ -310,6 +310,29 @@ def debug(file, hacky):
       # Normal debug mode
       click.echo("Running NeuralDbg in normal mode...")
 
+######################
+### Train Command ####
+######################
+@cli.command()
+@click.argument('file', type=click.Path(exists=True))
+@click.option('--backend', default='tensorflow', help='Target backend: tensorflow or pytorch')
+@click.option('--log-dir', default='runs/neural', help='TensorBoard log directory')
+def train(file, backend, log_dir):
+    """Train a neural network model and log to TensorBoard."""
+    from neural.parser.parser import create_parser
+    from neural.code_generation.code_generator import generate_code
+    parser_instance = create_parser('network' if os.path.splitext(file)[1].lower() in ['.neural', '.nr'] else 'research')
+    with open(file, 'r') as f:
+        content = f.read()
+    tree = parser_instance.parse(content)
+    model_data = ModelTransformer().transform(tree)
+    code = generate_code(model_data, backend)
+    output_file = f"model_{backend}.py"
+    save_file(output_file, code)
+    
+    subprocess.run([sys.executable, output_file], check=True)
+    click.echo(f"Training completed. Logs available in {log_dir}")
+
 
 
 if __name__ == '__main__':

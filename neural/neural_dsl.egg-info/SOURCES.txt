@@ -1,0 +1,8 @@
+README.md
+setup.py
+neural_dsl.egg-info/PKG-INFO
+neural_dsl.egg-info/SOURCES.txt
+neural_dsl.egg-info/dependency_links.txt
+neural_dsl.egg-info/entry_points.txt
+neural_dsl.egg-info/requires.txt
+neural_dsl.egg-info/top_level.txt
