@@ -17,21 +17,16 @@ def test_app():
 ### Test Execution Trace Visualization ###
 ##########################################
 
+@patch('neural.dashboard.dashboard.trace_data', [
+    {"layer": "Conv2D", "execution_time": 0.001},
+    {"layer": "Dense", "execution_time": 0.005},
+])
 def test_update_trace_graph():
-    """Ensures execution trace visualization updates correctly."""
-    global trace_data
-
-    test_data = [
-        {"layer": "Conv2D", "execution_time": 0.001},
-        {"layer": "Dense", "execution_time": 0.005},
-    ]
-    trace_data = test_data
     fig = update_trace_graph(1)
     
     assert len(fig.data) == 1  # Should contain one bar graph
     assert fig.data[0].x == ["Conv2D", "Dense"]  # Layers must match
     assert fig.data[0].y == [0.001, 0.005]  # Execution times must match
-
 ###########################################
 ### 🛠 Test FLOPs & Memory Visualization ###
 ###########################################
