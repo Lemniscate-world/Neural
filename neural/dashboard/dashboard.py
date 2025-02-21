@@ -82,6 +82,13 @@ def update_trace_graph(n):
     go.Bar(x=layers, y=[entry["transfer_time"] for entry in trace_data], name="Data Transfer"),])
     fig.update_layout(barmode="stack", title="Layer Execution Time Breakdown", xaxis_title="Layers", yaxis_title="Time (s)")
 
+    # Horizontal Bar Chart With Sorting
+    sorted_data = sorted(trace_data, key=lambda x: x["execution_time"], reverse=True)
+    layers = [entry["layer"] for entry in sorted_data]
+    times = [entry["execution_time"] for entry in sorted_data]
+    fig = go.Figure([go.Bar(x=times, y=layers, orientation="h", name="Execution Time")])
+    fig.update_layout(title="Layer Execution Time (Sorted)", xaxis_title="Time (s)", yaxis_title="Layers")
+
     return fig
 
 @app.callback(
