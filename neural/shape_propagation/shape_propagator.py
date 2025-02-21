@@ -3,6 +3,7 @@ import json
 import time
 import torch
 import numpy as np
+import psutil
 import plotly.graph_objects as go
 from graphviz import Digraph
 from typing import Dict, Tuple, Optional, Any, List
@@ -15,6 +16,30 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from parser.parser import ModelTransformer
 
+class PerformanceMonitor:
+    def __init__(self):
+        self.resource_history = []
+
+    def monitor_resources(self):
+        """Monitor CPU, memory, and GPU usage."""
+        cpu_usage = psutil.cpu_percent()
+        memory_usage = psutil.virtual_memory().percent
+        gpu_memory = 0
+        if torch.cuda.is_available():
+            gpu_memory = torch.cuda.memory_allocated() / (1024 ** 3)  # GB
+        io_counters = psutil.disk_io_counters()
+        io_usage = (io_counters.read_bytes + io_counters.write_bytes) / (1024 ** 2)  # MB
+
+        self.resource_history.append({
+            "timestamp": time.time(),
+            "cpu_usage": cpu_usage,
+            "memory_usage": memory_usage,
+            "gpu_memory": gpu_memory,
+            "io_usage": io_usage
+        })
+        return self.resource_history[-1]
+
+
 class ShapePropagator:
     
     def __init__(self, debug=False):
@@ -23,6 +48,7 @@ class ShapePropagator:
         self.layer_connections = []
         self.current_layer = 0
         self.execution_trace = []  # Stores nntrace logs
+        self.performance_monitor = PerformanceMonitor()
         
         # Framework compatibility mappings
         self.param_aliases = {
@@ -64,6 +90,14 @@ class ShapePropagator:
             "transfer_time": transfer_time,
         }
         self.execution_trace.append(trace_entry)
+
+        resources = self.performance_monitor.monitor_resources()
+        trace_entry.update({
+            "cpu_usage": resources["cpu_usage"],
+            "memory_usage": resources["memory_usage"],
+            "gpu_memory": resources["gpu_memory"],
+            "io_usage": resources["io_usage"]
+        })
 
         # Store shape history for visualization
         self.shape_history.append((layer_type, output_shape))
