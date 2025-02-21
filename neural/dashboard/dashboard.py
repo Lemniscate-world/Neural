@@ -127,6 +127,13 @@ def update_trace_graph(n):
     fig = go.Figure(data=go.Heatmap(z=data, x=iterations, y=[entry["layer"] for entry in trace_data]))
     fig.update_layout(title="Layer Execution Time Over Iterations", xaxis_title="Iterations", yaxis_title="Layers")
 
+    # Annotations and Thresholds
+    fig = go.Figure([go.Bar(x=layers, y=times, name="Execution Time", marker_color=["red" if t > 0.003 else "blue" for t in times])])
+    fig.update_layout(title="Layer Execution Time with Thresholds", xaxis_title="Layers", yaxis_title="Time (s)")
+    for i, t in enumerate(times):
+        if t > 0.003:
+            fig.add_annotation(x=layers[i], y=t, text=f"High: {t}s", showarrow=True, arrowhead=2)
+
     return fig
 
 @app.callback(
