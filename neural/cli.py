@@ -29,7 +29,7 @@ def cli():
 
 @cli.command()
 @click.argument('file', type=click.Path(exists=True))
-@click.option('--backend', default='tensorflow', help='Target backend: tensorflow or pytorch')
+@click.option('--backend', default='tensorflow', help='Target backend: tensorflow or pytorch', type=click.Choice(['tensorflow', 'pytorch']))
 def compile(file, backend):
     """
     Compile a .neural or .nr file into an executable Python script.
