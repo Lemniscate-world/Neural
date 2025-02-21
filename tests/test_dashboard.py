@@ -167,17 +167,15 @@ def test_trace_api(mock_get):
 def test_websocket_connection():
     """Verify WebSocket receives trace updates."""
     socket_client = SocketIOTestClient(app)
-
+    
     # Mock WebSocket response
     mock_data = [{"layer": "Conv2D", "execution_time": 0.002}]
-    socket_client.emit("request_trace_update")
+    socket_client.emit("trace_update", json.dumps(mock_data))  # Include data
     
     # Simulate receiving data
-    socket_client.get_received = MagicMock(return_value=[("trace_update", mock_data)])
     received = socket_client.get_received()
-
-    assert len(received) > 0  # Ensure WebSocket is working
-    assert received[0][1] == mock_data  # Validate data matches
+    assert len(received) > 0
+    assert json.loads(received[0]["args"]) == mock_data  # Validate data
 
 #######################
 ### UI Interaction ###
