@@ -24,20 +24,6 @@ app = dash.Dash(__name__, server=server)
 # Initialize WebSocket Connection
 socketio = SocketIO(cors_allowed_origins="*")
 
-@app.callback(
-    Output("trace_graph", "figure"),
-    Input("layer_filter", "value")
-)
-def update_trace_graph(selected_layers):
-    filtered_data = [entry for entry in trace_data if entry["layer"] in selected_layers]
-    if not filtered_data:
-        return go.Figure()
-    layers = [entry["layer"] for entry in filtered_data]
-    times = [entry["execution_time"] for entry in filtered_data]
-    fig = go.Figure([go.Bar(x=layers, y=times, name="Execution Time")])
-    fig.update_layout(title="Layer Execution Time", xaxis_title="Layers", yaxis_title="Time (s)")
-    return fig
-
 # Store Execution Trace Data
 trace_data = []
 
@@ -62,61 +48,134 @@ threading.Thread(target=socketio.run, args=("localhost", 5001), daemon=True).sta
 #################################################
 
 @app.callback(
-    Output("trace_graph", "figure"),
-    Input("interval_component", "n_intervals")
+    [Output("trace_graph", "figure")],
+    [Input("interval_component", "n_intervals"), Input("viz_type", "value"), Input("layer_filter", "value")]
 )
-
-def update_trace_graph(n):
-    """Update execution trace graph with new data."""
-    if not trace_data:
-        return go.Figure()
-
-    # Extract Layer Data
-    layers = [entry["layer"] for entry in trace_data]
-    execution_time = [entry["execution_time"] for entry in trace_data]
-
-    # Generate Bar Graph (Execution Time per Layer)
-    fig = go.Figure([go.Bar(x=layers, y=execution_time, name="Execution Time (s)")])
-    fig.update_layout(title="Layer Execution Time", xaxis_title="Layers", yaxis_title="Time (s)")
+def update_trace_graph(n, viz_type, selected_layers=None):
+    """Update execution trace graph with various visualization types."""
+    global trace_data
     
-    # Stacked Bar Chart
-    fig = go.Figure([
-    go.Bar(x=layers, y=[entry["compute_time"] for entry in trace_data], name="Compute Time"),
-    go.Bar(x=layers, y=[entry["transfer_time"] for entry in trace_data], name="Data Transfer"),])
-    fig.update_layout(barmode="stack", title="Layer Execution Time Breakdown", xaxis_title="Layers", yaxis_title="Time (s)")
+    if not trace_data:
+        return [go.Figure()]
 
-    # Horizontal Bar Chart With Sorting
-    sorted_data = sorted(trace_data, key=lambda x: x["execution_time"], reverse=True)
-    layers = [entry["layer"] for entry in sorted_data]
-    times = [entry["execution_time"] for entry in sorted_data]
-    fig = go.Figure([go.Bar(x=times, y=layers, orientation="h", name="Execution Time")])
-    fig.update_layout(title="Layer Execution Time (Sorted)", xaxis_title="Time (s)", yaxis_title="Layers")
+    # Filter data based on selected layers (if any)
+    if selected_layers:
+        filtered_data = [entry for entry in trace_data if entry["layer"] in selected_layers]
+    else:
+        filtered_data = trace_data
 
-    # Box Plots for Variability
-    times_by_layer = {layer: [entry["execution_time"] for entry in trace_data if entry["layer"] == layer] for layer in set(entry["layer"] for entry in trace_data)}
-    fig = go.Figure([go.Box(x=list(times_by_layer.keys()), y=list(times_by_layer.values()), name="Execution Time")])
-    fig.update_layout(title="Layer Execution Time Variability", xaxis_title="Layers", yaxis_title="Time (s)")
+    if not filtered_data:
+        return [go.Figure()]
 
-    # Gantt Chart for Timeline
+    layers = [entry["layer"] for entry in filtered_data]
+    execution_times = [entry["execution_time"] for entry in filtered_data]
+
+    # Simulate compute_time and transfer_time for stacked bar (you can extend ShapePropagator to include these)
+    compute_times = [t * 0.7 for t in execution_times]  # 70% of execution time for compute
+    transfer_times = [t * 0.3 for t in execution_times]  # 30% for data transfer
+
     fig = go.Figure()
-    for i, entry in enumerate(trace_data):
-        fig.add_trace(go.Bar(x=[i, i], y=[0, entry["execution_time"]], orientation="v", name=entry["layer"]))
-    fig.update_layout(title="Layer Execution Timeline", xaxis_title="Layers", yaxis_title="Time (s)")
 
-    # Heatmap of Execution Time Over Time
-    iterations = range(5)  # Simulate multiple runs
-    data = np.random.rand(len(trace_data), len(iterations)) * 0.005  # Random execution times
-    fig = go.Figure(data=go.Heatmap(z=data, x=iterations, y=[entry["layer"] for entry in trace_data]))
-    fig.update_layout(title="Layer Execution Time Over Iterations", xaxis_title="Iterations", yaxis_title="Layers")
+    if viz_type == "basic":
+        # Basic Bar Chart
+        fig = go.Figure([go.Bar(x=layers, y=execution_times, name="Execution Time (s)")])
+        fig.update_layout(
+            title="Layer Execution Time",
+            xaxis_title="Layers",
+            yaxis_title="Time (s)",
+            template="plotly_white"
+        )
 
-    # Annotations and Thresholds
-    fig = go.Figure([go.Bar(x=layers, y=times, name="Execution Time", marker_color=["red" if t > 0.003 else "blue" for t in times])])
-    fig.update_layout(title="Layer Execution Time with Thresholds", xaxis_title="Layers", yaxis_title="Time (s)")
-    for i, t in enumerate(times):
-        if t > 0.003:
-            fig.add_annotation(x=layers[i], y=t, text=f"High: {t}s", showarrow=True, arrowhead=2)
+    elif viz_type == "stacked":
+        # Stacked Bar Chart
+        fig = go.Figure([
+            go.Bar(x=layers, y=compute_times, name="Compute Time"),
+            go.Bar(x=layers, y=transfer_times, name="Data Transfer"),
+        ])
+        fig.update_layout(
+            barmode="stack",
+            title="Layer Execution Time Breakdown",
+            xaxis_title="Layers",
+            yaxis_title="Time (s)",
+            template="plotly_white"
+        )
 
-    return fig
+    elif viz_type == "horizontal":
+        # Horizontal Bar Chart with Sorting
+        sorted_data = sorted(filtered_data, key=lambda x: x["execution_time"], reverse=True)
+        sorted_layers = [entry["layer"] for entry in sorted_data]
+        sorted_times = [entry["execution_time"] for entry in sorted_data]
+        fig = go.Figure([go.Bar(x=sorted_times, y=sorted_layers, orientation="h", name="Execution Time")])
+        fig.update_layout(
+            title="Layer Execution Time (Sorted)",
+            xaxis_title="Time (s)",
+            yaxis_title="Layers",
+            template="plotly_white"
+        )
+
+    elif viz_type == "box":
+        # Box Plots for Variability
+        times_by_layer = {layer: [entry["execution_time"] for entry in trace_data if entry["layer"] == layer] for layer in set(entry["layer"] for entry in trace_data)}
+        fig = go.Figure([go.Box(x=list(times_by_layer.keys()), y=list(times_by_layer.values()), name="Execution Time")])
+        fig.update_layout(
+            title="Layer Execution Time Variability",
+            xaxis_title="Layers",
+            yaxis_title="Time (s)",
+            template="plotly_white"
+        )
+
+    elif viz_type == "gantt":
+        # Gantt Chart for Timeline
+        for i, entry in enumerate(filtered_data):
+            fig.add_trace(go.Bar(x=[i, i], y=[0, entry["execution_time"]], orientation="v", name=entry["layer"]))
+        fig.update_layout(
+            title="Layer Execution Timeline",
+            xaxis_title="Layers",
+            yaxis_title="Time (s)",
+            showlegend=True,
+            template="plotly_white"
+        )
+
+    elif viz_type == "heatmap":
+        # Heatmap of Execution Time Over Time (Simulate multiple runs)
+        iterations = range(5)  # Simulate multiple runs
+        data = np.random.rand(len(filtered_data), len(iterations)) * max(execution_times)  # Random execution times
+        fig = go.Figure(data=go.Heatmap(z=data, x=iterations, y=layers))
+        fig.update_layout(
+            title="Layer Execution Time Over Iterations",
+            xaxis_title="Iterations",
+            yaxis_title="Layers",
+            template="plotly_white"
+        )
+
+    elif viz_type == "thresholds":
+        # Bar Chart with Annotations and Thresholds
+        fig = go.Figure([go.Bar(x=layers, y=execution_times, name="Execution Time", 
+                               marker_color=["red" if t > 0.003 else "blue" for t in execution_times])])
+        for i, t in enumerate(execution_times):
+            if t > 0.003:
+                fig.add_annotation(
+                    x=layers[i], y=t, text=f"High: {t}s", showarrow=True, arrowhead=2, 
+                    font=dict(size=10), align="center"
+                )
+        fig.update_layout(
+            title="Layer Execution Time with Thresholds",
+            xaxis_title="Layers",
+            yaxis_title="Time (s)",
+            template="plotly_white"
+        )
+
+    # Add common layout enhancements
+    fig.update_layout(
+        showlegend=True,
+        hovermode="x unified",
+        template="plotly_white",
+        height=600,
+        width=1000
+    )
+
+    return [fig]
+
 
 @app.callback(
     Output("flops_memory_chart", "figure"),
