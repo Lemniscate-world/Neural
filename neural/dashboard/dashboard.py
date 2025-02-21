@@ -40,6 +40,26 @@ app.layout = html.Div([
     dcc.Interval(id="interval_component", interval=1000, n_intervals=0)
 ])
 
+app.layout = html.Div([
+    html.H1("Layer Execution Time"),
+    dcc.Dropdown(id="layer_filter", options=[{"label": l, "value": l} for l in ["Conv2D", "Dense"]], multi=True, value=["Conv2D", "Dense"]),
+    dcc.Graph(id="trace_graph"),
+])
+
+@app.callback(
+    Output("trace_graph", "figure"),
+    Input("layer_filter", "value")
+)
+def update_trace_graph(selected_layers):
+    filtered_data = [entry for entry in trace_data if entry["layer"] in selected_layers]
+    if not filtered_data:
+        return go.Figure()
+    layers = [entry["layer"] for entry in filtered_data]
+    times = [entry["execution_time"] for entry in filtered_data]
+    fig = go.Figure([go.Bar(x=layers, y=times, name="Execution Time")])
+    fig.update_layout(title="Layer Execution Time", xaxis_title="Layers", yaxis_title="Time (s)")
+    return fig
+
 # Store Execution Trace Data
 trace_data = []
 
@@ -100,6 +120,12 @@ def update_trace_graph(n):
     for i, entry in enumerate(trace_data):
         fig.add_trace(go.Bar(x=[i, i], y=[0, entry["execution_time"]], orientation="v", name=entry["layer"]))
     fig.update_layout(title="Layer Execution Timeline", xaxis_title="Layers", yaxis_title="Time (s)")
+
+    # Heatmap of Execution Time Over Time
+    iterations = range(5)  # Simulate multiple runs
+    data = np.random.rand(len(trace_data), len(iterations)) * 0.005  # Random execution times
+    fig = go.Figure(data=go.Heatmap(z=data, x=iterations, y=[entry["layer"] for entry in trace_data]))
+    fig.update_layout(title="Layer Execution Time Over Iterations", xaxis_title="Iterations", yaxis_title="Layers")
 
     return fig
 
