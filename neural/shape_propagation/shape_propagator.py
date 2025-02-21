@@ -71,14 +71,16 @@ class ShapePropagator:
             self._create_connection(prev_layer, self.current_layer - 1)  # Connect previous to current
         return output_shape
 
+###############################
 ### Performance Computation ###
+###############################
 
     def _compute_performance(self, layer, input_shape, output_shape):
-        """Estimates FLOPs and memory usage for nntrace."""
+        """Estimates FLOPs, memory usage, and breaks down execution time for nntrace."""
         layer_type = layer["type"]
         params = layer.get("params", {})
 
-        # Compute FLOPs
+        # Compute FLOPs (unchanged from your original)
         if layer_type == "Dense":
             flops = input_shape[1] * output_shape[1] * 2  # Multiply + Add
         elif layer_type == "Conv2D":
@@ -88,10 +90,19 @@ class ShapePropagator:
         else:
             flops = 0  # Default
 
-        # Estimate memory usage
+        # Estimate memory usage (unchanged)
         memory_usage = np.prod(output_shape) * 4 / (1024 ** 2)  # Convert to MB
 
-        return flops, memory_usage
+        # Simulate compute and transfer times (you can refine this based on actual profiling)
+        start_time = time.time()
+        # Simulate computation (e.g., based on FLOPs or layer complexity)
+        time.sleep(0.0001 * flops / 1e6)  # Simulate compute time proportional to FLOPs
+        compute_time = time.time() - start_time
+
+        # Simulate data transfer (e.g., based on input/output shapes)
+        transfer_time = (np.prod(input_shape) + np.prod(output_shape)) * 4 / (1024 ** 3)  # Bytes to seconds (simplified)
+
+        return flops, memory_usage, compute_time, transfer_time
 
 ### Send execution trace data to the dashboard ###
     def get_trace(self):
