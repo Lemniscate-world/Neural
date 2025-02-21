@@ -181,6 +181,16 @@ def clean():
         click.echo("Removed cache directory")
 
 
+#######################
+### Version Command ###
+#######################
+
+@cli.command()
+def version():
+    """Show the version of Neural CLI and dependencies."""
+    click.echo(f"Neural CLI v0.1")
+    click.echo(f"Python: {sys.version}")
+    click.echo(f"Click: {click.__version__}")
 
 if __name__ == '__main__':
     cli()
