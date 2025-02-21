@@ -453,6 +453,3 @@ def step_debug_hook(module, input, output):
 
     # Wait for user input before continuing
     input("Press Enter to continue...")
-
-for layer in model.children():
-    layer.register_forward_hook(step_debug_hook)

@@ -13,9 +13,9 @@ def test_app():
     """Creates Dash test client."""
     return app
 
-###########################################
-### 🛠 Test Execution Trace Visualization ###
-###########################################
+##########################################
+### Test Execution Trace Visualization ###
+##########################################
 
 def test_update_trace_graph():
     """Ensures execution trace visualization updates correctly."""
