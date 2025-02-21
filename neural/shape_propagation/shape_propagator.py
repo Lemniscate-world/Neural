@@ -32,31 +32,30 @@ class ShapePropagator:
         self.dot.attr('node', shape='record', style='filled', fillcolor='lightgrey')
 
     def propagate(self, input_shape: Tuple[Optional[int], ...], 
-                layer: Dict[str, Any], 
-                framework: str = 'tensorflow') -> Tuple[Optional[int], ...]:
+              layer: Dict[str, Any], 
+              framework: str = 'tensorflow') -> Tuple[Optional[int], ...]:
         """Processes a layer and logs shape changes for nntrace."""
         layer_type = layer["type"]
         params = layer.get("params", {})
 
         start_time = time.time()  # Measure execution time
 
-        
-        
         output_shape = self._process_layer(input_shape, layer, framework)
         prev_layer = self.current_layer - 1 if self.current_layer > 0 else None
 
-        # Compute FLOPs & memory usage
-        flops, mem_usage = self._compute_performance(layer, input_shape, output_shape)
+        # Compute FLOPs, memory, compute_time, and transfer_time
+        flops, mem_usage, compute_time, transfer_time = self._compute_performance(layer, input_shape, output_shape)
 
-
-        # Capture nntrace log
+        # Capture nntrace log with additional timing details
         trace_entry = {
             "layer": layer_type,
             "input_shape": input_shape,
             "output_shape": output_shape,
             "flops": flops,
             "memory": mem_usage,
-            "execution_time": time.time() - start_time, 
+            "execution_time": time.time() - start_time,
+            "compute_time": compute_time,
+            "transfer_time": transfer_time,
         }
         self.execution_trace.append(trace_entry)
 
