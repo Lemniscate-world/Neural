@@ -1,0 +1,16 @@
+network TransformerModel {
+  input: (100, 512)  # Sequence length, embedding dim
+  layers:
+    Embedding(input_dim=10000, output_dim=512)
+    TransformerEncoder(num_heads=8, ff_dim=2048)
+    GlobalAveragePooling1D()
+    Dense(units=128, activation="relu")
+    Output(units=10, activation="softmax")
+  
+  loss: "sparse_categorical_crossentropy"
+  optimizer: Adam(learning_rate=0.0001)
+  train {
+    epochs: 20
+    batch_size: 64
+  }
+}
