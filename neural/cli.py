@@ -5,6 +5,7 @@ import subprocess
 import click
 import logging
 import hashlib
+import shutil
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
