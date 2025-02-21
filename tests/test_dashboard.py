@@ -26,16 +26,16 @@ def test_update_trace_graph():
     fig = update_trace_graph(1)
     
     # Save visualization
-    fig.write_html("test_trace_graph.html")  # Interactive HTML
+    fig.write_html("test_trace_graph.html")
     try:
-        fig.write_image("test_trace_graph.png")  # Static PNG (requires kaleido)
+        fig.write_image("test_trace_graph.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
     
     # Assertions
     assert len(fig.data) == 1  # Should contain one bar graph
-    assert fig.data[0].x == ["Conv2D", "Dense"]  # Layers must match
-    assert fig.data[0].y == [0.001, 0.005]  # Execution times must match
+    assert list(fig.data[0].x) == ["Conv2D", "Dense"]  # Convert to list
+    assert list(fig.data[0].y) == [0.001, 0.005]  # Convert to list (for consistency)
 
 ###########################################
 ### 🛠 Test FLOPs & Memory Visualization ###
@@ -58,8 +58,8 @@ def test_update_flops_memory_chart():
     
     # Assertions
     assert len(fig.data) == 2  # Should contain two bar graphs (FLOPs & memory)
-    assert fig.data[0].x == ["Conv2D", "Dense"]
-    assert fig.data[1].x == ["Conv2D", "Dense"]
+    assert list(fig.data[0].x) == ["Conv2D", "Dense"]
+    assert list(fig.data[1].x) == ["Conv2D", "Dense"]
 
 ###########################################
 ### 🛠 Test Gradient Flow Visualization ###
@@ -82,8 +82,8 @@ def test_update_gradient_chart():
     
     # Assertions
     assert len(fig.data) == 1
-    assert fig.data[0].x == ["Conv2D", "Dense"]
-    assert fig.data[0].y == [0.9, 0.1]
+    assert list(fig.data[0].x) == ["Conv2D", "Dense"]
+    assert list(fig.data[0].y) == [0.9, 0.1]
 
 ###########################################
 ### 🛠 Test Dead Neuron Detection Panel ###
@@ -106,8 +106,8 @@ def test_update_dead_neurons():
     
     # Assertions
     assert len(fig.data) == 1
-    assert fig.data[0].x == ["Conv2D", "Dense"]
-    assert fig.data[0].y == [0.1, 0.5]
+    assert list(fig.data[0].x) == ["Conv2D", "Dense"]
+    assert list(fig.data[0].y) == [0.1, 0.5]
 
 ###########################################
 ### 🛠 Test Anomaly Detection Panel ###
@@ -130,8 +130,8 @@ def test_update_anomaly_chart():
     
     # Assertions
     assert len(fig.data) == 2
-    assert fig.data[0].x == ["Conv2D", "Dense"]
-    assert fig.data[1].y == [0, 1]  # Only the second layer is flagged as an anomaly
+    assert list(fig.data[0].x) == ["Conv2D", "Dense"]
+    assert list(fig.data[1].y) == [0, 1]  # Only the second layer is flagged as an anomaly
 
 ###########################################
 ### 🛠 Test Dashboard Initialization ###
