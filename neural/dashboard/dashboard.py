@@ -9,8 +9,10 @@ import requests
 from flask_socketio import SocketIO
 import threading
 
-from neural.shape_propagation.shape_propagator import ShapePropagator, propagate
+from neural.shape_propagation.shape_propagator import ShapePropagator
 from neural.dashboard.tensor_flow import create_animated_network
+
+
 
 # Flask app for WebSocket integration (if needed later)
 server = Flask(__name__)
@@ -148,8 +150,10 @@ def update_graph(selected_model):
     else:
         layers = [{"type": "Dense", "params": {"units": 256}}]
 
-    shape_data = propagate(layers)
-    return create_animated_network(shape_data)
+    propagator = ShapePropagator()
+    for layer in layers:
+        input_shape = propagator.propagate(input_shape, layer, framework='tensorflow')
+    return create_animated_network(input_shape)
 
 
 ###########################
