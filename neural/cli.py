@@ -4,6 +4,7 @@ import sys
 import subprocess
 import click
 import logging
+import hashlib
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,13 +32,16 @@ def cli():
 @click.argument('file', type=click.Path(exists=True))
 @click.option('--backend', default='tensorflow', help='Target backend: tensorflow or pytorch', type=click.Choice(['tensorflow', 'pytorch']))
 @click.option('--verbose', is_flag=True, help='Show verbose output')
-def compile(file, backend):
+def compile(file, backend, verbose):
     """
     Compile a .neural or .nr file into an executable Python script.
     
     Example:
         neural compile my_model.neural --backend pytorch
     """
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
     ext = os.path.splitext(file)[1].lower()
     # Choose the appropriate start rule based on extension
     if ext in ['.neural', '.nr']:
@@ -97,56 +101,68 @@ def visualize(file, format):
     from neural.parser.parser import create_parser
     from neural.dashboard.tensor_flow import create_animated_network
 
-    # Parse input file
-    ext = os.path.splitext(file)[1].lower()
-    parser_instance = create_parser('network' if ext in ['.neural', '.nr'] else 'research')
-    
-    with open(file, 'r') as f:
-        content = f.read()
-    
-    try:
-        tree = parser_instance.parse(content)
-        model_data = ModelTransformer().transform(tree)
-    except Exception as e:
-        click.echo(f"Error processing {file}: {e}")
-        sys.exit(1)
+    def get_file_hash(file):
+        with open(file, 'rb') as f:
+            return hashlib.sha256(f.read()).hexdigest()
 
-    # Propagate shapes
-    propagator = ShapePropagator()
-    input_shape = model_data['input']['shape']  # Get from parsed model
-    if not input_shape:
-        click.echo("Error: Input shape not defined in model!")
-        sys.exit(1) 
-    shape_history = []
+        cache_dir = ".neural_cache"
+        os.makedirs(cache_dir, exist_ok=True)
+        file_hash = get_file_hash(file)
+        cache_file = os.path.join(cache_dir, f"viz_{file_hash}_{format}")
 
-    with click.progressbar(length=len(model_data['layers']), label="Propagating shapes") as bar:
-        for layer in model_data['layers']:
-            input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
-            shape_history.append({"layer": layer['type'], "output_shape": input_shape})
-            bar.update(1)
+        if os.path.exists(cache_file):
+            click.echo(f"Using cached visualization: {cache_file}")
+        else:
+            # Parse input file
+            ext = os.path.splitext(file)[1].lower()
+            parser_instance = create_parser('network' if ext in ['.neural', '.nr'] else 'research')
+            
+            with open(file, 'r') as f:
+                content = f.read()
+            
+            try:
+                tree = parser_instance.parse(content)
+                model_data = ModelTransformer().transform(tree)
+            except Exception as e:
+                click.echo(f"Error processing {file}: {e}")
+                sys.exit(1)
 
-    # Generate visualizations
-    report = propagator.generate_report()
-    
-    # Save Graphviz diagram
-    dot = report['dot_graph']
-    dot.format = 'png' if format == 'png' else 'svg'
-    dot.render('architecture', cleanup=True)
-    
-    # Save Plotly visualization
-    fig = report['plotly_chart']
-    fig.write_html('shape_propagation.html')
-    
-    # Generate tensor flow animation
-    tf_fig = create_animated_network(shape_history)
-    tf_fig.write_html('tensor_flow.html')
+            # Propagate shapes
+            propagator = ShapePropagator()
+            input_shape = model_data['input']['shape']  # Get from parsed model
+            if not input_shape:
+                click.echo("Error: Input shape not defined in model!")
+                sys.exit(1) 
+            shape_history = []
 
-    click.echo(f"""
-    Visualizations generated:
-    - architecture.{format} (Network architecture)
-    - shape_propagation.html (Parameter count chart)
-    - tensor_flow.html (Data flow animation)
-    """)
+            with click.progressbar(length=len(model_data['layers']), label="Propagating shapes") as bar:
+                for layer in model_data['layers']:
+                    input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
+                    shape_history.append({"layer": layer['type'], "output_shape": input_shape})
+                    bar.update(1)
+
+            # Generate visualizations
+            report = propagator.generate_report()
+            
+            # Save Graphviz diagram
+            dot = report['dot_graph']
+            dot.format = 'png' if format == 'png' else 'svg'
+            dot.render('architecture', cleanup=True)
+            
+            # Save Plotly visualization
+            fig = report['plotly_chart']
+            fig.write_html('shape_propagation.html')
+            
+            # Generate tensor flow animation
+            tf_fig = create_animated_network(shape_history)
+            tf_fig.write_html('tensor_flow.html')
+
+            click.echo(f"""
+            Visualizations generated:
+            - architecture.{format} (Network architecture)
+            - shape_propagation.html (Parameter count chart)
+            - tensor_flow.html (Data flow animation)
+            """)
 
 if __name__ == '__main__':
     cli()
