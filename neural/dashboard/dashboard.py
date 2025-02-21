@@ -24,28 +24,6 @@ app = dash.Dash(__name__, server=server)
 # Initialize WebSocket Connection
 socketio = SocketIO(cors_allowed_origins="*")
 
-##############################################################
-### Layout: Real-time execution trace, FLOPs, Memory Usage ###
-##############################################################
-app.layout = html.Div([
-    html.H1("NeuralDbg: Real-Time Execution Monitoring"),
-    
-    # Execution Trace Visualization
-    dcc.Graph(id="trace_graph"),
-    
-    # FLOPs & Memory Usage Bar Chart
-    dcc.Graph(id="flops_memory_chart"),
-    
-    # Live Update Interval
-    dcc.Interval(id="interval_component", interval=1000, n_intervals=0)
-])
-
-app.layout = html.Div([
-    html.H1("Layer Execution Time"),
-    dcc.Dropdown(id="layer_filter", options=[{"label": l, "value": l} for l in ["Conv2D", "Dense"]], multi=True, value=["Conv2D", "Dense"]),
-    dcc.Graph(id="trace_graph"),
-])
-
 @app.callback(
     Output("trace_graph", "figure"),
     Input("layer_filter", "value")
@@ -157,26 +135,6 @@ def update_flops_memory_chart(n):
     fig.update_layout(title="FLOPs & Memory Usage", xaxis_title="Layers", yaxis_title="Values", barmode="group")
     
     return fig
-
-##########################################################
-### Layout: Real-time Shape Propagation & Loss/metrics ###
-##########################################################
-app.layout = html.Div([
-    html.H1("Neural Shape Propagation Dashboard"),
-    
-    # Shape propagation graph
-    dcc.Graph(id="shape_graph"),
-
-    # Live-updating loss/metrics
-    dcc.Interval(id="interval_component", interval=1000, n_intervals=0)  # Updates every 1s
-])
-
-app.layout = html.Div([
-    html.H1("Training Metrics"),
-    dcc.Graph(id="loss_graph"),
-    dcc.Graph(id="accuracy_graph"),
-    dcc.Interval(id="interval_component", interval=1000, n_intervals=0)  # Update every second
-])
 
 @app.callback(
     Output("loss_graph", "figure"),
@@ -292,6 +250,39 @@ def trigger_step_debug(n):
         return "Paused. Check terminal for tensor inspection."
     return "Click to pause execution."
 
+app.layout = html.Div([
+    html.H1("NeuralDbg: Real-Time Execution Monitoring"),
+    
+    # Execution Trace Visualization
+    dcc.Graph(id="trace_graph"),
+    
+    # FLOPs & Memory Usage
+    dcc.Graph(id="flops_memory_chart"),
+    
+    # Shape Propagation
+    html.H1("Neural Shape Propagation Dashboard"),
+    dcc.Graph(id="shape_graph"),
+    
+    # Training Metrics
+    html.H1("Training Metrics"),
+    dcc.Graph(id="loss_graph"),
+    dcc.Graph(id="accuracy_graph"),
+    
+    # Model Comparison
+    html.H1("Compare Architectures"),
+    dcc.Dropdown(
+        id="architecture_selector",
+        options=[
+            {"label": "Model A", "value": "A"},
+            {"label": "Model B", "value": "B"},
+        ],
+        value="A"
+    ),
+    dcc.Graph(id="architecture_graph"),
+    
+    # Interval for updates
+    dcc.Interval(id="interval_component", interval=1000, n_intervals=0)
+])
 
 if __name__ == "__main__":
     app.run_server(debug=True)
