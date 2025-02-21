@@ -5,9 +5,14 @@ from dash.dependencies import Input, Output
 import json
 import plotly.graph_objects as go
 from flask import Flask, jsonify, request
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
+import threading
+import yaml
 
 from shape_propagator import ShapePropagator
+
 
 # Backend shape propagator instance
 propagator = ShapePropagator()
@@ -27,7 +32,7 @@ for layer in layers:
 # Flask server
 server = Flask(__name__)
 app = dash.Dash(__name__, server=server)
-socketio = SocketIO(server, cors_allowed_origins="*")
+socketio = SocketIO(server, cors_allowed_origins=["http://localhost:8050"], logger=True)
 
 app.layout = html.Div([
     html.H1("Neural Shape Propagation Dashboard"),
@@ -73,19 +78,40 @@ def update_graph(n):
 ############################
 ### NNTRACE DATA SENDING ###
 ############################
+
+# Load configuration (e.g., from config.yaml)
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+except:
+    config = {"username": "admin", "password": "default"}
+
+users = {
+    config["username"]: generate_password_hash(config["password"])
+}
+auth = HTTPBasicAuth()
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and check_password_hash(users[username], password):
+        return username
+
 @server.route("/trace", methods=["GET"])
+@auth.login_required
 def get_nntrace():
     """API endpoint to fetch the latest execution trace for dashboard."""
     return jsonify(propagator.get_trace())
 
 @socketio.on("request_trace_update")
+@auth.login_required
 def send_trace_update():
-    """Streams real-time execution traces to the dashboard via WebSockets."""
+    """Streams real-time execution traces to the dashboard via WebSockets with authentication."""
+    username = request.headers.get('Authorization').split(' ')[1]  # Basic auth token
+    join_room(username)  # Create a room for the user
     while True:
         trace_data = propagator.get_trace()
-        socketio.emit("trace_update", json.dumps(trace_data))
-        time.sleep(1)  # Send updates every second
+        emit("trace_update", json.dumps(trace_data), room=username)
+        time.sleep(UPDATE_INTERVAL / 1000)
 
 if __name__ == "__main__":
-    socketio.run(server, debug=True, port=5001)
-    app.run_server(debug=True, port=8050)
+    threading.Thread(target=socketio.run, args=(server, "localhost", 5001), daemon=True).start()
