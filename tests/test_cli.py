@@ -1,5 +1,6 @@
 import click.testing
 import pytest
+import os
 
 def test_compile_command():
     runner = click.testing.CliRunner()
