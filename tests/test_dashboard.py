@@ -305,6 +305,8 @@ def test_trace_api(mock_get):
     assert isinstance(response.json(), list)
     assert response.json()[0]["layer"] == "Conv2D"
 
+####
+
 def test_websocket_connection():
     """Verify WebSocket receives trace updates."""
     socket_client = SocketIOTestClient(app)
