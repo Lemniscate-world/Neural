@@ -13,4 +13,6 @@ psutil>=5.9.0
 pytest>=7.0.0
 tensorflow>=2.10.0
 torch>=1.10.0
+pytest>=8.3.2
+pygithub>=1.59
 yaml>=0.2.5
