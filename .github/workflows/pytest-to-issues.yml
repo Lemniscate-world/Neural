@@ -28,7 +28,10 @@ jobs:
 
       - name: Run pytest and generate report
         continue-on-error: true  # Crucial for next step to run
-        run: pytest tests/ --junit-xml=test-results.xml
+        run: pytest tests/ --junit-xml=test-results.xml || true
+          if [ ! -f test-results.xml ]; then
+            echo '<?xml version="1.0" encoding="utf-8"?><testsuite></testsuite>' > test-results.xml
+          fi
 
 
       - name: Create GitHub Issues for Failures
