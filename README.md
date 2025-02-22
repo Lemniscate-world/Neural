@@ -37,6 +37,12 @@ NeuralDbg provides **real-time execution tracing, profiling, and debugging**, al
 ✅ **Real-Time Execution Monitoring** – Track activations, gradients, memory usage, and FLOPs.  
 ![test_trace_graph](https://github.com/user-attachments/assets/15b1edd2-2643-4587-9843-aa4697ed2e4b)
 ![test_flops_memory_chart](https://github.com/user-attachments/assets/de1f6504-787b-4948-b543-fe3d2f8bfd74)
+![test_trace_graph_stacked](https://github.com/user-attachments/assets/529fc487-fb31-48ad-bb11-b0c64ab330ed)
+![test_trace_graph_heatmap](https://github.com/user-attachments/assets/debef7d5-9989-45da-ae91-7cef19aac2b0)
+![test_anomaly_chart](https://github.com/user-attachments/assets/b57d3142-6da8-4d57-94f0-486d1797e92c)
+![test_dead_neurons](https://github.com/user-attachments/assets/f4629b4f-2988-410e-8b49-3dde225f926f)
+![test_gradient_chart](https://github.com/user-attachments/assets/ca6b9f20-7dd8-4c72-9ee8-a3f35af6208b)
+
 
 ✅ **Shape Propagation Debugging** – Visualize tensor transformations at each layer.  
 ✅ **Gradient Flow Analysis** – Detect **vanishing & exploding gradients**.  
