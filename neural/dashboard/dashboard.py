@@ -53,6 +53,8 @@ def send_trace_update():
         socketio.emit("trace_update", json.dumps(trace_data))
         time.sleep(UPDATE_INTERVAL / 1000)  # Convert milliseconds to seconds
 
+
+### Interval Updates ####
 @app.callback(
     [Output("interval_component", "interval")],
     [Input("update_interval", "value")]
