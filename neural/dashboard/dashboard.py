@@ -139,10 +139,9 @@ def update_trace_graph(n, viz_type, selected_layers=None):
         )
 
     elif viz_type == "box":
-        # Box Plots for Variability
-        times_by_layer = {layer: [entry["execution_time"] for entry in trace_data if entry["layer"] == layer] for layer in set(entry["layer"] for entry in trace_data)}
-        fig = go.Figure([go.Box(x=list(times_by_layer.keys()), y=list(times_by_layer.values()), name="Execution Time")])
-        fig.update_layout(
+        ### Box Plots for Variability ###
+        trace_fig = go.Figure([go.Box(x=layers, y=execution_times, name="Execution Variability")])
+        trace_fig.update_layout(
             title="Layer Execution Time Variability",
             xaxis_title="Layers",
             yaxis_title="Time (s)",
