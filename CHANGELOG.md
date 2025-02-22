@@ -30,3 +30,13 @@
 ### Added
 
 - `--hacky` mode for security analysis.
+
+Skills data structures, algorithms
+Assembly project, to become the most powerful ftogolese deveopper, once every two day
+Codeforces grandmeater to be remarked
+Hack the box badge github and challenges
+Leetcode top rank, AtCoder
+GoogleCodeJam
+Next OS kernel
+Certifications, i think one per two month
+Youtube for neural

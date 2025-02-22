@@ -14,6 +14,7 @@ import socketio
 import requests
 from dash.dependencies import Input, Output
 from neural.dashboard.dashboard import app, update_trace_graph, update_flops_memory_chart, update_gradient_chart, update_dead_neurons, update_anomaly_chart, update_graph
+from neural.dashboard.tensor_flow import create_animated_network
 from unittest.mock import MagicMock, patch
 from flask_socketio import SocketIOTestClient, SocketIO
 import plotly.graph_objects as go
@@ -105,6 +106,10 @@ def test_update_trace_graph_horizontal():
     assert list(fig.data[0].y) == ["Dense", "Conv2D"]  # Sorted by execution time (Dense > Conv2D)
     assert list(fig.data[0].x) == [0.005, 0.001]
 
+#######################
+### Trace Box Graph ###
+#######################
+
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_box():
     """Ensures box plot for variability in execution trace visualization updates correctly."""
@@ -122,6 +127,8 @@ def test_update_trace_graph_box():
     assert len(fig.data) == 1
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
     assert len(fig.data[0].y) == 2  # Two boxes (one per layer)
+
+
 
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_gantt():
