@@ -183,7 +183,9 @@ class ShapePropagator:
             
         return standardized
 
+####################################################################
 ### Shape propagation through 2 Dimensional Convolutional Layers ###
+####################################################################
 
     def _handle_conv2d(self, input_shape, params):
         """Calculates the output shape for a Conv2D layer.
