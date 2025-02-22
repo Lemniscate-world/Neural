@@ -149,8 +149,15 @@ class ShapePropagator:
 ### Send execution trace data to the dashboard ###
 ##################################################
     def get_trace(self):
-        """Returns execution trace data for the dashboard."""
-        return self.execution_trace
+            trace = [
+            {
+                "layer": layer_type, "execution_time": exec_time, "compute_time": comp_time,
+                "transfer_time": trans_time, "kernel_size": tuple(params.get("kernel_size", (1, 1))),
+                "flops": flops, "memory": memory, "grad_norm": grad_norm, "dead_ratio": dead_ratio,
+                "mean_activation": mean_act, "anomaly": anomaly
+            } for layer_type, exec_time, comp_time, trans_time, params, flops, memory, grad_norm, dead_ratio, mean_act, anomaly in self.execution_trace
+        ]
+            return trace
 
     def _process_layer(self, input_shape, layer, framework):
         layer_type = layer['type']
