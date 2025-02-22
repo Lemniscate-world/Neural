@@ -31,6 +31,7 @@ def parse_pytest_results(xml_path):
             })
     return issues
 
+
 def create_github_issues(issues):
     g = Github(GITHUB_TOKEN)
     repo = g.get_repo(REPO)
@@ -40,15 +41,6 @@ def create_github_issues(issues):
             print(f"Created issue: {issue['title']}")
         except Exception as e:
             print(f"Failed to create issue for {issue['title']}: {e}")
-
-    def issue_exists(repo, title):
-        for issue in repo.get_issues(state="open"):
-            if issue.title == title:
-                return True
-        return False
-
-    if not issue_exists(repo, issue["title"]):
-        repo.create_issue(title=issue["title"], body=issue["body"])
 
 
 if __name__ == "__main__":
