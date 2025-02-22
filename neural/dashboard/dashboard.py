@@ -370,6 +370,18 @@ def update_resource_graph(n):
     )
     return [fig]
 
+################################
+### Tensor Flow Visualization###
+################################
+@app.callback(
+    Output("tensor_flow_graph", "figure"),
+    Input("interval_component", "n_intervals")
+)
+def update_tensor_flow(n):
+    from neural.tensor_flow import create_animated_network
+    return create_animated_network(propagator.shape_history)
+
+
 # Custom Theme
 app = Dash(__name__, external_stylesheets=[themes.DARKLY])  # Darkly theme for Dash Bootstrap
 
