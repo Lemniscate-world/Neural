@@ -15,6 +15,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from parser.parser import ModelTransformer
+from neural.pretrained import PretrainedModelHub
 
 class PerformanceMonitor:
     def __init__(self):
@@ -49,6 +50,7 @@ class ShapePropagator:
         self.current_layer = 0
         self.execution_trace = []  # Stores nntrace logs
         self.performance_monitor = PerformanceMonitor()
+        self.hub = PretrainedModelHub()
         
         # Framework compatibility mappings
         self.param_aliases = {
@@ -371,6 +373,14 @@ class ShapePropagator:
             'channel_dim': shape[1] if len(shape) > 1 else None
         }
     
+    ### Loading Pretrained Models ####
+
+    def load_pretrained(self, model_name, pretrained=True):
+        model = self.hub.load(model_name, pretrained)
+        # Propagate shapes through pretrained model
+        input_shape = (1, 3, 224, 224)  # Default for ResNet50
+        for layer in model.layers:
+            input_shape = self.propagate(input_shape, layer, "pytorch")
 
 ### Shape Validation for Error Handling ###
 
