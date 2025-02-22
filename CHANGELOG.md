@@ -23,6 +23,7 @@
 - KeyError for `kernel_size` in `test_model_comparison`.
 - Invalid data handling in `test_update_trace_graph_invalid_data`.
 - Tensor flow import in `test_tensor_flow_visualization`.
+- NameError in `test_websocket_connection`
 
 ## [Unreleased]
 
