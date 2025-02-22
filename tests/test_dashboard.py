@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from selenium import webdriver
-from dash.testing import DashIntegrationTest
+from dash import Dash
 import pytest
 from unittest.mock import Mock
 from pytest import approx

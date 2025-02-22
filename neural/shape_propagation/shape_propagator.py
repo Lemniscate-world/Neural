@@ -15,7 +15,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from parser.parser import ModelTransformer
-from neural.pretrained import PretrainedModelHub
+from pretrained_models.pretrained import PretrainedModelHub
 
 class PerformanceMonitor:
     def __init__(self):

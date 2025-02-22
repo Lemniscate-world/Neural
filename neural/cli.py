@@ -338,6 +338,22 @@ def train(file, backend, log_dir):
 ### Load Pretrained Models ##
 #############################
 
+@cli.command()
+@click.argument('model_name', default='resnet50')
+@click.option('--pretrained', is_flag=True, help='Load pretrained weights from Hugging Face')
+@click.option('--output', default='model.pth', help='Output file for saved model')
+def load(model_name, pretrained, output):
+    """Load a pretrained model (e.g., ResNet50) from the hub."""
+    from neural.pretrained import PretrainedModelHub
+    try:
+        hub = PretrainedModelHub()
+        model = hub.load(model_name, pretrained=pretrained)
+        torch.save(model, output)
+        click.echo(f"Loaded {model_name} and saved to {output}")
+    except Exception as e:
+        click.echo(f"Error loading model: {e}")
+        sys.exit(1)
+
 
 
 
