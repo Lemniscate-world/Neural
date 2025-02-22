@@ -35,3 +35,8 @@
 
 - `--hacky` mode for security analysis.
 
+## [0.1.2] 
+
+### Fixed
+
+- Parser error in `Conv2D` layer parsing, ensuring `filters`, `kernel_size`, and `activation` are correctly captured (test_parser.py::test_layer_parsing[conv2d-relu]).
