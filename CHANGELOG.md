@@ -24,6 +24,10 @@
 - Invalid data handling in `test_update_trace_graph_invalid_data`.
 - Tensor flow import in `test_tensor_flow_visualization`.
 - NameError in `test_websocket_connection`
+- Tensor flow import in `test_tensor_flow_visualization`.
+- Dashboard theme check in `test_dashboard_theme`.
+- Dashboard visualization dependency in `test_dashboard_visualization`.
+- Box plot layer order mismatch in `test_update_trace_graph_box`.
 
 ## [Unreleased]
 
@@ -40,3 +44,5 @@ GoogleCodeJam
 Next OS kernel
 Certifications, i think one per two month
 Youtube for neural
+
+Data Fed unto the neural network analysis for neural, what i would change for the industry and will it be remarkable, give me insights, i will name the module inside neural, batch
