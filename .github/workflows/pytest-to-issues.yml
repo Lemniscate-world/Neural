@@ -10,6 +10,9 @@ on:
 jobs:
   test_and_create_issues:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -35,13 +38,22 @@ jobs:
         if: always()
         run: |
           if [ ! -f test-results.xml ]; then
-           echo '<?xml version="1.0"?><testsuite name="pytest"></testsuite>' > test-results.xml
+            echo '<?xml version="1.0"?><testsuite name="pytest" errors="1"><testcase name="dummy"><error message="No tests executed"/></testcase></testsuite>' > test-results.xml
           fi
         
-
       - name: Create GitHub Issues for Failures
         if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.ISSUES_TOKEN }}
         run: |
           python scripts/create_issues.py
+
+      - name: Debug Test Results
+        if: always()
+        run: |
+          echo "=== XML File Exists ==="
+          ls -l test-results.xml
+          echo "=== XML Content ==="
+          cat test-results.xml
+          echo "=== Environment ==="
+          echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN != '' }}"
