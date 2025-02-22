@@ -20,6 +20,9 @@ from flask_socketio import SocketIOTestClient, SocketIO
 import plotly.graph_objects as go
 import numpy as np
 
+
+### Dash Test Client ###
+
 @pytest.fixture
 def test_app():
     """Creates Dash test client."""
