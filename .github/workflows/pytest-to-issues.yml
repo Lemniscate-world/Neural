@@ -1,0 +1,32 @@
+# .github/workflows/create_issues.yml
+name: Automate Pytest Bugs to GitHub Issues
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  test_and_create_issues:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pygithub
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Run pytest and generate report
+        run: |
+          pytest tests/ --junitxml=test-results.xml --tb=short || true  # Continue even if tests fail
+      - name: Create GitHub Issues for Failures
+        if: failure()  # Only run if tests fail
+        env:
+          GITHUB_TOKEN: ${{ secrets.ISSUES_TOKEN }}
+        run: |
+          python scripts/create_issues.py
