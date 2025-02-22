@@ -41,7 +41,7 @@ def parse_pytest_results(xml_path):
 def create_github_issues(issues):
     print(f"Processing {len(issues)} potential issues")
     
-    g = Github(os.environ['ISSUES_TOKEN'])
+    g = Github(os.environ['GITHUB_TOKEN'])
     repo = g.get_repo(REPO)
     
     for idx, issue in enumerate(issues, 1):
