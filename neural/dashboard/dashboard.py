@@ -160,16 +160,13 @@ def update_trace_graph(n, viz_type, selected_layers=None):
         )
 
     elif viz_type == "heatmap":
-        # Heatmap of Execution Time Over Time (Simulate multiple runs)
-        iterations = range(5)  # Simulate multiple runs
-        data = np.random.rand(len(filtered_data), len(iterations)) * max(execution_times)  # Random execution times
-        fig = go.Figure(data=go.Heatmap(z=data, x=iterations, y=layers))
-        fig.update_layout(
-            title="Layer Execution Time Over Iterations",
-            xaxis_title="Iterations",
-            yaxis_title="Layers",
-            template="plotly_white"
-        )
+        # Ensure TRACE_DATA has multiple iterations or simulate them
+        iterations = 5
+        heatmap_data = np.random.rand(len(layers), iterations)
+        fig = go.Figure(data=go.Heatmap(z=heatmap_data, x=[f"Iteration {i+1}" for i in range(iterations)], y=layers))
+        fig.update_layout(title="Execution Time Heatmap", xaxis_title="Iterations", yaxis_title="Layers")
+            
+        
 
     elif viz_type == "thresholds":
         # Bar Chart with Annotations and Thresholds
@@ -199,6 +196,7 @@ def update_trace_graph(n, viz_type, selected_layers=None):
 
     return [fig]
 
+#### FLOPS Memory Chart ####
 
 @app.callback(
     Output("flops_memory_chart", "figure"),
@@ -220,7 +218,7 @@ def update_flops_memory_chart(n):
     ])
     fig.update_layout(title="FLOPs & Memory Usage", xaxis_title="Layers", yaxis_title="Values", barmode="group")
     
-    return fig
+    return [fig]
 
 @app.callback(
     Output("loss_graph", "figure"),
@@ -300,7 +298,7 @@ def update_dead_neurons(n):
     fig = go.Figure([go.Bar(x=layers, y=dead_ratios, name="Dead Neurons (%)")])
     fig.update_layout(title="Dead Neuron Detection", xaxis_title="Layers", yaxis_title="Dead Ratio", yaxis_range=[0, 1])
     
-    return fig
+    return [fig]
 
 ##############################
 ### Anomaly Detection Panel###
@@ -324,7 +322,7 @@ def update_anomaly_chart(n):
     ])
     fig.update_layout(title="Activation Anomalies", xaxis_title="Layers", yaxis_title="Activation Magnitude")
     
-    return fig
+    return [fig]
 
 ###########################
 ### Step Debugger Button###
