@@ -192,6 +192,8 @@ python neural.py debug --step mnist.neural
 
 ## 📚 Documentation
 
+- [DSL Documentation](docs/dsl.md)
+
 Explore advanced features:
 - [Custom Layers Guide]()
 - [ONNX Export Tutorial]()
