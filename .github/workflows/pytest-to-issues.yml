@@ -21,18 +21,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pygithub
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Install project in editable mode
+        run: |
+          pip install -e .
+
       - name: Run pytest and generate report
         continue-on-error: true  # Crucial for next step to run
         run: pytest tests/ --junit-xml=test-results.xml
+
+
       - name: Create GitHub Issues for Failures
         if: ${{ failure() }}  # Only run if tests fail
         env:
           GITHUB_TOKEN: ${{ secrets.ISSUES_TOKEN }}
-          XML_PATH: test-results.xml
         run: |
           python scripts/create_issues.py
-      - name: Debug Test Results
-        run: |
-          echo "Test results file exists: $(ls test-results.xml)"
-          echo "File content:"
-          cat test-results.xml
