@@ -35,14 +35,3 @@
 
 - `--hacky` mode for security analysis.
 
-Skills data structures, algorithms
-Assembly project, to become the most powerful ftogolese deveopper, once every two day
-Codeforces grandmeater to be remarked
-Hack the box badge github and challenges
-Leetcode top rank, AtCoder
-GoogleCodeJam
-Next OS kernel
-Certifications, i think one per two month
-Youtube for neural
-
-Data Fed unto the neural network analysis for neural, what i would change for the industry and will it be remarkable, give me insights, i will name the module inside neural, batch
