@@ -458,37 +458,38 @@ class ModelTransformer(lark.Transformer):
 
     def conv2d(self, items):
         param_style = items[0]
+        params = self._extract_value(param_style)
         ordered_params = []
         named_params = {}
 
-        # Iterate through each child parameter in param_style
-        for child in param_style.children:
-            param = self._extract_value(child)
-            if isinstance(param, dict):
-                named_params.update(param)
-            else:
-                # Handle cases where param could be a list (from dense_ordered_params)
-                if isinstance(param, list):
-                    ordered_params.extend(param)
-                else:
-                    ordered_params.append(param)
+        # Determine if parameters are ordered or named
+        if isinstance(params, dict):
+            named_params = params
+        elif isinstance(params, list):
+            ordered_params = params
+        else:
+            # Handle single parameter (e.g., Conv2D(32))
+            ordered_params.append(params)
 
-        params = {}
+        param_dict = {}
         # Assign ordered parameters to 'filters' and 'kernel_size'
         if ordered_params:
             if len(ordered_params) >= 1:
-                params['filters'] = ordered_params[0]
+                param_dict['filters'] = ordered_params[0]
             if len(ordered_params) >= 2:
                 kernel_size = ordered_params[1]
                 if isinstance(kernel_size, (list, tuple)):
-                    params['kernel_size'] = tuple(kernel_size)
+                    param_dict['kernel_size'] = tuple(kernel_size)
                 else:
-                    params['kernel_size'] = kernel_size
+                    param_dict['kernel_size'] = kernel_size
+            # Handle activation if present as an ordered parameter
+            if len(ordered_params) >= 3:
+                param_dict['activation'] = ordered_params[2]
 
         # Merge named parameters, overriding any existing keys if necessary
-        params.update(named_params)
+        param_dict.update(named_params)
 
-        return {'type': 'Conv2D', 'params': params}
+        return {'type': 'Conv2D', 'params': param_dict}
     def conv3d(self, items):
         return {'type': 'Conv3D', 'params': items[0]}
     
