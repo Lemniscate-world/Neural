@@ -71,6 +71,8 @@ class ShapePropagator:
         """Processes a layer and logs shape changes for nntrace."""
         layer_type = layer["type"]
         params = layer.get("params", {})
+        kernel_size = tuple(params.get("kernel_size", [3, 3]) if isinstance(params.get("kernel_size"), list) else (3, 3))
+        params["kernel_size"] = kernel_size  # Ensure tuple in params
 
         start_time = time.time()  # Measure execution time
 
@@ -149,15 +151,23 @@ class ShapePropagator:
 ### Send execution trace data to the dashboard ###
 ##################################################
     def get_trace(self):
-            trace = [
-            {
+        trace = []
+        for layer_type, exec_time, comp_time, trans_time, params, flops, memory, grad_norm, dead_ratio, mean_act, anomaly in self.execution_trace:
+            kernel_size = params.get("kernel_size", (1, 1))
+            if isinstance(kernel_size, list):
+                print(f"WARNING: Converting list kernel_size {kernel_size} to tuple for {layer_type}")
+                kernel_size = tuple(kernel_size)
+            elif not isinstance(kernel_size, tuple):
+                print(f"WARNING: Unexpected kernel_size type {type(kernel_size)} for {layer_type}, defaulting to (1, 1)")
+                kernel_size = (1, 1)
+            trace.append({
                 "layer": layer_type, "execution_time": exec_time, "compute_time": comp_time,
-                "transfer_time": trans_time, "kernel_size": tuple(params.get("kernel_size", (1, 1))),
+                "transfer_time": trans_time, "kernel_size": kernel_size,
                 "flops": flops, "memory": memory, "grad_norm": grad_norm, "dead_ratio": dead_ratio,
                 "mean_activation": mean_act, "anomaly": anomaly
-            } for layer_type, exec_time, comp_time, trans_time, params, flops, memory, grad_norm, dead_ratio, mean_act, anomaly in self.execution_trace
-        ]
-            return trace
+            })
+            
+        return trace
 
     def _process_layer(self, input_shape, layer, framework):
         layer_type = layer['type']
@@ -220,6 +230,8 @@ class ShapePropagator:
         elif isinstance(kernel, tuple):
             if len(kernel) != len(spatial_dims):
                 raise ValueError("Kernel size must match spatial dimensions")
+
+        kernel_size = tuple(params.get("kernel_size", [3, 3]) if isinstance(params.get("kernel_size"), list) else (3, 3))
 
         stride = params.get('stride', 1)
         padding = self._calculate_padding(params, input_shape[1] if data_format=='channels_last' else input_shape[2])

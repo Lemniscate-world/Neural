@@ -194,15 +194,15 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Convolutional layers 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
-        conv1d: "Conv1D(" param_style1 ")"
-        conv2d: "Conv2D(" param_style1 ")"
-        conv3d: "Conv3D(" param_style1 ")"
+        conv1d: "Conv1D" "(" param_style1 ")"
+        conv2d: "Conv2D" "(" param_style1 ")"
+        conv3d: "Conv3D" "(" param_style1 ")"
         conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
-        conv1d_transpose: "Conv1DTranspose(" param_style1 ")"
-        conv2d_transpose: "Conv2DTranspose(" param_style1 ")"
-        conv3d_transpose: "Conv3DTranspose(" param_style1 ")"
-        depthwise_conv2d: "DepthwiseConv2D(" param_style1 ")"
-        separable_conv2d: "SeparableConv2D(" param_style1 ")"
+        conv1d_transpose: "Conv1DTranspose" "(" param_style1 ")"
+        conv2d_transpose: "Conv2DTranspose" "(" param_style1 ")"
+        conv3d_transpose: "Conv3DTranspose" "(" param_style1 ")"
+        depthwise_conv2d: "DepthwiseConv2D" "(" param_style1 ")"
+        separable_conv2d: "SeparableConv2D" "(" param_style1 ")"
 
         // Pooling layer parameters
         pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
@@ -449,51 +449,38 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Conv1D', 'params': items[0]}
 
     def conv2d(self, items):
-        # Recursively flatten a tree or list of items into a single list.
-        def flatten(item):
-            if isinstance(item, list):
-                result = []
-                for sub in item:
-                    result.extend(flatten(sub))
-                return result
-            elif isinstance(item, Tree):
-                return flatten(item.children)
-            else:
-                return [item]
-
-        # Flatten the parameter tree.
-        flat_items = flatten(items[0])
-        
-        # Filter out any tokens that are just the literal "Conv2D"
-        flat_items = [it for it in flat_items if not (isinstance(it, Token) and it.type == "NAME" and it.value == "Conv2D")]
-
+        param_style = items[0]
         ordered_params = []
         named_params = {}
-        
-        # Process each flattened item:
-        for item in flat_items:
-            value = self._extract_value(item)
-            if isinstance(value, dict):  # Named parameter
-                named_params.update(value)
-            else:  # Ordered parameter or value
-                ordered_params.append(value)
-        
+
+        # Iterate through each child parameter in param_style
+        for child in param_style.children:
+            param = self._extract_value(child)
+            if isinstance(param, dict):
+                named_params.update(param)
+            else:
+                # Handle cases where param could be a list (from dense_ordered_params)
+                if isinstance(param, list):
+                    ordered_params.extend(param)
+                else:
+                    ordered_params.append(param)
+
         params = {}
-        # Assign ordered parameters: filters, kernel_size, activation
-        if len(ordered_params) >= 1:
-            params['filters'] = ordered_params[0]
-        if len(ordered_params) >= 2:
-            params['kernel_size'] = ordered_params[1]
-        if len(ordered_params) >= 3:
-            params['activation'] = ordered_params[2]
-        
-        # Merge with named parameters (override if needed)
+        # Assign ordered parameters to 'filters' and 'kernel_size'
+        if ordered_params:
+            if len(ordered_params) >= 1:
+                params['filters'] = ordered_params[0]
+            if len(ordered_params) >= 2:
+                kernel_size = ordered_params[1]
+                if isinstance(kernel_size, (list, tuple)):
+                    params['kernel_size'] = tuple(kernel_size)
+                else:
+                    params['kernel_size'] = kernel_size
+
+        # Merge named parameters, overriding any existing keys if necessary
         params.update(named_params)
-        
+
         return {'type': 'Conv2D', 'params': params}
-
-
-
     def conv3d(self, items):
         return {'type': 'Conv3D', 'params': items[0]}
     

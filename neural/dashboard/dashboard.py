@@ -46,15 +46,17 @@ trace_data = []
 
 @socketio.on("request_trace_update")
 def send_trace_update():
-    """Streams real-time execution traces to the dashboard via WebSockets with configurable interval."""
     global trace_data
     while True:
-        trace_data = propagator.get_trace()  # Assume propagator is global or passed
-        # Ensure kernel_size is a tuple before emitting
-        trace_data = [{k: tuple(v) if k == "kernel_size" and isinstance(v, list) else v for k, v in entry.items()} for entry in trace_data]
+        trace_data = propagator.get_trace()
+        # Double-check kernel_size is a tuple
+        trace_data = [
+            {k: tuple(v) if k == "kernel_size" and isinstance(v, list) else v for k, v in entry.items()}
+            for entry in trace_data
+        ]
+        print(f"DEBUG: Emitting trace_data with kernel_size: {trace_data[0]['kernel_size']}, type: {type(trace_data[0]['kernel_size'])}")
         socketio.emit("trace_update", json.dumps(trace_data))
-        time.sleep(UPDATE_INTERVAL / 1000)  # Convert milliseconds to seconds
-
+        time.sleep(UPDATE_INTERVAL / 1000)
 
 ### Interval Updates ####
 @app.callback(
