@@ -41,5 +41,15 @@ def create_github_issues(issues):
         except Exception as e:
             print(f"Failed to create issue for {issue['title']}: {e}")
 
+    def issue_exists(repo, title):
+        for issue in repo.get_issues(state="open"):
+            if issue.title == title:
+                return True
+        return False
+
+    if not issue_exists(repo, issue["title"]):
+        repo.create_issue(title=issue["title"], body=issue["body"])
+
+
 if __name__ == "__main__":
     create_github_issues(parse_pytest_results("test-results.xml"))
