@@ -340,7 +340,7 @@ def test_trace_api(mock_get):
 def test_websocket_connection():
     """Verify WebSocket receives trace updates."""
     socketio = SocketIO(app.server)
-    client = SocketIOTestClient(app, socketio)
+    socket_client = SocketIOTestClient(app, socketio)
 
     # Mock WebSocket response
     mock_data = TRACE_DATA
