@@ -67,6 +67,11 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
+```bash
+pip install neural-dsl
+``̀
+see v0.1.1 for bug fixes
+
 **Prerequisites**: Python 3.8+, pip
 
 ## 🛠️ Quick Start
