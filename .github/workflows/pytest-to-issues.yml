@@ -44,7 +44,7 @@ jobs:
       - name: Create GitHub Issues for Failures
         if: always()
         env:
-          GITHUB_TOKEN: ${{ secrets.ISSUES_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python scripts/create_issues.py
 
