@@ -15,7 +15,7 @@ import requests
 from dash.dependencies import Input, Output
 from neural.dashboard.dashboard import app, update_trace_graph, update_flops_memory_chart, update_gradient_chart, update_dead_neurons, update_anomaly_chart, update_graph
 from unittest.mock import MagicMock, patch
-from flask_socketio import SocketIOTestClient
+from flask_socketio import SocketIOTestClient, SocketIO
 import plotly.graph_objects as go
 import numpy as np
 
@@ -138,8 +138,8 @@ def test_update_trace_graph_gantt():
     
     # Assertions
     assert len(fig.data) == 2  # One bar per layer
-    assert list(fig.data[0].name) == "Conv2D"
-    assert list(fig.data[1].name) == "Dense"
+    assert fig.data[0].name == "Conv2D"
+    assert fig.data[1].name == "Dense"
 
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_update_trace_graph_heatmap():
@@ -196,7 +196,7 @@ def test_update_trace_graph_empty():
     assert len(fig.data) == 0
 
 ###########################################
-### 🛠 Test FLOPs & Memory Visualization ###
+### Test FLOPs & Memory Visualization #####
 ###########################################
 
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
@@ -219,9 +219,9 @@ def test_update_flops_memory_chart():
     assert list(fig.data[0].y) == [1000, 2000]  # FLOPs
     assert list(fig.data[1].y) == [10, 20]  # Memory
 
-###########################################
-### 🛠 Test Gradient Flow Visualization ###
-###########################################
+########################################
+### Test Gradient Flow Visualization ###
+########################################
 
 @patch("requests.get")
 def test_update_gradient_chart(mock_get):
@@ -250,9 +250,9 @@ def test_update_gradient_chart(mock_get):
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
     assert list(fig.data[0].y) == [0.9, 0.1]
 
-###########################################
-### 🛠 Test Dead Neuron Detection Panel ###
-###########################################
+########################################
+### Test Dead Neuron Detection Panel ###
+########################################
 
 @patch("requests.get")
 def test_update_dead_neurons(mock_get):
@@ -281,9 +281,9 @@ def test_update_dead_neurons(mock_get):
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
     assert list(fig.data[0].y) == [0.1, 0.5]
 
-###########################################
-### 🛠 Test Anomaly Detection Panel ###
-###########################################
+####################################
+### Test Anomaly Detection Panel ###
+####################################
 
 @patch("requests.get")
 def test_update_anomaly_chart(mock_get):
@@ -312,9 +312,9 @@ def test_update_anomaly_chart(mock_get):
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
     assert list(fig.data[1].y) == [0, 1]  # Only Dense has an anomaly
 
-###########################################
-### 🛠 Test Dashboard Initialization ###
-###########################################
+#####################################
+### Test Dashboard Initialization ###
+#####################################
 
 def test_dashboard_starts(test_app):
     """Ensures the Dash app starts without issues."""
@@ -339,7 +339,8 @@ def test_trace_api(mock_get):
 
 def test_websocket_connection():
     """Verify WebSocket receives trace updates."""
-    socket_client = SocketIOTestClient(app)
+    socketio = SocketIO(app.server)
+    client = SocketIOTestClient(app, socketio)
 
     # Mock WebSocket response
     mock_data = TRACE_DATA
@@ -352,9 +353,9 @@ def test_websocket_connection():
     assert len(received) > 0  # Ensure WebSocket is working
     assert json.loads(received[0][1]) == mock_data  # Validate data matches
 
-#######################
+######################
 ### UI Interaction ###
-#######################
+######################
 
 @patch('neural.dashboard.dashboard.trace_data', TRACE_DATA)
 def test_model_comparison():
@@ -378,9 +379,9 @@ def test_model_comparison():
     assert fig_b is not None
     assert fig_a != fig_b  # Different architectures should have different graphs
 
-###########################################
+#######################################
 ### Edge Cases and Additional Tests ###
-###########################################
+#######################################
 
 @patch('neural.dashboard.dashboard.trace_data', [])
 def test_update_trace_graph_invalid_data():
@@ -435,12 +436,22 @@ def test_tensor_flow_visualization():
     fig = create_animated_network([{"layer": "Conv2D", "output_shape": (26, 26, 32)}])
     assert len(fig.data) > 0
 
+#############
+### Theme ###
+#############
+
+def test_dashboard_theme(dash_app):
+    with Dash(app=dash_app) as test:
+        test.start_server()
+        test.wait_for_element("#trace_graph")
+        # Check for Darkly theme (simplified check—look for dark styles)
+        body = test.driver.find_element("body")
+        assert "darkly" in body.get_attribute("class") or "dark-theme" in body.get_attribute("class")
+
 
 ####################################
 #### Testing Total Visualization ###
 ####################################
-
-
 
 @pytest.fixture
 def driver():
