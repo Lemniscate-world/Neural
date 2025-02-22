@@ -240,18 +240,22 @@ app.layout = html.Div([
     dcc.Graph(id="architecture_graph"),
 ])
 
+##########################
+### Architecture Graph ###
+##########################
+
+
 @app.callback(
     Output("architecture_graph", "figure"),
     Input("architecture_selector", "value")
 )
-def update_graph(selected_model):
+def update_graph(arch):
     # Initialize input shape (e.g., for a 28x28 RGB image)
     input_shape = (1, 28, 28, 3)  # Batch, height, width, channels
     
-    if selected_model == "A":
-        layers = [{"type": "Conv2D", "params": {"filters": 32}}, {"type": "Dense", "params": {"units": 128}}]
-    else:
-        layers = [{"type": "Dense", "params": {"units": 256}}]
+    if arch == "A":
+        layers = ["Conv2D", "Dense"]  # Example
+        params = [{"kernel_size": (3, 3), "units": 128} for _ in layers]
 
     propagator = ShapePropagator()
     for layer in layers:
