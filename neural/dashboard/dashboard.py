@@ -66,9 +66,9 @@ def update_interval(new_interval):
 propagator = ShapePropagator()
 threading.Thread(target=socketio.run, args=("localhost", 5001), daemon=True).start()
 
-#################################################
-#### Layers Execution Trace & Others Subplots ###
-#################################################
+####################################################
+#### Layers Execution Trace Graph & Its Subplots ###
+####################################################
 
 @app.callback(
     [Output("trace_graph", "figure")],
@@ -78,8 +78,10 @@ def update_trace_graph(n, viz_type, selected_layers=None):
     """Update execution trace graph with various visualization types."""
     global trace_data
     
-    if not trace_data:
-        return [go.Figure()]
+
+    ### ***Errors Handling*** ###
+    if not trace_data or any(not isinstance(entry["execution_time"], (int, float)) for entry in trace_data):
+        return [go.Figure()]  # Return empty figure for invalid data
 
     # Filter data based on selected layers (if any)
     if selected_layers:
@@ -100,7 +102,7 @@ def update_trace_graph(n, viz_type, selected_layers=None):
     fig = go.Figure()
 
     if viz_type == "basic":
-        # Basic Bar Chart
+        ### Basic Bar Chart ###
         fig = go.Figure([go.Bar(x=layers, y=execution_times, name="Execution Time (s)")])
         fig.update_layout(
             title="Layer Execution Time",
@@ -196,7 +198,9 @@ def update_trace_graph(n, viz_type, selected_layers=None):
 
     return [fig]
 
+############################
 #### FLOPS Memory Chart ####
+############################
 
 @app.callback(
     Output("flops_memory_chart", "figure"),
@@ -219,6 +223,10 @@ def update_flops_memory_chart(n):
     fig.update_layout(title="FLOPs & Memory Usage", xaxis_title="Layers", yaxis_title="Values", barmode="group")
     
     return [fig]
+
+##################
+### Loss Graph ###
+##################
 
 @app.callback(
     Output("loss_graph", "figure"),
