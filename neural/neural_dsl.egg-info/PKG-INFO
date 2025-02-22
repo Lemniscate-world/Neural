@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: neural-dsl
-Version: 0.1.0
+Version: 0.1.1
 Summary: A domain-specific language and debugger for neural networks
 Home-page: https://github.com/Lemniscate-SHA-256/Neural
 Author: Lemniscate-SHA-256/SENOUVO Jacques-Charles Gad
@@ -27,6 +27,9 @@ Requires-Dist: graphviz
 
   ![Design sans titre (1) (1)](https://github.com/user-attachments/assets/cb351971-ba3d-4391-9401-25cf2ccfeca9)
 
+
+## Status
+Neural-dsl v0.1.0 is live on PyPI (`pip install neural-dsl`)! It’s a work-in-progress with bugs—see [CHANGELOG.md](CHANGELOG.md) for details. Feedback welcome!
 
 # Neural: A Neural Network Programming Language
 
@@ -259,3 +262,6 @@ pre-commit install  # Auto-format code on commit
 
 - [Discord Server](https://discord.gg/your-invite-link): Chat with developers
 - [Twitter @NLang4438](https://x.com/NLang4438): Updates & announcements
+
+
+**Note**: This is an early release (v0.1.0) with known bugs—see GitHub for updates!
