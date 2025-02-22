@@ -40,9 +40,9 @@ except:
 # Store Execution Trace Data
 trace_data = []
 
-############################################
-#### WebSocket Listener for Live Updates ###
-############################################
+########################################################################
+#### WebSocket Listener (Sending trace & Intervals) for Live Updates ###
+########################################################################
 
 @socketio.on("request_trace_update")
 def send_trace_update():
@@ -50,6 +50,8 @@ def send_trace_update():
     global trace_data
     while True:
         trace_data = propagator.get_trace()  # Assume propagator is global or passed
+        # Ensure kernel_size is a tuple before emitting
+        trace_data = [{k: tuple(v) if k == "kernel_size" and isinstance(v, list) else v for k, v in entry.items()} for entry in trace_data]
         socketio.emit("trace_update", json.dumps(trace_data))
         time.sleep(UPDATE_INTERVAL / 1000)  # Convert milliseconds to seconds
 
