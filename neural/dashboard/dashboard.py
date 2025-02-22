@@ -140,8 +140,10 @@ def update_trace_graph(n, viz_type, selected_layers=None):
 
     elif viz_type == "box":
         ### Box Plots for Variability ###
-        times_by_layer = {layer: [entry["execution_time"] for entry in trace_data if entry["layer"] == layer] for layer in set(entry["layer"] for entry in trace_data)}
-        fig = go.Figure([go.Box(x=list(times_by_layer.keys()), y=list(times_by_layer.values()), name="Execution Time")])
+        # Use unique layers from filtered_data, maintaining original order
+        unique_layers = list(dict.fromkeys(entry["layer"] for entry in filtered_data))  # Preserves order, removes duplicates
+        times_by_layer = {layer: [entry["execution_time"] for entry in filtered_data if entry["layer"] == layer] for layer in unique_layers}
+        fig = go.Figure([go.Box(x=unique_layers, y=[times_by_layer[layer] for layer in unique_layers], name="Execution Variability")])
         fig.update_layout(
             title="Layer Execution Time Variability",
             xaxis_title="Layers",
