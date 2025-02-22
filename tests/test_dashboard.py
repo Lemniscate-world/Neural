@@ -25,6 +25,11 @@ def test_app():
     """Creates Dash test client."""
     return app
 
+
+#####################################
+### Client Simulation For Testing ###
+#####################################
+
 @pytest.fixture
 def test_client():
     """Creates a test client for the dashboard app."""
