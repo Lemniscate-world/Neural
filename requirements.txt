@@ -9,3 +9,9 @@ dash>=2.18.2
 flask-socketio
 pytest>=7.0.0
 dash[pytest]>=2.18.2
+psutil
+yaml
+numpy
+networkx
+torch
+tensorflow
