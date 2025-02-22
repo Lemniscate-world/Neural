@@ -9,6 +9,12 @@ GITHUB_TOKEN = os.environ.get("ISSUES_TOKEN")
 REPO = "Lemniscate-SHA-256/Neural"
 
 def parse_pytest_results(xml_path):
+    xml_path = os.path.join(
+        os.environ.get('GITHUB_WORKSPACE', ''), 
+        'test-results.xml'
+    )
+    if not os.path.exists(xml_path):
+        xml_path = 'test-results.xml'
     tree = ET.parse(xml_path)
     root = tree.getroot()
     issues = []
@@ -33,15 +39,31 @@ def parse_pytest_results(xml_path):
 
 
 def create_github_issues(issues):
-    g = Github(GITHUB_TOKEN)
+    print(f"Processing {len(issues)} potential issues")
+    
+    g = Github(os.environ['ISSUES_TOKEN'])
     repo = g.get_repo(REPO)
-    for issue in issues:
+    
+    for idx, issue in enumerate(issues, 1):
+        print(f"\n--- Processing Issue {idx}/{len(issues)} ---")
+        print(f"Title: {issue['title']}")
+        print(f"Body: {issue['body'][:100]}...")
+        
         try:
-            repo.create_issue(title=issue["title"], body=issue["body"])
-            print(f"Created issue: {issue['title']}")
+            exists = any(issue.title.lower() == issue['title'].lower() 
+                        for issue in repo.get_issues(state='open'))
+            if exists:
+                print("↻ Existing issue found - skipping")
+                continue
+                
+            new_issue = repo.create_issue(
+                title=issue["title"],
+                body=issue["body"],
+                labels=['bug', 'ci']
+            )
+            print(f"✓ Created issue #{new_issue.number}")
         except Exception as e:
-            print(f"Failed to create issue for {issue['title']}: {e}")
-
+            print(f"✖ Error: {str(e)}")
 
 if __name__ == "__main__":
     create_github_issues(parse_pytest_results("test-results.xml"))
