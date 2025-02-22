@@ -428,6 +428,14 @@ def test_update_trace_graph_thresholds_annotations():
     assert fig.layout.annotations[0].text == "High: 0.005s"
 
 
+
+#### Tensor Flow Test ####
+
+def test_tensor_flow_visualization():
+    fig = create_animated_network([{"layer": "Conv2D", "output_shape": (26, 26, 32)}])
+    assert len(fig.data) > 0
+
+
 ####################################
 #### Testing Total Visualization ###
 ####################################
