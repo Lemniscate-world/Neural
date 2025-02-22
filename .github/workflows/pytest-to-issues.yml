@@ -26,16 +26,21 @@ jobs:
         run: |
           pip install -e .
 
-      - name: Run pytest and generate report
-        continue-on-error: true  # Crucial for next step to run
-        run: pytest tests/ --junit-xml=test-results.xml || true
+      - name: Run tests with XML
+        continue-on-error: true
+        run: |
+          pytest tests/ --junit-xml=test-results.xml || echo "Pytest failed but continuing"
+        
+      - name: Create XML if missing
+        if: always()
+        run: |
           if [ ! -f test-results.xml ]; then
-            echo '<?xml version="1.0" encoding="utf-8"?><testsuite></testsuite>' > test-results.xml
+           echo '<?xml version="1.0"?><testsuite name="pytest"></testsuite>' > test-results.xml
           fi
-
+        
 
       - name: Create GitHub Issues for Failures
-        if: ${{ failure() }}  # Only run if tests fail
+        if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.ISSUES_TOKEN }}
         run: |
