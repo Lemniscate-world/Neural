@@ -60,7 +60,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_size: NAME ":" explicit_tuple  
         named_filters: "filters" "=" NUMBER  // Example: filters=32
         named_strides: "strides" "=" value  // Example: strides=(1, 1) or strides=1
-        named_padding: "padding" "=" STRING  // Example: padding="same" or padding="valid"
+        named_padding: "padding" "=" STRING | "padding" ":" STRING  // Example: padding="same" or padding="valid"
         named_dilation_rate: "dilation_rate" "=" value  // Example: dilation_rate=(2, 2) or dilation_rate=2
         named_groups: "groups" "=" NUMBER  // Example: groups=32
         named_channels: "channels" "=" NUMBER  // Example: channels=3
@@ -621,21 +621,30 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'MaxPooling1D', 'params': param_dict}
 
     def max_pooling2d(self, items):
-        param_style = items[0]
+        # Extract the parsed parameters using _extract_value
+        param_style = self._extract_value(items[0])
         params = {}
+        
         if isinstance(param_style, list):
-            ordered_params = [self._extract_value(p) for p in param_style if not isinstance(p, dict)]
+            # Extract ordered parameters
+            ordered_params = [p for p in param_style if not isinstance(p, dict)]
             if ordered_params:
                 params['pool_size'] = ordered_params[0]
             if len(ordered_params) > 1:
+                print(ordered_params[1])
                 params['strides'] = ordered_params[1]
             if len(ordered_params) > 2:
+                print(ordered_params[2])
                 params['padding'] = ordered_params[2]
+            
+            # Extract named parameters
             for item in param_style:
                 if isinstance(item, dict):
                     params.update(item)
         elif isinstance(param_style, dict):
+            # Use named parameters directly
             params = param_style.copy()
+        
         return {'type': 'MaxPooling2D', 'params': params}
 
     def max_pooling3d(self, items):
