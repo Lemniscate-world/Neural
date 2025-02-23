@@ -39,23 +39,24 @@ def create_github_issues(issues):
         raise ValueError("Missing GITHUB_TOKEN environment variable")
     
     g = Github(token)
-    repo = g.get_repo(REPO)
+    repo = g.get_repo("Lemniscate-SHA-256/Neural")
     
     for issue in issues:
         # Check for existing issues with similar titles
-        existing = any(
-            issue.title.startswith(existing_issue.title[:40])
-            for existing_issue in repo.get_issues(state='open')
+        existing_issues = list(repo.get_issues(state='open'))
+        exists = any(
+            issue["title"] in existing.title 
+            for existing in existing_issues
         )
         
-        if not existing:
+        if not exists:
             try:
                 repo.create_issue(
-                    title=issue["title"],
+                    title=issue["title"][:120],  # Truncate long titles
                     body=issue["body"],
                     labels=['bug', 'ci']
                 )
-                print(f"Created: {issue['title']}")
+                print(f"Created issue: {issue['title']}")
             except Exception as e:
                 print(f"Error creating issue: {str(e)}")
 

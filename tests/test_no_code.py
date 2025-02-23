@@ -1,8 +1,8 @@
 # tests/test_no_code.py
 import pytest
 from unittest.mock import Mock, patch
-from dash.testing import DashTest
-from neural.no_code import app
+from dash.testing.application_runners import import_app
+from neural.no_code.no_code import app
 from neural.code_generation.code_generator import generate_code
 from neural.shape_propagation.shape_propagator import ShapePropagator
 
