@@ -22,7 +22,8 @@ from unittest.mock import MagicMock, patch
 from flask_socketio import SocketIOTestClient, SocketIO
 import plotly.graph_objects as go
 import numpy as np
-
+import flask
+from flask import Flask
 
 ### Dash Test Client ###
 
