@@ -71,7 +71,6 @@ tests/test_code_generator.py
 tests/test_dashboard.py
 tests/test_device_execution.py
 tests/test_error_handling.py
-tests/test_neural_visualizer.py
 tests/test_optimizers.py
 tests/test_parser.py
 tests/test_pretrained.py
