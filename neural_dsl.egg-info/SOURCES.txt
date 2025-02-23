@@ -67,6 +67,7 @@ neural_dsl.egg-info/requires.txt
 neural_dsl.egg-info/top_level.txt
 tests/test_ahpo.py
 tests/test_cli.py
+tests/test_code_generator.py
 tests/test_dashboard.py
 tests/test_device_execution.py
 tests/test_error_handling.py

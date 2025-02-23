@@ -137,14 +137,15 @@ class ShapePropagator:
         memory_usage = np.prod(output_shape) * 4 / (1024 ** 2)  # Convert to MB
 
         # Simulate compute and transfer times (you can refine this based on actual profiling)
-        start_time = time.time()
+        # start_time = time.time()
         # Simulate computation (e.g., based on FLOPs or layer complexity)
-        time.sleep(0.0001 * flops / 1e6)  # Simulate compute time proportional to FLOPs
-        compute_time = time.time() - start_time
+        # time.sleep(0.0001 * flops / 1e6)  # Simulate compute time proportional to FLOPs
+        compute_time = flops * 1e-9  # Simulated compute time (arbitrary scaling)
 
         # Simulate data transfer (e.g., based on input/output shapes)
-        transfer_time = (np.prod(input_shape) + np.prod(output_shape)) * 4 / (1024 ** 3)  # Bytes to seconds (simplified)
-
+        # transfer_time = (np.prod(input_shape) + np.prod(output_shape)) * 4 / (1024 ** 3)  # Bytes to seconds (simplified)
+        transfer_time = (np.prod(input_shape) + np.prod(output_shape)) * 4 / (1024 ** 3)  # GB/s simulation
+        
         return flops, memory_usage, compute_time, transfer_time
     
 ##################################################
