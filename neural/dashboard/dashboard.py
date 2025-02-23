@@ -1,5 +1,7 @@
 import dash
 from dash import Dash, dcc, html
+import sys
+import os
 import numpy as np
 import pysnooper
 from dash.dependencies import Input, Output, State
@@ -12,6 +14,9 @@ import time
 from flask_socketio import SocketIO
 import threading
 from dash_bootstrap_components import themes
+
+# Add the parent directory of 'neural' to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from neural.shape_propagation.shape_propagator import ShapePropagator
 from neural.dashboard.tensor_flow import create_animated_network
@@ -489,4 +494,4 @@ app.layout = html.Div([
 ])
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False, use_reloader=False)
