@@ -45,6 +45,8 @@
 
 - test_parser.py::test_layer_parsing[maxpooling2d-strides]
 
+- Test Failure: test_cli.py::test_compile_command - NameError: name 'cli' is not defined
+
 - Test Failure: test_websocket_connection 
 
 - Test Failure: test_dashboard.py::test_dashboard_visualization - selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_CONNECTION_REFUSED
