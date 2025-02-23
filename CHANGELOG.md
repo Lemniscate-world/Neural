@@ -50,6 +50,7 @@
 - Test Failure: test_websocket_connection 
 
 - Test Failure: test_dashboard.py::test_dashboard_visualization - selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_CONNECTION_REFUSED
+  
 - Test Failure: test_cli.py::test_compile_command - NameError: name 'cli' is not defined
 
 - Test Failure: test_cli.py::test_compile_command - AssertionError: Output file sample_tensorflow.py was not created #56
@@ -57,3 +58,5 @@
 - Test Failure: test_cli.py::test_compile_command - TypeError: a bytes-like object is required, not 'list' #57
 
 - test_cli.py::test_compile_command - AssertionError: Command failed: assert 1 == 0
+
+- Test Failure: test_code_generator.py::test_generate_tensorflow_simple - TypeError: unsupported operand type(s) for *: 'NoneType' and 'int' #58
