@@ -458,21 +458,24 @@ class ModelTransformer(lark.Transformer):
 
     def conv2d(self, items):
         param_style = items[0]
-        params = self._extract_value(param_style)
+        raw_params = self._extract_value(param_style)
         ordered_params = []
         named_params = {}
 
-        # Determine if parameters are ordered or named
-        if isinstance(params, dict):
-            named_params = params
-        elif isinstance(params, list):
-            ordered_params = params
+        # Separate ordered and named parameters
+        if isinstance(raw_params, list):
+            for param in raw_params:
+                if isinstance(param, dict):
+                    named_params.update(param)
+                else:
+                    ordered_params.append(param)
+        elif isinstance(raw_params, dict):
+            named_params = raw_params
         else:
-            # Handle single parameter (e.g., Conv2D(32))
-            ordered_params.append(params)
+            ordered_params.append(raw_params)
 
         param_dict = {}
-        # Assign ordered parameters to 'filters' and 'kernel_size'
+        # Assign ordered parameters to known fields
         if ordered_params:
             if len(ordered_params) >= 1:
                 param_dict['filters'] = ordered_params[0]
@@ -482,11 +485,10 @@ class ModelTransformer(lark.Transformer):
                     param_dict['kernel_size'] = tuple(kernel_size)
                 else:
                     param_dict['kernel_size'] = kernel_size
-            # Handle activation if present as an ordered parameter
             if len(ordered_params) >= 3:
                 param_dict['activation'] = ordered_params[2]
 
-        # Merge named parameters, overriding any existing keys if necessary
+        # Merge named parameters (override ordered if needed)
         param_dict.update(named_params)
 
         return {'type': 'Conv2D', 'params': param_dict}
@@ -921,49 +923,47 @@ class ModelTransformer(lark.Transformer):
                 return item.value
             if item.type in ('INT', 'FLOAT', 'NUMBER', 'SIGNED_NUMBER'):
                 try:
-                    return int(item)
+                    return int(item.value)
                 except ValueError:
-                    return float(item)
+                    return float(item.value)
             elif item.type == 'BOOL':
                 return item.value.lower() == 'true'
             elif item.type == 'STRING':
                 return item.value.strip('"')
             elif item.type == 'WS_INLINE':
                 return item.value.strip()
-            
         elif isinstance(item, Tree) and item.data == 'number_or_none':
             child = item.children[0]
-            if isinstance(child, Token) and child.type == 'STRING' and child.value.upper() == 'NONE':
+            if isinstance(child, Token) and child.value.upper() in ('NONE', 'None'):
                 return None
-
-
-        # Add handling for shape tuples
-        elif isinstance(item, Tree) and item.data == 'shape':
-            return tuple(self._extract_value(child) for child in item.children)
-        # Add handling for pool_size tuples
-        elif isinstance(item, Tree) and item.data == 'pool_size':
-            return tuple(self._extract_value(child) for child in item.children)
-        # Add handling for strides tuples
-        elif isinstance(item, Tree) and item.data =='strides':
-            return tuple(self._extract_value(child) for child in item.children)
-        # Add handling for padding tuples
-        elif isinstance(item, Tree) and item.data == 'padding':
-            return tuple(self._extract_value(child) for child in item.children)
-        # Add handling for dilation tuples
-        elif isinstance(item, Tree) and item.data == 'dilation':
-            return tuple(self._extract_value(child) for child in item.children)
-        # Add handling for kernel_size tuples
-        elif isinstance(item, list):  # Handles nested lists
-            return [self._extract_value(elem) for elem in item]
-        elif isinstance(item, dict):  # Handles nested dictionaries
-            return {k: self._extract_value(v) for k, v in item.items()}
-        elif isinstance(item, Tree):  # Handles all Tree types, not just tuple_
-            if item.data == 'tuple_':
+            else:
+                return self._extract_value(child)
+        # Handle tuples and lists
+        elif isinstance(item, Tree):
+            if item.data in ('tuple_', 'explicit_tuple'):
                 return tuple(self._extract_value(child) for child in item.children)
-            else:  # Extract values from other tree types
-                return {k: self._extract_value(v) for k, v in zip(item.children[::2], item.children[1::2])}
-        elif isinstance(item, Tree) and item.data == 'explicit_tuple':
-            return tuple(self._extract_value(child) for child in item.children)
+            else:
+                # Handle lists of parameters (not key-value pairs)
+                # Check if all children are non-dictionary values
+                extracted = [self._extract_value(child) for child in item.children]
+                # If any element is a dict, treat as mixed params
+                if any(isinstance(e, dict) for e in extracted):
+                    return extracted
+                # If even number of children, attempt key-value pairing
+                if len(item.children) % 2 == 0:
+                    try:
+                        return {self._extract_value(k): self._extract_value(v) 
+                                for k, v in zip(item.children[::2], item.children[1::2])}
+                    except TypeError:
+                        # Fallback to list if pairing fails
+                        return extracted
+                else:
+                    return extracted
+        # Handle nested structures
+        elif isinstance(item, list):
+            return [self._extract_value(elem) for elem in item]
+        elif isinstance(item, dict):
+            return {k: self._extract_value(v) for k, v in item.items()}
         return item
 
     def named_float(self, items):
