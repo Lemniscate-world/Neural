@@ -34,32 +34,30 @@ def parse_pytest_results(xml_path):
     return issues
 
 def create_github_issues(issues):
-    if not issues:
-        print("No issues found.")
-        return
-
-    g = Github(GITHUB_TOKEN)
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        raise ValueError("Missing GITHUB_TOKEN environment variable")
+    
+    g = Github(token)
     repo = g.get_repo(REPO)
-
-    for idx, issue in enumerate(issues, 1):
-        print(f"\n--- Processing Issue {idx}/{len(issues)} ---")
-        print(f"Title: {issue['title']}")
-        print(f"Body: {issue['body'][:100]}...")
-
-        try:
-            exists = any(existing_issue.title.lower() == issue["title"].lower() for existing_issue in repo.get_issues(state="open"))
-            if exists:
-                print("↻ Existing issue found - skipping")
-                continue
-            
-            new_issue = repo.create_issue(
-                title=issue["title"],
-                body=issue["body"],
-                labels=["bug", "ci"]
-            )
-            print(f"✓ Created issue #{new_issue.number}")
-        except Exception as e:
-            print(f"✖ Error: {str(e)}")
+    
+    for issue in issues:
+        # Check for existing issues with similar titles
+        existing = any(
+            issue.title.startswith(existing_issue.title[:40])
+            for existing_issue in repo.get_issues(state='open')
+        )
+        
+        if not existing:
+            try:
+                repo.create_issue(
+                    title=issue["title"],
+                    body=issue["body"],
+                    labels=['bug', 'ci']
+                )
+                print(f"Created: {issue['title']}")
+            except Exception as e:
+                print(f"Error creating issue: {str(e)}")
 
 if __name__ == "__main__":
     create_github_issues(parse_pytest_results("test-results.xml"))

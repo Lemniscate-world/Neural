@@ -4,8 +4,8 @@ from setuptools import setup, find_packages
 setup(
     name="neural-dsl",
     version="0.1.1",
-    packages=find_packages(where="neural"),
-    package_dir={"": "neural"},
+    packages=find_packages(where="."),
+    package_dir={"": "."},
     install_requires=[
         "click",
         "lark-parser",
