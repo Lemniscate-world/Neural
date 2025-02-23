@@ -103,9 +103,6 @@ class ShapePropagator:
             "io_usage": resources["io_usage"]
         })
 
-        # Store shape history for visualization
-        self.shape_history.append((layer_type, output_shape))
-
         if self.debug:
             print(f"TRACE: {trace_entry}")  # Debugging output
 
