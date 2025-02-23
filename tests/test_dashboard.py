@@ -1,3 +1,4 @@
+import json
 import sys
 import os
 import pysnooper
@@ -5,11 +6,11 @@ import pysnooper
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
 from dash import Dash
 import pytest
 from unittest.mock import Mock
 from pytest import approx
-import json
 import socketio
 import requests
 from dash.dependencies import Input, Output
@@ -474,8 +475,8 @@ def driver():
     yield driver
     driver.quit()
 
-def test_dashboard_visualization(driver, dash_duo):
-    dash_duo.start_server(app)
+def test_dashboard_visualization():
+    driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.get("http://localhost:8050")
     driver.save_screenshot("dashboard_full.png")
     assert driver.title == "NeuralDbg: Real-Time Execution Monitoring"
