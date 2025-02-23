@@ -6,7 +6,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import lark
-from neural.parser.parser import create_parser, ModelTransformer, generate_code
+from neural.parser.parser import create_parser, ModelTransformer
+from neural.code_generation.code_generator import generate_code
 from neural.shape_propagation.shape_propagator import  ShapePropagator
 
 test_code = """
