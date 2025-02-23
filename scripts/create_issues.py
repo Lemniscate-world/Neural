@@ -49,12 +49,17 @@ def create_github_issues(issues):
             for existing in existing_issues
         )
         
+        for existing in existing_issues:
+            if issue["title"].lower() == existing.title.lower():
+                existing.edit(state="closed")
+
         if not exists:
             try:
                 repo.create_issue(
                     title=issue["title"][:120],  # Truncate long titles
                     body=issue["body"],
-                    labels=['bug', 'ci']
+                    labels=['bug', 'ci'],
+                    assignees=['Lemniscate-SHA-256']
                 )
                 print(f"Created issue: {issue['title']}")
             except Exception as e:
