@@ -9,7 +9,7 @@ import shutil
 
 
 # Add the parent directory of 'neural' to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 from neural.parser.parser import create_parser, ModelTransformer
