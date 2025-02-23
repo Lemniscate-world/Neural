@@ -11,7 +11,6 @@ numpy>=1.23.0
 plotly>=5.18
 psutil>=5.9.0
 pytest>=7.0.0
-tensorflow>=2.10.0
 torch>=1.10.0
 pygithub>=1.59
 pyyaml>=6.0.1
@@ -19,7 +18,10 @@ selenium>=4.0
 optuna>=3.0
 fastapi>=0.68
 dash>=2.0
-python-dotenv
+python-dotenv>=1.0
 webdriver-manager
 torch>=1.10
 tensorflow>=2.6
+huggingface_hub>=0.16
+transformers>=4.30
+torchvision>=0.15

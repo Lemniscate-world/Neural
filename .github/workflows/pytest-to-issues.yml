@@ -13,6 +13,7 @@ jobs:
     permissions:
       issues: write
       contents: read
+      packages: read 
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -21,9 +22,10 @@ jobs:
           python-version: '3.12'
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pytest pygithub
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -U pip setuptools wheel
+          pip install -r requirements.txt
+          pip install -e .[dev]  # For development dependencies
+          pip install tensorrt  # Specific dependency from NVIDIA
       
       - name: Install project in editable mode
         run: |
@@ -57,3 +59,14 @@ jobs:
           cat test-results.xml
           echo "=== Environment ==="
           echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN != '' }}"
+
+      - name: Add NVIDIA repository
+        run: |
+          distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+          curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+          curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+          sudo apt-get update
+        
+      - name: Install TensorRT
+        run: |
+          sudo apt-get install -y tensorrt
