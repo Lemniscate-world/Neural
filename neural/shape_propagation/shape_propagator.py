@@ -118,33 +118,26 @@ class ShapePropagator:
 ### Performance Computation ###
 ###############################
 
-    def _compute_performance(self, layer, input_shape, output_shape):
-        """Estimates FLOPs, memory usage, and breaks down execution time for nntrace."""
-        layer_type = layer["type"]
-        params = layer.get("params", {})
-
-        # Compute FLOPs (unchanged from your original)
-        if layer_type == "Dense":
-            flops = input_shape[1] * output_shape[1] * 2  # Multiply + Add
-        elif layer_type == "Conv2D":
-            kernel_size = params.get("kernel_size", (3, 3))
-            filters = params.get("filters", 1)
-            flops = (kernel_size[0] * kernel_size[1] * input_shape[-1]) * filters * np.prod(output_shape[1:-1])
+    def _compute_performance(self, layer: dict, input_shape: tuple, output_shape: tuple) -> tuple:
+        """Compute performance metrics (FLOPs, memory usage, etc.) for a layer."""
+        # Replace None in shapes with 1 for calculation purposes
+        input_shape = tuple(1 if dim is None else dim for dim in input_shape)
+        output_shape = tuple(1 if dim is None else dim for dim in output_shape)
+        
+        # Calculate FLOPs (example for Conv2D)
+        if layer['type'] == 'Conv2D':
+            kernel_size = layer['params']['kernel_size']
+            filters = layer['params']['filters']
+            flops = np.prod(kernel_size) * np.prod(output_shape) * input_shape[-1]
         else:
-            flops = 0  # Default
-
-        # Estimate memory usage (unchanged)
-        memory_usage = np.prod(output_shape) * 4 / (1024 ** 2)  # Convert to MB
-
-        # Simulate compute and transfer times (you can refine this based on actual profiling)
-        # start_time = time.time()
-        # Simulate computation (e.g., based on FLOPs or layer complexity)
-        # time.sleep(0.0001 * flops / 1e6)  # Simulate compute time proportional to FLOPs
-        compute_time = flops * 1e-9  # Simulated compute time (arbitrary scaling)
-
-        # Simulate data transfer (e.g., based on input/output shapes)
-        # transfer_time = (np.prod(input_shape) + np.prod(output_shape)) * 4 / (1024 ** 3)  # Bytes to seconds (simplified)
-        transfer_time = (np.prod(input_shape) + np.prod(output_shape)) * 4 / (1024 ** 3)  # GB/s simulation
+            flops = 0  # Default for other layers
+        
+        # Memory usage (output tensor size in MB)
+        memory_usage = np.prod(output_shape) * 4 / (1024 ** 2)  # 4 bytes per float
+        
+        # Simplified compute/transfer time (example values)
+        compute_time = flops / 1e9  # Assume 1 GFLOP/s
+        transfer_time = memory_usage * 1e3 / 1e9  # Assume 1 GB/s
         
         return flops, memory_usage, compute_time, transfer_time
     
