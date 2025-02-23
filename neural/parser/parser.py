@@ -1,5 +1,6 @@
 from fastapi import params
 import lark
+import pysnooper
 from lark import Tree, Transformer, Token
 from typing import Any, Dict, List, Tuple, Union, Optional, Callable
 import json
@@ -620,6 +621,7 @@ class ModelTransformer(lark.Transformer):
 
         return {'type': 'MaxPooling1D', 'params': param_dict}
 
+    @pysnooper.snoop()
     def max_pooling2d(self, items):
         # Extract the parsed parameters using _extract_value
         param_style = self._extract_value(items[0])
@@ -631,10 +633,8 @@ class ModelTransformer(lark.Transformer):
             if ordered_params:
                 params['pool_size'] = ordered_params[0]
             if len(ordered_params) > 1:
-                print(ordered_params[1])
                 params['strides'] = ordered_params[1]
             if len(ordered_params) > 2:
-                print(ordered_params[2])
                 params['padding'] = ordered_params[2]
             
             # Extract named parameters
@@ -947,13 +947,18 @@ class ModelTransformer(lark.Transformer):
                 return None
             else:
                 return self._extract_value(child)
-        # Handle tuples and lists
+        # Handle single-value trees (string_value, number, bool_value)
         elif isinstance(item, Tree):
-            if item.data in ('tuple_', 'explicit_tuple'):
+            if item.data == 'string_value':
+                return self._extract_value(item.children[0])
+            elif item.data == 'number':
+                return self._extract_value(item.children[0])
+            elif item.data == 'bool_value':
+                return self._extract_value(item.children[0])
+            elif item.data in ('tuple_', 'explicit_tuple'):
                 return tuple(self._extract_value(child) for child in item.children)
             else:
                 # Handle lists of parameters (not key-value pairs)
-                # Check if all children are non-dictionary values
                 extracted = [self._extract_value(child) for child in item.children]
                 # If any element is a dict, treat as mixed params
                 if any(isinstance(e, dict) for e in extracted):
