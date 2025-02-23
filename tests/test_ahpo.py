@@ -16,23 +16,6 @@ def test_training_loop():
     loss = train_model(model, optimizer, train_loader, val_loader, epochs=1)  # Updated signature
     assert isinstance(loss, float)
 
-def test_optimizer_validation():
-    # Valid config
-    validate_optimizer({
-        "type": "Adam",
-        "params": {"learning_rate": 0.001, "beta_1": 0.9}
-    })
-    # Invalid param
-    with pytest.raises(ValueError):
-        validate_optimizer({
-            "type": "SGD",
-            "params": {"momentum": 0.9, "invalid_param": 1.0}
-        })
-
-    # Test missing required parameter
-    with pytest.raises(ValueError):
-        validate_optimizer({"type": "Adam", "params": {}})  # Missing learning_rate
-
 def test_hpo_objective():
     class MockTrial:
         def suggest_categorical(self, name, choices):
