@@ -39,24 +39,18 @@
 
 ### Fixed
 
-- Parser error in `Conv2D` layer parsing, ensuring `filters`, `kernel_size`, and `activation` are correctly captured (test_parser.py::test_layer_parsing[conv2d-relu]).
+Parser:
 
-- AttributeError in the conv2d method, test_parser.Correctly handling both ordered and named parameters by using the _extract_value helper function (test_prser.py::test_layer_parsing[conv2d-tanh])
+Fixed MaxPooling2D strides parsing.
 
-- test_parser.py::test_layer_parsing[maxpooling2d-strides]
+Resolved Conv2D layer parsing to ensure filters, kernel_size, and activation are captured (test: conv2d-relu).
 
-- Test Failure: test_cli.py::test_compile_command - NameError: name 'cli' is not defined
+Addressed AttributeError in conv2d method by using _extract_value helper for parameter handling (test: conv2d-tanh).
 
-- Test Failure: test_websocket_connection 
+CLI: Fixed test_compile_command errors (imports, file creation, data types, exit codes).
 
-- Test Failure: test_dashboard.py::test_dashboard_visualization - selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_CONNECTION_REFUSED
-  
-- Test Failure: test_cli.py::test_compile_command - NameError: name 'cli' is not defined
+WebSocket: Patched connection refusal (server setup).
 
-- Test Failure: test_cli.py::test_compile_command - AssertionError: Output file sample_tensorflow.py was not created #56
+Dashboard: Fixed Selenium ERR_CONNECTION_REFUSED during visualization.
 
-- Test Failure: test_cli.py::test_compile_command - TypeError: a bytes-like object is required, not 'list' #57
-
-- test_cli.py::test_compile_command - AssertionError: Command failed: assert 1 == 0
-
-- Test Failure: test_code_generator.py::test_generate_tensorflow_simple - TypeError: unsupported operand type(s) for *: 'NoneType' and 'int' #58
+Code Generator: Resolved NoneType error in TensorFlow code generation.
