@@ -1,6 +1,7 @@
 import dash
 from dash import Dash, dcc, html
 import numpy as np
+import pysnooper
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 from flask import Flask
@@ -45,6 +46,7 @@ trace_data = []
 ########################################################################
 
 @socketio.on("request_trace_update")
+@pysnooper.snoop()
 def send_trace_update():
     global trace_data
     while True:
