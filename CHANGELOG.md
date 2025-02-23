@@ -55,3 +55,5 @@
 - Test Failure: test_cli.py::test_compile_command - AssertionError: Output file sample_tensorflow.py was not created #56
 
 - Test Failure: test_cli.py::test_compile_command - TypeError: a bytes-like object is required, not 'list' #57
+
+- test_cli.py::test_compile_command - AssertionError: Command failed: assert 1 == 0
