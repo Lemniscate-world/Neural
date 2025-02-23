@@ -1,4 +1,5 @@
 import os
+import pysnooper
 import pytest
 from click.testing import CliRunner
 from neural.cli import cli
@@ -24,16 +25,24 @@ def sample_neural(tmp_path):
     file_path.write_text(content)
     return str(file_path)
 
+@pysnooper.snoop()
 def test_compile_command(runner, sample_neural):
     """Test the compile command with a sample .neural file."""
     output_file = "sample_tensorflow.py"
-    result = runner.invoke(cli, [sample_neural, "--backend", "tensorflow", "--output", output_file])
-    
-    assert result.exit_code == 0, f"Command failed with output: {result.output}"
-    assert os.path.exists(output_file), f"Output file {output_file} was not created"
-    assert "Compiled" in result.output
-    os.remove(output_file)  # Cleanup
-
+    with runner.isolated_filesystem():
+        # Copy the sample file into the isolated filesystem
+        with open(sample_neural, 'r') as src:
+            content = src.read()
+        isolated_sample = "sample.neural"
+        with open(isolated_sample, 'w') as dest:
+            dest.write(content)
+        
+        # Invoke the compile command within the isolated environment
+        result = runner.invoke(cli, ["compile", isolated_sample, "--backend", "tensorflow", "--output", output_file])
+        
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert os.path.exists(output_file), "Output file not found"
+        assert "Compiled" in result.output
 def test_compile_invalid_file(runner):
     """Test compile with a non-existent file."""
     result = runner.invoke(cli, ["compile", "nonexistent.neural", "--backend", "tensorflow"])

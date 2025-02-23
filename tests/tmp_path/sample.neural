@@ -1,0 +1,8 @@
+network TestNet {
+        input: (28, 28, 1)
+        layers:
+            Conv2D(32, 3, activation="relu")
+            Dense(10, activation="softmax")
+        loss: "categorical_crossentropy"
+        optimizer: "adam"
+    }
