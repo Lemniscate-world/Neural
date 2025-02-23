@@ -33,7 +33,7 @@ app = dash.Dash(__name__, server=server)
 socketio = SocketIO(server, cors_allowed_origins=["http://localhost:8050"])
 
 # Configuration (load from config.yaml or set defaults)
-UPDATE_INTERVAL = 1000  # Default 1 second in milliseconds, configurable via env var or config file
+UPDATE_INTERVAL = config.get("websocket_interval", 1000)
 try:
     import yaml
     with open("config.yaml", "r") as f:

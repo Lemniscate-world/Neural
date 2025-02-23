@@ -1,11 +1,22 @@
 graph TD
-    A[User Model Definition] --> B(Parser Module)
-    B --> C{ModelTransformer}
-    C --> D[Structured Model JSON]
-    D --> E[ShapePropagator]
-    E --> F[Execution Trace Data]
-    F --> G[Dashboard Websocket]
-    G --> H{Real-Time Visualizations}
-    H --> I[Execution Timeline]
-    H --> J[Shape Propagation]
-    H --> K[Resource Monitoring]
+    A[User] --> B[CLI Interface]
+    B --> C{Command}
+    C --> |compile| D[Parser Module]
+    C --> |run| E[Generated Code]
+    C --> |visualize| F[ShapePropagator]
+    C --> |dashboard| G[Real-Time Dashboard]
+    D --> H[ModelTransformer]
+    H --> I[Structured Model JSON]
+    I --> F
+    F --> J[Execution Trace Data]
+    J --> K((WebSocket Server))
+    K --> G
+    G --> L[Visualizations]
+    M[config.yaml] --> K
+    M --> N[Authentication]
+    M --> O[Update Intervals]
+    E --> P[Training/Inference]
+    P --> J
+    F --> Q[Visualization Files]
+    Q --> R[HTML/PNG Exports]
+    
