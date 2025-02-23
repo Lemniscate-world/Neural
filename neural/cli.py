@@ -355,6 +355,40 @@ def load(model_name, pretrained, output):
         sys.exit(1)
 
 
+### ------ Chat ------- ####
+@cli.command()
+def chat():
+    """Interact with NeuralChat to build models conversationally."""
+    from neural.neural_chat import NeuralChat
+    chat = NeuralChat()
+    click.echo("Welcome to NeuralChat! Type commands or 'exit' to quit.")
+    while True:
+        command = click.prompt("> ", type=str)
+        if command.lower() == "exit":
+            break
+        response = chat.process_command(command)
+        click.echo(response)
+
+
+
+### ----- llm ------ ###
+@cli.command()
+@click.option('--prompt', default="network MyNet {", help='Input prompt for autocompletion')
+def lm_suggest(prompt):
+    """Get suggestions from Neurallm for .neural syntax."""
+    from neural.neurallm import Neurallm
+    lm = Neurallm(model_path="./neurallm")
+    suggestion = lm.suggest(prompt)
+    click.echo(f"Suggestion: {suggestion}")
+
+@cli.command()
+@click.argument('dataset', type=click.Path(exists=True))
+@click.option('--epochs', default=1, help='Number of training epochs')
+def lm_train(dataset, epochs):
+    """Fine-tune Neurallm on a dataset of .neural files."""
+    from neural.neurallm import Neurallm
+    lm = Neurallm()
+    lm.train(dataset, epochs)
 
 
 if __name__ == '__main__':

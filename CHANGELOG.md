@@ -42,3 +42,5 @@
 - Parser error in `Conv2D` layer parsing, ensuring `filters`, `kernel_size`, and `activation` are correctly captured (test_parser.py::test_layer_parsing[conv2d-relu]).
 
 - AttributeError in the conv2d method, test_parser.Correctly handling both ordered and named parameters by using the _extract_value helper function (test_prser.py::test_layer_parsing[conv2d-tanh])
+
+- test_parser.py::test_layer_parsing[maxpooling2d-strides]
