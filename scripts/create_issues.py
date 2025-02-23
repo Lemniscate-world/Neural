@@ -5,7 +5,7 @@ import requests
 from github import Github
 
 # GitHub token (store in .env or GitHub Secrets)
-GITHUB_TOKEN = os.environ.get("ISSUES_TOKEN")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 REPO = "Lemniscate-SHA-256/Neural"
 
 def parse_pytest_results(xml_path):
