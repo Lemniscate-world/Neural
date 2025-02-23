@@ -1,3 +1,4 @@
+from neural.cli import cli  
 import click.testing
 import pytest
 import os

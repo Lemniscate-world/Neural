@@ -18,14 +18,6 @@ from neural.code_generation.code_generator import generate_code
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-try:
-    parser_instance = create_parser("network")
-    tree = parser_instance.parse(content)
-except Exception as e:
-    logger.error(f"Error parsing {file}: {e}")
-    sys.exit(1)
-
-
 @click.group()
 def cli():
     """Neural CLI: A compiler-like interface for .neural and .nr files."""
@@ -307,7 +299,7 @@ def debug(file, hacky):
   """Debug a neural network model with NeuralDbg."""
   # ... Existing debug code ...
   if hacky:
-      from neural.hacky import hacky_mode
+      from neural.hacky import hacky
       click.echo("Running NeuralDbg in hacky mode...")
       hacky_mode(propagator, model_data)
   else:
@@ -348,7 +340,7 @@ def train(file, backend, log_dir):
 @click.option('--output', default='model.pth', help='Output file for saved model')
 def load(model_name, pretrained, output):
     """Load a pretrained model (e.g., ResNet50) from the hub."""
-    from neural.pretrained import PretrainedModelHub
+    from neural.pretrained import pretrained
     try:
         hub = PretrainedModelHub()
         model = hub.load(model_name, pretrained=pretrained)
@@ -363,7 +355,7 @@ def load(model_name, pretrained, output):
 @cli.command()
 def chat():
     """Interact with NeuralChat to build models conversationally."""
-    from neural.neural_chat import NeuralChat
+    from neural.neural_chat import neural_chat
     chat = NeuralChat()
     click.echo("Welcome to NeuralChat! Type commands or 'exit' to quit.")
     while True:
@@ -380,7 +372,7 @@ def chat():
 @click.option('--prompt', default="network MyNet {", help='Input prompt for autocompletion')
 def lm_suggest(prompt):
     """Get suggestions from Neurallm for .neural syntax."""
-    from neural.neurallm import Neurallm
+    from neural.neurallm import neurallm
     lm = Neurallm(model_path="./neurallm")
     suggestion = lm.suggest(prompt)
     click.echo(f"Suggestion: {suggestion}")
@@ -390,10 +382,18 @@ def lm_suggest(prompt):
 @click.option('--epochs', default=1, help='Number of training epochs')
 def lm_train(dataset, epochs):
     """Fine-tune Neurallm on a dataset of .neural files."""
-    from neural.neurallm import Neurallm
+    from neural.neurallm import neurallm
     lm = Neurallm()
     lm.train(dataset, epochs)
 
+@click.group()
+def cli():  # <-- This must be named 'cli'
+    pass
+
+# Add commands
+cli.add_command(compile)
+cli.add_command(run)
+# ... other commands
 
 if __name__ == '__main__':
     cli()
