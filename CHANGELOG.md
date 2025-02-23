@@ -45,4 +45,6 @@
 
 - test_parser.py::test_layer_parsing[maxpooling2d-strides]
 
-- Test Failure: test_websocket_connection #37
+- Test Failure: test_websocket_connection 
+
+- Test Failure: test_dashboard.py::test_dashboard_visualization - selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_CONNECTION_REFUSED
