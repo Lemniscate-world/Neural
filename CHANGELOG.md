@@ -51,3 +51,7 @@
 
 - Test Failure: test_dashboard.py::test_dashboard_visualization - selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_CONNECTION_REFUSED
 - Test Failure: test_cli.py::test_compile_command - NameError: name 'cli' is not defined
+
+- Test Failure: test_cli.py::test_compile_command - AssertionError: Output file sample_tensorflow.py was not created #56
+
+- Test Failure: test_cli.py::test_compile_command - TypeError: a bytes-like object is required, not 'list' #57
