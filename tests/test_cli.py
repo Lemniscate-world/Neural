@@ -27,7 +27,7 @@ def sample_neural(tmp_path):
 def test_compile_command(runner, sample_neural):
     """Test the compile command with a sample .neural file."""
     output_file = "sample_tensorflow.py"
-    result = runner.invoke(cli, ["compile", sample_neural, "--backend", "tensorflow", "--output", output_file])
+    result = runner.invoke(cli, [sample_neural, "--backend", "tensorflow", "--output", output_file])
     
     assert result.exit_code == 0, f"Command failed with output: {result.output}"
     assert os.path.exists(output_file), f"Output file {output_file} was not created"
