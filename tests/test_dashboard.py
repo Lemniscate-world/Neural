@@ -1,6 +1,6 @@
 import sys
 import os
-
+import pysnooper
 # Add the parent directory of 'neural' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -41,11 +41,11 @@ def test_client():
 # Global variable to simulate trace data (used across tests)
 TRACE_DATA = [
     {
-        "layer": "Conv2D", "execution_time": 0.001, "compute_time": 0.0007, "transfer_time": 0.0003, "kernel_size": (3, 3),
+        "layer": "Conv2D", "execution_time": 0.001, "compute_time": 0.0007, "transfer_time": 0.0003, "kernel_size": [3, 3],
         "flops": 1000, "memory": 10, "grad_norm": 0.9, "dead_ratio": 0.1, "mean_activation": 0.5, "anomaly": False
     },
     {
-        "layer": "Dense", "execution_time": 0.005, "compute_time": 0.0035, "transfer_time": 0.0015, "kernel_size": (1, 1),
+        "layer": "Dense", "execution_time": 0.005, "compute_time": 0.0035, "transfer_time": 0.0015, "kernel_size": [1, 1],
         "flops": 2000, "memory": 20, "grad_norm": 0.1, "dead_ratio": 0.5, "mean_activation": 1000, "anomaly": True
     }
 ]

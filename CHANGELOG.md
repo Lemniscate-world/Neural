@@ -44,3 +44,5 @@
 - AttributeError in the conv2d method, test_parser.Correctly handling both ordered and named parameters by using the _extract_value helper function (test_prser.py::test_layer_parsing[conv2d-tanh])
 
 - test_parser.py::test_layer_parsing[maxpooling2d-strides]
+
+- Test Failure: test_websocket_connection #37
