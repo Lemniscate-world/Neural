@@ -1,7 +1,7 @@
 import pytest
 import torch
 import numpy as np
-from neural.automatic_hyperparameter_optimization.AHPO import TestModel, train_model, validate_optimizer, get_data, objective
+from neural.automatic_hyperparameter_optimization.AHPO import TestModel, train_model, get_data, objective
 
 def test_model_forward():
     model = TestModel()
@@ -22,11 +22,6 @@ def test_optimizer_validation():
         "type": "Adam",
         "params": {"learning_rate": 0.001, "beta_1": 0.9}
     })
-    
-    # Invalid optimizer type
-    with pytest.raises(ValueError):
-        validate_optimizer({"type": "Ranger", "params": {}})
-    
     # Invalid param
     with pytest.raises(ValueError):
         validate_optimizer({

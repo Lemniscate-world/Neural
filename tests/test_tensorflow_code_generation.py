@@ -6,7 +6,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import lark
-from neural.parser import create_parser, ModelTransformer, propagate_shape, generate_code
+from neural.parser.parser import create_parser, ModelTransformer, generate_code
+from neural.shape_propagation.shape_propagator import  ShapePropagator
 
 test_code = """
 network MyModel {
@@ -36,6 +37,7 @@ print("Transformed data: ", model_data) # Debug Print
 print("Input shape:", model_data['input_shape'])
 print("First layer:", model_data['layers'][0])
 
+propagate_shape = ShapePropagator()
 
 # Validate shapes
 input_shape = model_data['input_shape']
