@@ -119,28 +119,28 @@ class ShapePropagator:
 ###############################
 
     def _compute_performance(self, layer: dict, input_shape: tuple, output_shape: tuple) -> tuple:
-        """Compute performance metrics (FLOPs, memory usage, etc.) for a layer."""
-        # Replace None in shapes with 1 for calculation purposes
+        """Compute performance metrics (FLOPs, memory usage, etc.)."""
+        # Replace None with 1 to avoid NoneType math errors
         input_shape = tuple(1 if dim is None else dim for dim in input_shape)
         output_shape = tuple(1 if dim is None else dim for dim in output_shape)
-        
-        # Calculate FLOPs (example for Conv2D)
+
+        # FLOPs calculation (example for Conv2D)
         if layer['type'] == 'Conv2D':
             kernel_size = layer['params']['kernel_size']
             filters = layer['params']['filters']
             flops = np.prod(kernel_size) * np.prod(output_shape) * input_shape[-1]
         else:
             flops = 0  # Default for other layers
-        
+
         # Memory usage (output tensor size in MB)
         memory_usage = np.prod(output_shape) * 4 / (1024 ** 2)  # 4 bytes per float
-        
-        # Simplified compute/transfer time (example values)
-        compute_time = flops / 1e9  # Assume 1 GFLOP/s
-        transfer_time = memory_usage * 1e3 / 1e9  # Assume 1 GB/s
-        
+
+        # Simplified timing estimates
+        compute_time = flops / 1e9  # 1 GFLOP/s
+        transfer_time = memory_usage * 1e3 / 1e9  # 1 GB/s
+
         return flops, memory_usage, compute_time, transfer_time
-    
+
 ##################################################
 ### Send execution trace data to the dashboard ###
 ##################################################
