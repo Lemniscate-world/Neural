@@ -49,10 +49,6 @@ def create_github_issues(issues):
             for existing in existing_issues
         )
         
-        for existing in existing_issues:
-            if issue["title"].lower() == existing.title.lower():
-                existing.edit(state="closed")
-
         if not exists:
             try:
                 repo.create_issue(
