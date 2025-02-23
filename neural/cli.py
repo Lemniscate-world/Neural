@@ -223,6 +223,8 @@ def dashboard(file):
     threading.Thread(target=socketio.run, args=(server, "localhost", 5001), daemon=True).start()
     app.run_server(debug=True, port=8050)
 
+#### --- Debugger --- ####
+
 @cli.command()
 @click.argument('file', type=click.Path(exists=True))
 @click.option('--gradients', is_flag=True, help='Analyze gradient flow')
@@ -269,6 +271,8 @@ def debug(file, gradients, dead_neurons, anomalies, step):
         for layer in model_data['layers']:
             input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
             click.echo(f"Paused at {layer['type']}: input_shape = {input_shape}")
+            suggestion = lm.suggest(f"network DebugNet {{ layers: {layer['type']}")
+            click.echo(f"LM Suggestion: {suggestion}")
             input("Press Enter to continue...")
 
 
