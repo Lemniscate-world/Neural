@@ -25,3 +25,4 @@ tensorflow>=2.6
 huggingface_hub>=0.16
 transformers>=4.30
 torchvision>=0.15
+multiprocess>=0.70

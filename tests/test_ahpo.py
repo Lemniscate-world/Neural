@@ -1,6 +1,13 @@
 import pytest
 import torch
 import numpy as np
+import os
+import sys
+
+# Add the parent directory of 'neural' to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
 from neural.automatic_hyperparameter_optimization.AHPO import TestModel, train_model, get_data, objective
 
 def test_model_forward():
