@@ -1186,14 +1186,22 @@ class ModelTransformer(lark.Transformer):
 
     def transformer(self, items):
         # Extract the transformer type token (e.g., "TransformerEncoder")
-        # The structure of 'items' is: [Token, '(', params, ')']
         if isinstance(items[0], Token):
-            transformer_type = items[0].value  # Directly access the token's value
+            transformer_type = items[0].value
         else:
             self.raise_validation_error("Invalid transformer syntax: missing type identifier", items[0])
 
-        # Extract parameters (located at index 2)
-        params = items[2] if len(items) > 2 else {}
+        # Extract and merge parameters
+        params = {}
+        if len(items) > 2:
+            raw_params = self._extract_value(items[2])
+            if isinstance(raw_params, list):
+                # Merge list of dictionaries into a single dict
+                for param_set in raw_params:
+                    if isinstance(param_set, dict):
+                        params.update(param_set)
+            elif isinstance(raw_params, dict):
+                params.update(raw_params)
 
         # Validate required parameters
         for key in ['num_heads', 'ff_dim']:
