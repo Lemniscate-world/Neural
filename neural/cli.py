@@ -4,386 +4,284 @@ import sys
 import subprocess
 import click
 import logging
+from typing import Optional
 import hashlib
 import shutil
-import pysnooper
+import json
+from pathlib import Path
 
-# Add the parent directory of 'neural' to sys.path
+# Add parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-
-from neural.parser.parser import create_parser, ModelTransformer
+from neural.parser.parser import create_parser, ModelTransformer, DSLValidationError
 from neural.code_generation.code_generator import generate_code
+from neural.shape_propagation.shape_propagator import ShapePropagator
+from neural.dashboard.tensor_flow import create_animated_network
 
-logging.basicConfig(level=logging.INFO)
+# Configure logging with richer output
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 logger = logging.getLogger(__name__)
 
-@click.group()
-def cli():
+# Global CLI context for shared options
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
+@click.option('--verbose', '-v', is_flag=True, help='Enable verbose logging')
+def cli(verbose: bool):
     """Neural CLI: A compiler-like interface for .neural and .nr files."""
-    pass
-
-@cli.command()
-@click.argument('file', type=click.Path(exists=True))
-@click.option('--backend', default='tensorflow', help='Target backend: tensorflow or pytorch', type=click.Choice(['tensorflow', 'pytorch']))
-@click.option('--verbose', is_flag=True, help='Show verbose output')
-@click.option('--output', default=None, help='Output file path for generated code or visualizations')
-def compile(file, backend, verbose, output):
-    """
-    Compile a .neural or .nr file into an executable Python script.
-    
-    Example:
-        neural compile my_model.neural --backend pytorch
-    """
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+    logger.debug("Verbose mode enabled")
 
+# Compile command
+@cli.command()
+@click.argument('file', type=click.Path(exists=True, file_okay=True, dir_okay=False))
+@click.option('--backend', '-b', default='tensorflow', help='Target backend', type=click.Choice(['tensorflow', 'pytorch', 'onnx'], case_sensitive=False))
+@click.option('--output', '-o', default=None, help='Output file path (defaults to <file>_<backend>.py)')
+@click.option('--dry-run', is_flag=True, help='Preview generated code without writing to file')
+def compile(file: str, backend: str, output: Optional[str], dry_run: bool):
+    """Compile a .neural or .nr file into an executable Python script.
+
+    Example: neural compile my_model.neural --backend pytorch --output model.py
+    """
     ext = os.path.splitext(file)[1].lower()
-    # Choose the appropriate start rule based on extension
-    if ext in ['.neural', '.nr']:
-        parser_instance = create_parser('network')
-    elif ext == '.rnr':
-        parser_instance = create_parser('research')
-    else:
-        click.echo(f"Unsupported file type: {ext}")
+    start_rule = 'network' if ext in ['.neural', '.nr'] else 'research' if ext == '.rnr' else None
+    if not start_rule:
+        logger.error(f"Unsupported file type: {ext}. Use .neural, .nr, or .rnr")
         sys.exit(1)
 
+    logger.info(f"Compiling {file} for {backend} backend")
+    parser_instance = create_parser(start_rule=start_rule)
     with open(file, 'r') as f:
         content = f.read()
-    
+
     try:
         tree = parser_instance.parse(content)
-    except Exception as e:
-        click.echo(f"Error parsing {file}: {e}")
+        model_data = ModelTransformer().transform(tree)
+    except (exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError) as e:
+        logger.error(f"Parsing/transforming {file} failed: {e}")
         sys.exit(1)
 
-    transformer = ModelTransformer()
     try:
-        model_data = transformer.transform(tree)
+        code = generate_code(model_data, backend)
     except Exception as e:
-        click.echo(f"Error transforming {file}: {e}")
+        logger.error(f"Code generation failed: {e}")
         sys.exit(1)
 
-    code = generate_code(model_data, backend)
-    output_file = output or os.path.splitext(file)[0] + f"_{backend}.py"
-    with open(output_file, 'w') as f:
-        f.write(code)
-    click.echo(f"Compiled {file} to {output_file} for backend {backend}")
+    output_file = output or f"{os.path.splitext(file)[0]}_{backend}.py"
+    if dry_run:
+        click.echo("Generated code (dry run):\n" + code)
+    else:
+        with open(output_file, 'w') as f:
+            f.write(code)
+        logger.info(f"Compiled {file} to {output_file}")
+        click.echo(f"Output written to {output_file}")
 
+# Run command
 @cli.command()
-@click.argument('file', type=click.Path(exists=True))
-def run(file):
-    """
-    Run an executable neural model.
-    
-    Example:
-        neural run my_model_pytorch.py
-    """
-    # Here, we assume that the file is a Python file generated by the compile command.
-    subprocess.run([sys.executable, file], check=True)
+@click.argument('file', type=click.Path(exists=True, file_okay=True, dir_okay=False))
+@click.option('--backend', '-b', default='tensorflow', help='Backend to run', type=click.Choice(['tensorflow', 'pytorch'], case_sensitive=False))
+def run(file: str, backend: str):
+    """Run a compiled neural model.
 
+    Example: neural run my_model_pytorch.py --backend pytorch
+    """
+    ext = os.path.splitext(file)[1].lower()
+    if ext != '.py':
+        logger.error(f"Expected a .py file, got {ext}. Use 'compile' first.")
+        sys.exit(1)
 
+    logger.info(f"Running {file} with {backend} backend")
+    try:
+        subprocess.run([sys.executable, file], check=True)
+        logger.info("Execution completed successfully")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Execution failed with exit code {e.returncode}")
+        sys.exit(e.returncode)
+
+# Visualize command
 @cli.command()
-@click.argument('file', type=click.Path(exists=True))
-@click.option('--format', default='html', help='Output format: html or png')
-def visualize(file, format):
+@click.argument('file', type=click.Path(exists=True, file_okay=True, dir_okay=False))
+@click.option('--format', '-f', default='html', help='Output format', type=click.Choice(['html', 'png', 'svg'], case_sensitive=False))
+@click.option('--cache/--no-cache', default=True, help='Use cached visualizations if available')
+def visualize(file: str, format: str, cache: bool):
+    """Visualize network architecture and shape propagation.
+
+    Example: neural visualize my_model.neural --format png --no-cache
     """
-    Visualize network architecture and shape propagation.
-    
-    Example:
-        neural visualize my_model.neural --format png
-    """
-    from neural.shape_propagation.shape_propagator import ShapePropagator
-    from neural.parser.parser import create_parser
-    from neural.dashboard.tensor_flow import create_animated_network
+    logger.info(f"Visualizing {file} in {format} format")
+    ext = os.path.splitext(file)[1].lower()
+    start_rule = 'network' if ext in ['.neural', '.nr'] else 'research' if ext == '.rnr' else None
+    if not start_rule:
+        logger.error(f"Unsupported file type: {ext}")
+        sys.exit(1)
 
-    def get_file_hash(file):
-        with open(file, 'rb') as f:
-            return hashlib.sha256(f.read()).hexdigest()
+    cache_dir = Path(".neural_cache")
+    cache_dir.mkdir(exist_ok=True)
+    file_hash = hashlib.sha256(Path(file).read_bytes()).hexdigest()
+    cache_file = cache_dir / f"viz_{file_hash}_{format}"
 
-        cache_dir = ".neural_cache"
-        os.makedirs(cache_dir, exist_ok=True)
-        file_hash = get_file_hash(file)
-        cache_file = os.path.join(cache_dir, f"viz_{file_hash}_{format}")
+    if cache and cache_file.exists():
+        logger.info(f"Using cached visualization: {cache_file}")
+        shutil.copy(cache_file, f"architecture.{format}")
+        click.echo(f"Cached visualization copied to architecture.{format}")
+        return
 
-        if os.path.exists(cache_file):
-            click.echo(f"Using cached visualization: {cache_file}")
-        else:
-            # Parse input file
-            ext = os.path.splitext(file)[1].lower()
-            parser_instance = create_parser('network' if ext in ['.neural', '.nr'] else 'research')
-            
-            with open(file, 'r') as f:
-                content = f.read()
-            
-            try:
-                tree = parser_instance.parse(content)
-                model_data = ModelTransformer().transform(tree)
-            except Exception as e:
-                click.echo(f"Error processing {file}: {e}")
-                sys.exit(1)
+    parser_instance = create_parser(start_rule=start_rule)
+    with open(file, 'r') as f:
+        content = f.read()
 
-            # Propagate shapes
-            propagator = ShapePropagator()
-            input_shape = model_data['input']['shape']  # Get from parsed model
-            if not input_shape:
-                click.echo("Error: Input shape not defined in model!")
-                sys.exit(1) 
-            shape_history = []
+    try:
+        tree = parser_instance.parse(content)
+        model_data = ModelTransformer().transform(tree)
+    except Exception as e:
+        logger.error(f"Processing {file} failed: {e}")
+        sys.exit(1)
 
-            with click.progressbar(length=len(model_data['layers']), label="Propagating shapes") as bar:
-                for layer in model_data['layers']:
-                    input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
-                    shape_history.append({"layer": layer['type'], "output_shape": input_shape})
-                    bar.update(1)
+    propagator = ShapePropagator()
+    input_shape = model_data['input']['shape']
+    if not input_shape:
+        logger.error("Input shape not defined in model")
+        sys.exit(1)
 
-            # Generate visualizations
-            report = propagator.generate_report()
-            
-            # Save Graphviz diagram
-            dot = report['dot_graph']
-            dot.format = 'png' if format == 'png' else 'svg'
-            dot.render('architecture', cleanup=True)
-            
-            # Save Plotly visualization
-            fig = report['plotly_chart']
-            fig.write_html('shape_propagation.html')
-            
-            # Generate tensor flow animation
-            tf_fig = create_animated_network(shape_history)
-            tf_fig.write_html('tensor_flow.html')
+    shape_history = []
+    with click.progressbar(model_data['layers'], label="Propagating shapes") as bar:
+        for layer in bar:
+            input_shape = propagator.propagate(input_shape, layer, model_data.get('framework', 'tensorflow'))
+            shape_history.append({"layer": layer['type'], "output_shape": input_shape})
 
-            click.echo(f"""
-            Visualizations generated:
-            - architecture.{format} (Network architecture)
-            - shape_propagation.html (Parameter count chart)
-            - tensor_flow.html (Data flow animation)
-            """)
+    report = propagator.generate_report()
+    dot = report['dot_graph']
+    dot.format = format if format != 'html' else 'svg'
+    dot.render('architecture', cleanup=True)
 
+    if format == 'html':
+        report['plotly_chart'].write_html('shape_propagation.html')
+        create_animated_network(shape_history).write_html('tensor_flow.html')
+        click.echo("""
+        Visualizations generated:
+        - architecture.svg (Network architecture)
+        - shape_propagation.html (Parameter count chart)
+        - tensor_flow.html (Data flow animation)
+        """)
+    else:
+        click.echo(f"Visualization saved as architecture.{format}")
+
+    if cache:
+        shutil.copy(f"architecture.{format}", cache_file)
+        logger.debug(f"Cached visualization at {cache_file}")
+
+# Clean command
 @cli.command()
 def clean():
-    """Remove generated files (e.g., .py, .png, .html, cache)."""
-    for ext in ['.py', '.png', '.html']:
-        for file in os.listdir('.'):
-            if file.endswith(ext):
-                os.remove(file)
-                click.echo(f"Removed {file}")
+    """Remove generated files (e.g., .py, .png, .svg, .html, cache)."""
+    extensions = ['.py', '.png', '.svg', '.html']
+    removed = False
+    for file in os.listdir('.'):
+        if any(file.endswith(ext) for ext in extensions):
+            os.remove(file)
+            logger.info(f"Removed {file}")
+            removed = True
     if os.path.exists(".neural_cache"):
         shutil.rmtree(".neural_cache")
-        click.echo("Removed cache directory")
+        logger.info("Removed cache directory")
+        removed = True
+    if not removed:
+        click.echo("No files to clean")
 
-
-#######################
-### Version Command ###
-#######################
-
+# Version command
 @cli.command()
 def version():
     """Show the version of Neural CLI and dependencies."""
-    click.echo(f"Neural CLI v0.1")
-    click.echo(f"Python: {sys.version}")
+    click.echo("Neural CLI v0.1.0")
+    click.echo(f"Python: {sys.version.split()[0]}")
     click.echo(f"Click: {click.__version__}")
+    click.echo(f"Lark: {lark.__version__}")
 
-########################################
-### Dashboard Integration Or Command ###
-########################################
-
+# Debug command
 @cli.command()
-@click.argument('file', type=click.Path(exists=True))
-def dashboard(file):
-    """Launch the Neural dashboard for real-time monitoring of the model."""
-    from neural.dashboard.dashboard import app, server, socketio
-    from neural.shape_propagation.shape_propagator import ShapePropagator
-    from neural.parser.parser import create_parser
-
-    # Parse and propagate shapes to populate trace_data
-    parser_instance = create_parser('network' if os.path.splitext(file)[1].lower() in ['.neural', '.nr'] else 'research')
-    with open(file, 'r') as f:
-        content = f.read()
-    tree = parser_instance.parse(content)
-    model_data = ModelTransformer().transform(tree)
-    propagator = ShapePropagator()
-    input_shape = model_data['input']['shape']
-    for layer in model_data['layers']:
-        input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
-
-    # Update trace_data for the dashboard
-    import threading
-    global trace_data
-    trace_data = propagator.get_trace()
-    threading.Thread(target=socketio.run, args=(server, "localhost", 5001), daemon=True).start()
-    app.run_server(debug=True, port=8050)
-
-#### --- Debugger --- ####
-
-@cli.command()
-@click.argument('file', type=click.Path(exists=True))
+@click.argument('file', type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option('--gradients', is_flag=True, help='Analyze gradient flow')
 @click.option('--dead-neurons', is_flag=True, help='Detect dead neurons')
 @click.option('--anomalies', is_flag=True, help='Detect training anomalies')
-@click.option('--step', is_flag=True, help='Enable step debugging')
-def debug(file, gradients, dead_neurons, anomalies, step):
-    """Debug a neural network model with NeuralDbg."""
-    from neural.shape_propagation.shape_propagator import ShapePropagator, register_gradient_hooks, detect_dead_neurons, detect_activation_anomalies, step_debug_hook
-    from neural.parser.parser import create_parser
+@click.option('--step', is_flag=True, help='Enable step debugging mode')
+@click.option('--backend', '-b', default='tensorflow', help='Backend for runtime', type=click.Choice(['tensorflow', 'pytorch'], case_sensitive=False))
+def debug(file: str, gradients: bool, dead_neurons: bool, anomalies: bool, step: bool, backend: str):
+    """Debug a neural network model with NeuralDbg.
 
-    parser_instance = create_parser('network' if os.path.splitext(file)[1].lower() in ['.neural', '.nr'] else 'research')
+    Example: neural debug my_model.neural --gradients --step --backend pytorch
+    """
+    logger.info(f"Debugging {file} with NeuralDbg (backend: {backend})")
+    ext = os.path.splitext(file)[1].lower()
+    start_rule = 'network' if ext in ['.neural', '.nr'] else 'research' if ext == '.rnr' else None
+    if not start_rule:
+        logger.error(f"Unsupported file type: {ext}")
+        sys.exit(1)
+
+    parser_instance = create_parser(start_rule=start_rule)
     with open(file, 'r') as f:
         content = f.read()
-    tree = parser_instance.parse(content)
-    model_data = ModelTransformer().transform(tree)
-    
+
+    try:
+        tree = parser_instance.parse(content)
+        model_data = ModelTransformer().transform(tree)
+    except Exception as e:
+        logger.error(f"Processing {file} failed: {e}")
+        sys.exit(1)
+
+    # Shape propagation for baseline
     propagator = ShapePropagator(debug=True)
     input_shape = model_data['input']['shape']
     for layer in model_data['layers']:
-        input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
-
+        input_shape = propagator.propagate(input_shape, layer, backend)
     trace_data = propagator.get_trace()
+
+    # Debugging modes
     if gradients:
-        model = ...  # Load or create the PyTorch/TensorFlow model from model_data
-        gradient_trace = register_gradient_hooks(model)
-        click.echo("Gradient flow analysis:")
-        for entry in gradient_trace:
-            click.echo(f"Layer {entry['layer']}: grad_norm = {entry['grad_norm']}")
-    if dead_neurons:
-        # Simulate or integrate with model to detect dead neurons
-        click.echo("Dead neuron detection:")
+        logger.info("Gradient flow analysis not fully implemented yet (requires runtime)")
+        click.echo("Gradient flow trace (simulated):")
         for entry in trace_data:
-            if 'dead_ratio' in entry:
-                click.echo(f"Layer {entry['layer']}: dead_ratio = {entry['dead_ratio']}")
+            click.echo(f"Layer {entry['layer']}: mean_activation = {entry.get('mean_activation', 'N/A')}")
+    if dead_neurons:
+        logger.info("Dead neuron detection not fully implemented yet (requires runtime)")
+        click.echo("Dead neuron trace (simulated):")
+        for entry in trace_data:
+            click.echo(f"Layer {entry['layer']}: active_ratio = {entry.get('active_ratio', 'N/A')}")
     if anomalies:
-        click.echo("Anomaly detection:")
+        logger.info("Anomaly detection not fully implemented yet (requires runtime)")
+        click.echo("Anomaly trace (simulated):")
         for entry in trace_data:
             if 'anomaly' in entry:
-                click.echo(f"Layer {entry['layer']}: anomaly = {entry['anomaly']}, mean_activation = {entry['mean_activation']}")
+                click.echo(f"Layer {entry['layer']}: {entry['anomaly']}")
     if step:
-        # Implement step debugging (e.g., using hooks or breakpoints)
-        click.echo("Step debugging mode: Pausing at each layer. Press Enter to continue...")
-        for layer in model_data['layers']:
-            input_shape = propagator.propagate(input_shape, layer, model_data['framework'])
-            click.echo(f"Paused at {layer['type']}: input_shape = {input_shape}")
-            suggestion = lm.suggest(f"network DebugNet {{ layers: {layer['type']}")
-            click.echo(f"LM Suggestion: {suggestion}")
-            input("Press Enter to continue...")
+        logger.info("Step debugging mode")
+        for i, layer in enumerate(model_data['layers']):
+            input_shape = propagator.propagate(input_shape, layer, backend)
+            click.echo(f"Step {i+1}: {layer['type']} - Output Shape: {input_shape}")
+            if click.confirm("Continue?", default=True):
+                continue
+            else:
+                logger.info("Debugging paused by user")
+                break
 
+    click.echo("Debug session completed. Full runtime debugging coming soon!")
 
-######################
-### Export Command ###
-######################
-@cli.command()
-@click.argument('file', type=click.Path(exists=True))
-@click.option('--format', default='onnx', help='Export format: onnx')
-@click.option('--output', default='model.onnx', help='Output file path')
-def export(file, format, output):
-    """Export a neural network model to ONNX or other formats."""
-    from neural.parser.parser import create_parser
-    from neural.code_generation.code_generator import generate_code
-    parser_instance = create_parser('network' if os.path.splitext(file)[1].lower() in ['.neural', '.nr'] else 'research')
-    with open(file, 'r') as f:
-        content = f.read()
-    tree = parser_instance.parse(content)
-    model_data = ModelTransformer().transform(tree)
-    generate_code(model_data, format)
-    click.echo(f"Exported {file} to {output}")
+# No-code command
+@cli.command(name='no-code')
+def no_code():
+    """Launch the no-code interface for building models.
 
-
-###############################
-### Hacky Mode for Debugger ###
-###############################
-
-@cli.command()
-@click.argument('file', type=click.Path(exists=True))
-@click.option('--hacky', is_flag=True, help='Run NeuralDbg in hacky mode for security analysis')
-def debug(file, hacky):
-  """Debug a neural network model with NeuralDbg."""
-  # ... Existing debug code ...
-  if hacky:
-      from neural.hacky import hacky
-      click.echo("Running NeuralDbg in hacky mode...")
-      hacky_mode(propagator, model_data)
-  else:
-      # Normal debug mode
-      click.echo("Running NeuralDbg in normal mode...")
-
-######################
-### Train Command ####
-######################
-@cli.command()
-@click.argument('file', type=click.Path(exists=True))
-@click.option('--backend', default='tensorflow', help='Target backend: tensorflow or pytorch')
-@click.option('--log-dir', default='runs/neural', help='TensorBoard log directory')
-def train(file, backend, log_dir):
-    """Train a neural network model and log to TensorBoard."""
-    from neural.parser.parser import create_parser
-    from neural.code_generation.code_generator import generate_code
-    parser_instance = create_parser('network' if os.path.splitext(file)[1].lower() in ['.neural', '.nr'] else 'research')
-    with open(file, 'r') as f:
-        content = f.read()
-    tree = parser_instance.parse(content)
-    model_data = ModelTransformer().transform(tree)
-    code = generate_code(model_data, backend)
-    output_file = f"model_{backend}.py"
-    save_file(output_file, code)
-    
-    subprocess.run([sys.executable, output_file], check=True)
-    click.echo(f"Training completed. Logs available in {log_dir}")
-
-
-#############################
-### Load Pretrained Models ##
-#############################
-
-@cli.command()
-@click.argument('model_name', default='resnet50')
-@click.option('--pretrained', is_flag=True, help='Load pretrained weights from Hugging Face')
-@click.option('--output', default='model.pth', help='Output file for saved model')
-def load(model_name, pretrained, output):
-    """Load a pretrained model (e.g., ResNet50) from the hub."""
-    from neural.pretrained import pretrained
+    Example: neural no-code
+    """
+    from neural.dashboard.dashboard import app  # Assuming a dashboard module exists
+    logger.info("Launching no-code interface at http://localhost:8051")
     try:
-        hub = PretrainedModelHub()
-        model = hub.load(model_name, pretrained=pretrained)
-        torch.save(model, output)
-        click.echo(f"Loaded {model_name} and saved to {output}")
+        app.run_server(debug=False, host="localhost", port=8051)
     except Exception as e:
-        click.echo(f"Error loading model: {e}")
+        logger.error(f"Failed to launch no-code interface: {e}")
         sys.exit(1)
-
-
-### ------ Chat ------- ####
-@cli.command()
-def chat():
-    """Interact with NeuralChat to build models conversationally."""
-    from neural.neural_chat import neural_chat
-    chat = NeuralChat()
-    click.echo("Welcome to NeuralChat! Type commands or 'exit' to quit.")
-    while True:
-        command = click.prompt("> ", type=str)
-        if command.lower() == "exit":
-            break
-        response = chat.process_command(command)
-        click.echo(response)
-
-
-
-### ----- llm ------ ###
-@cli.command()
-@click.option('--prompt', default="network MyNet {", help='Input prompt for autocompletion')
-def lm_suggest(prompt):
-    """Get suggestions from Neurallm for .neural syntax."""
-    from neural.neurallm import neurallm
-    lm = Neurallm(model_path="./neurallm")
-    suggestion = lm.suggest(prompt)
-    click.echo(f"Suggestion: {suggestion}")
-
-@cli.command()
-@click.argument('dataset', type=click.Path(exists=True))
-@click.option('--epochs', default=1, help='Number of training epochs')
-def lm_train(dataset, epochs):
-    """Fine-tune Neurallm on a dataset of .neural files."""
-    from neural.neurallm import neurallm
-    lm = Neurallm()
-    lm.train(dataset, epochs)
 
 if __name__ == '__main__':
     cli()
