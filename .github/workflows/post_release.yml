@@ -1,6 +1,10 @@
 name: Post Release
 on:
     workflow_dispatch:
+        inputs:
+            version:
+                description: 'Version to tweet (e.g., 1.2.3)'
+                required: true
     release:
         types: [published]
 
