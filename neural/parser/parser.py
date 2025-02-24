@@ -607,6 +607,8 @@ class ModelTransformer(lark.Transformer):
         
         return params
 
+    def validation_split_param(self, items):
+        return {'validation_split': self._extract_value(items[0])}
 
     def epochs_param(self, items):
         return {'epochs': self._extract_value(items[0])}
