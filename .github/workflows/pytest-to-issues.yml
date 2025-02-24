@@ -26,6 +26,7 @@ jobs:
           pip install -r requirements.txt
           pip install -e .[dev]  # For development dependencies
           pip install tensorrt  # Specific dependency from NVIDIA
+          pip install pysnooper
       
       - name: Install project in editable mode
         run: |
