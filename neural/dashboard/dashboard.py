@@ -33,14 +33,14 @@ app = dash.Dash(__name__, server=server)
 socketio = SocketIO(server, cors_allowed_origins=["http://localhost:8050"])
 
 # Configuration (load from config.yaml or set defaults)
-UPDATE_INTERVAL = config.get("websocket_interval", 1000)
 try:
     import yaml
     with open("config.yaml", "r") as f:
         config = yaml.safe_load(f)
-        UPDATE_INTERVAL = config.get("websocket_interval", 1000)
-except:
-    pass  # Use default if config file not found
+except Exception as e:
+    config = {}
+
+UPDATE_INTERVAL = config.get("websocket_interval", 1000) # Use default if config file not found
 
 
 # Store Execution Trace Data
