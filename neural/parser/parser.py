@@ -71,6 +71,16 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         BOOL: "true" | "false"
         explicit_tuple: "(" value ("," value)+ ")"
 
+        research: "research" NAME? "{" [research_params] "}"
+        research_params: (metrics | references)*
+        metrics: "metrics" "{" [accuracy_param] [metrics_loss_param] [precision_param] [recall_param] "}"
+        accuracy_param: "accuracy:" FLOAT
+        metrics_loss_param: "loss:" FLOAT
+        precision_param: "precision:" FLOAT
+        recall_param: "recall:" FLOAT
+        references: "references" "{" paper_param+ "}"
+        paper_param: "paper:" STRING
+
         bool_value: BOOL
         named_return_sequences: "return_sequences" "=" bool_value
         named_units: "units" "=" number
@@ -316,15 +326,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" STRING
-        research: "research" NAME? "{" [research_params] "}"
-        research_params: (metrics | references)*
-        metrics: "metrics" "{" [accuracy_param] [metrics_loss_param] [precision_param] [recall_param] "}"
-        accuracy_param: "accuracy:" FLOAT
-        metrics_loss_param: "loss:" FLOAT
-        precision_param: "precision:" FLOAT
-        recall_param: "recall:" FLOAT
-        references: "references" "{" paper_param+ "}"
-        paper_param: "paper:" STRING
+        
 
         custom_shape: "CustomShape" "(" NAME "," explicit_tuple ")"
 
@@ -861,16 +863,15 @@ class ModelTransformer(lark.Transformer):
         for item in items:
             if item is None:
                 continue
-            if isinstance(item, dict):
-                result.update(item)
-            else:
-                val = self._extract_value(item)
-                if val and ':' in val:
-                    key, v = val.split(':', 1)
-                    try:
-                        result[key.strip()] = float(v.strip())
-                    except ValueError:
-                        result[key.strip()] = v.strip()
+            val = self._extract_value(item)
+            if isinstance(val, dict):
+                result.update(val)
+            elif isinstance(val, str) and ':' in val:
+                key, v = val.split(':', 1)
+                try:
+                    result[key.strip()] = float(v.strip())
+                except ValueError:
+                    result[key.strip()] = v.strip()
         return {'metrics': result}
 
     def accuracy_param(self, items):
@@ -882,27 +883,17 @@ class ModelTransformer(lark.Transformer):
     def recall_param(self, items):
         return {'recall': self._extract_value(items[0])}
 
-    def references(self, items):
-        if not items:
-            return {'references': {}}
-        result = {}
-        for item in items:
-            if item is None:
-                continue
-            if isinstance(item, dict):
-                result.update(item)
-            else:
-                val = self._extract_value(item)
-                if val and ':' in val:
-                    key, v = val.split(':', 1)
-                    try:
-                        result[key.strip()] = float(v.strip())
-                    except ValueError:
-                        result[key.strip()] = v.strip()
-        return {'references': result}
+
 
     def paper_param(self, items):
+        # Extract the string value from the 'paper:' parameter
         return self._extract_value(items[0])
+
+    def references(self, items):
+        papers = [self._extract_value(item) for item in items if item is not None]
+        return {'references': papers}
+    def metrics_loss_param(self, items):
+        return {'loss': self._extract_value(items[0])}
 
     def network(self, items):
         name = str(items[0].value)
@@ -972,8 +963,20 @@ class ModelTransformer(lark.Transformer):
                     return extracted
                 if len(item.children) % 2 == 0:
                     try:
-                        return {self._extract_value(k): self._extract_value(v) 
-                                for k, v in zip(item.children[::2], item.children[1::2])}
+                        # Check if all keys are strings to form a valid dictionary
+                        valid = True
+                        pairs = []
+                        for k_node, v_node in zip(item.children[::2], item.children[1::2]):
+                            key = self._extract_value(k_node)
+                            if not isinstance(key, str):
+                                valid = False
+                                break
+                            value = self._extract_value(v_node)
+                            pairs.append((key, value))
+                        if valid:
+                            return dict(pairs)
+                        else:
+                            return extracted
                     except TypeError:
                         return extracted
                 else:
@@ -983,7 +986,6 @@ class ModelTransformer(lark.Transformer):
         elif isinstance(item, dict):
             return {k: self._extract_value(v) for k, v in item.items()}
         return item
-
     def named_float(self, items):
         return {items[0].value: self._extract_value(items[1])}
 
@@ -1142,6 +1144,9 @@ class ModelTransformer(lark.Transformer):
         for key in ['num_heads', 'ff_dim']:
             if key in params:
                 val = params[key]
+                # Skip validation if it's an HPO parameter
+                if isinstance(val, dict) and 'hpo' in val:
+                    continue
                 if not isinstance(val, int) or val <= 0:
                     self.raise_validation_error(f"Transformer {key} must be a positive integer, got {val}", items[0])
         return {'type': 'TransformerEncoder', 'params': params}
