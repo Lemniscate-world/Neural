@@ -532,6 +532,18 @@ class ModelTransformer(lark.Transformer):
         # Merge named parameters (override ordered if needed)
         param_dict.update(named_params)
 
+        if 'filters' in params:
+                filters = params['filters']
+                if not isinstance(filters, int) or filters <= 0:
+                    self.raise_error(f"Conv2D filters must be a positive integer, got {filters}", items[0])
+        if 'kernel_size' in params:
+                ks = params['kernel_size']
+                if isinstance(ks, (list, tuple)):
+                    if not all(isinstance(k, int) and k > 0 for k in ks):
+                        self.raise_error(f"Conv2D kernel_size must be positive integers, got {ks}", items[0])
+                elif not isinstance(ks, int) or ks <= 0:
+                    self.raise_error(f"Conv2D kernel_size must be a positive integer, got {ks}", items[0])
+        
         return {'type': 'Conv2D', 'params': param_dict}
     def conv3d(self, items):
         return {'type': 'Conv3D', 'params': items[0]}
