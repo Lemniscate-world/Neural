@@ -6,7 +6,7 @@ import click
 import logging
 import hashlib
 import shutil
-
+import pysnooper
 
 # Add the parent directory of 'neural' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -188,7 +188,7 @@ def version():
 ### Dashboard Integration Or Command ###
 ########################################
 
-
+@pysnooper.snoop()
 @cli.command()
 @click.argument('file', type=click.Path(exists=True))
 def dashboard(file):

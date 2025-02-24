@@ -24,3 +24,4 @@ huggingface_hub
 transformers
 torchvision
 multiprocess
+pysnooper

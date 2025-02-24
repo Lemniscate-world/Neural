@@ -33,6 +33,7 @@ setup(
         "transformers",
         "torchvision",
         "multiprocess",
+        "pysnooper",
     ],
     entry_points={
         "console_scripts": ["neural=neural.cli:cli"]
