@@ -188,7 +188,6 @@ def version():
 ### Dashboard Integration Or Command ###
 ########################################
 
-@pysnooper.snoop()
 @cli.command()
 @click.argument('file', type=click.Path(exists=True))
 def dashboard(file):
@@ -385,15 +384,6 @@ def lm_train(dataset, epochs):
     from neural.neurallm import neurallm
     lm = Neurallm()
     lm.train(dataset, epochs)
-
-@click.group()
-def cli():  # <-- This must be named 'cli'
-    pass
-
-# Add commands
-cli.add_command(compile)
-cli.add_command(run)
-# ... other commands
 
 if __name__ == '__main__':
     cli()
