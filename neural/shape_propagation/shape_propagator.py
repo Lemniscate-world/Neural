@@ -162,8 +162,7 @@ class ShapePropagator:
 
     def _process_layer(self, input_shape, layer, framework):
         layer_type = layer['type']
-        params = self._standardize_params(layer['params'], layer_type, framework)
-        
+        params = self._standardize_params(layer.get('params', {}), layer_type, framework)
         # Unified parameter handling
         handler_name = f"_handle_{layer_type.lower()}"
         if hasattr(self, handler_name):
