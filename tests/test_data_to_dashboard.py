@@ -1,7 +1,7 @@
 import base64
 import json
 import pytest
-from neural.shape_propagator.data_to_dashboard import server, app, update_graph, propagator
+from neural.shape_propagation.data_to_dashboard import server, app, update_graph, propagator
 import plotly.graph_objects as go
 
 # Fixture to provide a test client for the Flask server.
