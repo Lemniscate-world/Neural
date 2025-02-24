@@ -175,7 +175,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         input_layer: "input" ":" shape ("," shape)*
         shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
         number_or_none: number | "NONE" | "None"
-        layers: "layers" ":" _NL* (layer _NL*)*
+        layers: "layers" ":" _NL* (layer_or_repeated _NL*)*
+        layer_or_repeated: layer | layer "*" INT
 
         lambda_: "Lambda" "(" STRING ")"
         wrapper: "TimeDistributed" "(" layer ["," named_params] ")"
