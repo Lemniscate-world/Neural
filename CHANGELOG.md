@@ -40,17 +40,16 @@
 ### Fixed
 
 Parser:
+  - Fixed MaxPooling2D strides parsing.
 
-Fixed MaxPooling2D strides parsing.
+  - Resolved Conv2D layer parsing to ensure filters, kernel_size, and activation are captured (test: conv2d-relu).
 
-Resolved Conv2D layer parsing to ensure filters, kernel_size, and activation are captured (test: conv2d-relu).
+  - Addressed AttributeError in conv2d method by using _extract_value helper for parameter handling (test: conv2d-tanh).
 
-Addressed AttributeError in conv2d method by using _extract_value helper for parameter handling (test: conv2d-tanh).
+- CLI: Fixed test_compile_command errors (imports, file creation, data types, exit codes).
 
-CLI: Fixed test_compile_command errors (imports, file creation, data types, exit codes).
+- WebSocket: Patched connection refusal (server setup).
 
-WebSocket: Patched connection refusal (server setup).
+- Dashboard: Fixed Selenium ERR_CONNECTION_REFUSED during visualization.
 
-Dashboard: Fixed Selenium ERR_CONNECTION_REFUSED during visualization.
-
-Code Generator: Resolved NoneType error in TensorFlow code generation.
+- Code Generator: Resolved NoneType error in TensorFlow code generation.
