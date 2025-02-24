@@ -11,7 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import threading
 import yaml
 
-from shape_propagator import ShapePropagator
+from neural.shape_propagation.shape_propagator import ShapePropagator
 
 
 # Backend shape propagator instance
