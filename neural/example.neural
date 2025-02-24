@@ -3,7 +3,7 @@ network MyModel {
     layers:
         Dense(128, activation="relu")
         Dropout(rate=0.2)
-        Output(10, activation="softmax")
+        Output(units=10, activation="softmax")
     loss: "categorical_crossentropy"
     optimizer: "Adam"
 }
