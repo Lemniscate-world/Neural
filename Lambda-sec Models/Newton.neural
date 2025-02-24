@@ -1,11 +1,9 @@
 network MathTransformer {
   input: (NONE, 512)  # Dynamic-length sentences with 512 embedding size
   layers:
-    TransformerEncoder(num_heads=8, ff_dim=2048, dropout=0.1)
-    TransformerEncoder(num_heads=8, ff_dim=2048, dropout=0.1)
-    TransformerDecoder(num_heads=8, ff_dim=2048, dropout=0.1)
+    TransformerEncoder(num_heads=8, ff_dim=2048) * 3
     Dense(512, activation="relu")
-    Output(units=vocab_size, activation="softmax")
+    Output(units=10, activation="softmax")
 
   loss: "categorical_crossentropy"
   optimizer: Adam(learning_rate=0.0001)

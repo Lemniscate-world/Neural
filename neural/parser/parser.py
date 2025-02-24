@@ -311,7 +311,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         activation_without_params: "Activation(" STRING ")"
 
         training_config: "train" "{" training_params "}"
-        training_params: (epochs_param | batch_size_param | optimizer_param | search_method_param)*
+        training_params: (epochs_param | batch_size_param | optimizer_param | search_method_param | validation_split_param)*
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" values_list
         values_list: "[" value ("," value)* "]" | value ("," value)*
@@ -319,6 +319,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_optimizer: "named_optimizer(" learning_rate_param ")"
         learning_rate_param: "learning_rate=" FLOAT
         search_method_param: "search_method:" STRING
+        validation_split_param: "validation_split:" FLOAT
 
         loss: "loss" ":" (NAME | STRING) ["(" named_params ")"]
         optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
@@ -597,7 +598,15 @@ class ModelTransformer(lark.Transformer):
                 params.update(self._extract_value(item))
             elif isinstance(item, dict):
                 params.update(item)
+        
+        # Ensure validation_split is between 0 and 1
+        if "validation_split" in params:
+            val_split = params["validation_split"]
+            if not (0 <= val_split <= 1):
+                self.raise_validation_error(f"validation_split must be between 0 and 1, got {val_split}")
+        
         return params
+
 
     def epochs_param(self, items):
         return {'epochs': self._extract_value(items[0])}
