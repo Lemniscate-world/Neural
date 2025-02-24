@@ -29,17 +29,10 @@
 - Dashboard visualization dependency in `test_dashboard_visualization`.
 - Box plot layer order mismatch in `test_update_trace_graph_box`.
 
-## [Unreleased]
-
-### Added
-
-- `--hacky` mode for security analysis.
-
-## [0.1.2] 
+## [0.1.2] - 24-02-2025
 
 ### Fixed
 
-Parser:
   - Fixed MaxPooling2D strides parsing.
 
   - Resolved Conv2D layer parsing to ensure filters, kernel_size, and activation are captured (test: conv2d-relu).
