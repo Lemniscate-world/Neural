@@ -570,7 +570,12 @@ class ModelTransformer(lark.Transformer):
         return {"type": items[0].value, "args": [self._extract_value(x) for x in items[1].children]}
 
     def training_config(self, items):
-        return self._extract_value(items[0]) if items else None
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'training_config', 'params': params}
+
+    def execution_config(self, items):
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'execution_config', 'params': params}
 
     def training_params(self, items):
         params = {}
@@ -901,10 +906,21 @@ class ModelTransformer(lark.Transformer):
         layers_config = self._extract_value(items[2])
         loss_config = self._extract_value(items[3])
         optimizer_config = self._extract_value(items[4])
-        training_config = next((self._extract_value(item) for item in items[5:] if isinstance(item, Tree)), None)
-        execution_config = next((self._extract_value(item) for item in items[5:] if isinstance(item, Tree) and 'params' in item and 'device' in item['params']), {'params': {'device': 'auto'}})['params']
+        
+        training_config = None
+        execution_config = {'params': {'device': 'auto'}}  # Default
+        
+        for item in items[5:]:
+            # Items are already transformed, so check for dict
+            if isinstance(item, dict):
+                if item.get('type') == 'training_config':
+                    training_config = item.get('params')
+                elif item.get('type') == 'execution_config':
+                    execution_config = item
+        
         output_layer = next((layer for layer in reversed(layers_config) if layer['type'] == 'Output'), None)
         output_shape = output_layer.get('params', {}).get('units') if output_layer else None
+        
         return {
             'type': 'model',
             'name': name,
@@ -915,9 +931,8 @@ class ModelTransformer(lark.Transformer):
             'loss': loss_config,
             'optimizer': optimizer_config,
             'training_config': training_config,
-            'execution_config': execution_config
+            'execution_config': execution_config.get('params', {'device': 'auto'})
         }
-
     def named_params(self, items):
         params = {}
         for item in items:
