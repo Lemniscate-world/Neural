@@ -780,6 +780,10 @@ class ModelTransformer(lark.Transformer):
 
     def batch_norm(self, items):
         params = self._extract_value(items[0]) if items else None
+        if params and 'axis' in params:
+            axis = params['axis']
+            if not isinstance(axis, int):
+                self.raise_error(f"BatchNormalization axis must be an integer, got {axis}", items[0])
         return {'type': 'BatchNormalization', 'params': params}
 
     def layer_norm(self, items):
