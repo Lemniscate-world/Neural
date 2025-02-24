@@ -393,6 +393,17 @@ class ModelTransformer(lark.Transformer):
     """
     Transforms the parsed tree NUMBER to a structured dictionary representing the neural network model.
     """
+    def __init__(self):
+        super().__init__()
+        self.variables = {}  # For future dynamic expressions
+
+    def raise_error(self, msg, item=None):
+        if item and hasattr(item, 'meta'):
+            line = item.meta.line
+            column = item.meta.column
+            raise ValueError(f"Error at line {line}, column {column}: {msg}")
+        raise ValueError(msg)
+
     def layer(self, items):
         return self.visit(items[0])
 
