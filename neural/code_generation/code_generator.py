@@ -41,8 +41,19 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         input_shape = model_data['input']['shape']
         if not input_shape:
             raise ValueError("Input layer shape is not defined.")
-        code += f"{indent}tf.keras.layers.Input(shape={input_shape}),\n"
         current_input_shape = input_shape
+
+        for i, layer_config in enumerate(model_data['layers']):  # Track index with enumerate
+            layer_type = layer_config['type']
+            params = layer_config.get('params', {})
+
+            # Handle input_shape for the first layer
+            if i == 0 and layer_type == 'Dense':
+                units = params.get('units')
+                activation = params.get('activation', 'relu')
+                code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}', input_shape={input_shape}),\n"
+                current_input_shape = propagator.propagate(current_input_shape, layer_config, framework='tensorflow')
+            continue
 
         for layer_config in model_data['layers']:
             layer_type = layer_config['type']
