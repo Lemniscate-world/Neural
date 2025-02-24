@@ -1276,6 +1276,11 @@ class ModelTransformer(lark.Transformer):
 
     def transformer(self, items):
         params = self._extract_value(items[0])
+        for key in ['num_heads', 'ff_dim']:
+            if key in params:
+                val = params[key]
+                if not isinstance(val, int) or val <= 0:
+                    self.raise_error(f"Transformer {key} must be a positive integer, got {val}", items[0])
         return {'type': 'TransformerEncoder', 'params': params}
     
     def embedding(self, items):
