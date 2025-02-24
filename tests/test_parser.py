@@ -103,14 +103,18 @@ def transformer():
 )
 def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_id):
     if expected is None:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError)):
+        with pytest.raises((
+            exceptions.UnexpectedCharacters, 
+            exceptions.UnexpectedToken, 
+            DSLValidationError,
+            exceptions.VisitError  # Add VisitError to handle wrapped validation errors
+        )):
             tree = layer_parser.parse(layer_string)
             transformer.transform(tree)
     else:
         tree = layer_parser.parse(layer_string)
         result = transformer.transform(tree)
         assert result == expected, f"Failed for {test_id}: expected {expected}, got {result}"
-
 # Network parsing tests
 @pytest.mark.parametrize(
     "network_string, expected_name, expected_input_shape, expected_layers, expected_loss, expected_optimizer, expected_training_config",
