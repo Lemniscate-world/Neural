@@ -701,6 +701,15 @@ class ModelTransformer(lark.Transformer):
         elif isinstance(param_style, dict):
             # Use named parameters directly
             params = param_style.copy()
+
+        for key in ['pool_size', 'strides']:
+            if key in params:
+                val = params[key]
+                if isinstance(val, (list, tuple)):
+                    if not all(isinstance(v, int) and v > 0 for v in val):
+                        self.raise_error(f"MaxPooling2D {key} must be positive integers, got {val}", items[0])
+                elif not isinstance(val, int) or val <= 0:
+                    self.raise_error(f"MaxPooling2D {key} must be a positive integer, got {val}", items[0])
         
         return {'type': 'MaxPooling2D', 'params': params}
 
@@ -785,14 +794,29 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'GroupNormalization', 'params': params}
 
     def lstm(self, items):
+        params = self._extract_value(items[0])
+        if 'units' in params:
+            units = params['units']
+            if not isinstance(units, int) or units <= 0:
+                self.raise_error(f"LSTM units must be a positive integer, got {units}", items[0])
         return {'type': 'LSTM', 'params': items[0]}
 
     def gru(self, items):
+        params = self._extract_value(items[0])
+        if 'units' in params:
+            units = params['units']
+            if not isinstance(units, int) or units <= 0:
+                self.raise_error(f"GRU units must be a positive integer, got {units}", items[0])
         return {'type': 'GRU', 'params': items[0]}
     
     ### Recurrent Layers ########################################
 
     def simple_rnn(self, items):
+        params = self._extract_value(items[0])
+        if 'units' in params:
+            units = params['units']
+            if not isinstance(units, int) or units <= 0:
+                self.raise_error(f"SimpleRNN units must be a positive integer, got {units}", items[0])
         return {'type': 'SimpleRNN', 'params': items[0]}
     
     def conv_lstm(self, items):
