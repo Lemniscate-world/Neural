@@ -1179,16 +1179,21 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'QuantumLayer', 'params': params}
 
     def transformer(self, items):
-        params = self._extract_value(items[0])
+        # Extract the transformer type from the first token (e.g., "TransformerEncoder")
+        transformer_type = items[0].value
+        params = {}
+        # Check if parameters are present (items[2] is the named_params tree)
+        if len(items) > 2 and isinstance(items[2], Tree):
+            params = self._extract_value(items[2])
+        # Validate required parameters
         for key in ['num_heads', 'ff_dim']:
             if key in params:
                 val = params[key]
-                # Skip validation if it's an HPO parameter
                 if isinstance(val, dict) and 'hpo' in val:
-                    continue
+                    continue  # Skip HPO parameters
                 if not isinstance(val, int) or val <= 0:
-                    self.raise_validation_error(f"Transformer {key} must be a positive integer, got {val}", items[0])
-        return {'type': 'TransformerEncoder', 'params': params}
+                    self.raise_validation_error(f"{transformer_type} {key} must be a positive integer, got {val}", items[2])
+        return {'type': transformer_type, 'params': params}
 
     def embedding(self, items):
         params = self._extract_value(items[0]) if items else None
