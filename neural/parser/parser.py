@@ -167,7 +167,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         number_or_none: number | "NONE" | "None"
         layers: "layers" ":" _NL* (layer _NL*)*
 
-        lambda_: "Lambda(" STRING ")"
+        lambda_: "Lambda" "(" STRING ")"
         wrapper: "TimeDistributed" "(" layer ["," named_params] ")"
 
         ?basic: conv | pooling | dropout | flatten | dense | output
@@ -398,24 +398,35 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Flatten', 'params': params}
 
     def dropout(self, items):
-        param_style = self._extract_value(items[0])  # Tree('dropout_params', [Token('FLOAT', '0.5')])
+        param_style = self._extract_value(items[0])
         params = {}
         
-        # Handle dropout_params tree
-        if isinstance(param_style, list) and len(param_style) > 0:
-            value = param_style[0]  # Extract the first value (e.g., 0.5)
-            if isinstance(value, float):
-                if not 0 <= value <= 1:
-                    self.raise_validation_error(f"Dropout rate must be between 0 and 1, got {value}", items[0])
-                params['rate'] = value
-            else:
-                self.raise_validation_error(f"Dropout rate must be a float, got {value}", items[0])
-        elif isinstance(param_style, dict):
+        # Handle list of parameters (positional or nested named params)
+        if isinstance(param_style, list):
+            # Merge all dictionaries in the list
+            merged_params = {}
+            for elem in param_style:
+                if isinstance(elem, dict):
+                    merged_params.update(elem)
+                else:
+                    # Handle positional rate
+                    merged_params['rate'] = elem
+            param_style = merged_params
+
+        # Process merged parameters
+        if isinstance(param_style, dict):
             params = param_style.copy()
             if 'rate' in params:
                 rate = params['rate']
                 if not isinstance(rate, (int, float)) or not 0 <= rate <= 1:
                     self.raise_validation_error(f"Dropout rate must be between 0 and 1, got {rate}", items[0])
+            else:
+                self.raise_validation_error("Dropout requires a 'rate' parameter", items[0])
+        elif isinstance(param_style, (int, float)):
+            # Handle positional rate without key
+            params['rate'] = param_style
+            if not 0 <= params['rate'] <= 1:
+                self.raise_validation_error(f"Dropout rate must be between 0 and 1, got {params['rate']}", items[0])
         else:
             self.raise_validation_error("Invalid parameters for Dropout", items[0])
         
@@ -575,7 +586,9 @@ class ModelTransformer(lark.Transformer):
         return {'batch_size': self._extract_value(items[0])}
 
     def values_list(self, items):
-        return [self._extract_value(x) for x in items]
+        values = [self._extract_value(x) for x in items]
+        return values[0] if len(values) == 1 else values
+
 
     def optimizer_param(self, items):
         return {'optimizer': self._extract_value(items[0])}
