@@ -3,6 +3,7 @@ README.md
 setup.py
 ./neural/__init__.py
 ./neural/cli.py
+./neural/example_tensorflow.py
 ./neural/test.py
 ./neural/automatic_hyperparameter_optimization/AHPO.py
 ./neural/automatic_hyperparameter_optimization/__init__.py
@@ -32,6 +33,7 @@ setup.py
 ./neural/training/training.py
 neural/__init__.py
 neural/cli.py
+neural/example_tensorflow.py
 neural/test.py
 neural/automatic_hyperparameter_optimization/AHPO.py
 neural/automatic_hyperparameter_optimization/__init__.py
