@@ -5,7 +5,7 @@ flask>=3.0
 flask-socketio>=5.0.0
 graphviz>=0.20
 lark>=1.1.5
-matplotlib>=3.8
+matplotlib<3.8
 networkx>=2.8.8
 numpy>=1.23.0
 plotly>=5.18
