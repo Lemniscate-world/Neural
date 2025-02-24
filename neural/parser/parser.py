@@ -372,11 +372,22 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         custom: NAME "(" named_params ")"
 
     """
-    return  lark.Lark(grammar, start=[start_rule], parser='lalr', lexer='contextual', cache=False)
+    return  lark.Lark(grammar, start=[start_rule], parser='lalr', lexer='contextual', cache=True, propagate_positions=True, on_error=custom_error_handler)
 
 network_parser = create_parser('network')
 layer_parser = create_parser('layer')
 research_parser = create_parser('research')
+
+def custom_error_handler(error):
+    if isinstance(error, lark.UnexpectedCharacters):
+        msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected character '{error.char}'.\n" \
+              f"Expected one of: {', '.join(sorted(error.allowed))}"
+    elif isinstance(error, lark.UnexpectedToken):
+        msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected token '{error}'.\n" \
+              f"Expected one of: {', '.join(sorted(error.expected))}"
+    else:
+        msg = str(error)
+    raise SyntaxError(msg)
 
 class ModelTransformer(lark.Transformer):
     """
