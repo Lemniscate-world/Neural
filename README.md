@@ -16,6 +16,10 @@ Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
 [![Coverage](https://img.shields.io/codecov/c/github/Lemniscate-SHA-256/Neural)](https://codecov.io/gh/Lemniscate-SHA-256/Neural)
 
 
+![design-01jmphv5f1-1740433387](https://github.com/user-attachments/assets/ecbcce19-73df-4696-ace2-69e32d02709f)
+
+
+
 Neural is a domain-specific language (DSL) designed for defining, training, debugging, and deploying neural networks. With **declarative syntax**, **cross-framework support**, and **built-in execution tracing (NeuralDbg)**, it simplifies deep learning development.
 
 
