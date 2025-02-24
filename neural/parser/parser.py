@@ -398,12 +398,18 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Flatten', 'params': params}
 
     def dropout(self, items):
-        param_style = self._extract_value(items[0])
+        param_style = self._extract_value(items[0])  # Tree('dropout_params', [Token('FLOAT', '0.5')])
         params = {}
-        if isinstance(param_style, float):
-            if not 0 <= param_style <= 1:
-                self.raise_validation_error(f"Dropout rate must be between 0 and 1, got {param_style}", items[0])
-            params['rate'] = param_style
+        
+        # Handle dropout_params tree
+        if isinstance(param_style, list) and len(param_style) > 0:
+            value = param_style[0]  # Extract the first value (e.g., 0.5)
+            if isinstance(value, float):
+                if not 0 <= value <= 1:
+                    self.raise_validation_error(f"Dropout rate must be between 0 and 1, got {value}", items[0])
+                params['rate'] = value
+            else:
+                self.raise_validation_error(f"Dropout rate must be a float, got {value}", items[0])
         elif isinstance(param_style, dict):
             params = param_style.copy()
             if 'rate' in params:
@@ -412,8 +418,8 @@ class ModelTransformer(lark.Transformer):
                     self.raise_validation_error(f"Dropout rate must be between 0 and 1, got {rate}", items[0])
         else:
             self.raise_validation_error("Invalid parameters for Dropout", items[0])
+        
         return {'type': 'Dropout', 'params': params}
-
     def output(self, items):
         return {'type': 'Output', 'params': self._extract_value(items[0])}
 
