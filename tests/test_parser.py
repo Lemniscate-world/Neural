@@ -214,6 +214,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
             }
             """,
             None, None, None, None, None, None
+        ),
         # Validation Split Tests
         (
             """
@@ -255,6 +256,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
         ),
     ],
     ids=["complex-model", "simple-model", "no-layers", "optimizer-params", "invalid-optimizer", "valid-validation-split", "invalid-validation-split"]
+)
 
 def test_network_parsing(network_parser, transformer, network_string, expected_name, expected_input_shape, expected_layers, expected_loss, expected_optimizer, expected_training_config):
     if expected_name is None:
