@@ -439,17 +439,18 @@ class ModelTransformer(lark.Transformer):
         param_style = self._extract_value(items[0])
         params = {}
         
-        if isinstance(param_style, float):  # Direct FLOAT from dropout_params
+        if isinstance(param_style, float):
+            if not 0 <= param_style <= 1:
+                self.raise_error(f"Dropout rate must be between 0 and 1, got {param_style}", items[0])
             params['rate'] = param_style
-        elif isinstance(param_style, list):  # Ordered params from param_style1
-            ordered_params = [p for p in param_style if not isinstance(p, dict)]
-            if ordered_params:
-                params['rate'] = ordered_params[0]
-            for item in param_style:
-                if isinstance(item, dict):
-                    params.update(item)
-        elif isinstance(param_style, dict):  # Named params
+        elif isinstance(param_style, dict):
             params = param_style.copy()
+            if 'rate' in params:
+                rate = params['rate']
+                if not isinstance(rate, (int, float)) or not 0 <= rate <= 1:
+                    self.raise_error(f"Dropout rate must be between 0 and 1, got {rate}", items[0])
+        else:
+            self.raise_error("Invalid parameters for Dropout", items[0])
         
         return {'type': 'Dropout', 'params': params}
 
