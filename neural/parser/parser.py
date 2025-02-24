@@ -167,7 +167,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         
         // Basic layer types & group
         ?basic: conv | pooling | dropout | flatten | dense | output
-        dropout: "Dropout" "(" param_style1 ")" 
+        dropout: "Dropout" "(" dropout_params ")"
+        dropout_params: FLOAT | named_params
         dense: "Dense" "(" dense_params ")"
         dense_params: (NUMBER ("," (NUMBER | STRING | named_param))* ) | named_params
         // dense_ordered_params: value ("," value)*  // Allow any valid 'value'
@@ -410,23 +411,23 @@ class ModelTransformer(lark.Transformer):
             params = None
         return {'type': 'Flatten', 'params': params}
 
+    
+
     def dropout(self, items):
         param_style = self._extract_value(items[0])
         params = {}
         
-        if isinstance(param_style, list):
-            # Extract ordered parameters
+        if isinstance(param_style, float):  # Direct FLOAT from dropout_params
+            params['rate'] = param_style
+        elif isinstance(param_style, list):  # Ordered params from param_style1
             ordered_params = [p for p in param_style if not isinstance(p, dict)]
             if ordered_params:
-                params['rate'] = ordered_params[0]  # First param is 'rate'
-            # Extract named parameters
+                params['rate'] = ordered_params[0]
             for item in param_style:
                 if isinstance(item, dict):
                     params.update(item)
-        elif isinstance(param_style, dict):
+        elif isinstance(param_style, dict):  # Named params
             params = param_style.copy()
-        elif param_style is not None:  # Single value (e.g., 0.5)
-            params['rate'] = param_style
         
         return {'type': 'Dropout', 'params': params}
 
