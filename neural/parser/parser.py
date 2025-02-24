@@ -381,7 +381,16 @@ class ModelTransformer(lark.Transformer):
 
     def layer(self, items):
         return self.visit(items[0])
-
+    
+    def layers(self, items):
+        expanded_layers = []
+        for item in items:
+            if isinstance(item, tuple) and len(item) == 2 and isinstance(item[1], int):
+                layer, count = item
+                expanded_layers.extend([layer] * count)
+            else:
+                expanded_layers.append(item)
+        return expanded_layers
     def wrapper(self, items):
         wrapper_type = items[0]
         layer = items[1]
@@ -392,9 +401,6 @@ class ModelTransformer(lark.Transformer):
     def input_layer(self, items):
         shapes = [self._extract_value(item) for item in items]
         return {'type': 'Input', 'shape': shapes[0] if len(shapes) == 1 else shapes}
-
-    def layers(self, items):
-        return [item for item in items if item is not None]
 
     def flatten(self, items):
         params = self._extract_value(items[0]) if items else None
