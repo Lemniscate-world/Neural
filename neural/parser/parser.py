@@ -461,7 +461,7 @@ class ModelTransformer(lark.Transformer):
         params.update(named_params)
         if 'units' in params:
             units = params['units']
-            if not isinstance(units, int) or units <= 0:
+            if not isinstance(units, int) or units < 0:
                 self.raise_validation_error(f"Dense units must be a positive integer, got {units}", items[0])
         return {"type": "Dense", "params": params}
 
