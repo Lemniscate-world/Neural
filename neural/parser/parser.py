@@ -391,6 +391,12 @@ class ModelTransformer(lark.Transformer):
             else:
                 expanded_layers.append(item)
         return expanded_layers
+
+    def layer_or_repeated(self, items):
+        if len(items) == 3 and items[1] == "*":
+            return (items[0], int(items[2]))  # Return (layer, count)
+        return items[0]  # Normal layer
+
     def wrapper(self, items):
         wrapper_type = items[0]
         layer = items[1]
