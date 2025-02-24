@@ -214,10 +214,48 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
             }
             """,
             None, None, None, None, None, None
+        # Validation Split Tests
+        (
+            """
+            network ValidationTest {
+                input: (28, 28, 1)
+                layers:
+                    Dense(64, "relu")
+                    Output(units=10, activation="softmax")
+                loss: "categorical_crossentropy"
+                optimizer: "adam"
+                train {
+                    epochs: 10
+                    batch_size: 32
+                    validation_split: 0.2
+                }
+            }
+            """,
+            "ValidationTest", (28, 28, 1),
+            [
+                {'type': 'Dense', 'params': {'units': 64, 'activation': 'relu'}},
+                {'type': 'Output', 'params': {'units': 10, 'activation': 'softmax'}}
+            ],
+            "categorical_crossentropy", {'type': 'adam', 'params': {}}, {'epochs': 10, 'batch_size': 32, 'validation_split': 0.2}
+        ),
+        (
+            """
+            network InvalidValidation {
+                input: (10,)
+                layers:
+                    Dense(5)
+                loss: "mse"
+                optimizer: "sgd"
+                train {
+                    validation_split: 1.1
+                }
+            }
+            """,
+            None, None, None, None, None, None
         ),
     ],
-    ids=["complex-model", "simple-model", "no-layers", "optimizer-params", "invalid-optimizer"]
-)
+    ids=["complex-model", "simple-model", "no-layers", "optimizer-params", "invalid-optimizer", "valid-validation-split", "invalid-validation-split"]
+
 def test_network_parsing(network_parser, transformer, network_string, expected_name, expected_input_shape, expected_layers, expected_loss, expected_optimizer, expected_training_config):
     if expected_name is None:
         with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError)):
