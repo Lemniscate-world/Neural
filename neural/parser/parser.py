@@ -350,8 +350,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         lexer='contextual',
         cache=True,
         propagate_positions=True,
-        on_error=custom_error_handler
     )
+
+def safe_parse(parser, text):
+    try:
+        return parser.parse(text)
+    except (lark.UnexpectedCharacters, lark.UnexpectedToken) as e:
+        return custom_error_handler(e)
 
 network_parser = create_parser('network')
 layer_parser = create_parser('layer')
