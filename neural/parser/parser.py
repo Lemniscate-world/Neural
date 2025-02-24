@@ -1280,6 +1280,11 @@ class ModelTransformer(lark.Transformer):
     
     def embedding(self, items):
         params = items[0] if items else None
+        for key in ['input_dim', 'output_dim']:
+            if key in params:
+                dim = params[key]
+                if not isinstance(dim, int) or dim <= 0:
+                    self.raise_error(f"Embedding {key} must be a positive integer, got {dim}", items[0])
         return {'type': 'Embedding', 'params': params}
     
     def lambda_(self, items):
