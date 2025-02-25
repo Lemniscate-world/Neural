@@ -265,6 +265,67 @@ def test_multi_input_handling():
     assert "tf.keras.layers.Concatenate()" in tf_code
     assert "input_shape=[(32,), (64,)]" in tf_code
 
+@pytest.fixture
+def multiplied_layers_model():
+    return {
+        "input": {"shape": (None, 32)},
+        "layers": [
+            {"type": "Dense", "params": {"units": 64}, "*": 3},
+            {"type": "Dropout", "params": {"rate": 0.5}, "*": 2}
+        ],
+        "loss": "mse",
+        "optimizer": "adam"
+    }
+
+def test_layer_multiplication(multiplied_layers_model):
+    tf_code = generate_code(multiplied_layers_model, "tensorflow")
+    pt_code = generate_code(multiplied_layers_model, "pytorch")
+    
+    # Verify TensorFlow
+    assert tf_code.count("Dense(units=64") == 3
+    assert tf_code.count("Dropout(rate=0.5") == 2
+    
+    # Verify PyTorch
+    assert pt_code.count("self.layer0_dense") == 1
+    assert pt_code.count("self.layer3_dropout") == 1
+    assert "x = self.layer0_dense(x)" in pt_code
+    assert "x = self.layer1_dense(x)" in pt_code
+    assert "x = self.layer3_dropout(x)" in pt_code
+
+
+@pytest.fixture
+def transformer_model_data():
+    return {
+        "type": "model",
+        "input": {"shape": (None, 128)},
+        "layers": [
+            {
+                "type": "TransformerEncoder",
+                "params": {
+                    "num_heads": 4,
+                    "ff_dim": 256,
+                    "dropout": 0.1
+                }
+            },
+            {"type": "Dense", "params": {"units": 10}}
+        ],
+        "loss": "categorical_crossentropy",
+        "optimizer": "adam"
+    }
+
+def test_transformer_generation(transformer_model_data):
+    # TensorFlow
+    tf_code = generate_code(transformer_model_data, "tensorflow")
+    assert "MultiHeadAttention" in tf_code
+    assert "LayerNormalization" in tf_code
+    
+    # PyTorch
+    pt_code = generate_code(transformer_model_data, "pytorch")
+    assert "TransformerEncoderLayer(" in pt_code
+    assert "dim_feedforward=256" in pt_code
+    assert "nhead=4" in pt_code
+
+
 # Add more tests for:
 # - Different pooling configurations
 # - Various RNN types and configurations
