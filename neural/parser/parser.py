@@ -370,8 +370,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" STRING
         
-        
-        custom_shape: STRING "(" VARIABLE "," explicit_tuple ")"
+        CUSTOM_SHAPE: "CustomShape"
+        custom_shape: CUSTOM_SHAPE "(" NAME "," explicit_tuple ")"
 
         math_expr: term (("+"|"-") term)*
         term: factor (("*"|"/") factor)*
@@ -386,7 +386,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         layer_choice: "HPO(choice(" layer ("," layer)* "))"
 
         ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_)
-        custom: NAME "(" param_style ")"
+        custom: NAME "(" param_style1 ")"
     """
     return lark.Lark(
         grammar,
