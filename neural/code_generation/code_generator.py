@@ -32,7 +32,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         raise ValueError("Invalid model_data format. Ensure it contains 'layers', 'input', 'loss', and 'optimizer'.")
 
     indent = "    "
-    propagator = ShapePropagator(debug=False)  # Instantiate ShapePropagator once
+    propagator = ShapePropagator(debug=False)
 
     if backend == "tensorflow":
         code = "import tensorflow as tf\n\n"
@@ -43,39 +43,16 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
             raise ValueError("Input layer shape is not defined.")
         current_input_shape = input_shape
 
-        for i, layer_config in enumerate(model_data['layers']):  # Track index with enumerate
+        # Check if flattening is needed
+        needs_flatten = len(current_input_shape) > 2 and model_data['layers'] and model_data['layers'][0]['type'] in ['Dense', 'Output']
+        if needs_flatten:
+            code += f"{indent}tf.keras.layers.Flatten(input_shape={input_shape}),\n"
+            current_input_shape = propagator.propagate(current_input_shape, {'type': 'Flatten', 'params': {}}, framework='tensorflow')
+
+        for i, layer_config in enumerate(model_data['layers']):
             layer_type = layer_config['type']
             params = layer_config.get('params', {})
 
-            # Handle input_shape for the first layer
-            if i == 0 and layer_type == 'Dense':
-                units = params.get('units')
-                activation = params.get('activation', 'relu')
-                code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}', input_shape={input_shape}),\n"
-                current_input_shape = propagator.propagate(current_input_shape, layer_config, framework='tensorflow')
-            continue
-
-        for layer_config in model_data['layers']:
-            layer_type = layer_config['type']
-            params = layer_config.get('params', {})
-
-            # Handle nested layers
-            if "sub_layers" in layer_config:
-                if layer_type == "TimeDistributed":
-                    sub_layer = layer_config['sub_layers'][0]
-                    sub_type = sub_layer['type']
-                    sub_params = sub_layer.get('params', {})
-                    sub_params_str = ", ".join(f"{k}={repr(v)}" for k, v in sub_params.items())
-                    code += f"{indent}tf.keras.layers.TimeDistributed(tf.keras.layers.{sub_type}({sub_params_str})),\n"
-                elif layer_type == "Residual":
-                    code += f"{indent}# Residual block (use Functional API for full implementation)\n"
-                    code += f"{indent}tf.keras.layers.Add(),\n"  # Simplified residual connection
-                else:
-                    code += f"{indent}# Unsupported nested layer {layer_type} (manual implementation needed)\n"
-                current_input_shape = propagator.propagate(current_input_shape, layer_config, framework='tensorflow')
-                continue
-
-            # Standard layers
             if layer_type == 'Conv2D':
                 filters = params.get('filters')
                 kernel_size = params.get('kernel_size')
@@ -90,12 +67,16 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                 code += f"{indent}tf.keras.layers.MaxPooling2D(pool_size={pool_size}),\n"
             elif layer_type == 'Flatten':
                 code += f"{indent}tf.keras.layers.Flatten(),\n"
-            elif layer_type == 'Dense' or layer_type == 'Output':
+            elif layer_type in ['Dense', 'Output']:
                 units = params.get('units')
                 activation = params.get('activation', 'relu' if layer_type == 'Dense' else 'linear')
                 if not units:
                     raise ValueError(f"{layer_type} layer config missing 'units'.")
-                code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}'),\n"
+                # Only add input_shape if this is the first layer and no Flatten precedes it
+                if i == 0 and not needs_flatten:
+                    code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}', input_shape={input_shape}),\n"
+                else:
+                    code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}'),\n"
             elif layer_type == 'Dropout':
                 rate = params.get('rate')
                 if rate is None:
