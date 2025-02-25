@@ -1366,13 +1366,22 @@ class ModelTransformer(lark.Transformer):
         return {"hpo_type": "layer_choice", "options": [self._extract_value(item) for item in items]}
 
     def parse_network(self, config: str, framework: str = 'auto'):
-        tree = network_parser.parse(config)
-        model = self.transform(tree)
-        if framework == 'auto':
-            framework = self._detect_framework(model)
-        model['framework'] = framework
-        model['shape_info'] = []
-        return model
+        warnings = []
+        try:
+            parse_result = safe_parse(network_parser, config)
+            tree = parse_result["result"]
+            warnings.extend(parse_result["warnings"])
+            
+            model = self.transform(tree)
+            if framework == 'auto':
+                framework = self._detect_framework(model)
+            model['framework'] = framework
+            model['shape_info'] = []
+            model['warnings'] = warnings
+            return model
+        except DSLValidationError as e:
+            log_by_severity(e.severity, str(e))
+        raise
 
     def _detect_framework(self, model):
         for layer in model['layers']:
