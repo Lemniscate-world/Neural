@@ -480,3 +480,56 @@ def test_comment_parsing(layer_parser, transformer, comment_string, expected, te
     tree = layer_parser.parse(comment_string)
     result = transformer.transform(tree)
     assert result == expected
+
+@pytest.mark.parametrize(
+    "layer_string, expected_result, expected_warnings, raises_error, test_id",
+    [
+        # Warning: Dropout rate > 1 (should log a warning but continue)
+        (
+            'Dropout(1.5)',
+            {'type': 'Dropout', 'params': {'rate': 1.5}},
+            [{'warning': 'WARNING: Dropout rate should be between 0 and 1, got 1.5', 'line': 1, 'column': None}],
+            False,
+            "dropout-high-rate-warning"
+        ),
+        # Error: Invalid dropout rate type (should raise an error)
+        (
+            'Dropout("invalid")',
+            None,
+            [],
+            True,
+            "dropout-invalid-type-error"
+        ),
+        # Warning: Negative kernel size (should log a warning but continue if transformer allows)
+        (
+            'Conv2D(32, (-1, 1))',
+            None,  # Depends on transformer handling; expect error in current code
+            [],
+            True,  # Current code raises ERROR, not WARNING
+            "conv2d-negative-kernel-error"  # Adjust if you change to WARNING
+        ),
+        # Valid case: No issues
+        (
+            'Dense(128, "relu")',
+            {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}},
+            [],
+            False,
+            "dense-valid-no-issues"
+        ),
+    ],
+    ids=["dropout-high-rate-warning", "dropout-invalid-type-error", "conv2d-negative-kernel-error", "dense-valid-no-issues"]
+)
+def test_severity_level_parsing(layer_parser, transformer, layer_string, expected_result, expected_warnings, raises_error, test_id):
+    if raises_error:
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, exceptions.VisitError)):
+            tree = layer_parser.parse(layer_string)
+            transformer.transform(tree)
+    else:
+        tree = layer_parser.parse(layer_string)
+        result = transformer.transform(tree)
+        # Check result matches expected
+        assert result == expected_result, f"Failed for {test_id}: expected {expected_result}, got {result}"
+        # Check warnings (if your transformer starts returning them; currently it doesn't)
+        # For now, this assumes warnings are logged, not returned. Future enhancement could add them to result.
+        # If you modify parse_network to return warnings, update this:
+        # assert result.get('warnings', []) == expected_warnings, f"Warnings mismatch for {test_id}"
