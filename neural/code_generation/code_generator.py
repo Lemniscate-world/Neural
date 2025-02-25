@@ -42,17 +42,11 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         input_shape = model_data['input']['shape']
         if not input_shape:
             raise ValueError("Input layer shape is not defined.")
-        # Remove None (batch dimension) and assume grayscale if channels unspecified
+        # Remove None (batch dimension)
         input_shape = tuple(x for x in input_shape if x is not None)
-        if len(input_shape) == 2:  # e.g., (28, 28) for grayscale
-            input_shape = input_shape  # Already correct
-        elif len(input_shape) == 3 and input_shape[-1] != 1:  # e.g., (28, 28, 3) for RGB
-            pass  # Keep as is
-        else:
-            input_shape = input_shape + (1,)  # Add channel if missing (e.g., (28, 28) -> (28, 28, 1))
         current_input_shape = input_shape
 
-        # Auto-insert Flatten if needed
+        # Auto-insert Flatten only if needed (not for Conv2D or similar)
         needs_flatten = len(current_input_shape) > 2 and model_data['layers'] and model_data['layers'][0]['type'] in ['Dense', 'Output']
         if needs_flatten:
             code += f"{indent}tf.keras.layers.Flatten(input_shape={current_input_shape}),\n"
@@ -62,13 +56,16 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
             layer_type = layer_config['type']
             params = layer_config.get('params', {})
 
+            # Add input_shape to the first layer if no Flatten is needed
+            input_str = f", input_shape={input_shape}" if i == 0 and not needs_flatten else ""
+
             if layer_type == 'Conv2D':
                 filters = params.get('filters')
                 kernel_size = params.get('kernel_size')
                 activation = params.get('activation', 'relu')
                 if not filters or not kernel_size:
                     raise ValueError("Conv2D layer config missing 'filters' or 'kernel_size'.")
-                code += f"{indent}tf.keras.layers.Conv2D(filters={filters}, kernel_size={kernel_size}, activation='{activation}'),\n"
+                code += f"{indent}tf.keras.layers.Conv2D(filters={filters}, kernel_size={kernel_size}, activation='{activation}'{input_str}),\n"
             elif layer_type == 'MaxPooling2D':
                 pool_size = params.get('pool_size')
                 if not pool_size:
@@ -81,10 +78,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                 activation = params.get('activation', 'relu' if layer_type == 'Dense' else 'linear')
                 if not units:
                     raise ValueError(f"{layer_type} layer config missing 'units'.")
-                if i == 0 and not needs_flatten:
-                    code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}', input_shape={input_shape}),\n"
-                else:
-                    code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}'),\n"
+                code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}'{input_str}),\n"
             elif layer_type == 'Dropout':
                 rate = params.get('rate')
                 if rate is None:
@@ -97,7 +91,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                 return_sequences = params.get('return_sequences', False)
                 if not units:
                     raise ValueError(f"{layer_type} layer config missing 'units'.")
-                code += f"{indent}tf.keras.layers.{layer_type}(units={units}, return_sequences={str(return_sequences).lower()}),\n"
+                code += f"{indent}tf.keras.layers.{layer_type}(units={units}, return_sequences={str(return_sequences).lower()}{input_str}),\n"
             else:
                 print(f"Warning: Unsupported layer type '{layer_type}' for TensorFlow. Skipping.")
                 continue
@@ -107,8 +101,9 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         code += "])\n\n"
         loss_value = model_data['loss'] if isinstance(model_data['loss'], str) else model_data['loss']['value'].strip('"')
         optimizer_value = model_data['optimizer']['type'] if isinstance(model_data['optimizer'], dict) else model_data['optimizer'].strip('"')
-        code += f"model.compile(loss='{loss_value}', optimizer='{optimizer_value.lower()}')\n"  # Lowercase 'adam' for consistency
+        code += f"model.compile(loss='{loss_value}', optimizer='{optimizer_value.lower()}')\n"
         return code
+
 
     elif backend == "pytorch":
         code = "import torch\n"
