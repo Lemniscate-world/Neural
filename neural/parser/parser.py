@@ -1185,21 +1185,20 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'QuantumLayer', 'params': params}
 
     def transformer(self, items):
-        # Extract the transformer type token (e.g., "TransformerEncoder")
+        # Extract the transformer type token
         if isinstance(items[0], Token):
             transformer_type = items[0].value
         else:
             self.raise_validation_error("Invalid transformer syntax: missing type identifier", items[0])
 
-        # Extract and merge parameters
+        # Extract and process parameters
         params = {}
         if len(items) > 2:
-            raw_params = self._extract_value(items[2])
+            raw_params = self._extract_value(items[2])  # Critical fix: use _extract_value here
             if isinstance(raw_params, list):
-                # Merge list of dictionaries into a single dict
-                for param_set in raw_params:
-                    if isinstance(param_set, dict):
-                        params.update(param_set)
+                for param in raw_params:
+                    if isinstance(param, dict):
+                        params.update(param)
             elif isinstance(raw_params, dict):
                 params.update(raw_params)
 
@@ -1208,9 +1207,12 @@ class ModelTransformer(lark.Transformer):
             if key in params:
                 val = params[key]
                 if isinstance(val, dict) and 'hpo' in val:
-                    continue  # Skip HPO parameters
+                    continue
                 if not isinstance(val, int) or val <= 0:
-                    self.raise_validation_error(f"{transformer_type} {key} must be a positive integer, got {val}", items[2] if len(items) > 2 else None)
+                    self.raise_validation_error(
+                        f"{transformer_type} {key} must be a positive integer, got {val}",
+                        items[2] if len(items) > 2 else None
+                    )
 
         return {'type': transformer_type, 'params': params}
 
