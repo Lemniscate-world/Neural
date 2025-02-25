@@ -300,3 +300,77 @@ def export_onnx(model_data: Dict[str, Any], filename: str = "model.onnx") -> str
     model = generate_onnx(model_data)
     onnx.save(model, filename)
     return f"ONNX model saved to {filename}"
+
+# Custom Transformer Encoder Layer
+class TransformerEncoder(tf.keras.layers.Layer):
+    def __init__(self, num_heads, ff_dim, dropout=0.1):
+        super().__init__()
+        self.att = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=ff_dim//num_heads)
+        self.ffn = tf.keras.Sequential([
+            tf.keras.layers.Dense(ff_dim, activation="relu"),
+            tf.keras.layers.Dense(ff_dim)
+        ])
+        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.dropout1 = tf.keras.layers.Dropout(dropout)
+        self.dropout2 = tf.keras.layers.Dropout(dropout)
+
+    def call(self, inputs):
+        attn_output = self.att(inputs, inputs)
+        attn_output = self.dropout1(attn_output)
+        out1 = self.layernorm1(inputs + attn_output)
+        ffn_output = self.ffn(out1)
+        ffn_output = self.dropout2(ffn_output)
+        return self.layernorm2(out1 + ffn_output)
+
+# Custom Transformer Decoder Layer
+class TransformerDecoder(tf.keras.layers.Layer):
+    def __init__(self, num_heads, ff_dim, dropout=0.1):
+        super().__init__()
+        self.attn1 = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=ff_dim//num_heads)
+        self.attn2 = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=ff_dim//num_heads)
+        self.ffn = tf.keras.Sequential([
+            tf.keras.layers.Dense(ff_dim, activation="relu"),
+            tf.keras.layers.Dense(ff_dim)
+        ])
+        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.layernorm3 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.dropout1 = tf.keras.layers.Dropout(dropout)
+        self.dropout2 = tf.keras.layers.Dropout(dropout)
+        self.dropout3 = tf.keras.layers.Dropout(dropout)
+
+    def call(self, inputs, enc_output):
+        attn1 = self.attn1(inputs, inputs)
+        attn1 = self.dropout1(attn1)
+        out1 = self.layernorm1(attn1 + inputs)
+        attn2 = self.attn2(out1, enc_output)
+        attn2 = self.dropout2(attn2)
+        out2 = self.layernorm2(attn2 + out1)
+        ffn_output = self.ffn(out2)
+        ffn_output = self.dropout3(ffn_output)
+        return self.layernorm3(out2 + ffn_output)
+
+# Model Construction
+inputs = tf.keras.Input(shape=(512,))
+x = inputs
+
+# Encoder Stack
+for _ in range(3):
+    encoder = TransformerEncoder(num_heads=8, ff_dim=2048, dropout=0.1)
+    x = encoder(x)
+
+# Decoder
+decoder = TransformerDecoder(num_heads=8, ff_dim=2048, dropout=0.1)
+x = decoder(x, x)  # Using encoder output as cross-attention input
+
+# Final Layers
+x = tf.keras.layers.Dense(512, activation="relu")(x)
+outputs = tf.keras.layers.Dense(vocab_size, activation="softmax")(x)
+
+model = tf.keras.Model(inputs=inputs, outputs=outputs)
+
+# Compile with custom optimizer
+model.compile(
+    loss="categorical_crossentropy",
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001)
