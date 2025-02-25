@@ -6,17 +6,31 @@ from typing import Any, Dict, List, Tuple, Union, Optional, Callable
 import json
 import plotly.graph_objects as go
 import logging
+from enum import Enum
 
 logger = logging.getLogger('neural.parser')
 logging.basicConfig(level=logging.INFO)
 
+
+class Severity(Enum):
+    DEBUG = 1    # For development info, not user-facing
+    INFO = 2     # Informational, no action needed
+    WARNING = 3  # Recoverable issue, parsing can continue
+    ERROR = 4    # Non-recoverable, parsing stops
+    CRITICAL = 5 # Fatal, immediate halt required
+
+
 # Custom exception for DSL validation errors
-class DSLValidationError(ValueError):
-    def __init__(self, message, line=None, column=None):
+class DSLValidationError(Exception):
+    def __init__(self, message, severity=Severity.ERROR, line=None, column=None):
+        self.severity = severity
+        self.line = line
+        self.column = column
         if line and column:
-            super().__init__(f"Error at line {line}, column {column}: {message}")
+            super().__init__(f"{severity.name} at line {line}, column {column}: {message}")
         else:
-            super().__init__(message)
+            super().__init__(f"{severity.name}: {message}")
+        self.message = message  # Store raw message for logging
 
 # Custom error handler for Lark parsing
 def custom_error_handler(error):
@@ -43,7 +57,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
     """
     grammar = r"""
 
-        CUSTOM_SHAPE: "CustomShape"
         TRANSFORMER: "Transformer"
         TRANSFORMER_ENCODER: "TransformerEncoder"
         TRANSFORMER_DECODER: "TransformerDecoder"
@@ -337,7 +350,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         device_param: "device:" STRING
         
         
-        custom_shape: CUSTOM_SHAPE "(" NAME "," explicit_tuple ")"
+        custom_shape: STRING "(" VARIABLE "," explicit_tuple ")"
 
         math_expr: term (("+"|"-") term)*
         term: factor (("*"|"/") factor)*
@@ -352,7 +365,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         layer_choice: "HPO(choice(" layer ("," layer)* "))"
 
         ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_)
-        custom: NAME "(" named_params ")"
+        custom: NAME "(" param_style ")"
     """
     return lark.Lark(
         grammar,
