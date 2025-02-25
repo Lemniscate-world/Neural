@@ -13,120 +13,125 @@ def to_number(x: str) -> Union[int, float]:
     except ValueError:
         return float(x)
 
+
 def generate_code(model_data: Dict[str, Any], backend: str) -> str:
-    """
-    Generates code for creating and training a neural network model based on model_data and backend.
-    Supports TensorFlow, PyTorch, and ONNX backends.
-
-    Args:
-        model_data (dict): Parsed model configuration dictionary from ModelTransformer.
-        backend (str): Backend framework ('tensorflow', 'pytorch', or 'onnx').
-
-    Returns:
-        str: Generated code as a string.
-
-    Raises:
-        ValueError: If the backend is unsupported or model_data is invalid.
-    """
-    if not isinstance(model_data, dict) or 'layers' not in model_data or 'input' not in model_data or 'loss' not in model_data or 'optimizer' not in model_data:
-        raise ValueError("Invalid model_data format. Ensure it contains 'layers', 'input', 'loss', and 'optimizer'.")
+    # Initial validation and setup
+    if not isinstance(model_data, dict) or 'layers' not in model_data:
+        raise ValueError("Invalid model_data format")
 
     indent = "    "
     propagator = ShapePropagator(debug=False)
 
+    # Pre-process layers for multiplication and API detection
     expanded_layers = []
+    requires_functional_api = False
     for layer in model_data['layers']:
-        multiply = layer.pop('*', 1)  # Remove '*' key and default to 1 if not present
-        for _ in range(multiply):
-            expanded_layers.append(layer.copy())  # Avoid modifying the original layer
-    model_data['layers'] = expanded_layers  # Replace with expanded layers
+        # Check for complex architectures
+        if layer['type'] in ['Transformer', 'TransformerEncoder', 'TransformerDecoder',
+                            'Residual', 'Inception', 'MultiInput', 'MultiOutput']:
+            requires_functional_api = True
+        
+        # Expand multiplied layers
+        multiply = layer.pop('*', 1)
+        expanded_layers.extend([layer.copy() for _ in range(multiply)])
+    
+    model_data['layers'] = expanded_layers
 
     if backend == "tensorflow":
         code = "import tensorflow as tf\n\n"
-        code += f"model = tf.keras.Sequential(name='{model_data.get('name', 'UnnamedModel')}', layers=[\n"
+        
+        # Add custom layer definitions only when needed
+        if any(l['type'] in ['TransformerEncoder', 'TransformerDecoder'] for l in model_data['layers']):
+            code += """class TransformerEncoder(tf.keras.layers.Layer):
+                # ... (keep previous implementation)
+            
+            class TransformerDecoder(tf.keras.layers.Layer):
+                # ... (keep previous implementation)\n\n"""
 
-        # Correct input shape by removing 'None' (batch size)
-        input_shape = model_data['input']['shape']
-        if not input_shape:
-            raise ValueError("Input layer shape is not defined.")
-        # Remove None (batch dimension)
-        input_shape = tuple(x for x in input_shape if x is not None)
-        current_input_shape = input_shape
-
-        # Auto-insert Flatten only if needed (not for Conv2D or similar)
-        needs_flatten = len(current_input_shape) > 2 and model_data['layers'] and model_data['layers'][0]['type'] in ['Dense', 'Output']
-        if needs_flatten:
-            code += f"{indent}tf.keras.layers.Flatten(input_shape={current_input_shape}),\n"
-            current_input_shape = propagator.propagate(current_input_shape, {'type': 'Flatten', 'params': {}}, framework='tensorflow')
-
-        for i, layer_config in enumerate(model_data['layers']):
-            layer_type = layer_config['type']
-            params = layer_config.get('params', {})
-
-            # Add input_shape to the first layer if no Flatten is needed
-            input_str = f", input_shape={input_shape}" if i == 0 and not needs_flatten else ""
-
-            if layer_type == 'Conv2D':
-                filters = params.get('filters')
-                kernel_size = params.get('kernel_size')
-                activation = params.get('activation', 'relu')
-                if not filters or not kernel_size:
-                    raise ValueError("Conv2D layer config missing 'filters' or 'kernel_size'.")
-                code += f"{indent}tf.keras.layers.Conv2D(filters={filters}, kernel_size={kernel_size}, activation='{activation}'{input_str}),\n"
-            elif layer_type == 'MaxPooling2D':
-                pool_size = params.get('pool_size')
-                if not pool_size:
-                    raise ValueError("MaxPooling2D layer config missing 'pool_size'.")
-                code += f"{indent}tf.keras.layers.MaxPooling2D(pool_size={pool_size}),\n"
-            elif layer_type == 'Flatten':
-                code += f"{indent}tf.keras.layers.Flatten(),\n"
-            elif layer_type in ['Dense', 'Output']:
-                units = params.get('units')
-                activation = params.get('activation', 'relu' if layer_type == 'Dense' else 'linear')
-                if not units:
-                    raise ValueError(f"{layer_type} layer config missing 'units'.")
-                code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}'{input_str}),\n"
-            elif layer_type == 'Dropout':
-                rate = params.get('rate')
-                if rate is None:
-                    raise ValueError("Dropout layer config missing 'rate'.")
-                code += f"{indent}tf.keras.layers.Dropout(rate={rate}),\n"
-            elif layer_type == 'BatchNormalization':
-                code += f"{indent}tf.keras.layers.BatchNormalization(),\n"
-            elif layer_type in ['SimpleRNN', 'LSTM', 'GRU']:
-                units = params.get('units')
-                return_sequences = params.get('return_sequences', False)
-                if not units:
-                    raise ValueError(f"{layer_type} layer config missing 'units'.")
-                code += f"{indent}tf.keras.layers.{layer_type}(units={units}, return_sequences={str(return_sequences).lower()}{input_str}),\n"
-            elif layer_type in ['Transformer', 'TransformerEncoder']:
-                num_heads = params.get('num_heads', 8)
-                ff_dim = params.get('ff_dim', 512)
-                dropout_rate = params.get('dropout', 0.1)
+        if requires_functional_api:
+            # FUNCTIONAL API GENERATION
+            code += "# Model construction using Functional API\n"
+            input_shape = tuple(x for x in model_data['input']['shape'] if x is not None)
+            code += f"inputs = tf.keras.Input(shape={input_shape})\n"
+            code += "x = inputs\n"
+            
+            # Track special connections
+            encoder_stack = None
+            
+            for layer in model_data['layers']:
+                layer_type = layer['type']
+                params = layer.get('params', {})
                 
-                code += f"""{indent}# Transformer Encoder
-            {indent}encoder_input = tf.keras.Input(shape={current_input_shape})
-            {indent}attention = tf.keras.layers.MultiHeadAttention(
-            {indent}    num_heads={num_heads}, key_dim={ff_dim}//{num_heads})(encoder_input, encoder_input)
-            {indent}x = tf.keras.layers.Dropout({dropout_rate})(attention)
-            {indent}x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x + encoder_input)
-            {indent}x = tf.keras.layers.Dense({ff_dim}, activation='relu')(x)
-            {indent}x = tf.keras.layers.Dense({current_input_shape[-1]})(x)
-            {indent}x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
-            {indent}model.add(tf.keras.Model(inputs=encoder_input, outputs=x))\n"""
-                current_input_shape = propagator.propagate(current_input_shape, layer_config, 'tensorflow')
-            else:
-                print(f"Warning: Unsupported layer type '{layer_type}' for TensorFlow. Skipping.")
-                continue
+                if layer_type == 'TransformerEncoder':
+                    code += f"x = TransformerEncoder(num_heads={params['num_heads']}, " \
+                           f"ff_dim={params['ff_dim']}, dropout={params['dropout']})(x)\n"
+                    encoder_stack = "x"
+                
+                elif layer_type == 'TransformerDecoder':
+                    code += f"x = TransformerDecoder(num_heads={params['num_heads']}, " \
+                           f"ff_dim={params['ff_dim']}, dropout={params['dropout']})" \
+                           f"(x, {encoder_stack})\n"
+                
+                # Handle other functional layers
+                elif layer_type == 'Dense':
+                    code += f"x = tf.keras.layers.Dense({params['units']}, " \
+                           f"activation='{params['activation']}')(x)\n"
+                
+                elif layer_type == 'Output':
+                    code += f"outputs = tf.keras.layers.Dense({params['units']}, " \
+                           f"activation='{params['activation']}')(x)\n"
+                
+                # Add more layer types as needed
 
-            current_input_shape = propagator.propagate(current_input_shape, layer_config, framework='tensorflow')
+            code += "\nmodel = tf.keras.Model(inputs=inputs, outputs=outputs)\n"
+        
+        else:
+            # SEQUENTIAL API GENERATION
+            code += f"model = tf.keras.Sequential(name='{model_data.get('name', 'UnnamedModel')}', layers=[\n"
+            
+            # First layer needs input_shape
+            input_shape = tuple(x for x in model_data['input']['shape'] if x is not None)
+            needs_flatten = len(input_shape) > 1
+            
+            if needs_flatten:
+                code += f"{indent}tf.keras.layers.Flatten(input_shape={input_shape}),\n"
+            
+            for i, layer in enumerate(model_data['layers']):
+                layer_type = layer['type']
+                params = layer.get('params', {})
+                input_str = f", input_shape={input_shape}" if i == 0 and not needs_flatten else ""
+                
+                if layer_type == 'Dense':
+                    code += f"{indent}tf.keras.layers.Dense(" \
+                           f"units={params['units']}, " \
+                           f"activation='{params.get('activation', 'relu')}'{input_str}),\n"
+                
+                # Add more sequential-compatible layers
+                
+            code += "])\n"
 
-        code += "])\n\n"
-        loss_value = model_data['loss'] if isinstance(model_data['loss'], str) else model_data['loss']['value'].strip('"')
-        optimizer_value = model_data['optimizer']['type'] if isinstance(model_data['optimizer'], dict) else model_data['optimizer'].strip('"')
-        code += f"model.compile(loss='{loss_value}', optimizer='{optimizer_value.lower()}')\n"
+        # Common compiler section
+        optimizer_params = ""
+        if isinstance(model_data['optimizer'], dict) and 'params' in model_data['optimizer']:
+            params = model_data['optimizer']['params']
+            optimizer_params = ", ".join([f"{k}={v}" for k, v in params.items()])
+
+        code += f"\nmodel.compile(\n" \
+               f"    loss='{model_data['loss']}',\n" \
+               f"    optimizer=tf.keras.optimizers.{model_data['optimizer']['type']}({optimizer_params}),\n" \
+               f"    metrics=['accuracy']\n" \
+               f")\n"
+
+        # Training configuration
+        if 'training_config' in model_data:
+            code += f"\nmodel.fit(\n" \
+                   f"    x_train, y_train,\n" \
+                   f"    epochs={model_data['training_config']['epochs']},\n" \
+                   f"    batch_size={model_data['training_config']['batch_size']},\n" \
+                   f"    validation_split={model_data['training_config']['validation_split']}\n" \
+                   f")\n"
+
         return code
-
 
     elif backend == "pytorch":
         code = "import torch\n"
@@ -300,6 +305,7 @@ def export_onnx(model_data: Dict[str, Any], filename: str = "model.onnx") -> str
     model = generate_onnx(model_data)
     onnx.save(model, filename)
     return f"ONNX model saved to {filename}"
+
 
 # Custom Transformer Encoder Layer
 class TransformerEncoder(tf.keras.layers.Layer):
