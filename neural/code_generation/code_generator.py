@@ -13,9 +13,7 @@ def to_number(x: str) -> Union[int, float]:
     except ValueError:
         return float(x)
 
-
 def generate_code(model_data: Dict[str, Any], backend: str) -> str:
-    # Initial validation and setup
     if not isinstance(model_data, dict) or 'layers' not in model_data:
         raise ValueError("Invalid model_data format")
 
@@ -26,37 +24,50 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
     expanded_layers = []
     requires_functional_api = False
     for layer in model_data['layers']:
-        # Check for complex architectures
         if layer['type'] in ['Transformer', 'TransformerEncoder', 'TransformerDecoder',
                             'Residual', 'Inception', 'MultiInput', 'MultiOutput']:
             requires_functional_api = True
         
-        # Expand multiplied layers
         multiply = layer.pop('*', 1)
         expanded_layers.extend([layer.copy() for _ in range(multiply)])
     
     model_data['layers'] = expanded_layers
 
     if backend == "tensorflow":
-        code = "import tensorflow as tf\n\n"
+        code = "import tensorflow as tf\nfrom tensorflow.keras import layers\n\n"
         
-        # Add custom layer definitions only when needed
-        if any(l['type'] in ['TransformerEncoder', 'TransformerDecoder'] for l in model_data['layers']):
-            code += """class TransformerEncoder(tf.keras.layers.Layer):
-                # ... (keep previous implementation)
-            
-            class TransformerDecoder(tf.keras.layers.Layer):
-                # ... (keep previous implementation)\n\n"""
+        # Custom Transformer Encoder
+        if any(l['type'] in ['TransformerEncoder'] for l in model_data['layers']):
+            code += """class TransformerEncoder(layers.Layer):
+    def __init__(self, num_heads, ff_dim, dropout=0.1):
+        super().__init__()
+        self.num_heads = num_heads
+        self.ff_dim = ff_dim
+        self.dropout = dropout
+        self.attn = layers.MultiHeadAttention(num_heads=num_heads, key_dim=ff_dim)
+        self.ffn = tf.keras.Sequential([
+            layers.Dense(ff_dim, activation='relu'),
+            layers.Dense(ff_dim)
+        ])
+        self.norm1 = layers.LayerNormalization(epsilon=1e-6)
+        self.norm2 = layers.LayerNormalization(epsilon=1e-6)
+        self.dropout1 = layers.Dropout(dropout)
+        self.dropout2 = layers.Dropout(dropout)
 
+    def call(self, inputs):
+        attn_output = self.attn(inputs, inputs)
+        attn_output = self.dropout1(attn_output)
+        out1 = self.norm1(inputs + attn_output)
+        ffn_output = self.ffn(out1)
+        ffn_output = self.dropout2(ffn_output)
+        return self.norm2(out1 + ffn_output)\n\n"""
+
+        # Functional API
         if requires_functional_api:
-            # FUNCTIONAL API GENERATION
             code += "# Model construction using Functional API\n"
-            input_shape = tuple(x for x in model_data['input']['shape'] if x is not None)
+            input_shape = tuple(None if x == 'NONE' else x for x in model_data['input']['shape'])
             code += f"inputs = tf.keras.Input(shape={input_shape})\n"
             code += "x = inputs\n"
-            
-            # Track special connections
-            encoder_stack = None
             
             for layer in model_data['layers']:
                 layer_type = layer['type']
@@ -65,52 +76,16 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                 if layer_type == 'TransformerEncoder':
                     code += f"x = TransformerEncoder(num_heads={params['num_heads']}, " \
                            f"ff_dim={params['ff_dim']}, dropout={params['dropout']})(x)\n"
-                    encoder_stack = "x"
                 
-                elif layer_type == 'TransformerDecoder':
-                    code += f"x = TransformerDecoder(num_heads={params['num_heads']}, " \
-                           f"ff_dim={params['ff_dim']}, dropout={params['dropout']})" \
-                           f"(x, {encoder_stack})\n"
-                
-                # Handle other functional layers
                 elif layer_type == 'Dense':
-                    code += f"x = tf.keras.layers.Dense({params['units']}, " \
-                           f"activation='{params['activation']}')(x)\n"
+                    code += f"x = layers.Dense({params['units']}, activation='{params['activation']}')(x)\n"
                 
                 elif layer_type == 'Output':
-                    code += f"outputs = tf.keras.layers.Dense({params['units']}, " \
-                           f"activation='{params['activation']}')(x)\n"
-                
-                # Add more layer types as needed
+                    code += f"outputs = layers.Dense({params['units']}, activation='{params['activation']}')(x)\n"
 
             code += "\nmodel = tf.keras.Model(inputs=inputs, outputs=outputs)\n"
         
-        else:
-            # SEQUENTIAL API GENERATION
-            code += f"model = tf.keras.Sequential(name='{model_data.get('name', 'UnnamedModel')}', layers=[\n"
-            
-            # First layer needs input_shape
-            input_shape = tuple(x for x in model_data['input']['shape'] if x is not None)
-            needs_flatten = len(input_shape) > 1
-            
-            if needs_flatten:
-                code += f"{indent}tf.keras.layers.Flatten(input_shape={input_shape}),\n"
-            
-            for i, layer in enumerate(model_data['layers']):
-                layer_type = layer['type']
-                params = layer.get('params', {})
-                input_str = f", input_shape={input_shape}" if i == 0 and not needs_flatten else ""
-                
-                if layer_type == 'Dense':
-                    code += f"{indent}tf.keras.layers.Dense(" \
-                           f"units={params['units']}, " \
-                           f"activation='{params.get('activation', 'relu')}'{input_str}),\n"
-                
-                # Add more sequential-compatible layers
-                
-            code += "])\n"
-
-        # Common compiler section
+        # Compiler section
         optimizer_params = ""
         if isinstance(model_data['optimizer'], dict) and 'params' in model_data['optimizer']:
             params = model_data['optimizer']['params']
@@ -132,6 +107,8 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                    f")\n"
 
         return code
+
+    # ... (rest of the original code for other backends and helper functions)
 
     elif backend == "pytorch":
         code = "import torch\n"
@@ -307,76 +284,4 @@ def export_onnx(model_data: Dict[str, Any], filename: str = "model.onnx") -> str
     return f"ONNX model saved to {filename}"
 
 
-# Custom Transformer Encoder Layer
-class TransformerEncoder(tf.keras.layers.Layer):
-    def __init__(self, num_heads, ff_dim, dropout=0.1):
-        super().__init__()
-        self.att = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=ff_dim//num_heads)
-        self.ffn = tf.keras.Sequential([
-            tf.keras.layers.Dense(ff_dim, activation="relu"),
-            tf.keras.layers.Dense(ff_dim)
-        ])
-        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.dropout1 = tf.keras.layers.Dropout(dropout)
-        self.dropout2 = tf.keras.layers.Dropout(dropout)
 
-    def call(self, inputs):
-        attn_output = self.att(inputs, inputs)
-        attn_output = self.dropout1(attn_output)
-        out1 = self.layernorm1(inputs + attn_output)
-        ffn_output = self.ffn(out1)
-        ffn_output = self.dropout2(ffn_output)
-        return self.layernorm2(out1 + ffn_output)
-
-# Custom Transformer Decoder Layer
-class TransformerDecoder(tf.keras.layers.Layer):
-    def __init__(self, num_heads, ff_dim, dropout=0.1):
-        super().__init__()
-        self.attn1 = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=ff_dim//num_heads)
-        self.attn2 = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=ff_dim//num_heads)
-        self.ffn = tf.keras.Sequential([
-            tf.keras.layers.Dense(ff_dim, activation="relu"),
-            tf.keras.layers.Dense(ff_dim)
-        ])
-        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm3 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.dropout1 = tf.keras.layers.Dropout(dropout)
-        self.dropout2 = tf.keras.layers.Dropout(dropout)
-        self.dropout3 = tf.keras.layers.Dropout(dropout)
-
-    def call(self, inputs, enc_output):
-        attn1 = self.attn1(inputs, inputs)
-        attn1 = self.dropout1(attn1)
-        out1 = self.layernorm1(attn1 + inputs)
-        attn2 = self.attn2(out1, enc_output)
-        attn2 = self.dropout2(attn2)
-        out2 = self.layernorm2(attn2 + out1)
-        ffn_output = self.ffn(out2)
-        ffn_output = self.dropout3(ffn_output)
-        return self.layernorm3(out2 + ffn_output)
-
-# Model Construction
-inputs = tf.keras.Input(shape=(512,))
-x = inputs
-
-# Encoder Stack
-for _ in range(3):
-    encoder = TransformerEncoder(num_heads=8, ff_dim=2048, dropout=0.1)
-    x = encoder(x)
-
-# Decoder
-decoder = TransformerDecoder(num_heads=8, ff_dim=2048, dropout=0.1)
-x = decoder(x, x)  # Using encoder output as cross-attention input
-
-# Final Layers
-x = tf.keras.layers.Dense(512, activation="relu")(x)
-outputs = tf.keras.layers.Dense(vocab_size, activation="softmax")(x)
-
-model = tf.keras.Model(inputs=inputs, outputs=outputs)
-
-# Compile with custom optimizer
-model.compile(
-    loss="categorical_crossentropy",
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001)
