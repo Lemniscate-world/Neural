@@ -34,6 +34,13 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
     indent = "    "
     propagator = ShapePropagator(debug=False)
 
+    expanded_layers = []
+    for layer in model_data['layers']:
+        multiply = layer.pop('*', 1)  # Remove '*' key and default to 1 if not present
+        for _ in range(multiply):
+            expanded_layers.append(layer.copy())  # Avoid modifying the original layer
+    model_data['layers'] = expanded_layers  # Replace with expanded layers
+
     if backend == "tensorflow":
         code = "import tensorflow as tf\n\n"
         code += f"model = tf.keras.Sequential(name='{model_data.get('name', 'UnnamedModel')}', layers=[\n"
