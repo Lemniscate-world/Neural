@@ -92,6 +92,22 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                 if not units:
                     raise ValueError(f"{layer_type} layer config missing 'units'.")
                 code += f"{indent}tf.keras.layers.{layer_type}(units={units}, return_sequences={str(return_sequences).lower()}{input_str}),\n"
+            elif layer_type in ['Transformer', 'TransformerEncoder']:
+                num_heads = params.get('num_heads', 8)
+                ff_dim = params.get('ff_dim', 512)
+                dropout_rate = params.get('dropout', 0.1)
+                
+                code += f"""{indent}# Transformer Encoder
+            {indent}encoder_input = tf.keras.Input(shape={current_input_shape})
+            {indent}attention = tf.keras.layers.MultiHeadAttention(
+            {indent}    num_heads={num_heads}, key_dim={ff_dim}//{num_heads})(encoder_input, encoder_input)
+            {indent}x = tf.keras.layers.Dropout({dropout_rate})(attention)
+            {indent}x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x + encoder_input)
+            {indent}x = tf.keras.layers.Dense({ff_dim}, activation='relu')(x)
+            {indent}x = tf.keras.layers.Dense({current_input_shape[-1]})(x)
+            {indent}x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
+            {indent}model.add(tf.keras.Model(inputs=encoder_input, outputs=x))\n"""
+                current_input_shape = propagator.propagate(current_input_shape, layer_config, 'tensorflow')
             else:
                 print(f"Warning: Unsupported layer type '{layer_type}' for TensorFlow. Skipping.")
                 continue
@@ -183,6 +199,19 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
             elif layer_type == 'BatchNormalization':
                 layers_code.append(f"{layer_name}_bn = nn.BatchNorm2d(num_features={current_input_shape[-1]})")
                 forward_code_body.append(f"x = self.layer{i}_bn(x)")
+            elif layer_type in ['Transformer', 'TransformerEncoder']:
+                num_heads = params.get('num_heads', 8)
+                ff_dim = params.get('ff_dim', 512)
+                dropout = params.get('dropout', 0.1)
+                
+                layers_code.append(
+                    f"{layer_name} = nn.TransformerEncoderLayer(\n"
+                    f"{indent}{indent}d_model={current_input_shape[-1]}, nhead={num_heads},\n"
+                    f"{indent}{indent}dim_feedforward={ff_dim}, dropout={dropout}\n"
+                    f"{indent})"
+                )
+                forward_code_body.append(f"x = self.layer{i}(x)")
+                current_input_shape = propagator.propagate(current_input_shape, layer_config, 'pytorch')
             else:
                 print(f"Warning: Unsupported layer type '{layer_type}' for PyTorch. Skipping.")
                 continue
