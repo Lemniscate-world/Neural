@@ -399,14 +399,16 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
     )
 
 def safe_parse(parser, text):
+    warnings = []
     try:
-        return parser.parse(text)
+        tree = parser.parse(text)
+        return {"result": tree, "warnings": warnings}
     except (lark.UnexpectedCharacters, lark.UnexpectedToken) as e:
-        return custom_error_handler(e)
-
-network_parser = create_parser('network')
-layer_parser = create_parser('layer')
-research_parser = create_parser('research')
+        result = custom_error_handler(e)
+        if isinstance(result, dict):  # Warning case
+            warnings.append(result)
+            return {"result": None, "warnings": warnings}
+        raise  # Re-raise errors/critical
 
 class ModelTransformer(lark.Transformer):
     def __init__(self):
