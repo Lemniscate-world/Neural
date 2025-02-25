@@ -52,13 +52,19 @@ def custom_error_handler(error):
     if isinstance(error, lark.UnexpectedCharacters):
         msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected character '{error.char}'.\n" \
               f"Expected one of: {', '.join(sorted(error.allowed))}"
+        severity = Severity.ERROR  # Syntax errors are typically severe
     elif isinstance(error, lark.UnexpectedToken):
         msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected token '{error}'.\n" \
               f"Expected one of: {', '.join(sorted(error.expected))}"
+        severity = Severity.ERROR
     else:
         msg = str(error)
-    logger.error(msg)
-    raise DSLValidationError(msg, error.line, error.column)
+        severity = Severity.ERROR
+
+    log_by_severity(severity, msg)
+    if severity.value >= Severity.ERROR.value:
+        raise DSLValidationError(msg, severity, error.line, error.column)
+    return {"warning": msg, "line": error.line, "column": error.column}  # Return for warnings
 
 def create_parser(start_rule: str = 'network') -> lark.Lark:
     """
@@ -407,14 +413,18 @@ class ModelTransformer(lark.Transformer):
         super().__init__()
         self.variables = {}
 
-    def raise_validation_error(self, msg, item=None):
+    def raise_validation_error(self, msg, item=None, severity=Severity.ERROR):
         if item and hasattr(item, 'meta'):
             line, col = item.meta.line, item.meta.column
-            full_msg = f"Error at line {line}, column {col}: {msg}"
-            logger.error(full_msg)
-            raise DSLValidationError(msg, line, col)
-        logger.error(msg)
-        raise DSLValidationError(msg)
+            full_msg = f"{severity.name} at line {line}, column {col}: {msg}"
+        else:
+            line, col = None, None
+            full_msg = f"{severity.name}: {msg}"
+        
+        log_by_severity(severity, full_msg)
+        if severity.value >= Severity.ERROR.value:
+            raise DSLValidationError(msg, severity, line, col)
+        return {"warning": msg, "line": line, "column": col}  # Return for warnings
 
     def layer(self, items):
         return self.visit(items[0])
