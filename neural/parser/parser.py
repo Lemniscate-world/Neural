@@ -43,6 +43,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
     """
     grammar = r"""
 
+        CUSTOM_SHAPE: "CustomShape"
         TRANSFORMER: "Transformer"
         TRANSFORMER_ENCODER: "TransformerEncoder"
         TRANSFORMER_DECODER: "TransformerDecoder"
@@ -335,8 +336,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" STRING
         
-
-        custom_shape: "CustomShape" "(" NAME "," explicit_tuple ")"
+        
+        custom_shape: CUSTOM_SHAPE "(" NAME "," explicit_tuple ")"
 
         math_expr: term (("+"|"-") term)*
         term: factor (("*"|"/") factor)*
@@ -358,6 +359,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         start=start_rule,
         parser='lalr',
         lexer='contextual',
+        debug=True,
         cache=True,
         propagate_positions=True,
     )
