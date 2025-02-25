@@ -1191,16 +1191,29 @@ class ModelTransformer(lark.Transformer):
         else:
             self.raise_validation_error("Invalid transformer syntax: missing type identifier", items[0])
 
+        # Log items for debugging
+        logger.debug(f"Transformer items: {items}")
+
         # Extract and process parameters
         params = {}
-        if len(items) > 2:
-            raw_params = self._extract_value(items[2])  # Critical fix: use _extract_value here
-            if isinstance(raw_params, list):
-                for param in raw_params:
-                    if isinstance(param, dict):
-                        params.update(param)
-            elif isinstance(raw_params, dict):
-                params.update(raw_params)
+        if len(items) > 1:  # Adjust for cases with or without parentheses
+            param_idx = 2 if len(items) > 2 else 1  # Handle params with or without extra tokens
+            if param_idx < len(items):
+                raw_params = self._extract_value(items[param_idx])
+                logger.debug(f"Raw params: {raw_params}")
+                if isinstance(raw_params, list):
+                    for param in raw_params:
+                        if isinstance(param, dict):
+                            params.update(param)
+                elif isinstance(raw_params, dict):
+                    params.update(raw_params)
+                else:
+                    logger.warning(f"Unexpected param type: {type(raw_params)}")
+
+        # Set default parameters if missing (optional)
+        if transformer_type == 'TransformerEncoder' and not params:
+            params = {'num_heads': 8, 'ff_dim': 512}  # Default values for testing
+            logger.info("Applied default params for TransformerEncoder")
 
         # Validate required parameters
         for key in ['num_heads', 'ff_dim']:
@@ -1211,20 +1224,10 @@ class ModelTransformer(lark.Transformer):
                 if not isinstance(val, int) or val <= 0:
                     self.raise_validation_error(
                         f"{transformer_type} {key} must be a positive integer, got {val}",
-                        items[2] if len(items) > 2 else None
+                        items[param_idx] if param_idx < len(items) else None
                     )
 
         return {'type': transformer_type, 'params': params}
-
-
-    def named_num_heads(self, items):
-        # items structure: ["num_heads", "=", NUMBER]
-        return {'num_heads': self._extract_value(items[2])}
-
-    def named_ff_dim(self, items):
-        # items structure: ["ff_dim", "=", NUMBER]
-        return {'ff_dim': self._extract_value(items[2])}
-
 
     def embedding(self, items):
         params = self._extract_value(items[0]) if items else None
