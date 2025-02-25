@@ -9,8 +9,23 @@ import logging
 from enum import Enum
 
 logger = logging.getLogger('neural.parser')
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.DEBUG,  # Capture all levels
+    format='%(levelname)s: %(message)s'  # Include severity in output
+)
 
+def log_by_severity(severity, message):
+    """Log a message based on its severity level."""
+    if severity == Severity.DEBUG:
+        logger.debug(message)
+    elif severity == Severity.INFO:
+        logger.info(message)
+    elif severity == Severity.WARNING:
+        logger.warning(message)
+    elif severity == Severity.ERROR:
+        logger.error(message)
+    elif severity == Severity.CRITICAL:
+        logger.critical(message)
 
 class Severity(Enum):
     DEBUG = 1    # For development info, not user-facing
