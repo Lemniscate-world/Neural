@@ -465,34 +465,31 @@ class ModelTransformer(lark.Transformer):
         param_style = self._extract_value(items[0])
         params = {}
         
-        # Handle list of parameters (positional or nested named params)
         if isinstance(param_style, list):
-            # Merge all dictionaries in the list
             merged_params = {}
             for elem in param_style:
                 if isinstance(elem, dict):
                     merged_params.update(elem)
                 else:
-                    # Handle positional rate
                     merged_params['rate'] = elem
             param_style = merged_params
 
-        # Process merged parameters
         if isinstance(param_style, dict):
             params = param_style.copy()
             if 'rate' in params:
                 rate = params['rate']
-                if not isinstance(rate, (int, float)) or not 0 <= rate <= 1:
-                    self.raise_validation_error(f"Dropout rate must be between 0 and 1, got {rate}", items[0])
+                if not isinstance(rate, (int, float)):
+                    self.raise_validation_error(f"Dropout rate must be a number, got {rate}", items[0], Severity.ERROR)
+                elif not 0 <= rate <= 1:
+                    self.raise_validation_error(f"Dropout rate should be between 0 and 1, got {rate}", items[0], Severity.WARNING)
             else:
-                self.raise_validation_error("Dropout requires a 'rate' parameter", items[0])
+                self.raise_validation_error("Dropout requires a 'rate' parameter", items[0], Severity.ERROR)
         elif isinstance(param_style, (int, float)):
-            # Handle positional rate without key
             params['rate'] = param_style
             if not 0 <= params['rate'] <= 1:
-                self.raise_validation_error(f"Dropout rate must be between 0 and 1, got {params['rate']}", items[0])
+                self.raise_validation_error(f"Dropout rate should be between 0 and 1, got {params['rate']}", items[0], Severity.WARNING)
         else:
-            self.raise_validation_error("Invalid parameters for Dropout", items[0])
+            self.raise_validation_error("Invalid parameters for Dropout", items[0], Severity.ERROR)
         
         return {'type': 'Dropout', 'params': params}
     def output(self, items):
