@@ -38,15 +38,24 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         code = "import tensorflow as tf\n\n"
         code += f"model = tf.keras.Sequential(name='{model_data.get('name', 'UnnamedModel')}', layers=[\n"
 
+        # Correct input shape by removing 'None' (batch size)
         input_shape = model_data['input']['shape']
         if not input_shape:
             raise ValueError("Input layer shape is not defined.")
+        # Remove None (batch dimension) and assume grayscale if channels unspecified
+        input_shape = tuple(x for x in input_shape if x is not None)
+        if len(input_shape) == 2:  # e.g., (28, 28) for grayscale
+            input_shape = input_shape  # Already correct
+        elif len(input_shape) == 3 and input_shape[-1] != 1:  # e.g., (28, 28, 3) for RGB
+            pass  # Keep as is
+        else:
+            input_shape = input_shape + (1,)  # Add channel if missing (e.g., (28, 28) -> (28, 28, 1))
         current_input_shape = input_shape
 
-        # Check if flattening is needed
+        # Auto-insert Flatten if needed
         needs_flatten = len(current_input_shape) > 2 and model_data['layers'] and model_data['layers'][0]['type'] in ['Dense', 'Output']
         if needs_flatten:
-            code += f"{indent}tf.keras.layers.Flatten(input_shape={input_shape}),\n"
+            code += f"{indent}tf.keras.layers.Flatten(input_shape={current_input_shape}),\n"
             current_input_shape = propagator.propagate(current_input_shape, {'type': 'Flatten', 'params': {}}, framework='tensorflow')
 
         for i, layer_config in enumerate(model_data['layers']):
@@ -72,7 +81,6 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                 activation = params.get('activation', 'relu' if layer_type == 'Dense' else 'linear')
                 if not units:
                     raise ValueError(f"{layer_type} layer config missing 'units'.")
-                # Only add input_shape if this is the first layer and no Flatten precedes it
                 if i == 0 and not needs_flatten:
                     code += f"{indent}tf.keras.layers.Dense(units={units}, activation='{activation}', input_shape={input_shape}),\n"
                 else:
@@ -99,7 +107,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         code += "])\n\n"
         loss_value = model_data['loss'] if isinstance(model_data['loss'], str) else model_data['loss']['value'].strip('"')
         optimizer_value = model_data['optimizer']['type'] if isinstance(model_data['optimizer'], dict) else model_data['optimizer'].strip('"')
-        code += f"model.compile(loss='{loss_value}', optimizer='{optimizer_value}')\n"
+        code += f"model.compile(loss='{loss_value}', optimizer='{optimizer_value.lower()}')\n"  # Lowercase 'adam' for consistency
         return code
 
     elif backend == "pytorch":
