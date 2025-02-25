@@ -1216,6 +1216,16 @@ class ModelTransformer(lark.Transformer):
 
         return {'type': transformer_type, 'params': params}
 
+
+    def named_num_heads(self, items):
+        # items structure: ["num_heads", "=", NUMBER]
+        return {'num_heads': self._extract_value(items[2])}
+
+    def named_ff_dim(self, items):
+        # items structure: ["ff_dim", "=", NUMBER]
+        return {'ff_dim': self._extract_value(items[2])}
+
+
     def embedding(self, items):
         params = self._extract_value(items[0]) if items else None
         for key in ['input_dim', 'output_dim']:
