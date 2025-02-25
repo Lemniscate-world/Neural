@@ -562,25 +562,25 @@ class ModelTransformer(lark.Transformer):
             if len(ordered_params) >= 1:
                 params['filters'] = ordered_params[0]
             if len(ordered_params) >= 2:
-                kernel_size = ordered_params[1]
-                if isinstance(kernel_size, (list, tuple)):
-                    params['kernel_size'] = tuple(kernel_size)
-                else:
-                    params['kernel_size'] = kernel_size
+                params['kernel_size'] = ordered_params[1]
+                if isinstance(params['kernel_size'], (list, tuple)):
+                    params['kernel_size'] = tuple(params['kernel_size'])
             if len(ordered_params) >= 3:
                 params['activation'] = ordered_params[2]
         params.update(named_params)
         if 'filters' in params:
             filters = params['filters']
             if not isinstance(filters, int) or filters <= 0:
-                self.raise_validation_error(f"Conv2D filters must be a positive integer, got {filters}", items[0])
+                self.raise_validation_error(f"Conv2D filters must be a positive integer, got {filters}", items[0], Severity.ERROR)
         if 'kernel_size' in params:
             ks = params['kernel_size']
             if isinstance(ks, (list, tuple)):
-                if not all(isinstance(k, int) and k > 0 for k in ks):
-                    self.raise_validation_error(f"Conv2D kernel_size must be positive integers, got {ks}", items[0])
+                if not all(isinstance(k, int) for k in ks):
+                    self.raise_validation_error(f"Conv2D kernel_size must be integers, got {ks}", items[0], Severity.ERROR)
+                elif not all(k > 0 for k in ks):
+                    self.raise_validation_error(f"Conv2D kernel_size should be positive integers, got {ks}", items[0], Severity.WARNING)
             elif not isinstance(ks, int) or ks <= 0:
-                self.raise_validation_error(f"Conv2D kernel_size must be a positive integer, got {ks}", items[0])
+                self.raise_validation_error(f"Conv2D kernel_size must be a positive integer, got {ks}", items[0], Severity.ERROR)
         return {'type': 'Conv2D', 'params': params}
 
     def conv3d(self, items):
