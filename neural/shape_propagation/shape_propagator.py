@@ -74,6 +74,12 @@ class ShapePropagator:
         kernel_size = tuple(params.get("kernel_size", [3, 3]) if isinstance(params.get("kernel_size"), list) else (3, 3))
         params["kernel_size"] = kernel_size  # Ensure tuple in params
 
+        if layer['type'] == 'TransformerEncoder':
+            if framework == 'tensorflow':
+                return input_shape  # Shape preserved through self-attention
+            elif framework == 'pytorch':
+                return (input_shape[0], input_shape[1])  # (seq_len, d_model)
+
         start_time = time.time()  # Measure execution time
 
         output_shape = self._process_layer(input_shape, layer, framework)
