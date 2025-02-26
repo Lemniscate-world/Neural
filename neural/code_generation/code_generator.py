@@ -77,12 +77,37 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         for i, layer in enumerate(expanded_layers):
             layer_type = layer['type']
             params = layer.get('params', {})
+
+            elif layer_type == 'TimeDistributed':
+                # Handle TimeDistributed layers with sub-layers
+                sub_layer = layer.get('sub_layers', [{}])[0]
+                sub_type = sub_layer['type']
+                sub_params = sub_layer.get('params', {})
+                
+                # Generate code for the wrapped layer
+                if sub_type == 'Conv2D':
+                    code += (
+                        f"x = layers.TimeDistributed(layers.Conv2D("
+                        f"filters={sub_params['filters']}, "
+                        f"kernel_size={sub_params['kernel_size']}, "
+                        f"padding='{sub_params.get('padding', 'valid')}"
+                        f"))(x)\n"
+                    )
+                elif sub_type == 'Dense':
+                    code += (
+                        f"x = layers.TimeDistributed(layers.Dense("
+                        f"{sub_params['units']}, activation='{sub_params.get('activation', 'linear')}'"
+                        f"))(x)\n"
+                    )
             
-            if layer_type == 'TransformerEncoder':
+            elif layer_type == 'TransformerEncoder':
                 code += (
                     f"x = TransformerEncoder(num_heads={params['num_heads']}, "
                     f"ff_dim={params['ff_dim']}, dropout={params['dropout']})(x)\n"
                 )
+
+            
+
             elif layer_type == 'Dense':
                 activation = params.get('activation', 'linear')  # Default to linear
                 code += f"x = layers.Dense({params['units']}, activation='{activation}')(x)\n"
