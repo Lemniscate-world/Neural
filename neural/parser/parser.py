@@ -601,7 +601,7 @@ class ModelTransformer(lark.Transformer):
                 if not all(isinstance(k, int) for k in ks):
                     self.raise_validation_error(f"Conv2D kernel_size must be integers, got {ks}", items[0], Severity.ERROR)
                 elif not all(k > 0 for k in ks):
-                    self.raise_validation_error(f"Conv2D kernel_size should be positive integers, got {ks}", items[0], Severity.WARNING)
+                    self.raise_validation_error(f"Conv2D kernel_size should be positive integers, got {ks}", items[0], Severity.ERROR)
             elif not isinstance(ks, int) or ks <= 0:
                 self.raise_validation_error(f"Conv2D kernel_size must be a positive integer, got {ks}", items[0], Severity.ERROR)
         return {'type': 'Conv2D', 'params': params}

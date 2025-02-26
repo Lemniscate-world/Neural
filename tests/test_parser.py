@@ -260,7 +260,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
 
 def test_network_parsing(network_parser, transformer, network_string, expected_name, expected_input_shape, expected_layers, expected_loss, expected_optimizer, expected_training_config):
     if expected_name is None:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError)):
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, exceptions.VisitError)):
             tree = network_parser.parse(network_string)
             transformer.transform(tree)
     else:
