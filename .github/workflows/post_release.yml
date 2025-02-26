@@ -39,4 +39,4 @@ jobs:
           else
             VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
           fi
-          python -c "from twitter_bot import post_release; post_release('$VERSION')"
+          python -c "import sys; sys.path.append('scripts'); from twitter_bot import post_release; post_release('$VERSION')"
