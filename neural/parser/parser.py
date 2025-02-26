@@ -385,8 +385,15 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         layer_choice: "HPO(choice(" layer ("," layer)* "))"
 
-        ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_)
+        define: "define" NAME "{" layer+ "}"
+        macro_ref: NAME
+
+        ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_ | macro_ref )
         custom: NAME "(" param_style1 ")"
+
+        
+        
+
     """
     return lark.Lark(
         grammar,
