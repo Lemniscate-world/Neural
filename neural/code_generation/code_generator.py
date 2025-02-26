@@ -122,7 +122,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
             elif layer_type == 'MaxPooling2D':
                 pool_size = params.get('pool_size', 2)
                 code += f"x = layers.MaxPooling2D(pool_size={pool_size})(x)\n"
-                
+
             elif layer_type == 'TransformerEncoder':
                 code += (
                     f"x = TransformerEncoder(num_heads={params['num_heads']}, "
@@ -133,7 +133,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
 
             elif layer_type == 'Dense':
                 activation = params.get('activation', 'linear')  # Default to linear
-                code += f"x = layers.Dense({params['units']}, activation='{activation}')(x)\n"
+                code += f"x = layers.Dense(units={params['units']}, activation='{activation}')(x)\n"
             elif layer_type == 'Output':
                 activation = params.get('activation', 'softmax')  # Default for output
                 code += f"outputs = layers.Dense({params['units']}, activation='{activation}')(x)\n"
