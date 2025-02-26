@@ -78,7 +78,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
             layer_type = layer['type']
             params = layer.get('params', {})
 
-            elif layer_type == 'TimeDistributed':
+            if layer_type == 'TimeDistributed':
                 # Handle TimeDistributed layers with sub-layers
                 sub_layer = layer.get('sub_layers', [{}])[0]
                 sub_type = sub_layer['type']
