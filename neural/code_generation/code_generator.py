@@ -134,6 +134,11 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
             elif layer_type == 'Dense':
                 activation = params.get('activation', 'linear')  # Default to linear
                 code += f"x = layers.Dense(units={params['units']}, activation='{activation}')(x)\n"
+            
+            elif layer_type == 'Dropout':
+                rate = params.get('rate', 0.5)
+                code += f"x = layers.Dropout(rate={rate})(x)\n"
+            
             elif layer_type == 'Output':
                 activation = params.get('activation', 'softmax')  # Default for output
                 code += f"outputs = layers.Dense({params['units']}, activation='{activation}')(x)\n"
