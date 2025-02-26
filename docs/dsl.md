@@ -1,4 +1,3 @@
-```markdown
 # Neural DSL Documentation
 
 ## Table of Contents
@@ -201,4 +200,4 @@ coverage run -m pytest && coverage html
 
 [Full API Docs](https://neural-dsl.dev/api) | 
 [Report Issues](https://github.com/neural-dsl/issues)
-```
+
