@@ -533,6 +533,10 @@ class ModelTransformer(lark.Transformer):
                     self.raise_validation_error(f"Dense activation must be a string, got {activation}", items[0])
                 params['activation'] = activation
         params.update(named_params)
+        if 'units' in params:
+            units = params['units']
+            if not isinstance(units, int):
+                self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
         if 'units' not in params:
             self.raise_validation_error("Dense layer requires 'units' parameter", items[0])
         return {"type": "Dense", "params": params}
@@ -1380,25 +1384,25 @@ class ModelTransformer(lark.Transformer):
         return {"hpo_type": "layer_choice", "options": [self._extract_value(item) for item in items]}
 
     def parse_network(self, config: str, framework: str = 'auto'):
-    warnings = []
-    try:
-        parse_result = safe_parse(network_parser, config)
-        tree = parse_result["result"]
-        if tree is None:
-            # Handle cases where parsing returned warnings but no result
-            raise DSLValidationError("Parsing failed due to warnings", Severity.ERROR)
-        warnings.extend(parse_result["warnings"])
-        
-        model = self.transform(tree)
-        if framework == 'auto':
-            framework = self._detect_framework(model)
-        model['framework'] = framework
-        model['shape_info'] = []
-        model['warnings'] = warnings
-        return model
-    except (lark.LarkError, DSLValidationError, lark.VisitError) as e:
-        log_by_severity(Severity.ERROR, f"Error parsing network: {str(e)}")
-        raise  # Re-raise the exception to be caught by the test
+        warnings = []
+        try:
+            parse_result = safe_parse(network_parser, config)
+            tree = parse_result["result"]
+            if tree is None:
+                # Handle cases where parsing returned warnings but no result
+                raise DSLValidationError("Parsing failed due to warnings", Severity.ERROR)
+            warnings.extend(parse_result["warnings"])
+            
+            model = self.transform(tree)
+            if framework == 'auto':
+                framework = self._detect_framework(model)
+            model['framework'] = framework
+            model['shape_info'] = []
+            model['warnings'] = warnings
+            return model
+        except (lark.LarkError, DSLValidationError, lark.VisitError) as e:
+            log_by_severity(Severity.ERROR, f"Error parsing network: {str(e)}")
+            raise  # Re-raise the exception to be caught by the test
 
     def _detect_framework(self, model):
         for layer in model['layers']:
