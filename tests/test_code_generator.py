@@ -70,6 +70,7 @@ def test_generate_tensorflow_complex(complex_model_data):
     assert "MaxPooling2D(pool_size=2)" in code
     assert "Dense(units=256, activation='relu'" in code
     assert "Dropout(rate=0.5)" in code
+    assert "TimeDistributed(layers.Conv2D(filters=64, kernel_size=3, padding='same'))" in code
     
     # Verify compilation
     assert "model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001)" in code
