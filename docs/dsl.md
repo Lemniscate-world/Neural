@@ -1,148 +1,204 @@
+```markdown
 # Neural DSL Documentation
 
 ## Table of Contents
-- [Neural DSL Documentation](#neural-dsl-documentation)
-  - [Table of Contents](#table-of-contents)
-  - [Syntax Basics](#syntax-basics)
-    - [Key Components](#key-components)
-  - [Validation Rules](#validation-rules)
-  - [CLI Commands](#cli-commands)
-  - [Error Handling](#error-handling)
-    - [Example Error Message](#example-error-message)
-    - [Severity Levels](#severity-levels)
-  - [Examples](#examples)
-    - [MNIST Classifier](#mnist-classifier)
-    - [Transformer with Defaults](#transformer-with-defaults)
-  - [Contributing](#contributing)
-    - [Linting Setup](#linting-setup)
-    - [Running Tests](#running-tests)
+- [Syntax Reference](#syntax-reference)
+- [Core Components](#core-components)
+- [Validation Rules](#validation-rules)
+- [CLI Reference](#cli-reference)
+- [Error Handling](#error-handling)
+- [Examples](#examples)
+- [Development Guide](#development-guide)
 
 ---
 
-## Syntax Basics
+## Syntax Reference
+
+### Network Structure
 ```yaml
 network <ModelName> {
-  input: <Shape>           # e.g., (28, 28, 1)
+  input: <Shape>                # e.g., (224, 224, 3) or multiple inputs
   layers:
-    <LayerType>(<Params>)  # e.g., Conv2D(filters=32, kernel=(3,3))
+    <LayerType>(<Parameters>)   # Supports ordered and named params
+    <LayerType>*<Count>         # Layer repetition syntax
   loss: <LossFunction>
   optimizer: <Optimizer>
-  train { epochs: <Int>, batch_size: <Int> }
+  train {
+    epochs: <Int>
+    batch_size: <Int|HPO-range>
+    validation_split: <0.0-1.0>
+    search_method: "random"     # Hyperparameter optimization
+  }
+  execution {
+    device: <String>            # "cpu", "cuda", "tpu"
+  }
 }
 ```
 
-### Key Components
-1. **Layers**:  
-   ```yaml
-   # Ordered params (units first)
-   Dense(128, activation="relu")
-   
-   # Named params
-   Conv2D(filters=32, kernel_size=(3,3), activation="relu")
-   ```
+### Parameter Types
+```yaml
+# Ordered parameters
+Conv2D(32, (3,3), "relu")
 
-2. **Advanced Layers**:  
-   ```yaml
-   TransformerEncoder(num_heads=8)  # Requires num_heads > 0
-   Attention()                      # No mandatory params
-   ```
+# Named parameters
+TransformerEncoder(num_heads=8, ff_dim=512)
 
-3. **Training Config**:  
-   ```yaml
-   train {
-     epochs: 10
-     batch_size: 32
-     validation_split: 0.2  # Must be 0-1
-   }
-   ```
+# HPO parameters
+Dense(HPO(choice(128, 256, 512)))
+
+# Device placement
+LSTM(units=128) @ "cuda:0"
+```
+
+---
+
+## Core Components
+
+### Layer Types
+| Category         | Layers                                                                 |
+|------------------|-----------------------------------------------------------------------|
+| **Convolution**  | `Conv1D`, `Conv2D`, `DepthwiseConv2D`, `SeparableConv2D`              |
+| **Recurrent**    | `LSTM`, `GRU`, `Bidirectional`, `ConvLSTM2D`                          |
+| **Transformer**  | `TransformerEncoder`, `TransformerDecoder`                            |
+| **Regularization**| `Dropout`, `SpatialDropout2D`, `GaussianNoise`, `BatchNormalization` |
+| **Utility**      | `Flatten`, `Lambda`, `TimeDistributed`, `ResidualConnection`          |
 
 ---
 
 ## Validation Rules
-| Parameter           | Rule                          | Error Example              |
-|---------------------|-------------------------------|----------------------------|
-| `Dropout(rate)`     | `0 ≤ rate ≤ 1`                | `Dropout(1.5)` → ERROR     |
-| `Conv2D(filters)`   | Must be positive integer      | `filters=-32` → ERROR      |
-| `kernel_size`       | Tuple of positive integers    | `(0,0)` → ERROR            |
-| `validation_split`  | `0 ≤ value ≤ 1`               | `1.1` → ERROR              |
-| Transformer params  | `num_heads > 0`, `ff_dim > 0` | `num_heads=0` → ERROR      |
+
+### Parameter Constraints
+| Parameter           | Rule                                  | Error Example              |
+|---------------------|---------------------------------------|----------------------------|
+| `num_heads`         | Must be > 0                          | `num_heads=0` → ERROR      |
+| `filters`           | Positive integer                     | `filters=-32` → ERROR      |
+| `kernel_size`       | Tuple of positive integers           | `(0,3)` → ERROR            |
+| `rate`              | 0 ≤ value ≤ 1                        | `Dropout(1.2)` → ERROR     |
+| `validation_split`  | 0 ≤ value ≤ 1                        | `1.1` → ERROR              |
+| `device`            | Valid device identifier              | `device:"npu"` → CRITICAL  |
+
+### Type Coercions
+- Float → Int conversion with warning (e.g., `Dense(256.0)`)
+- Automatic tuple wrapping for single values
 
 ---
 
-## CLI Commands
+## CLI Reference
+
+### Command Overview
 ```bash
-# Compile to framework code
-neural compile model.neural --backend tensorflow
+# Core Commands
+neural compile <file> [--backend tensorflow|pytorch] [--hpo]
+neural run <file> [--device cpu|cuda]
+neural debug <file> [--gradients] [--dead-neurons] [--step]
 
-# Dry-run validation
-neural compile model.neural --dry-run
+# Analysis & Visualization
+neural visualize <file> [--format png|svg|html]
+neural profile <file> [--memory] [--latency]
 
-# Debug with live monitoring
-neural debug model.neural --backend pytorch
-
-# Launch no-code GUI
-neural no-code --port 8051
+# Project Management
+neural clean  # Remove generated files
+neural version  # Show version info
 ```
+
+### Key Options
+- `--dry-run`: Validate without code generation
+- `--hpo`: Enable hyperparameter optimization
+- `--step`: Interactive debugging mode
+- `--port`: Specify GUI port for no-code interface
 
 ---
 
 ## Error Handling
-### Example Error Message
-```text
-ERROR at line 7, column 15:
-Dropout rate must be between 0 and 1. Got 1.2
-```
 
 ### Severity Levels
-- **ERROR**: Parsing stops (e.g., invalid `kernel_size=(0,0)`).  
-- **WARNING**: Logged but parsing continues (e.g., `Dense(128.0)` → coerced to 128).  
+| Level     | Description                          | Example Case                      |
+|-----------|--------------------------------------|-----------------------------------|
+| CRITICAL  | Fatal configuration error           | Invalid device specification      |
+| ERROR     | Structural/model error              | Missing required parameter        |
+| WARNING   | Non-fatal issue                     | Type coercion                     |
+| INFO      | Diagnostic message                  | Shape propagation update          |
+
+### Example Messages
+```text
+CRITICAL at line 5, column 12: 
+Invalid device 'npu' - must be one of [cpu, cuda, tpu]
+
+ERROR at line 12, column 8:
+Conv2D kernel_size requires positive integers. Got (0,3)
+
+WARNING at line 8, column 15:
+Implicit conversion of 256.0 to integer 256
+```
 
 ---
 
 ## Examples
-### MNIST Classifier
+
+### Vision Transformer
 ```yaml
-network MNISTClassifier {
-  input: (28, 28, 1)
+network ViT {
+  input: (224, 224, 3)
   layers:
-    Conv2D(32, (3,3), activation="relu")
-    MaxPooling2D(pool_size=(2,2))
-    Flatten()
-    Dense(128, activation="relu")
-    Dropout(0.5)
-    Output(10, activation="softmax")
-  loss: "sparse_categorical_crossentropy"
-  optimizer: Adam(learning_rate=0.001)
-  train { epochs: 10, batch_size: 32 }
+    Conv2D(64, (7,7), strides=2) @ "cuda:0"
+    TransformerEncoder() * 12     # 12 transformer blocks
+    GlobalAveragePooling2D()
+    Dense(1000, "softmax")
+  loss: "categorical_crossentropy"
+  optimizer: Adam(learning_rate=1e-4)
+  train {
+    epochs: 300
+    batch_size: HPO(range(128, 512, step=64))
+  }
 }
 ```
 
-### Transformer with Defaults
+### Hyperparameter Optimization
 ```yaml
-network ViT {
+network HPOExample {
   layers:
-    TransformerEncoder()  # Auto-sets num_heads=8, ff_dim=512
+    Dense(HPO(choice(128, 256, 512)))
+    Dropout(HPO(range(0.3, 0.7, step=0.1)))
+  optimizer: Adam(
+    learning_rate=HPO(log_range(1e-4, 1e-2))
+  )
+  train {
+    epochs: 100
+    search_method: "bayesian"
+  }
 }
 ```
 
 ---
 
-## Contributing
-### Linting Setup
-```bash
-pip install pre-commit
-pre-commit install  # Auto-run Black/Flake8 on commit
-```
+## Development Guide
 
-### Running Tests
+### Setup & Testing
 ```bash
-# Run all tests
+# Install dependencies
+pip install -r requirements.txt
+pre-commit install
+
+# Run tests
 pytest test_parser.py -v
+pytest -k "transformer_validation" --log-level=DEBUG
 
-# Test specific layer
-pytest test_parser.py -k "test_conv2d_validation"
+# Generate coverage report
+coverage run -m pytest && coverage html
 ```
 
-[Full API Reference](https://github.com/your-repo/docs) | 
-[Report Issues](https://github.com/your-repo/issues)
+### Linting Rules
+- Type hint enforcement
+- Parameter validation checks
+- HPO syntax verification
+- Device configuration validation
+
+### Contribution Requirements
+1. Unit tests for new features
+2. Documentation updates
+3. Backward compatibility checks
+4. Pre-commit hook validation
+
+[Full API Docs](https://neural-dsl.dev/api) | 
+[Report Issues](https://github.com/neural-dsl/issues)
 ```
