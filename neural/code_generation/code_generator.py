@@ -89,7 +89,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                         code += (
                             f"x = layers.Conv2D(filters={sub_params['filters']}, "
                             f"kernel_size={sub_params['kernel_size']}, "
-                            f"padding='{sub_params.get('padding', 'same')}"
+                            f"padding='{sub_params.get('padding', 'same')}'"
                             f")(x)\n"
                         )
 
