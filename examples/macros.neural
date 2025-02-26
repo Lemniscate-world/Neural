@@ -1,0 +1,10 @@
+define ConvBlock {
+    Conv2D(32, 3, activation="relu")
+    BatchNormalization()
+}
+network MyNet {
+    input: (28, 28, 1)
+    layers:
+        ConvBlock
+        Dropout(0.5)
+}

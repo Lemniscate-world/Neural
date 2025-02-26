@@ -447,6 +447,14 @@ class ModelTransformer(lark.Transformer):
             raise DSLValidationError(msg, severity, line, col)
         return {"warning": msg, "line": line, "column": col}  # Return for warnings
 
+
+    def define(self, items):
+        return self._extract_value(items[0])
+
+    def macro_ref(self, items):
+        params = self._extract_value(items[0])
+        return {'type': 'Macro', 'params':params}
+
     def layer(self, items):
         return self.visit(items[0])
     
