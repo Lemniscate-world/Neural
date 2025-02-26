@@ -404,11 +404,18 @@ def safe_parse(parser, text):
         tree = parser.parse(text)
         return {"result": tree, "warnings": warnings}
     except (lark.UnexpectedCharacters, lark.UnexpectedToken) as e:
+        # Handle Lark syntax errors
         result = custom_error_handler(e)
         if isinstance(result, dict):  # Warning case
             warnings.append(result)
             return {"result": None, "warnings": warnings}
-        raise  # Re-raise errors/critical
+        else:
+            # If custom_error_handler raised an exception, propagate it
+            raise result from e
+    except DSLValidationError as e:
+        # Catch and re-raise any DSLValidationError from custom_error_handler
+        raise e
+
 
 class ModelTransformer(lark.Transformer):
     def __init__(self):
@@ -514,15 +521,22 @@ class ModelTransformer(lark.Transformer):
             else:
                 ordered_params.append(param)
         if ordered_params:
-            params['units'] = ordered_params[0]
+            # Validate units is an integer
+            units = ordered_params[0]
+            if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
+                self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
+            units = int(units)
+            params['units'] = units
             if len(ordered_params) > 1:
-                params['activation'] = ordered_params[1]
+                activation = ordered_params[1]
+                if not isinstance(activation, str):
+                    self.raise_validation_error(f"Dense activation must be a string, got {activation}", items[0])
+                params['activation'] = activation
         params.update(named_params)
-        if 'units' in params:
-            units = params['units']
-            if not isinstance(units, int) or units < 0:
-                self.raise_validation_error(f"Dense units must be a positive integer, got {units}", items[0])
+        if 'units' not in params:
+            self.raise_validation_error("Dense layer requires 'units' parameter", items[0])
         return {"type": "Dense", "params": params}
+
 
     def conv(self, items):
         return items[0]
@@ -1366,22 +1380,25 @@ class ModelTransformer(lark.Transformer):
         return {"hpo_type": "layer_choice", "options": [self._extract_value(item) for item in items]}
 
     def parse_network(self, config: str, framework: str = 'auto'):
-        warnings = []
-        try:
-            parse_result = safe_parse(network_parser, config)
-            tree = parse_result["result"]
-            warnings.extend(parse_result["warnings"])
-            
-            model = self.transform(tree)
-            if framework == 'auto':
-                framework = self._detect_framework(model)
-            model['framework'] = framework
-            model['shape_info'] = []
-            model['warnings'] = warnings
-            return model
-        except DSLValidationError as e:
-            log_by_severity(e.severity, str(e))
-        raise
+    warnings = []
+    try:
+        parse_result = safe_parse(network_parser, config)
+        tree = parse_result["result"]
+        if tree is None:
+            # Handle cases where parsing returned warnings but no result
+            raise DSLValidationError("Parsing failed due to warnings", Severity.ERROR)
+        warnings.extend(parse_result["warnings"])
+        
+        model = self.transform(tree)
+        if framework == 'auto':
+            framework = self._detect_framework(model)
+        model['framework'] = framework
+        model['shape_info'] = []
+        model['warnings'] = warnings
+        return model
+    except (lark.LarkError, DSLValidationError, lark.VisitError) as e:
+        log_by_severity(Severity.ERROR, f"Error parsing network: {str(e)}")
+        raise  # Re-raise the exception to be caught by the test
 
     def _detect_framework(self, model):
         for layer in model['layers']:
