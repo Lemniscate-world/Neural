@@ -77,8 +77,28 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         for i, layer in enumerate(expanded_layers):
             layer_type = layer['type']
             params = layer.get('params', {})
+            
+            # Handle Residual layers by processing their sub_layers
+            if layer_type == 'Residual':
+                code += "# Residual block\n"
+                for sub_layer in layer.get('sub_layers', []):
+                    sub_type = sub_layer['type']
+                    sub_params = sub_layer.get('params', {})
+                    
+                    if sub_type == 'Conv2D':
+                        code += (
+                            f"x = layers.Conv2D(filters={sub_params['filters']}, "
+                            f"kernel_size={sub_params['kernel_size']}, "
+                            f"padding='{sub_params.get('padding', 'same')}"
+                            f")(x)\n"
+                        )
 
-            if layer_type == 'TimeDistributed':
+                    elif sub_type == 'BatchNormalization':
+                        code += "x = layers.BatchNormalization()(x)\n"
+                code += "# Residual connection\n"
+                code += f"x = layers.Add()([x, x_residual_input])\n"  # Assuming x_residual_input is captured earlier
+
+            elif layer_type == 'TimeDistributed':
                 # Handle TimeDistributed layers with sub-layers
                 sub_layer = layer.get('sub_layers', [{}])[0]
                 sub_type = sub_layer['type']
