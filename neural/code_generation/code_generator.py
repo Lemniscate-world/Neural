@@ -119,7 +119,10 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                         f"{sub_params['units']}, activation='{sub_params.get('activation', 'linear')}'"
                         f"))(x)\n"
                     )
-            
+            elif layer_type == 'MaxPooling2D':
+                pool_size = params.get('pool_size', 2)
+                code += f"x = layers.MaxPooling2D(pool_size={pool_size})(x)\n"
+                
             elif layer_type == 'TransformerEncoder':
                 code += (
                     f"x = TransformerEncoder(num_heads={params['num_heads']}, "
