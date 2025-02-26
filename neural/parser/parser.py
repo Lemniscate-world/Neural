@@ -415,6 +415,11 @@ def safe_parse(parser, text):
     except DSLValidationError as e:
         # Catch and re-raise any DSLValidationError from custom_error_handler
         raise e
+    except Exception as e:
+        if isinstance(e, DSLValidationError):
+            raise e
+        else:
+            raise DSLValidationError(f"Parsing failed: {str(e)}") from e
 
 
 class ModelTransformer(lark.Transformer):
