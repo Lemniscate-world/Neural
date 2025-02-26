@@ -1,48 +1,56 @@
 # Changelog
 
-## [0.1.0] - 21-02-2025
+## [0.2.0] - 25-02-2025
 
 ### Added
-
-- Initial release with DSL parser, CLI, and NeuralDbg dashboard.
-- No-code interface for model building.
-- ONNX export and TensorBoard integration.
-  
-### Known Issues
-
-- Bugs in shape propagation (under investigation).
-
-## [0.1.1] - 22-02-2025
+- **DSL Semantic Validation**: Custom error handling with severity levels (ERROR, WARNING, etc.) for granular error reporting.
+- **Layer-Specific Checks**:
+  - Dropout rate range validation (0 ≤ rate ≤ 1).
+  - Conv2D filters/kernel_size, Dense units, MaxPooling parameters, and RNN/Embedding/Transformer dimensions must be positive integers.
+  - BatchNormalization axis must be an integer.
+- **CLI Enhancements**:
+  - Global `--verbose` flag and structured logging with timestamps.
+  - `--dry-run` mode for compile command.
+  - Expanded `debug` command with backend simulation and step confirmation.
+  - `no-code` command to launch GUI dashboard.
+- **Documentation**: Added DSL syntax rules and error examples to docs.
 
 ### Fixed
+- **Parser Errors**:
+  - `test_layer_parsing[dropout-invalid-rate]`: Now raises error for invalid rates.
+  - `test_layer_parsing[transformer]`: Default params added for TransformerEncoder (num_heads=8, ff_dim=512).
+  - `test_layer_parsing[conv2d-zero-kernel]`: Kernel size validation upgraded to ERROR severity.
+  - `test_cli.py::test_version_command`: Exit code corrected.
+  - `test_network_parsing[invalid-validation-split]`: Validation split clamped to [0,1].
+- **CLI Robustness**:
+  - Unified file extension checks.
+  - Wrapped parsing errors in try-except blocks to prevent silent failures.
+- **Position Tracking**: Lark errors now include line/column details for debugging.
 
-- Gantt chart name assertion in `test_update_trace_graph_gantt`.
-- Heatmap data generation in `test_update_trace_graph_heatmap`.
-- Type errors in `test_update_flops_memory_chart`, `test_update_dead_neurons`, `test_update_anomaly_chart`.
-- WebSocket test missing `socketio` parameter in `test_websocket_connection`.
-- KeyError for `kernel_size` in `test_model_comparison`.
-- Invalid data handling in `test_update_trace_graph_invalid_data`.
-- Tensor flow import in `test_tensor_flow_visualization`.
-- NameError in `test_websocket_connection`
-- Tensor flow import in `test_tensor_flow_visualization`.
-- Dashboard theme check in `test_dashboard_theme`.
-- Dashboard visualization dependency in `test_dashboard_visualization`.
-- Box plot layer order mismatch in `test_update_trace_graph_box`.
+### Improved
+- **Error Messaging**: Clearer DSL validation errors (e.g., "Conv2D kernel_size must be positive integers").
+- **CLI Usability**: Progress bars, cached visualization, and backend flexibility (TensorFlow/PyTorch/ONNX).
+- **Logging Configuration**: Severity levels mapped to standard logging modules (DEBUG, INFO, etc.).
+
+---
 
 ## [0.1.2] - 24-02-2025
-
 ### Fixed
+- MaxPooling2D strides parsing.
+- Conv2D layer parameter extraction (filters, kernel_size, activation).
+- CLI test errors (imports, file creation, exit codes).
+- Dashboard connection issues and code generator NoneType errors.
 
-  - Fixed MaxPooling2D strides parsing.
+---
 
-  - Resolved Conv2D layer parsing to ensure filters, kernel_size, and activation are captured (test: conv2d-relu).
+## [0.1.1] - 22-02-2025
+### Fixed
+- Test suite stability (Gantt/heatmap assertions, WebSocket parameters, TensorFlow imports).
+- KeyError handling in model comparison and invalid data flows.
 
-  - Addressed AttributeError in conv2d method by using _extract_value helper for parameter handling (test: conv2d-tanh).
+---
 
-- CLI: Fixed test_compile_command errors (imports, file creation, data types, exit codes).
-
-- WebSocket: Patched connection refusal (server setup).
-
-- Dashboard: Fixed Selenium ERR_CONNECTION_REFUSED during visualization.
-
-- Code Generator: Resolved NoneType error in TensorFlow code generation.
+## [0.1.0] - 21-02-2025
+### Added
+- Initial release with DSL parser, CLI, and NeuralDbg dashboard.
+- ONNX export and TensorBoard integration.
