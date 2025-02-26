@@ -533,3 +533,93 @@ def test_severity_level_parsing(layer_parser, transformer, layer_string, expecte
         # For now, this assumes warnings are logged, not returned. Future enhancement could add them to result.
         # If you modify parse_network to return warnings, update this:
         # assert result.get('warnings', []) == expected_warnings, f"Warnings mismatch for {test_id}"
+
+
+# Macro parsing tests
+@pytest.mark.parametrize(
+    "config, expected_definition, expected_layers, raises_error, test_id",
+    [
+        # Basic macro definition and reference
+        (
+            """
+            define MyDense {
+                Dense(128, "relu")
+            }
+            """,
+            {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}},
+            [{'type': 'Macro', 'params': 'MyDense'}],
+            False,
+            "macro-basic"
+        ),
+        # Macro with multiple layers
+        (
+            """
+            define MultiLayer {
+                Dense(64, "tanh")
+                Dropout(0.3)
+                BatchNormalization()
+            }
+            """,
+            [
+                {'type': 'Dense', 'params': {'units': 64, 'activation': 'tanh'}},
+                {'type': 'Dropout', 'params': {'rate': 0.3}},
+                {'type': 'BatchNormalization', 'params': None}
+            ],
+            [{'type': 'Macro', 'params': 'MultiLayer'}],
+            False,
+            "macro-multi-layer"
+        ),
+        # Undefined macro reference (error)
+        (
+            "UndefinedMacro()",
+            None,
+            None,
+            True,
+            "macro-undefined"
+        ),
+        # Nested macros (if supported)
+        (
+            """
+            define Inner {
+                Dense(32, "relu")
+            }
+            define Outer {
+                Inner()
+                Dropout(0.2)
+            }
+            """,
+            [
+                {'type': 'Macro', 'params': 'Inner'},
+                {'type': 'Dropout', 'params': {'rate': 0.2}}
+            ],
+            [{'type': 'Macro', 'params': 'Outer'}],
+            False,
+            "macro-nested"
+        ),
+    ],
+    ids=["macro-basic", "macro-multi-layer", "macro-undefined", "macro-nested"]
+)
+def test_macro_parsing(layer_parser, transformer, config, expected_definition, expected_layers, raises_error, test_id):
+    if raises_error:
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError)):
+            # Test macro reference parsing
+            tree = layer_parser.parse(config)
+            transformer.transform(tree)
+    else:
+        # Test macro definition parsing
+        define_parser = create_parser('define')
+        definition_tree = define_parser.parse(config)
+        definition_result = transformer.transform(definition_tree)
+        
+        # Verify macro definition content
+        if isinstance(expected_definition, list):
+            assert definition_result == expected_definition, f"Macro definition mismatch in {test_id}"
+        else:
+            assert definition_result == expected_definition, f"Macro definition mismatch in {test_id}"
+        
+        # Test macro reference parsing
+        reference_str = "MyDense()" if test_id == "macro-basic" else "MultiLayer()" if test_id == "macro-multi-layer" else "Outer()"
+        layer_tree = layer_parser.parse(reference_str)
+        layer_result = transformer.transform(layer_tree)
+        
+        assert layer_result == expected_layers[0], f"Macro reference mismatch in {test_id}"
