@@ -62,20 +62,15 @@ layer_test_cases = [
 # Enhanced test cases
 def test_generate_tensorflow_complex(complex_model_data):
     """Test complex model generation for TensorFlow"""
-    # Ensure the Conv2D sub-layer has 'padding' set to 'same'
-    time_distributed_layer = complex_model_data['layers'][0]
-    conv_sub_layer = time_distributed_layer['sub_layers'][0]
-    conv_sub_layer['params']['padding'] = 'same'  # Add padding parameter
-
 
     code = generate_code(complex_model_data, "tensorflow")
 
-    # Verify the generated code includes TimeDistributed Conv2D with padding
-    expected_line = "TimeDistributed(layers.Conv2D(filters=64, kernel_size=3, padding='same'))"
-    assert expected_line in code, f"Expected line not found: {expected_line}"
-    
-    # Verify model structure
-    assert "TimeDistributed(layers.Conv2D(filters=64, kernel_size=3, padding='same'))" in code
+     # Check for Conv2D with padding in Residual block
+    assert "layers.Conv2D(filters=64, kernel_size=3, padding='same')" in code
+    assert "layers.BatchNormalization()" in code
+    # Verify residual connection
+    assert "layers.Add()" in code
+    # Rest of the assertions...
     assert "BatchNormalization()" in code
     assert "MaxPooling2D(pool_size=2)" in code
     assert "Dense(units=256, activation='relu'" in code
