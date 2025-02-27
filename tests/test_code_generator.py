@@ -78,7 +78,7 @@ def test_generate_tensorflow_complex(complex_model_data):
     
     
     # Verify compilation
-    assert "model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001)" in code
+    assert "model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001))" in code
 
 def test_generate_pytorch_complex(complex_model_data):
     """Test complex model generation for PyTorch"""
