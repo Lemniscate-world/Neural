@@ -24,8 +24,9 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
 
     indent = "    "
     propagator = ShapePropagator(debug=False)
-    
-    # Layer expansion with proper multiplication handling
+    current_input_shape = model_data['input']['shape']
+
+    # Process expanded layers before modifying model_data
     expanded_layers = []
     for layer in model_data.get('layers', []):
         if not isinstance(layer, dict) or 'type' not in layer:
@@ -39,6 +40,8 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         for _ in range(multiply):
             expanded_layers.append(layer_copy.copy())
 
+    # Store original layers
+    original_layers = model_data['layers']
     model_data['layers'] = expanded_layers
 
     if backend == "tensorflow":
@@ -54,7 +57,6 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         code += f"inputs = layers.Input(shape={input_shape})\n"
         code += "x = inputs\n\n"
 
-        current_input_shape = model_data['input']['shape']
         for layer in expanded_layers:
             layer_type = layer['type']
             params = layer.get('params', {})
@@ -112,28 +114,18 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         code += f"{indent}def __init__(self):\n"
         code += f"{indent}{indent}super(NeuralNetworkModel, self).__init__()\n"
 
-        input_shape = model_data['input']['shape']
-        if not input_shape:
-            raise ValueError("Input layer shape is not defined.")
-        current_input_shape = input_shape
-
         layers_code = []
         forward_code_body = []
-        layer_counter = {}  # Track layer counts for multiplication
-
-        # Add mixed precision imports if needed
-        if model_data.get("training_config", {}).get("mixed_precision"):
-            code += "from torch.cuda.amp import autocast, GradScaler\n"
 
         for i, layer in enumerate(expanded_layers):
             layer_type = layer['type']
-            params = layer.get('params', {})
+            params = layer.get('params', {}).copy()  # Make a copy of params
             
             if layer_type == "Residual":
                 sub_layers = []
                 for sub_layer in layer.get('sub_layers', []):
                     sub_type = sub_layer['type']
-                    sub_params = sub_layer.get('params', {})
+                    sub_params = sub_layer.get('params', {}).copy()  # Make a copy
                     sub_layer_code = generate_pytorch_layer(sub_type, sub_params, current_input_shape)
                     if sub_layer_code:
                         sub_layers.append(sub_layer_code)
@@ -166,20 +158,17 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
 
             current_input_shape = propagator.propagate(current_input_shape, layer)
 
+        # Restore original layers
+        model_data['layers'] = original_layers
+
+        # Generate class code
         for line in layers_code:
             code += f"{indent}{indent}{line}\n"
         code += f"\n{indent}# Forward pass\n"
-        if model_data.get("training_config", {}).get("mixed_precision"):
-            code += f"{indent}def forward(self, x):\n"
-            code += f"{indent}{indent}with autocast():\n"
-            for line in forward_code_body:
-                code += f"{indent}{indent}{indent}{line}\n"
-            code += f"{indent}{indent}return x\n\n"
-        else:
-            code += f"{indent}def forward(self, x):\n"
-            for line in forward_code_body:
-                code += f"{indent}{indent}{line}\n"
-            code += f"{indent}{indent}return x\n\n"
+        code += f"{indent}def forward(self, x):\n"
+        for line in forward_code_body:
+            code += f"{indent}{indent}{line}\n"
+        code += f"{indent}{indent}return x\n\n"
 
         code += "# Model instantiation\nmodel = NeuralNetworkModel()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel.to(device)\n\n"
 
@@ -364,16 +353,15 @@ def generate_tensorflow_layer(layer_type, params):
 def generate_pytorch_layer(layer_type, params, input_shape=None):
     """Generate PyTorch layer code"""
     if layer_type == "Conv2D":
-        in_channels = input_shape[1] if input_shape and len(input_shape) > 3 else 3
+        in_channels = input_shape[3] if input_shape and len(input_shape) > 3 else 3  # Changed to use last channel dim
         out_channels = params.get("filters", 32)
-        kernel_size = params.get("kernel_size", (3, 3))
+        kernel_size = params.get("kernel_size", 3)
+        # Handle both tuple/list and integer kernel sizes
         if isinstance(kernel_size, (tuple, list)):
-            kernel_size = kernel_size[0]
-        padding = params.get("padding", "same")
-        padding_val = kernel_size // 2 if padding == "same" else 0
-        return f"nn.Conv2d(in_channels={in_channels}, out_channels={out_channels}, kernel_size={kernel_size}, padding={padding_val})"
+            kernel_size = kernel_size[0]  # Use first element for both dimensions
+        return f"nn.Conv2d(in_channels={in_channels}, out_channels={out_channels}, kernel_size={kernel_size}, padding={kernel_size // 2})"
     elif layer_type == "BatchNormalization":
-        num_features = input_shape[1] if input_shape and len(input_shape) > 3 else params.get("filters", 3)
+        num_features = input_shape[3] if input_shape and len(input_shape) > 3 else params.get("filters", 3)  # Changed to use last channel dim
         momentum = params.get("momentum", 0.9)  # Changed default to match test
         eps = params.get("epsilon", 0.001)  # Changed default to match test
         return f"nn.BatchNorm2d(num_features={num_features}, momentum={momentum}, eps={eps})"
@@ -393,17 +381,19 @@ def generate_pytorch_layer(layer_type, params, input_shape=None):
                 layers.append("nn.Identity()")
         return "nn.Sequential(" + ", ".join(layers) + ")"
     elif layer_type == "MaxPooling2D":
-        pool_size = params.get("pool_size", (2, 2))
+        pool_size = params.get("pool_size", 2)
+        # Handle both tuple/list and integer pool sizes
         if isinstance(pool_size, (tuple, list)):
-            pool_size = pool_size
+            pool_size = pool_size[0]  # Use first element for both dimensions
         strides = params.get("strides", None)
         if strides:
             return f"nn.MaxPool2d(kernel_size={pool_size}, stride={strides})"
         return f"nn.MaxPool2d(kernel_size={pool_size})"
     elif layer_type == "AveragePooling2D":
-        pool_size = params.get("pool_size", (2, 2))
+        pool_size = params.get("pool_size", 2)
+        # Handle both tuple/list and integer pool sizes
         if isinstance(pool_size, (tuple, list)):
-            pool_size = pool_size
+            pool_size = pool_size[0]  # Use first element for both dimensions
         return f"nn.AvgPool2d(kernel_size={pool_size})"
     elif layer_type == "Flatten":
         return "nn.Flatten()"
