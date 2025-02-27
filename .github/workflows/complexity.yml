@@ -1,4 +1,4 @@
-name: Complexity Analysis
+name: Update Complexity Analysis
 on:
   push:
     branches: [main]
@@ -11,14 +11,14 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - name: Install dependencies
+      - name: Install radon
         run: pip install radon
       - name: Run complexity analysis
+        run: python /scripts/complexity.py
+      - name: Commit changes
         run: |
-          radon cc . -a > complexity_report.txt
-          echo "Complexity report generated" >> $GITHUB_STEP_SUMMARY
-      - name: Upload report
-        uses: actions/upload-artifact@v3
-        with:
-          name: complexity-report
-          path: complexity_report.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "Update complexity analysis for all files" || echo "No changes"
+          git push
