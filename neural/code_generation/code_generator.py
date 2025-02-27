@@ -42,113 +42,25 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         optimizer_config = model_data.get('optimizer', {'type': 'Adam'})
         optimizer_type = optimizer_config['type'] if isinstance(optimizer_config, dict) else optimizer_config
 
-        code = f"import tensorflow as tf\nfrom tensorflow.keras import layers\nfrom tensorflow.keras.optimizers import {optimizer_type}\n\n"
+        code = "import tensorflow as tf\nfrom tensorflow.keras import layers\n"
+        code += f"from tensorflow.keras.optimizers import {optimizer_type}\n\n"
 
-        if any(l['type'] == 'TransformerEncoder' for l in expanded_layers):
-            code += """# Custom TransformerEncoder layer
-class TransformerEncoder(layers.Layer):
-    def __init__(self, num_heads, ff_dim, dropout=0.1):
-        super().__init__()
-        self.num_heads = num_heads
-        self.ff_dim = ff_dim
-        self.dropout = dropout
-        self.attn = layers.MultiHeadAttention(num_heads=num_heads, key_dim=ff_dim//num_heads)
-        self.ffn = tf.keras.Sequential([layers.Dense(ff_dim, activation='relu'), layers.Dense(ff_dim)])
-        self.layernorm1 = layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = layers.LayerNormalization(epsilon=1e-6)
-        self.dropout1 = layers.Dropout(dropout)
-        self.dropout2 = layers.Dropout(dropout)
-    
-    def call(self, inputs):
-        attn_output = self.attn(inputs, inputs)
-        attn_output = self.dropout1(attn_output)
-        out1 = self.layernorm1(inputs + attn_output)
-        ffn_output = self.ffn(out1)
-        ffn_output = self.dropout2(ffn_output)
-        return self.layernorm2(out1 + ffn_output)\n\n"""
+        # Add input shape handling
+        input_shape = tuple(dim for dim in model_data['input']['shape'][1:])  # Remove batch dimension
+        code += f"# Input layer with shape {input_shape}\n"
+        code += f"inputs = layers.Input(shape={input_shape})\n"
+        code += "x = inputs\n\n"
 
-        code += "# Model construction using Functional API\n"
-        input_shape = [None if dim == 'NONE' else dim for dim in model_data['input']['shape']]
-        code += f"# Input layer with shape {tuple(input_shape)}\n"
-        code += f"inputs = tf.keras.Input(shape={tuple(input_shape)})\n"
-        code += "x = inputs\n"
-        
-        for i, layer in enumerate(expanded_layers):
+        for layer in expanded_layers:
             layer_type = layer['type']
             params = layer.get('params', {})
+            
+            layer_code = generate_tensorflow_layer(layer_type, params)
+            if layer_code:
+                code += f"x = {layer_code}(x)\n"
 
-            if layer_type == 'Residual':
-                code += f"# Residual block {i}\n"
-                code += "x_residual_input = x  # Store input for residual connection\n"
-                for sub_layer in layer.get('sub_layers', []):
-                    sub_type = sub_layer.get('type', '')
-                    sub_params = sub_layer.get('params', {})
-                    if sub_type == 'Conv2D':
-                        code += (
-                            f"# Convolutional layer with {sub_params.get('filters', 32)} filters\n"
-                            f"x = layers.Conv2D(filters={sub_params.get('filters', 32)}, "
-                            f"kernel_size={sub_params.get('kernel_size', 3)}, "
-                            f"padding='{sub_params.get('padding', 'same')}')(x)\n"
-                        )
-                    elif sub_type == 'BatchNormalization':
-                        code += "# Batch normalization\nx = layers.BatchNormalization()(x)\n"
-                code += "# Add residual connection\nx = layers.Add()([x, x_residual_input])\n"
-            elif layer_type == 'TimeDistributed':
-                sub_layer = layer.get('sub_layers', [{}])[0]
-                sub_type = sub_layer.get('type', '')
-                sub_params = sub_layer.get('params', {})
-                if sub_type == 'Conv2D':
-                    code += (
-                        f"# Time-distributed Conv2D with {sub_params.get('filters', 32)} filters\n"
-                        f"x = layers.TimeDistributed(layers.Conv2D("
-                        f"filters={sub_params.get('filters', 32)}, kernel_size={sub_params.get('kernel_size', 3)}, "
-                        f"padding='{sub_params.get('padding', 'valid')}'))(x)\n"
-                    )
-                elif sub_type == 'Dense':
-                    code += (
-                        f"# Time-distributed Dense layer with {sub_params.get('units', 10)} units\n"
-                        f"x = layers.TimeDistributed(layers.Dense("
-                        f"{sub_params.get('units', 10)}, activation='{sub_params.get('activation', 'linear')}'))(x)\n"
-                    )
-            elif layer_type == 'MaxPooling2D':
-                code += f"# MaxPooling2D with pool size {params.get('pool_size', 2)}\n"
-                code += f"x = layers.MaxPooling2D(pool_size={params.get('pool_size', 2)})(x)\n"
-            elif layer_type == 'TransformerEncoder':
-                code += (
-                    f"# TransformerEncoder layer\n"
-                    f"x = TransformerEncoder(num_heads={params.get('num_heads', 8)}, "
-                    f"ff_dim={params.get('ff_dim', 512)}, dropout={params.get('dropout', 0.1)})(x)\n"
-                )
-            elif layer_type == 'Dense':
-                code += f"# Dense layer with {params.get('units', 10)} units\n"
-                code += f"x = layers.Dense(units={params.get('units', 10)}, activation='{params.get('activation', 'linear')}')(x)\n"
-            elif layer_type == 'Dropout':
-                code += f"# Dropout layer with rate {params.get('rate', 0.5)}\n"
-                code += f"x = layers.Dropout(rate={params.get('rate', 0.5)})(x)\n"
-            elif layer_type == 'MaxPooling2D':
-                pool_size = params.get('pool_size', 2)
-                strides = params.get('strides', pool_size)
-                code += f"x = layers.MaxPooling2D(pool_size={pool_size}, strides={strides})(x)\n"
-            elif layer_type == 'AveragePooling2D':
-                pool_size = params.get('pool_size', 2)
-                strides = params.get('strides', pool_size)
-                code += f"x = layers.AveragePooling2D(pool_size={pool_size}, strides={strides})(x)\n"
-            elif layer_type in ['LSTM', 'GRU']:
-                units = params.get('units', 64)
-                return_seq = params.get('return_sequences', False)
-                code += f"x = layers.{layer_type}(units={units}, return_sequences={return_seq})(x)\n"            
-            elif layer_type == 'BatchNormalization':
-                momentum = params.get('momentum', 0.99)
-                epsilon = params.get('epsilon', 1e-3)
-                code += f"x = layers.BatchNormalization(momentum={momentum}, epsilon={epsilon})(x)\n"
-  
-            elif layer_type == 'Output':
-                code += f"# Output layer with {params.get('units', 10)} units\n"
-                code += f"outputs = layers.Dense({params.get('units', 10)}, activation='{params.get('activation', 'softmax')}')(x)\n"
-            else:
-                logger.warning(f"Unsupported layer type '{layer_type}' for {backend}. Skipping.")
-
-        code += "\n# Build the model\nmodel = tf.keras.Model(inputs=inputs, outputs=outputs)\n"
+        code += "\n# Build model\n"
+        code += "model = tf.keras.Model(inputs=inputs, outputs=x)\n"
         
         opt_params = []
         if isinstance(optimizer_config, dict):
@@ -191,6 +103,10 @@ class TransformerEncoder(layers.Layer):
 
         layers_code = []
         forward_code_body = []
+
+        # Add mixed precision imports if needed
+        if model_data.get("training_config", {}).get("mixed_precision"):
+            code += "from torch.cuda.amp import autocast, GradScaler\n"
 
         for i, layer_config in enumerate(model_data['layers']):
             layer_type = layer_config['type']
@@ -257,12 +173,10 @@ class TransformerEncoder(layers.Layer):
             elif layer_type in ['LSTM', 'GRU']:
                 units = params.get('units', 64)
                 return_seq = params.get('return_sequences', False)
-                in_features = current_input_shape[-1]
-                layers_code.append(f"{layer_name} = nn.{layer_type}(input_size={in_features}, hidden_size={units}, batch_first=True)")
-                forward_code_body.append(f"x, _ = self.layer{i}(x)" if layer_type == 'LSTM' else f"x = self.layer{i}(x)")
+                code += f"{layer_name} = nn.{layer_type}(units={units}, return_sequences={return_seq})(x)\n"            
             elif layer_type == 'BatchNormalization':
-                momentum = params.get('momentum', 0.1)  # PyTorch uses 1 - TF's momentum
-                epsilon = params.get('epsilon', 1e-5)
+                momentum = params.get('momentum', 0.99)
+                epsilon = params.get('epsilon', 1e-3)
                 layers_code.append(f"{layer_name}_bn = nn.BatchNorm2d(num_features={current_input_shape[-1]}, momentum={momentum}, eps={epsilon})")
             elif layer_type in ['Dense', 'Output']:
                 units = params.get('units')
@@ -303,10 +217,18 @@ class TransformerEncoder(layers.Layer):
 
         for line in layers_code:
             code += f"{indent}{indent}{line}\n"
-        code += f"\n{indent}# Forward pass\ndef forward(self, x):\n"
-        for line in forward_code_body:
-            code += f"{indent}{indent}{line}\n"
-        code += f"{indent}{indent}return x\n\n"
+        code += f"\n{indent}# Forward pass\n"
+        if model_data.get("training_config", {}).get("mixed_precision"):
+            code += f"{indent}def forward(self, x):\n"
+            code += f"{indent}{indent}with autocast():\n"
+            for line in forward_code_body:
+                code += f"{indent}{indent}{indent}{line}\n"
+            code += f"{indent}{indent}return x\n\n"
+        else:
+            code += f"{indent}def forward(self, x):\n"
+            for line in forward_code_body:
+                code += f"{indent}{indent}{line}\n"
+            code += f"{indent}{indent}return x\n\n"
 
         code += "# Model instantiation\nmodel = NeuralNetworkModel()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel.to(device)\n\n"
 
@@ -336,19 +258,12 @@ class TransformerEncoder(layers.Layer):
                 f"{indent}print(f'Epoch {{epoch+1}}, Loss: {{loss.item()}}')\n"
             )
             if 'training_config' in model_data and model_data['training_config'].get('mixed_precision', False):
-                code += "from torch.cuda.amp import autocast, GradScaler\n"
                 code += "\nscaler = GradScaler()\n"
                 code += "\nwith autocast():\n    # Your training code here\n"
             if 'training_config' in model_data and 'save_path' in model_data['training_config']:
                 code += f"torch.save(model.state_dict(), '{model_data['training_config']['save_path']}')\n"
             
             code += "# Note: Replace 'dataset' with your actual dataset\n"
-
-        if model_data.get("training_config", {}).get("mixed_precision"):
-            code.append("from torch.cuda.amp import autocast, GradScaler")
-            code.append("\nscaler = GradScaler()")
-            code.append("\nwith autocast():")
-            code.append("    # Your training code here")
 
         return code
 
@@ -380,18 +295,39 @@ def load_file(filename: str) -> Any:
 
 def generate_onnx(model_data):
     """Generate ONNX model"""
-    # Create graph
+    # Create nodes for each layer
+    nodes = []
+    current_input = "input"
+    
+    for i, layer in enumerate(model_data['layers']):
+        layer_type = layer['type']
+        params = layer.get('params', {})
+        output_name = f"layer_{i}_output"
+        
+        if layer_type == "Conv2D":
+            nodes.append(helper.make_node(
+                'Conv',
+                inputs=[current_input],
+                outputs=[output_name],
+                kernel_shape=params.get('kernel_size', [3, 3]),
+                strides=params.get('strides', [1, 1])
+            ))
+        # Add other layer types as needed
+        
+        current_input = output_name
+
+    # Create graph with nodes
     graph = helper.make_graph(
-        nodes=[],  # Add nodes based on model_data layers
+        nodes=nodes,
         name="NeuralModel",
         inputs=[helper.make_tensor_value_info("input", TensorProto.FLOAT, model_data["input"]["shape"])],
-        outputs=[helper.make_tensor_value_info("output", TensorProto.FLOAT, None)],
+        outputs=[helper.make_tensor_value_info(current_input, TensorProto.FLOAT, None)],
         initializer=[]
     )
     
     # Create model
     model = helper.make_model(graph, producer_name="Neural")
-    model.opset_import[0].version = 13  # Use a stable opset version
+    model.opset_import[0].version = 13
     
     return model
 
@@ -414,9 +350,15 @@ def generate_tensorflow_layer(layer_type, params):
         return "layers.BatchNormalization()"
     elif layer_type == "MaxPooling2D":
         pool_size = params.get("pool_size", (2, 2))
+        strides = params.get("strides", None)
+        if strides:
+            return f"layers.MaxPooling2D(pool_size={pool_size}, strides={strides})"
         return f"layers.MaxPooling2D(pool_size={pool_size})"
     elif layer_type == "AveragePooling2D":
         pool_size = params.get("pool_size", (2, 2))
+        strides = params.get("strides", None)
+        if strides:
+            return f"layers.AveragePooling2D(pool_size={pool_size}, strides={strides})"
         return f"layers.AveragePooling2D(pool_size={pool_size})"
     elif layer_type == "Flatten":
         return "layers.Flatten()"
@@ -426,9 +368,13 @@ def generate_tensorflow_layer(layer_type, params):
         return f"layers.LSTM(units={units}, return_sequences={str(return_sequences)})"
     elif layer_type == "GRU":
         units = params.get("units", 64)
-        return f"layers.GRU(units={units})"
+        return_sequences = params.get("return_sequences", False)
+        return f"layers.GRU(units={units}, return_sequences={str(return_sequences)})"
+    elif layer_type == "Dropout":
+        rate = params.get("rate", 0.5)
+        return f"layers.Dropout(rate={rate})"
     else:
-        warnings.warn(f"Unsupported layer type '{layer_type}' for tensorflow. Skipping.")
+        warnings.warn(f"Unsupported layer type '{layer_type}' for tensorflow. Skipping.", UserWarning)
         return None
 
 def generate_pytorch_layer(layer_type, params, input_shape=None):
