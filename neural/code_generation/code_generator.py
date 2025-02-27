@@ -143,7 +143,8 @@ class TransformerEncoder(layers.Layer):
             elif layer_type == 'Output':
                 code += f"# Output layer with {params.get('units', 10)} units\n"
                 code += f"outputs = layers.Dense({params.get('units', 10)}, activation='{params.get('activation', 'softmax')}')(x)\n"
-
+            else:
+                logger.warning(f"Unsupported layer type '{layer_type}' for {backend}. Skipping.")
 
         code += "\n# Build the model\nmodel = tf.keras.Model(inputs=inputs, outputs=outputs)\n"
         
