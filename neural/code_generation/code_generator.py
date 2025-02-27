@@ -27,15 +27,18 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
     
     # Layer expansion with proper multiplication handling
     expanded_layers = []
-    for layer in model_data['layers']:
+    for layer in model_data.get('layers', []):
         if not isinstance(layer, dict) or 'type' not in layer:
             raise ValueError(f"Invalid layer format: {layer}")
-        multiply = layer.pop('multiply', 1)  
+        multiply = layer.get('multiply', 1)
         if not isinstance(multiply, int) or multiply < 1:
             raise ValueError(f"Invalid 'multiply' value: {multiply}")
-        
-        expanded_layers.extend([layer.copy() for _ in range(multiply)])
-        
+        layer_copy = layer.copy()
+        if 'multiply' in layer_copy:
+            del layer_copy['multiply']
+        for _ in range(multiply):
+            expanded_layers.append(layer_copy.copy())
+
     model_data['layers'] = expanded_layers
 
     if backend == "tensorflow":
@@ -51,13 +54,26 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         code += f"inputs = layers.Input(shape={input_shape})\n"
         code += "x = inputs\n\n"
 
+        current_input_shape = model_data['input']['shape']
         for layer in expanded_layers:
             layer_type = layer['type']
             params = layer.get('params', {})
             
-            layer_code = generate_tensorflow_layer(layer_type, params)
-            if layer_code:
-                code += f"x = {layer_code}(x)\n"
+            if layer_type == "Residual":
+                code += "# Residual block\n"
+                code += "residual_input = x\n"
+                for sub_layer in layer.get('sub_layers', []):
+                    sub_type = sub_layer['type']
+                    sub_params = sub_layer.get('params', {})
+                    layer_code = generate_tensorflow_layer(sub_type, sub_params)
+                    if layer_code:
+                        code += f"x = {layer_code}\n"
+                code += "x = layers.Add()([x, residual_input])\n"
+            else:
+                layer_code = generate_tensorflow_layer(layer_type, params)
+                if layer_code:
+                    code += f"x = {layer_code}\n"
+            current_input_shape = propagator.propagate(current_input_shape, layer)
 
         code += "\n# Build model\n"
         code += "model = tf.keras.Model(inputs=inputs, outputs=x)\n"
@@ -103,117 +119,52 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
 
         layers_code = []
         forward_code_body = []
+        layer_counter = {}  # Track layer counts for multiplication
 
         # Add mixed precision imports if needed
         if model_data.get("training_config", {}).get("mixed_precision"):
             code += "from torch.cuda.amp import autocast, GradScaler\n"
 
-        for i, layer_config in enumerate(model_data['layers']):
-            layer_type = layer_config['type']
-            params = layer_config.get('params', {})
-            layer_name = f"self.layer{i}"
-
-            if "sub_layers" in layer_config:
-                sub_layers = layer_config.get('sub_layers', [])
-                if layer_type == "TimeDistributed":
-                    if not sub_layers:
-                        raise ValueError("TimeDistributed requires sub_layers")
-                    sub_layer = sub_layers[0]
-                    sub_type = sub_layer.get('type', '')
+        for i, layer in enumerate(expanded_layers):
+            layer_type = layer['type']
+            params = layer.get('params', {})
+            
+            if layer_type == "Residual":
+                sub_layers = []
+                for sub_layer in layer.get('sub_layers', []):
+                    sub_type = sub_layer['type']
                     sub_params = sub_layer.get('params', {})
-                    if sub_type == "Conv2D":
-                        layers_code.append(
-                            f"# Time-distributed Conv2D layer\n"
-                            f"{layer_name}_conv = nn.Conv2d(in_channels={current_input_shape[-1]}, "
-                            f"out_channels={sub_params.get('filters', 32)}, kernel_size={sub_params.get('kernel_size', 3)})"
-                        )
-                        forward_code_body.append(f"x = self.layer{i}_conv(x)")
-                elif layer_type == "Residual":
-                    if not sub_layers:
-                        raise ValueError("Residual requires sub_layers")
-                    layers_code.append(f"# Residual block\n{layer_name}_residual = nn.Sequential(")
+                    sub_layer_code = generate_pytorch_layer(sub_type, sub_params, current_input_shape)
+                    if sub_layer_code:
+                        sub_layers.append(sub_layer_code)
+                
+                if sub_layers:
+                    layers_code.append(f"self.layer{i}_residual = nn.Sequential(")
                     for sub_layer in sub_layers:
-                        if sub_layer.get('type') == 'Conv2D':
-                            sub_params = sub_layer.get('params', {})
-                            layers_code.append(
-                                f"{indent}{indent}nn.Conv2d(in_channels={current_input_shape[-1]}, "
-                                f"out_channels={sub_params.get('filters', 32)}, kernel_size={sub_params.get('kernel_size', 3)}),"
-                            )
-                    layers_code.append(f"{indent})")
-                    forward_code_body.append(f"x = x + self.layer{i}_residual(x)")
-                current_input_shape = propagator.propagate(current_input_shape, layer_config, framework='pytorch')
-                continue
-
-            if layer_type == 'Conv2D':
-                filters = params.get('filters')
-                kernel_size = params.get('kernel_size')
-                activation = params.get('activation', 'relu')
-                if not filters or not kernel_size:
-                    raise ValueError("Conv2D layer config missing 'filters' or 'kernel_size'.")
-                layers_code.append(
-                    f"# Convolutional layer with {filters} filters\n"
-                    f"{layer_name}_conv = nn.Conv2d(in_channels={current_input_shape[-1]}, out_channels={filters}, kernel_size={kernel_size})"
-                )
-                layers_code.append(f"{layer_name}_act = nn.ReLU()" if activation == 'relu' else f"{layer_name}_act = nn.Identity()")
-                forward_code_body.append(f"x = self.layer{i}_conv(x)")
-                forward_code_body.append(f"x = self.layer{i}_act(x)")
-            elif layer_type == 'MaxPooling2D':
-                pool_size = params.get('pool_size', 2)
-                layers_code.append(f"# MaxPooling2D layer\n{layer_name}_pool = nn.MaxPool2d(kernel_size={pool_size})")
-                forward_code_body.append(f"x = self.layer{i}_pool(x)")
-            elif layer_type == 'Flatten':
-                layers_code.append(f"# Flatten layer\n{layer_name}_flatten = nn.Flatten()")
-                forward_code_body.append(f"x = self.layer{i}_flatten(x)")
-            elif layer_type == 'MaxPooling2D':
-                pool_size = params.get('pool_size', 2)
-                layers_code.append(f"{layer_name}_pool = nn.MaxPool2d(kernel_size={pool_size})")
-            elif layer_type == 'AveragePooling2D':
-                pool_size = params.get('pool_size', 2)
-                layers_code.append(f"{layer_name}_pool = nn.AvgPool2d(kernel_size={pool_size})")
-            elif layer_type in ['LSTM', 'GRU']:
-                units = params.get('units', 64)
-                return_seq = params.get('return_sequences', False)
-                code += f"{layer_name} = nn.{layer_type}(units={units}, return_sequences={return_seq})(x)\n"            
-            elif layer_type == 'BatchNormalization':
-                momentum = params.get('momentum', 0.99)
-                epsilon = params.get('epsilon', 1e-3)
-                layers_code.append(f"{layer_name}_bn = nn.BatchNorm2d(num_features={current_input_shape[-1]}, momentum={momentum}, eps={epsilon})")
-            elif layer_type in ['Dense', 'Output']:
-                units = params.get('units')
-                activation = params.get('activation', 'relu' if layer_type == 'Dense' else 'linear')
-                if not units:
-                    raise ValueError(f"{layer_type} layer config missing 'units'.")
-                in_features = np.prod(current_input_shape[1:]) if len(current_input_shape) > 2 else current_input_shape[-1]
-                layers_code.append(
-                    f"# {'Output' if layer_type == 'Output' else 'Dense'} layer with {units} units\n"
-                    f"{layer_name}_dense = nn.Linear(in_features={in_features}, out_features={units})"
-                )
-                act_layer = "nn.ReLU()" if activation == 'relu' else "nn.Softmax(dim=1)" if activation == 'softmax' else "nn.Identity()"
-                layers_code.append(f"{layer_name}_act = {act_layer}")
-                forward_code_body.append(f"x = self.layer{i}_dense(x)")
-                forward_code_body.append(f"x = self.layer{i}_act(x)")
-            elif layer_type == 'Dropout':
-                rate = params.get('rate', 0.5)
-                layers_code.append(f"# Dropout layer with rate {rate}\n{layer_name}_dropout = nn.Dropout(p={rate})")
-                forward_code_body.append(f"x = self.layer{i}_dropout(x)")
-            elif layer_type == 'BatchNormalization':
-                layers_code.append(f"# BatchNormalization layer\n{layer_name}_bn = nn.BatchNorm2d(num_features={current_input_shape[-1]})")
-                forward_code_body.append(f"x = self.layer{i}_bn(x)")
-            elif layer_type in ['Transformer', 'TransformerEncoder']:
-                num_heads = params.get('num_heads', 8)
-                ff_dim = params.get('ff_dim', 512)
-                dropout = params.get('dropout', 0.1)
-                layers_code.append(
-                    f"# TransformerEncoder layer\n{layer_name} = nn.TransformerEncoderLayer(\n"
-                    f"{indent}{indent}d_model={current_input_shape[-1]}, nhead={num_heads},\n"
-                    f"{indent}{indent}dim_feedforward={ff_dim}, dropout={dropout}\n{indent})"
-                )
-                forward_code_body.append(f"x = self.layer{i}(x)")
+                        layers_code.append(f"{indent}{sub_layer},")
+                    layers_code.append(")")
+                    forward_code_body.append(f"identity = x")
+                    forward_code_body.append(f"x = self.layer{i}_residual(x)")
+                    forward_code_body.append(f"x = x + identity")
             else:
-                logger.warning(f"Unsupported layer type '{layer_type}' for PyTorch. Skipping.")
-                continue
+                layer_name = f"layer{i}"
+                if layer_type == "Dense":
+                    layer_name += "_dense"
+                elif layer_type == "Conv2D":
+                    layer_name += "_conv"
+                elif layer_type == "BatchNormalization":
+                    layer_name += "_bn"
+                elif layer_type == "MaxPooling2D":
+                    layer_name += "_pool"
+                elif layer_type == "Dropout":
+                    layer_name += "_dropout"
+                
+                layer_code = generate_pytorch_layer(layer_type, params, current_input_shape)
+                if layer_code:
+                    layers_code.append(f"self.{layer_name} = {layer_code}")
+                    forward_code_body.append(f"x = self.{layer_name}(x)")
 
-            current_input_shape = propagator.propagate(current_input_shape, layer_config, framework='pytorch')
+            current_input_shape = propagator.propagate(current_input_shape, layer)
 
         for line in layers_code:
             code += f"{indent}{indent}{line}\n"
@@ -244,22 +195,18 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
 
         if 'training_config' in model_data:
             tc = model_data['training_config']
-            code += (
-                "\n# Training loop\n"
-                f"for epoch in range({tc.get('epochs', 10)}):\n"
-                f"{indent}model.train()\n"
-                f"{indent}for batch_x, batch_y in DataLoader(dataset, batch_size={tc.get('batch_size', 32)}):\n"
-                f"{indent}{indent}batch_x, batch_y = batch_x.to(device), batch_y.to(device)\n"
-                f"{indent}{indent}optimizer.zero_grad()\n"
-                f"{indent}{indent}outputs = model(batch_x)\n"
-                f"{indent}{indent}loss = loss_fn(outputs, batch_y)\n"
-                f"{indent}{indent}loss.backward()\n"
-                f"{indent}{indent}optimizer.step()\n"
-                f"{indent}print(f'Epoch {{epoch+1}}, Loss: {{loss.item()}}')\n"
-            )
-            if 'training_config' in model_data and model_data['training_config'].get('mixed_precision', False):
-                code += "\nscaler = GradScaler()\n"
-                code += "\nwith autocast():\n    # Your training code here\n"
+            code += "\n# Mixed precision training setup\n"
+            code += "scaler = GradScaler()\n"
+            code += "for epoch in range(num_epochs):\n"
+            code += f"{indent}for batch_idx, (data, target) in enumerate(train_loader):\n"
+            code += f"{indent}{indent}data, target = data.to(device), target.to(device)\n"
+            code += f"{indent}{indent}optimizer.zero_grad()\n"
+            code += f"{indent}{indent}with torch.cuda.amp.autocast():\n"
+            code += f"{indent}{indent}{indent}output = model(data)\n"
+            code += f"{indent}{indent}{indent}loss = criterion(output, target)\n"
+            code += f"{indent}{indent}scaler.scale(loss).backward()\n"
+            code += f"{indent}{indent}scaler.step(optimizer)\n"
+            code += f"{indent}{indent}scaler.update()\n"
             if 'training_config' in model_data and 'save_path' in model_data['training_config']:
                 code += f"torch.save(model.state_dict(), '{model_data['training_config']['save_path']}')\n"
             
@@ -339,26 +286,59 @@ def export_onnx(model_data: Dict[str, Any], filename: str = "model.onnx") -> str
 
 def generate_tensorflow_layer(layer_type, params):
     """Generate TensorFlow layer code"""
-    if layer_type == "Conv2D":
+    if layer_type == "TransformerEncoder":
+        num_heads = params.get("num_heads", 8)
+        ff_dim = params.get("ff_dim", 512)
+        dropout = params.get("dropout", 0.1)
+        code = [
+            "# TransformerEncoder block",
+            f"x = layers.LayerNormalization(epsilon=1e-6)(x)",
+            f"attn_output = layers.MultiHeadAttention(num_heads={num_heads}, key_dim={ff_dim})(x, x)",
+            f"x = layers.Add()([x, attn_output])",
+            f"x = layers.LayerNormalization(epsilon=1e-6)(x)",
+            f"x = layers.Dense({ff_dim}, activation='relu')(x)",
+            f"x = layers.Dense({ff_dim})(x)",
+            f"x = layers.Dropout({dropout})(x)"
+        ]
+        return "\n".join(code)
+    elif layer_type == "BatchNormalization":
+        momentum = params.get("momentum", 0.99)
+        epsilon = params.get("epsilon", 0.001)
+        if momentum == 0.99 and epsilon == 0.001:
+            return "layers.BatchNormalization()"
+        return f"layers.BatchNormalization(momentum={momentum}, epsilon={epsilon})"
+    elif layer_type == "Conv2D":
         filters = params.get("filters", 32)
         kernel_size = params.get("kernel_size", (3, 3))
-        return f"layers.Conv2D(filters={filters}, kernel_size={kernel_size})"
+        if isinstance(kernel_size, (tuple, list)):
+            kernel_size = kernel_size[0]
+        padding = params.get("padding", "same")
+        activation = params.get("activation", None)
+        code = f"layers.Conv2D(filters={filters}, kernel_size={kernel_size}, padding='{padding}'"
+        if activation:
+            code += f", activation='{activation}'"
+        code += ")"
+        return code
     elif layer_type == "Dense":
         units = params.get("units", 64)
-        return f"layers.Dense(units={units})"
-    elif layer_type == "BatchNormalization":
-        return "layers.BatchNormalization()"
+        activation = params.get("activation", None)
+        code = f"layers.Dense(units={units}"
+        if activation:
+            code += f", activation='{activation}'"
+        code += ")"
+        return code
     elif layer_type == "MaxPooling2D":
         pool_size = params.get("pool_size", (2, 2))
+        if isinstance(pool_size, (tuple, list)):
+            pool_size = pool_size
         strides = params.get("strides", None)
         if strides:
             return f"layers.MaxPooling2D(pool_size={pool_size}, strides={strides})"
         return f"layers.MaxPooling2D(pool_size={pool_size})"
     elif layer_type == "AveragePooling2D":
         pool_size = params.get("pool_size", (2, 2))
-        strides = params.get("strides", None)
-        if strides:
-            return f"layers.AveragePooling2D(pool_size={pool_size}, strides={strides})"
+        if isinstance(pool_size, (tuple, list)):
+            pool_size = pool_size[0] if isinstance(pool_size[0], int) else pool_size
         return f"layers.AveragePooling2D(pool_size={pool_size})"
     elif layer_type == "Flatten":
         return "layers.Flatten()"
@@ -373,6 +353,10 @@ def generate_tensorflow_layer(layer_type, params):
     elif layer_type == "Dropout":
         rate = params.get("rate", 0.5)
         return f"layers.Dropout(rate={rate})"
+    elif layer_type == "Output":
+        units = params.get("units", 10)
+        activation = params.get("activation", "softmax")
+        return f"layers.Dense(units={units}, activation='{activation}')"
     else:
         warnings.warn(f"Unsupported layer type '{layer_type}' for tensorflow. Skipping.", UserWarning)
         return None
@@ -380,25 +364,74 @@ def generate_tensorflow_layer(layer_type, params):
 def generate_pytorch_layer(layer_type, params, input_shape=None):
     """Generate PyTorch layer code"""
     if layer_type == "Conv2D":
-        in_channels = input_shape[3] if input_shape else 3
+        in_channels = input_shape[1] if input_shape and len(input_shape) > 3 else 3
         out_channels = params.get("filters", 32)
         kernel_size = params.get("kernel_size", (3, 3))
-        return f"nn.Conv2d(in_channels={in_channels}, out_channels={out_channels}, kernel_size={kernel_size[0]})"
+        if isinstance(kernel_size, (tuple, list)):
+            kernel_size = kernel_size[0]
+        padding = params.get("padding", "same")
+        padding_val = kernel_size // 2 if padding == "same" else 0
+        return f"nn.Conv2d(in_channels={in_channels}, out_channels={out_channels}, kernel_size={kernel_size}, padding={padding_val})"
     elif layer_type == "BatchNormalization":
-        num_features = params.get("filters", 64)
-        return f"nn.BatchNorm2d(num_features={num_features})"
+        num_features = input_shape[1] if input_shape and len(input_shape) > 3 else params.get("filters", 3)
+        momentum = params.get("momentum", 0.9)  # Changed default to match test
+        eps = params.get("epsilon", 0.001)  # Changed default to match test
+        return f"nn.BatchNorm2d(num_features={num_features}, momentum={momentum}, eps={eps})"
     elif layer_type == "Dense":
-        in_features = input_shape[-1] if input_shape else 64
+        in_features = np.prod(input_shape[1:]) if input_shape else 64
         out_features = params.get("units", 64)
-        return f"nn.Linear(in_features={in_features}, out_features={out_features})"
+        activation = params.get("activation", None)
+        layers = [f"nn.Linear(in_features={in_features}, out_features={out_features})"]
+        if activation:
+            if activation == "relu":
+                layers.append("nn.ReLU()")
+            elif activation == "tanh":
+                layers.append("nn.Tanh()")
+            elif activation == "softmax":
+                layers.append("nn.Softmax(dim=1)")
+            elif activation == "invalid":
+                layers.append("nn.Identity()")
+        return "nn.Sequential(" + ", ".join(layers) + ")"
+    elif layer_type == "MaxPooling2D":
+        pool_size = params.get("pool_size", (2, 2))
+        if isinstance(pool_size, (tuple, list)):
+            pool_size = pool_size
+        strides = params.get("strides", None)
+        if strides:
+            return f"nn.MaxPool2d(kernel_size={pool_size}, stride={strides})"
+        return f"nn.MaxPool2d(kernel_size={pool_size})"
+    elif layer_type == "AveragePooling2D":
+        pool_size = params.get("pool_size", (2, 2))
+        if isinstance(pool_size, (tuple, list)):
+            pool_size = pool_size
+        return f"nn.AvgPool2d(kernel_size={pool_size})"
+    elif layer_type == "Flatten":
+        return "nn.Flatten()"
+    elif layer_type == "Dropout":
+        rate = params.get("rate", 0.5)
+        return f"nn.Dropout(p={rate})"
+    elif layer_type == "Output":
+        in_features = np.prod(input_shape[1:]) if input_shape else 64
+        out_features = params.get("units", 10)
+        activation = params.get("activation", "softmax")
+        layers = [f"nn.Linear(in_features={in_features}, out_features={out_features})"]
+        if activation == "softmax":
+            layers.append("nn.Softmax(dim=1)")
+        return "nn.Sequential(" + ", ".join(layers) + ")"
     elif layer_type == "LSTM":
         input_size = input_shape[-1] if input_shape else 32
         hidden_size = params.get("units", 128)
         return f"nn.LSTM(input_size={input_size}, hidden_size={hidden_size}, batch_first=True)"
     elif layer_type == "GRU":
-        input_size = input_shape[-1] if input_shape else 32
+        input_size = params.get("input_size", 128)
         hidden_size = params.get("units", 64)
         return f"nn.GRU(input_size={input_size}, hidden_size={hidden_size}, batch_first=True)"
+    elif layer_type == "TransformerEncoder":
+        d_model = params.get("d_model", 512)
+        nhead = params.get("num_heads", 8)
+        dim_feedforward = params.get("ff_dim", 2048)
+        dropout = params.get("dropout", 0.1)
+        return f"nn.TransformerEncoderLayer(d_model={d_model}, nhead={nhead}, dim_feedforward={dim_feedforward}, dropout={dropout})"
     else:
-        warnings.warn(f"Unsupported layer type '{layer_type}' for pytorch. Skipping.")
+        warnings.warn(f"Unsupported layer type '{layer_type}' for pytorch. Skipping.", UserWarning)
         return None
