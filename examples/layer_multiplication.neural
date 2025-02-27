@@ -1,0 +1,17 @@
+network SimpleMultipliedNet {
+  input: (None, 32)
+  layers:
+    Dense(64, "relu") * 3     
+    Dropout(0.5)
+    Dense(10, "softmax")
+  loss: categorical_crossentropy
+  optimizer: Adam
+  train {
+    epochs: 10
+    batch_size: 32
+    validation_split: 0.2
+  }
+  execution {
+    device: "cpu"
+  }
+}

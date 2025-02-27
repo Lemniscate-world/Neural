@@ -29,11 +29,12 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
     for layer in model_data['layers']:
         if not isinstance(layer, dict) or 'type' not in layer:
             raise ValueError(f"Invalid layer format: {layer}")
-        multiply = layer.pop('multiply', 1)  # Fixed from '*'
+        multiply = layer.pop('multiply', 1)  
         if not isinstance(multiply, int) or multiply < 1:
             raise ValueError(f"Invalid 'multiply' value: {multiply}")
         
         expanded_layers.extend([layer.copy() for _ in range(multiply)])
+        
     model_data['layers'] = expanded_layers
 
     if backend == "tensorflow":
