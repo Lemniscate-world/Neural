@@ -166,6 +166,9 @@ class TransformerEncoder(layers.Layer):
                 f"    validation_split={tc.get('validation_split', 0.2)},\n"
                 f"    verbose=1\n)\n"
             )
+            if 'training_config' in model_data and model_data['training_config'].get('mixed_precision', False):
+                code = "from tensorflow.keras.mixed_precision import set_global_policy\n" + code
+                code += "set_global_policy('mixed_float16')\n"
         return code
 
     elif backend == "pytorch":
@@ -328,6 +331,9 @@ class TransformerEncoder(layers.Layer):
                 f"{indent}{indent}optimizer.step()\n"
                 f"{indent}print(f'Epoch {{epoch+1}}, Loss: {{loss.item()}}')\n"
             )
+            if 'training_config' in model_data and model_data['training_config'].get('mixed_precision', False):
+                code += "from torch.cuda.amp import autocast\n"
+                code = code.replace("outputs = model(batch_x)", "with autocast():\n            outputs = model(batch_x)")
             code += "# Note: Replace 'dataset' with your actual dataset\n"
 
         return code
