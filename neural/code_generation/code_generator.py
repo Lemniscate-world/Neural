@@ -131,7 +131,10 @@ class TransformerEncoder(layers.Layer):
                 pool_size = params.get('pool_size', 2)
                 strides = params.get('strides', pool_size)
                 code += f"x = layers.AveragePooling2D(pool_size={pool_size}, strides={strides})(x)\n"
-                        
+            elif layer_type in ['LSTM', 'GRU']:
+                units = params.get('units', 64)
+                return_seq = params.get('return_sequences', False)
+                code += f"x = layers.{layer_type}(units={units}, return_sequences={return_seq})(x)\n"            
             elif layer_type == 'Output':
                 code += f"# Output layer with {params.get('units', 10)} units\n"
                 code += f"outputs = layers.Dense({params.get('units', 10)}, activation='{params.get('activation', 'softmax')}')(x)\n"
@@ -238,6 +241,12 @@ class TransformerEncoder(layers.Layer):
             elif layer_type == 'AveragePooling2D':
                 pool_size = params.get('pool_size', 2)
                 layers_code.append(f"{layer_name}_pool = nn.AvgPool2d(kernel_size={pool_size})")
+            elif layer_type in ['LSTM', 'GRU']:
+                units = params.get('units', 64)
+                return_seq = params.get('return_sequences', False)
+                in_features = current_input_shape[-1]
+                layers_code.append(f"{layer_name} = nn.{layer_type}(input_size={in_features}, hidden_size={units}, batch_first=True)")
+                forward_code_body.append(f"x, _ = self.layer{i}(x)" if layer_type == 'LSTM' else f"x = self.layer{i}(x)")
             
             elif layer_type in ['Dense', 'Output']:
                 units = params.get('units')
