@@ -4,8 +4,9 @@ from neural.parser.parser import ModelTransformer, create_parser
 from typing import Any, Dict, Union
 import torch
 import onnx
-from onnx import helper
+from onnx import helper, TensorProto
 import numpy as np
+import warnings
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -335,13 +336,19 @@ class TransformerEncoder(layers.Layer):
                 f"{indent}print(f'Epoch {{epoch+1}}, Loss: {{loss.item()}}')\n"
             )
             if 'training_config' in model_data and model_data['training_config'].get('mixed_precision', False):
-                code += "from torch.cuda.amp import autocast\n"
-                code = code.replace("outputs = model(batch_x)", "with autocast():\n            outputs = model(batch_x)")
+                code += "from torch.cuda.amp import autocast, GradScaler\n"
+                code += "\nscaler = GradScaler()\n"
+                code += "\nwith autocast():\n    # Your training code here\n"
             if 'training_config' in model_data and 'save_path' in model_data['training_config']:
                 code += f"torch.save(model.state_dict(), '{model_data['training_config']['save_path']}')\n"
             
             code += "# Note: Replace 'dataset' with your actual dataset\n"
 
+        if model_data.get("training_config", {}).get("mixed_precision"):
+            code.append("from torch.cuda.amp import autocast, GradScaler")
+            code.append("\nscaler = GradScaler()")
+            code.append("\nwith autocast():")
+            code.append("    # Your training code here")
 
         return code
 
@@ -371,31 +378,21 @@ def load_file(filename: str) -> Any:
     else:
         raise ValueError(f"Unsupported file type: {filename}")
 
-def generate_onnx(model_data: Dict[str, Any]) -> onnx.ModelProto:
-    """Generate ONNX model from model_data."""
-    output_shape = model_data.get('output_shape', [None, 10])
+def generate_onnx(model_data):
+    """Generate ONNX model"""
+    # Create graph
     graph = helper.make_graph(
-        nodes=[],
+        nodes=[],  # Add nodes based on model_data layers
         name="NeuralModel",
-        inputs=[helper.make_tensor_value_info("input", onnx.TensorProto.FLOAT, model_data['input']['shape'])],
-        outputs=[helper.make_tensor_value_info("output", onnx.TensorProto.FLOAT, output_shape)],
+        inputs=[helper.make_tensor_value_info("input", TensorProto.FLOAT, model_data["input"]["shape"])],
+        outputs=[helper.make_tensor_value_info("output", TensorProto.FLOAT, None)],
+        initializer=[]
     )
+    
+    # Create model
     model = helper.make_model(graph, producer_name="Neural")
-    propagator = ShapePropagator()
-    current_input_shape = model_data['input']['shape']
-
-    for layer in model_data['layers']:
-        current_input_shape = propagator.propagate(current_input_shape, layer, framework='tensorflow')
-        if layer.get('type') == 'Conv2D':
-            params = layer.get('params', {})
-            node = helper.make_node(
-                'Conv', ['input'], [f"conv_{id(layer)}"],
-                kernel_shape=[params.get('kernel_size', 3)] * 2 if isinstance(params.get('kernel_size'), int) else params.get('kernel_size', [3, 3]),
-                pads=[0, 0, 0, 0],
-                strides=[params.get('strides', 1)] * 2 if isinstance(params.get('strides'), int) else params.get('strides', [1, 1])
-            )
-            graph.node.append(node)
-    onnx.checker.check_model(model)
+    model.opset_import[0].version = 13  # Use a stable opset version
+    
     return model
 
 def export_onnx(model_data: Dict[str, Any], filename: str = "model.onnx") -> str:
@@ -403,3 +400,59 @@ def export_onnx(model_data: Dict[str, Any], filename: str = "model.onnx") -> str
     model = generate_onnx(model_data)
     onnx.save(model, filename)
     return f"ONNX model saved to {filename}"
+
+def generate_tensorflow_layer(layer_type, params):
+    """Generate TensorFlow layer code"""
+    if layer_type == "Conv2D":
+        filters = params.get("filters", 32)
+        kernel_size = params.get("kernel_size", (3, 3))
+        return f"layers.Conv2D(filters={filters}, kernel_size={kernel_size})"
+    elif layer_type == "Dense":
+        units = params.get("units", 64)
+        return f"layers.Dense(units={units})"
+    elif layer_type == "BatchNormalization":
+        return "layers.BatchNormalization()"
+    elif layer_type == "MaxPooling2D":
+        pool_size = params.get("pool_size", (2, 2))
+        return f"layers.MaxPooling2D(pool_size={pool_size})"
+    elif layer_type == "AveragePooling2D":
+        pool_size = params.get("pool_size", (2, 2))
+        return f"layers.AveragePooling2D(pool_size={pool_size})"
+    elif layer_type == "Flatten":
+        return "layers.Flatten()"
+    elif layer_type == "LSTM":
+        units = params.get("units", 128)
+        return_sequences = params.get("return_sequences", False)
+        return f"layers.LSTM(units={units}, return_sequences={str(return_sequences)})"
+    elif layer_type == "GRU":
+        units = params.get("units", 64)
+        return f"layers.GRU(units={units})"
+    else:
+        warnings.warn(f"Unsupported layer type '{layer_type}' for tensorflow. Skipping.")
+        return None
+
+def generate_pytorch_layer(layer_type, params, input_shape=None):
+    """Generate PyTorch layer code"""
+    if layer_type == "Conv2D":
+        in_channels = input_shape[3] if input_shape else 3
+        out_channels = params.get("filters", 32)
+        kernel_size = params.get("kernel_size", (3, 3))
+        return f"nn.Conv2d(in_channels={in_channels}, out_channels={out_channels}, kernel_size={kernel_size[0]})"
+    elif layer_type == "BatchNormalization":
+        num_features = params.get("filters", 64)
+        return f"nn.BatchNorm2d(num_features={num_features})"
+    elif layer_type == "Dense":
+        in_features = input_shape[-1] if input_shape else 64
+        out_features = params.get("units", 64)
+        return f"nn.Linear(in_features={in_features}, out_features={out_features})"
+    elif layer_type == "LSTM":
+        input_size = input_shape[-1] if input_shape else 32
+        hidden_size = params.get("units", 128)
+        return f"nn.LSTM(input_size={input_size}, hidden_size={hidden_size}, batch_first=True)"
+    elif layer_type == "GRU":
+        input_size = input_shape[-1] if input_shape else 32
+        hidden_size = params.get("units", 64)
+        return f"nn.GRU(input_size={input_size}, hidden_size={hidden_size}, batch_first=True)"
+    else:
+        warnings.warn(f"Unsupported layer type '{layer_type}' for pytorch. Skipping.")
+        return None
