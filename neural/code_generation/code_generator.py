@@ -25,7 +25,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
     for layer in model_data['layers']:
         if not isinstance(layer, dict) or 'type' not in layer:
             raise ValueError(f"Invalid layer format: {layer}")
-        multiply = layer.pop('multiply', 1)  # Default to 1 if 'multiply' absent
+        multiply = layer.pop('*', 1)  # Default to 1 if 'multiply' absent
         if not isinstance(multiply, int) or multiply < 1:
             raise ValueError(f"Invalid 'multiply' value: {multiply}")
         
