@@ -162,10 +162,9 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
 
         loss_value = model_data['loss']['value'] if isinstance(model_data['loss'], dict) else model_data['loss']
         code += (
-            f"\nmodel.compile(\n"
-            f"    loss='{loss_value}',\n"
-            f"    optimizer={optimizer_type}({', '.join(opt_params)}),\n"
-            f"    metrics=['accuracy']\n"
+            f"model.compile("
+            f"loss='{loss_value}',"
+            f" optimizer={optimizer_type}({', '.join(opt_params)})"
             f")\n"
         )
         
