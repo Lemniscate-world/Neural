@@ -232,6 +232,13 @@ class TransformerEncoder(layers.Layer):
             elif layer_type == 'Flatten':
                 layers_code.append(f"# Flatten layer\n{layer_name}_flatten = nn.Flatten()")
                 forward_code_body.append(f"x = self.layer{i}_flatten(x)")
+            elif layer_type == 'MaxPooling2D':
+                pool_size = params.get('pool_size', 2)
+                layers_code.append(f"{layer_name}_pool = nn.MaxPool2d(kernel_size={pool_size})")
+            elif layer_type == 'AveragePooling2D':
+                pool_size = params.get('pool_size', 2)
+                layers_code.append(f"{layer_name}_pool = nn.AvgPool2d(kernel_size={pool_size})")
+            
             elif layer_type in ['Dense', 'Output']:
                 units = params.get('units')
                 activation = params.get('activation', 'relu' if layer_type == 'Dense' else 'linear')
