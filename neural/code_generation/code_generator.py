@@ -169,6 +169,8 @@ class TransformerEncoder(layers.Layer):
             if 'training_config' in model_data and model_data['training_config'].get('mixed_precision', False):
                 code = "from tensorflow.keras.mixed_precision import set_global_policy\n" + code
                 code += "set_global_policy('mixed_float16')\n"
+            if 'training_config' in model_data and 'save_path' in model_data['training_config']:
+                code += f"model.save('{model_data['training_config']['save_path']}')\n"
         return code
 
     elif backend == "pytorch":
@@ -334,7 +336,11 @@ class TransformerEncoder(layers.Layer):
             if 'training_config' in model_data and model_data['training_config'].get('mixed_precision', False):
                 code += "from torch.cuda.amp import autocast\n"
                 code = code.replace("outputs = model(batch_x)", "with autocast():\n            outputs = model(batch_x)")
+            if 'training_config' in model_data and 'save_path' in model_data['training_config']:
+                code += f"torch.save(model.state_dict(), '{model_data['training_config']['save_path']}')\n"
+            
             code += "# Note: Replace 'dataset' with your actual dataset\n"
+
 
         return code
 
