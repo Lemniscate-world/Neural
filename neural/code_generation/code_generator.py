@@ -135,6 +135,11 @@ class TransformerEncoder(layers.Layer):
                 units = params.get('units', 64)
                 return_seq = params.get('return_sequences', False)
                 code += f"x = layers.{layer_type}(units={units}, return_sequences={return_seq})(x)\n"            
+            elif layer_type == 'BatchNormalization':
+                momentum = params.get('momentum', 0.99)
+                epsilon = params.get('epsilon', 1e-3)
+                code += f"x = layers.BatchNormalization(momentum={momentum}, epsilon={epsilon})(x)\n"
+  
             elif layer_type == 'Output':
                 code += f"# Output layer with {params.get('units', 10)} units\n"
                 code += f"outputs = layers.Dense({params.get('units', 10)}, activation='{params.get('activation', 'softmax')}')(x)\n"
@@ -247,7 +252,10 @@ class TransformerEncoder(layers.Layer):
                 in_features = current_input_shape[-1]
                 layers_code.append(f"{layer_name} = nn.{layer_type}(input_size={in_features}, hidden_size={units}, batch_first=True)")
                 forward_code_body.append(f"x, _ = self.layer{i}(x)" if layer_type == 'LSTM' else f"x = self.layer{i}(x)")
-            
+            elif layer_type == 'BatchNormalization':
+                momentum = params.get('momentum', 0.1)  # PyTorch uses 1 - TF's momentum
+                epsilon = params.get('epsilon', 1e-5)
+                layers_code.append(f"{layer_name}_bn = nn.BatchNorm2d(num_features={current_input_shape[-1]}, momentum={momentum}, eps={epsilon})")
             elif layer_type in ['Dense', 'Output']:
                 units = params.get('units')
                 activation = params.get('activation', 'relu' if layer_type == 'Dense' else 'linear')
