@@ -152,10 +152,12 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                 opt_params.append(f"{k}='{v}'")
             else:
                 opt_params.append(f"{k}={v}")
-        
+
+
+        loss_value = model_data['loss']['value'] if isinstance(model_data['loss'], dict) else model_data['loss']
         code += (
             f"\nmodel.compile(\n"
-            f"    loss='{model_data['loss']}',\n"
+            f"    loss='{loss_value}',\n"
             f"    optimizer=tf.keras.optimizers.{optimizer_config['type']}({', '.join(opt_params)}),\n"
             f"    metrics=['accuracy']\n"
             f")\n"
