@@ -37,6 +37,10 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
 
     if backend == "tensorflow":
 
+
+        # Extract optimizer type
+        optimizer_type = model_data['optimizer']['type'] if isinstance(model_data['optimizer'], dict) else model_data['optimizer']
+
         # Update imports to include the specific optimizer
         code = f"import tensorflow as tf\nfrom tensorflow.keras import layers\nfrom tensorflow.keras.optimizers import {optimizer_type}\n\n"
 
@@ -155,13 +159,12 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
             else:
                 opt_params.append(f"{k}={v}")
 
-        # Extract optimizer type
-        optimizer_type = model_data['optimizer']['type'] if isinstance(model_data['optimizer'], dict) else model_data['optimizer']
+
         loss_value = model_data['loss']['value'] if isinstance(model_data['loss'], dict) else model_data['loss']
         code += (
             f"\nmodel.compile(\n"
             f"    loss='{loss_value}',\n"
-            f"    optimizer=tf.keras.optimizers.{optimizer_type}({', '.join(opt_params)}),\n"
+            f"    optimizer={optimizer_type}({', '.join(opt_params)}),\n"
             f"    metrics=['accuracy']\n"
             f")\n"
         )
