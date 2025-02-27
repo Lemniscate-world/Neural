@@ -36,8 +36,14 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
     model_data['layers'] = expanded_layers
 
     if backend == "tensorflow":
-        code = "import tensorflow as tf\nfrom tensorflow.keras import layers\n\n"
-        
+
+
+        # Extract optimizer type
+        optimizer_type = model_data['optimizer']['type'] if isinstance(model_data['optimizer'], dict) else model_data['optimizer']
+
+        # Update imports to include the specific optimizer
+        code = f"import tensorflow as tf\nfrom tensorflow.keras import layers\nfrom tensorflow.keras.optimizers import {optimizer_type}\n\n"
+
         # Generate TransformerEncoder class only if needed
         if any(l['type'] == 'TransformerEncoder' for l in expanded_layers):
             code += """class TransformerEncoder(layers.Layer):
@@ -158,7 +164,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         code += (
             f"\nmodel.compile(\n"
             f"    loss='{loss_value}',\n"
-            f"    optimizer=tf.keras.optimizers.{optimizer_config['type']}({', '.join(opt_params)}),\n"
+            f"    optimizer=tf.keras.optimizers.{optimizer_type}({', '.join(opt_params)}),\n"
             f"    metrics=['accuracy']\n"
             f")\n"
         )
