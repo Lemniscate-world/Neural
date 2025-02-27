@@ -117,15 +117,17 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         layers_code = []
         forward_code_body = []
 
+        layer_counts = {}  # Track layer counts for unique naming
+        
         for i, layer in enumerate(expanded_layers):
             layer_type = layer['type']
-            params = layer.get('params', {}).copy()  # Make a copy of params
+            params = layer.get('params', {}).copy()
             
             if layer_type == "Residual":
                 sub_layers = []
                 for sub_layer in layer.get('sub_layers', []):
                     sub_type = sub_layer['type']
-                    sub_params = sub_layer.get('params', {}).copy()  # Make a copy
+                    sub_params = sub_layer.get('params', {}).copy()
                     sub_layer_code = generate_pytorch_layer(sub_type, sub_params, current_input_shape)
                     if sub_layer_code:
                         sub_layers.append(sub_layer_code)
@@ -140,16 +142,18 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                     forward_code_body.append(f"x = x + identity")
             else:
                 layer_name = f"layer{i}"
+                layer_counts[layer_type] = layer_counts.get(layer_type, -1) + 1
+                
                 if layer_type == "Dense":
-                    layer_name += "_dense"
+                    layer_name = f"layer{i}_dense_{layer_counts[layer_type]}"
                 elif layer_type == "Conv2D":
-                    layer_name += "_conv"
+                    layer_name = f"layer{i}_conv_{layer_counts[layer_type]}"
                 elif layer_type == "BatchNormalization":
-                    layer_name += "_bn"
+                    layer_name = f"layer{i}_bn_{layer_counts[layer_type]}"
                 elif layer_type == "MaxPooling2D":
-                    layer_name += "_pool"
+                    layer_name = f"layer{i}_pool_{layer_counts[layer_type]}"
                 elif layer_type == "Dropout":
-                    layer_name += "_dropout"
+                    layer_name = f"layer{i}_dropout_{layer_counts[layer_type]}"
                 
                 layer_code = generate_pytorch_layer(layer_type, params, current_input_shape)
                 if layer_code:
@@ -353,17 +357,17 @@ def generate_tensorflow_layer(layer_type, params):
 def generate_pytorch_layer(layer_type, params, input_shape=None):
     """Generate PyTorch layer code"""
     if layer_type == "Conv2D":
-        in_channels = input_shape[3] if input_shape and len(input_shape) > 3 else 3  # Changed to use last channel dim
+        in_channels = input_shape[3] if input_shape and len(input_shape) > 3 else 3  # Use channels_last format
         out_channels = params.get("filters", 32)
         kernel_size = params.get("kernel_size", 3)
         # Handle both tuple/list and integer kernel sizes
         if isinstance(kernel_size, (tuple, list)):
             kernel_size = kernel_size[0]  # Use first element for both dimensions
-        return f"nn.Conv2d(in_channels={in_channels}, out_channels={out_channels}, kernel_size={kernel_size}, padding={kernel_size // 2})"
+        return f"nn.Conv2d(in_channels={in_channels}, out_channels={out_channels}, kernel_size={kernel_size})"
     elif layer_type == "BatchNormalization":
-        num_features = input_shape[3] if input_shape and len(input_shape) > 3 else params.get("filters", 3)  # Changed to use last channel dim
-        momentum = params.get("momentum", 0.9)  # Changed default to match test
-        eps = params.get("epsilon", 0.001)  # Changed default to match test
+        num_features = input_shape[3] if input_shape and len(input_shape) > 3 else 3  # Use channels_last format
+        momentum = params.get("momentum", 0.9)
+        eps = params.get("epsilon", 0.001)
         return f"nn.BatchNorm2d(num_features={num_features}, momentum={momentum}, eps={eps})"
     elif layer_type == "Dense":
         in_features = np.prod(input_shape[1:]) if input_shape else 64
@@ -384,7 +388,7 @@ def generate_pytorch_layer(layer_type, params, input_shape=None):
         pool_size = params.get("pool_size", 2)
         # Handle both tuple/list and integer pool sizes
         if isinstance(pool_size, (tuple, list)):
-            pool_size = pool_size[0]  # Use first element for both dimensions
+            pool_size = pool_size if len(pool_size) == 2 else (pool_size[0], pool_size[0])
         strides = params.get("strides", None)
         if strides:
             return f"nn.MaxPool2d(kernel_size={pool_size}, stride={strides})"
@@ -393,7 +397,7 @@ def generate_pytorch_layer(layer_type, params, input_shape=None):
         pool_size = params.get("pool_size", 2)
         # Handle both tuple/list and integer pool sizes
         if isinstance(pool_size, (tuple, list)):
-            pool_size = pool_size[0]  # Use first element for both dimensions
+            pool_size = pool_size if len(pool_size) == 2 else (pool_size[0], pool_size[0])
         return f"nn.AvgPool2d(kernel_size={pool_size})"
     elif layer_type == "Flatten":
         return "nn.Flatten()"
