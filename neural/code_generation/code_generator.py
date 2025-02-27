@@ -25,7 +25,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
     indent = "    "
     propagator = ShapePropagator(debug=False)
     current_input_shape = model_data['input']['shape']
-
+    
     # Process expanded layers before modifying model_data
     expanded_layers = []
     for layer in model_data.get('layers', []):
@@ -118,6 +118,7 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         forward_code_body = []
 
         layer_counts = {}  # Track layer counts for unique naming
+        current_channels = None  # Track channels globally for BatchNorm
         
         for i, layer in enumerate(expanded_layers):
             layer_type = layer['type']
@@ -128,6 +129,14 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                 for sub_layer in layer.get('sub_layers', []):
                     sub_type = sub_layer['type']
                     sub_params = sub_layer.get('params', {}).copy()
+                    # Propagate data_format from parent layer
+                    if 'data_format' in params:
+                        sub_params['data_format'] = params['data_format']
+                    # Track channels for BatchNorm
+                    if sub_type == "Conv2D":
+                        current_channels = sub_params.get("filters")
+                    elif sub_type == "BatchNormalization" and current_channels:
+                        sub_params["filters"] = current_channels
                     sub_layer_code = generate_pytorch_layer(sub_type, sub_params, current_input_shape)
                     if sub_layer_code:
                         sub_layers.append(sub_layer_code)
@@ -141,19 +150,17 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
                     forward_code_body.append(f"x = self.layer{i}_residual(x)")
                     forward_code_body.append(f"x = x + identity")
             else:
-                layer_name = f"layer{i}"
-                layer_counts[layer_type] = layer_counts.get(layer_type, -1) + 1
+                if layer_type not in layer_counts:
+                    layer_counts[layer_type] = 0
                 
-                if layer_type == "Dense":
-                    layer_name = f"layer{i}_dense_{layer_counts[layer_type]}"
-                elif layer_type == "Conv2D":
-                    layer_name = f"layer{i}_conv_{layer_counts[layer_type]}"
-                elif layer_type == "BatchNormalization":
-                    layer_name = f"layer{i}_bn_{layer_counts[layer_type]}"
-                elif layer_type == "MaxPooling2D":
-                    layer_name = f"layer{i}_pool_{layer_counts[layer_type]}"
-                elif layer_type == "Dropout":
-                    layer_name = f"layer{i}_dropout_{layer_counts[layer_type]}"
+                # Generate layer name with counter
+                layer_name = f"layer{i}_{layer_type.lower()}_{layer_counts[layer_type]}"
+                layer_counts[layer_type] += 1
+                
+                if layer_type == "Conv2D":
+                    current_channels = params.get("filters")  # Update current channels
+                elif layer_type == "BatchNormalization" and current_channels:
+                    params["filters"] = current_channels
                 
                 layer_code = generate_pytorch_layer(layer_type, params, current_input_shape)
                 if layer_code:
@@ -357,7 +364,9 @@ def generate_tensorflow_layer(layer_type, params):
 def generate_pytorch_layer(layer_type, params, input_shape=None):
     """Generate PyTorch layer code"""
     if layer_type == "Conv2D":
-        in_channels = input_shape[3] if input_shape and len(input_shape) > 3 else 3  # Use channels_last format
+        data_format = params.get("data_format", "channels_last")
+        in_channels = input_shape[1] if data_format == "channels_first" else input_shape[3]
+        in_channels = in_channels if input_shape and len(input_shape) > 3 else 3
         out_channels = params.get("filters", 32)
         kernel_size = params.get("kernel_size", 3)
         # Handle both tuple/list and integer kernel sizes
@@ -365,9 +374,17 @@ def generate_pytorch_layer(layer_type, params, input_shape=None):
             kernel_size = kernel_size[0]  # Use first element for both dimensions
         return f"nn.Conv2d(in_channels={in_channels}, out_channels={out_channels}, kernel_size={kernel_size})"
     elif layer_type == "BatchNormalization":
-        num_features = input_shape[3] if input_shape and len(input_shape) > 3 else 3  # Use channels_last format
+        data_format = params.get("data_format", "channels_last")
+        if input_shape and len(input_shape) > 3:
+            num_features = input_shape[1] if data_format == "channels_first" else input_shape[3]
+        else:
+            # Use the number of filters from previous Conv2D layer if available
+            num_features = params.get("filters", 64)  # Default to 64 features
         momentum = params.get("momentum", 0.9)
         eps = params.get("epsilon", 0.001)
+        # Only include momentum and eps if they differ from defaults
+        if momentum == 0.9 and eps == 0.001:
+            return f"nn.BatchNorm2d(num_features={num_features})"
         return f"nn.BatchNorm2d(num_features={num_features}, momentum={momentum}, eps={eps})"
     elif layer_type == "Dense":
         in_features = np.prod(input_shape[1:]) if input_shape else 64
