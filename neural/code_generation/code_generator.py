@@ -123,9 +123,19 @@ class TransformerEncoder(layers.Layer):
             elif layer_type == 'Dropout':
                 code += f"# Dropout layer with rate {params.get('rate', 0.5)}\n"
                 code += f"x = layers.Dropout(rate={params.get('rate', 0.5)})(x)\n"
+            elif layer_type == 'MaxPooling2D':
+                pool_size = params.get('pool_size', 2)
+                strides = params.get('strides', pool_size)
+                code += f"x = layers.MaxPooling2D(pool_size={pool_size}, strides={strides})(x)\n"
+            elif layer_type == 'AveragePooling2D':
+                pool_size = params.get('pool_size', 2)
+                strides = params.get('strides', pool_size)
+                code += f"x = layers.AveragePooling2D(pool_size={pool_size}, strides={strides})(x)\n"
+                        
             elif layer_type == 'Output':
                 code += f"# Output layer with {params.get('units', 10)} units\n"
                 code += f"outputs = layers.Dense({params.get('units', 10)}, activation='{params.get('activation', 'softmax')}')(x)\n"
+
 
         code += "\n# Build the model\nmodel = tf.keras.Model(inputs=inputs, outputs=outputs)\n"
         
