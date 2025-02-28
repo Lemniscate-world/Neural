@@ -483,12 +483,19 @@ class ModelTransformer(lark.Transformer):
             layer_def = self._extract_value(items[1])
             if isinstance(layer_def, dict):
                 # Store the layer definition in the macros dictionary
-                self.macros[macro_name] = layer_def
+                # Store both the original layer definition and a "macro" version
+                self.macros[macro_name] = {
+                    'original': layer_def,
+                    'macro': {
+                        'type': 'Macro',
+                        'params': macro_name
+                    }
+                }
         
         if not layer_def:
             self.raise_validation_error(f"Invalid macro definition for '{macro_name}'", items[0])
         
-        # Return the macro definition directly
+        # Return the original layer definition
         return layer_def
 
     def macro_ref(self, items):
@@ -497,22 +504,13 @@ class ModelTransformer(lark.Transformer):
         if macro_name not in self.macros:
             self.raise_validation_error(f"Undefined macro '{macro_name}'", items[0])
         
-        # Get the base macro definition
-        macro_def = self.macros[macro_name]
-        
-        # If there are additional parameters, merge them
-        if len(items) > 1:
-            new_params = self._extract_value(items[1])
-            if isinstance(new_params, dict):
-                # Create a copy of the original macro
-                macro_def = macro_def.copy()
-                if isinstance(macro_def.get('params'), dict):
-                    macro_def['params'] = macro_def['params'].copy()
-                    macro_def['params'].update(new_params)
-                else:
-                    macro_def['params'] = new_params
-        
-        return macro_def
+        # Get the macro definition based on context
+        if self.current_macro == 'define':
+            # When defining a macro, return the original layer definition
+            return self.macros[macro_name]['original']
+        else:
+            # When referencing a macro, return the macro version
+            return self.macros[macro_name]['macro']
 
     def layers(self, items):
         expanded_layers = []
