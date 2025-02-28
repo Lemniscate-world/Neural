@@ -40,7 +40,8 @@ Requires-Dist: multiprocess
 Requires-Dist: pysnooper
 
 
-  ![Design sans titre (1) (1)](https://github.com/user-attachments/assets/cb351971-ba3d-4391-9401-25cf2ccfeca9)
+  ![Design sans titre (2)](https://github.com/user-attachments/assets/8738c025-7081-47da-b825-9cc5e038a86c)
+
 
 
 Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
@@ -98,7 +99,7 @@ NeuralDbg provides **real-time execution tracing, profiling, and debugging**, al
 
 ## 📦 Installation
 
-```bash
+
 # Clone the repository
 git clone https://github.com/yourusername/neural.git
 cd neural
@@ -109,12 +110,15 @@ source venv/bin/activate  # Linux/macOS
 venv\Scripts\activate     # Windows
 
 # Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
 ```bash
 pip install neural-dsl
-``̀
+```
+
 see v0.1.1 for bug fixes
 
 **Prerequisites**: Python 3.8+, pip
@@ -124,6 +128,7 @@ see v0.1.1 for bug fixes
 ### 1. Define a Model
 
 Create `mnist.neural`:
+
 ```yaml
 network MNISTClassifier {
   input: (28, 28, 1)  # Channels-last format
@@ -166,6 +171,7 @@ neural compile mnist.neural --backend pytorch --output mnist_torch.py
 ```bash
 neural visualize mnist.neural --format png
 ```
+
 This will create architecture.png, shape_propagation.html, and tensor_flow.html for inspecting the network structure and shape propagation.
 
 ![MNIST Architecture]()
@@ -175,6 +181,7 @@ This will create architecture.png, shape_propagation.html, and tensor_flow.html 
 ```bash
 neural debug mnist.neural
 ```
+
 Open your browser to http://localhost:8050 to monitor execution traces, gradients, and anomalies interactively.
 
 ### 6. Use The No-Code Interface
@@ -182,6 +189,7 @@ Open your browser to http://localhost:8050 to monitor execution traces, gradient
 ```bash
 neural --no_code
 ```
+
 Open your browser to http://localhost:8051 to build and compile models via a graphical interface.
 
 ---
@@ -291,7 +299,7 @@ pre-commit install  # Auto-format code on commit
 
 ## 📬 Community
 
-- [Discord Server](https://discord.gg/your-invite-link): Chat with developers
+- [Discord Server](https://discord.gg/645a6Yd5): Chat with developers
 - [Twitter @NLang4438](https://x.com/NLang4438): Updates & announcements
 
 
