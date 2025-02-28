@@ -81,6 +81,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         TRANSFORMER: "Transformer"
         TRANSFORMER_ENCODER: "TransformerEncoder"
         TRANSFORMER_DECODER: "TransformerDecoder"
+        OUTPUT: "Output"
         VARIABLE: /[a-zA-Z_][a-zA-Z0-9_]*/
         STRING: "\"" /[^"]+/ "\"" | "\'" /[^']+/ "\'"
         %ignore /\#[^\n]*/  // Ignore line comments              
@@ -95,7 +96,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         %ignore WS
 
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /[A-Z][a-zA-Z0-9]*(?<!Layer)/  // Matches names not ending with "Layer"
+        MACRO_NAME: /(?!Output$)[A-Z][a-zA-Z0-9]*(?<!Layer)/  // Matches names not ending with "Layer"
 
         ?start: network | layer | research
 
@@ -243,7 +244,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         l2: "L2(" named_params ")"
         l1_l2: "L1L2(" named_params ")"
 
-        output: "Output(" named_params ")"
+        output: OUTPUT "(" named_params ")"
 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
         conv1d: "Conv1D" "(" param_style1 ")"
@@ -392,7 +393,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         define: "define" NAME "{" layer "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")"
         
-        ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom_or_macro | wrapper | lambda_)
+        ?layer: (output | basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom_or_macro | wrapper | lambda_)
         ?custom_or_macro: custom | macro_ref
         custom: CUSTOM_LAYER "(" param_style1 ")"
 
