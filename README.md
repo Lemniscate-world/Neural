@@ -1,5 +1,6 @@
 
-  ![Design sans titre (1) (1)](https://github.com/user-attachments/assets/cb351971-ba3d-4391-9401-25cf2ccfeca9)
+  ![Design sans titre (2)](https://github.com/user-attachments/assets/8738c025-7081-47da-b825-9cc5e038a86c)
+
 
 
 Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
