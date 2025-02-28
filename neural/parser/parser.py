@@ -82,6 +82,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         TRANSFORMER_ENCODER: "TransformerEncoder"
         TRANSFORMER_DECODER: "TransformerDecoder"
         OUTPUT: "Output"
+        CONV2DTRANSPOSE: "Conv2DTranspose"
         VARIABLE: /[a-zA-Z_][a-zA-Z0-9_]*/
         STRING: "\"" /[^"]+/ "\"" | "\'" /[^']+/ "\'"
         %ignore /\#[^\n]*/  // Ignore line comments              
@@ -96,7 +97,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         %ignore WS
 
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /(?!Output$)[A-Z][a-zA-Z0-9]*(?<!Layer)/  // Matches names not ending with "Layer"
+        MACRO_NAME: /(?!Output|Conv2DTranspose$)[A-Z][a-zA-Z0-9]*(?<!Layer)/  // Matches names not ending with "Layer"
 
         ?start: network | layer | research
 
