@@ -220,8 +220,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         input_layer: "input" ":" shape ("," shape)*
         shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
         number_or_none: number | "NONE" | "None"
-        layers: "layers" ":" _NL* (layer_or_repeated _NL*)*
-        layer_or_repeated: layer | layer "*" INT
+        layers: "layers" ":" (_NL* layer_or_repeated)* _NL*
+        layer_or_repeated: layer ["*" INT]  
 
         lambda_: "Lambda" "(" STRING ")"
         wrapper: "TimeDistributed" "(" layer ["," named_params] ")"
@@ -532,9 +532,9 @@ class ModelTransformer(lark.Transformer):
         return expanded_layers
 
     def layer_or_repeated(self, items):
-        if len(items) == 3 and items[1] == "*":
-            return (items[0], int(items[2]))  # Return (layer, count)
-        return items[0]  # Normal layer
+        if len(items) == 2:  # layer and multiplier
+            return (items[0], int(items[1]))
+        return items[0]  # single layer
 
     def wrapper(self, items):
         wrapper_type = items[0]
