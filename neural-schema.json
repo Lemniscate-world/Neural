@@ -1,0 +1,221 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Neural DSL Schema",
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": ["model"]
+      },
+      "name": {
+        "type": "string"
+      },
+      "input": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {"type": "integer", "minimum": 1},
+                  {"type": "null"}
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "layers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Conv1D", "Conv2D", "Conv3D", "LSTM", "GRU", "TransformerEncoder",
+                "Dropout", "Flatten", "Dense", "MaxPooling2D", "BatchNormalization",
+                "ResidualConnection", "GlobalAveragePooling2D", "Lambda"
+              ]
+            },
+            "params": {
+              "type": "object",
+              "properties": {
+                "filters": {
+                  "oneOf": [
+                    {"type": "integer", "minimum": 1},
+                    {"$ref": "#/definitions/hpo"}
+                  ]
+                },
+                "kernel_size": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {"type": "integer", "minimum": 1},
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    {"$ref": "#/definitions/hpo"}
+                  ]
+                },
+                "units": {
+                  "oneOf": [
+                    {"type": "integer", "minimum": 1},
+                    {"$ref": "#/definitions/hpo"}
+                  ]
+                },
+                "num_heads": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "ff_dim": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "rate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "activation": {"type": "string"},
+                "strides": {
+                  "oneOf": [
+                    {"type": "integer", "minimum": 1},
+                    {"type": "array", "items": {"type": "integer", "minimum": 1}}
+                  ]
+                },
+                "pool_size": {
+                  "type": "array",
+                  "items": {"type": "integer", "minimum": 1}
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "required": ["type"],
+          "allOf": [
+            {
+              "if": {
+                "properties": {"type": {"const": "Conv2D"}},
+                "required": ["type"]
+              },
+              "then": {
+                "required": ["filters", "kernel_size"]
+              }
+            },
+            {
+              "if": {
+                "properties": {"type": {"const": "TransformerEncoder"}},
+                "required": ["type"]
+              },
+              "then": {
+                "required": ["num_heads", "ff_dim"]
+              }
+            }
+          ]
+        }
+      },
+      "loss": {
+        "type": "string"
+      },
+      "optimizer": {
+        "type": "object",
+        "properties": {
+          "type": {"type": "string"},
+          "params": {
+            "type": "object",
+            "properties": {
+              "learning_rate": {
+                "oneOf": [
+                  {"type": "number"},
+                  {"$ref": "#/definitions/hpo"}
+                ]
+              }
+            }
+          }
+        }
+      },
+      "training_config": {
+        "type": "object",
+        "properties": {
+          "epochs": {"type": "integer", "minimum": 1},
+          "batch_size": {
+            "oneOf": [
+              {"type": "integer", "minimum": 1},
+              {"$ref": "#/definitions/hpo"}
+            ]
+          },
+          "validation_split": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "search_method": {"type": "string"}
+        }
+      },
+      "execution_config": {
+        "type": "object",
+        "properties": {
+          "device": {
+            "type": "string",
+            "enum": ["cpu", "cuda", "tpu"]
+          }
+        }
+      }
+    },
+    "required": ["type", "name", "input", "layers", "loss", "optimizer"],
+    "definitions": {
+      "hpo": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["categorical", "range", "log_range"]
+          },
+          "values": {
+            "type": "array",
+            "minItems": 1
+          },
+          "start": {"type": "number"},
+          "end": {"type": "number"},
+          "step": {"type": "number"},
+          "low": {"type": "number"},
+          "high": {"type": "number"}
+        },
+        "required": ["type"],
+        "oneOf": [
+          {
+            "properties": {
+              "type": {"const": "categorical"},
+              "values": {"type": "array"}
+            },
+            "required": ["values"]
+          },
+          {
+            "properties": {
+              "type": {"const": "range"},
+              "start": {"type": "number"},
+              "end": {"type": "number"}
+            },
+            "required": ["start", "end"]
+          },
+          {
+            "properties": {
+              "type": {"const": "log_range"},
+              "low": {"type": "number", "minimum": 0},
+              "high": {"type": "number", "minimum": 0}
+            },
+            "required": ["low", "high"]
+          }
+        ]
+      }
+    }
+  }

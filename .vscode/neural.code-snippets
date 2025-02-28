@@ -1,0 +1,18 @@
+{
+    "Network Block": {
+      "prefix": "network",
+      "body": [
+        "network ${1:NetworkName} {",
+        "  input: (${2:32, 32, 3})",
+        "  layers:",
+        "    ${3:Dense(128, activation='relu')}",
+        "  loss: ${4:categorical_crossentropy}",
+        "  optimizer: ${5:adam}",
+        "}"
+      ]
+    },
+    "Dense Layer": {
+      "prefix": "dense",
+      "body": "Dense(${1:units}, activation='${2:relu}')"
+    }
+  }
