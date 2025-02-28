@@ -480,26 +480,27 @@ def driver():
     yield driver
     driver.quit()
 
-def test_dashboard_visualization():
+def test_dashboard_visualization(driver):  # Use pytest fixture
     # Initialize and start the Dash app
     server = Flask(__name__)
     app = Dash(__name__, server=server)
-    app.layout = html.Div("Test")  # Replace with your layout
-    try:
-        app.run_server(port=8050, debug=True, use_reloader=False)
-        time.sleep(2)  # Wait for server to start
-    except Exception as e:
-        pytest.fail(f"Failed to start server: {e}")
+    app.layout = html.Div("Test")
     
-    app.run_server(port=8050, debug=True, use_reloader=False)
+    # Start server in a separate thread
+    server_thread = threading.Thread(
+        target=app.run_server,
+        kwargs={'port': 8050, 'debug': False, 'use_reloader': False}
+    )
+    server_thread.daemon = True
+    server_thread.start()
+    time.sleep(2)  # Wait for server to start
 
-    # Configure ChromeDriver with Service
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service)  # Use Service object
-    
     try:
         driver.get("http://localhost:8050")
-        # Add assertions here (e.g., check page title)
+        # Add test assertions here
+        assert "NeuralDbg" in driver.title  # Example assertion
     finally:
+        # Cleanup - this will close the browser
         driver.quit()
-        app.server.stop()  # Stop the server after the test
+        # Forcefully stop the Flask server
+        requests.post('http://localhost:8050/_shutdown')
