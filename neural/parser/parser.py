@@ -94,6 +94,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         %import common.WS
         %ignore WS
 
+        CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
+        MACRO_NAME: /[A-Z][a-zA-Z0-9]*(?<!Layer)/  // Matches names not ending with "Layer"
+
         ?start: network | layer | research
 
         neural_file: network
@@ -387,11 +390,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         layer_choice: "HPO(choice(" layer ("," layer)* "))"
 
         define: "define" NAME "{" layer "}"
-        macro_ref: NAME ["(" [param_style1] ")"]
-        param_style1: named_params | (value ("," (value | named_param))* )
-
-        ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_ | macro_ref )
-        custom: NAME "(" param_style1 ")"
+        macro_ref: MACRO_NAME "(" [param_style1] ")"
+        
+        ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom_or_macro | wrapper | lambda_)
+        ?custom_or_macro: custom | macro_ref
+        custom: CUSTOM_LAYER "(" param_style1 ")"
 
         
         
@@ -471,15 +474,7 @@ class ModelTransformer(lark.Transformer):
         return layer_def
 
     def define(self, items):
-        """
-        Handle macro definitions in the DSL.
-        
-        Args:
-            items: List containing macro name and layer definition
-        
-        Returns:
-            dict: The layer definition
-        """
+        """Handle macro definitions"""
         macro_name = items[0].value
         layer_def = None
         
@@ -497,15 +492,7 @@ class ModelTransformer(lark.Transformer):
         return layer_def
 
     def macro_ref(self, items):
-        """
-        Handle macro references in the DSL.
-        
-        Args:
-            items: List containing the macro name and optional parameters
-        
-        Returns:
-            dict: The expanded macro definition with any additional parameters
-        """
+        """Handle macro references"""
         macro_name = items[0].value
         if macro_name not in self.macros:
             self.raise_validation_error(f"Undefined macro '{macro_name}'", items[0])
@@ -517,11 +504,12 @@ class ModelTransformer(lark.Transformer):
         if len(items) > 1:
             params = self._extract_value(items[1])
             if isinstance(params, dict):
-                if 'params' in macro_def:
+                if isinstance(macro_def.get('params'), dict):
                     macro_def['params'].update(params)
                 else:
                     macro_def['params'] = params
         
+        # Return the macro definition preserving the original layer type
         return macro_def
 
     def layers(self, items):
@@ -1458,7 +1446,10 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'L1L2', 'params': self._extract_value(items[0])}
 
     def custom(self, items):
-        return {'type': items[0].value, 'params': self._extract_value(items[1])}
+        """Handle custom layer definitions"""
+        layer_type = items[0].value  # Will include the "Layer" suffix
+        params = self._extract_value(items[1])
+        return {'type': layer_type, 'params': params}
 
     def named_layer(self, items):
         return {'type': items[0].value, 'params': self._extract_value(items[1])}
