@@ -451,24 +451,22 @@ class ModelTransformer(lark.Transformer):
 
 
     def define(self, items):
-        # Extract macro name and layers
+        # Récupérer le nom de la macro et les couches définies
         macro_name = items[0].value
-        layer_trees = items[1:]
-        # Transform each layer in the macro
-        transformed_layers = [self.transform(lt) for lt in layer_trees]
-        self.macros[macro_name] = transformed_layers
+        # Stocker la définition brute (non transformée) pour l'expansion future
+        self.macros[macro_name] = items[1:]
+        # La définition de la macro ne doit pas apparaître dans le modèle final
         return None  # Macro definition doesn't contribute to the model structure
 
     def macro_ref(self, items):
         macro_name = items[0].value
         if macro_name not in self.macros:
             self.raise_validation_error(f"Macro '{macro_name}' not defined", items[0])
-        # Return the stored layers to be expanded
-        return self.macros[macro_name]
-
-    def layer(self, items):
-        return self.visit(items[0])
-    
+        # Transformer chaque élément stocké pour obtenir les couches définies dans la macro
+        expanded_layers = [self.transform(layer) for layer in self.macros[macro_name]]
+        # Si la macro contient une seule couche, renvoyer directement cette couche
+        return expanded_layers if len(expanded_layers) != 1 else expanded_layers[0]
+        
     def layers(self, items):
         expanded_layers = []
         for item in items:
