@@ -225,7 +225,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         lambda_: "Lambda" "(" STRING ")"
         wrapper: "TimeDistributed" "(" layer ["," named_params] ")"
 
-        ?basic: conv | pooling | dropout | flatten | dense | output
         dropout: "Dropout" "(" dropout_params ")"
         dropout_params: FLOAT | named_params
         dense: "Dense" "(" dense_params ")"
@@ -393,7 +392,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         define: "define" NAME "{" layer "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")"
         
-        ?layer: (output | basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom_or_macro | wrapper | lambda_)
+        ?layer: (
+            conv | pooling | dropout | flatten | dense |  
+            output |  
+            recurrent | advanced | activation | merge | 
+            noise | norm_layer | regularization | 
+            custom_or_macro | wrapper | lambda_
+        )
         ?custom_or_macro: custom | macro_ref
         custom: CUSTOM_LAYER "(" param_style1 ")"
 
