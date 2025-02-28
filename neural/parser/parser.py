@@ -435,6 +435,7 @@ class ModelTransformer(lark.Transformer):
         super().__init__()
         self.variables = {}
         self.macros = {}
+        self.current_macro = None
 
     def raise_validation_error(self, msg, item=None, severity=Severity.ERROR):
         if item and hasattr(item, 'meta'):
@@ -449,24 +450,79 @@ class ModelTransformer(lark.Transformer):
             raise DSLValidationError(msg, severity, line, col)
         return {"warning": msg, "line": line, "column": col}  # Return for warnings
 
+    def _extract_layer_def(self, layer_item):
+        """
+        Helper method to extract layer definition from an item.
+        
+        Args:
+            layer_item: The layer item to process
+        
+        Returns:
+            dict: The processed layer definition
+        """
+        if layer_item is None:
+            return None
+            
+        layer_def = self._extract_value(layer_item)
+        if not isinstance(layer_def, dict):
+            self.raise_validation_error(f"Invalid layer definition: {layer_def}", layer_item)
+            
+        return layer_def
 
     def define(self, items):
-        # Récupérer le nom de la macro et les couches définies
+        """
+        Handle macro definitions in the DSL.
+        
+        Args:
+            items: List containing macro name and layer definitions
+        
+        Returns:
+            dict: The processed macro definition
+        """
         macro_name = items[0].value
-        # Stocker la définition brute (non transformée) pour l'expansion future
-        self.macros[macro_name] = items[1:]
-        # La définition de la macro ne doit pas apparaître dans le modèle final
-        return None  # Macro definition doesn't contribute to the model structure
+        layers = []
+        
+        # Process each layer in the macro definition
+        for layer_item in items[1:]:
+            if layer_item is not None:  # Skip None values
+                layer_def = self._extract_value(layer_item)
+                if isinstance(layer_def, dict):
+                    layers.append(layer_def)
+        
+        # Store the processed layers in the macros dictionary
+        self.macros[macro_name] = {
+            'type': 'macro',
+            'name': macro_name,
+            'layers': layers
+        }
+        
+        return self.macros[macro_name]
 
     def macro_ref(self, items):
-        macro_name = items[0].value
-        if macro_name not in self.macros:
-            self.raise_validation_error(f"Macro '{macro_name}' not defined", items[0])
-        # Transformer chaque élément stocké pour obtenir les couches définies dans la macro
-        expanded_layers = [self.transform(layer) for layer in self.macros[macro_name]]
-        # Si la macro contient une seule couche, renvoyer directement cette couche
-        return expanded_layers if len(expanded_layers) != 1 else expanded_layers[0]
+        """
+        Handle macro references in the DSL.
         
+        Args:
+            items: List containing the macro name reference
+        
+        Returns:
+            dict: The expanded macro definition
+        """
+        macro_name = items[0].value
+        if (macro_name not in self.macros):
+            self.raise_validation_error(f"Undefined macro '{macro_name}'", items[0])
+            
+        macro_def = self.macros[macro_name]
+        if not macro_def or 'layers' not in macro_def:
+            self.raise_validation_error(f"Invalid macro definition for '{macro_name}'", items[0])
+            
+        # Return a deep copy of the macro layers to prevent modifications to the original
+        return {
+            'type': 'macro_ref',
+            'name': macro_name,
+            'layers': macro_def['layers'].copy()
+        }
+
     def layers(self, items):
         expanded_layers = []
         for item in items:
@@ -1019,17 +1075,30 @@ class ModelTransformer(lark.Transformer):
         return {'loss': self._extract_value(items[0])}
 
     def network(self, items):
+        """
+        Process network definition including macro expansions.
+        """
         name = str(items[0].value)
         input_layer_config = self._extract_value(items[1])
-        layers_config = self._extract_value(items[2])
+        layers_config = []
+        
+        # Process layers, expanding macros as needed
+        raw_layers = self._extract_value(items[2])
+        for layer in raw_layers:
+            if isinstance(layer, dict) and layer.get('type') == 'macro_ref':
+                # Expand macro reference
+                layers_config.extend(layer['layers'])
+            else:
+                layers_config.append(layer)
+        
+        # Rest of the network processing...
         loss_config = self._extract_value(items[3])
         optimizer_config = self._extract_value(items[4])
         
         training_config = None
-        execution_config = {'params': {'device': 'auto'}}  # Default
+        execution_config = {'params': {'device': 'auto'}}
         
         for item in items[5:]:
-            # Items are already transformed, so check for dict
             if isinstance(item, dict):
                 if item.get('type') == 'training_config':
                     training_config = item.get('params')
@@ -1051,6 +1120,7 @@ class ModelTransformer(lark.Transformer):
             'training_config': training_config,
             'execution_config': execution_config.get('params', {'device': 'auto'})
         }
+
     def named_params(self, items):
         params = {}
         for item in items:
