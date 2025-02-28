@@ -487,7 +487,7 @@ def driver():
 def test_dashboard_visualization(driver):  # Use pytest fixture
     # Initialize and start the Dash app
     server = Flask(__name__)
-    app = Dash(__name__, server=server)
+    app = Dash(__name__, server=server, title="NeuralDbg")
     app.layout = html.Div("Test")
     
     # Start server in a separate thread
@@ -502,7 +502,7 @@ def test_dashboard_visualization(driver):  # Use pytest fixture
     try:
         driver.get("http://localhost:8050")
         # Add test assertions here
-        assert "NeuralDbg" in driver.title  # Example assertion
+        assert driver.title == "NeuralDbg" # Example assertion
     finally:
         # Cleanup - this will close the browser
         driver.quit()
