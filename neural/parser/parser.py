@@ -488,7 +488,7 @@ class ModelTransformer(lark.Transformer):
         if not layer_def:
             self.raise_validation_error(f"Invalid macro definition for '{macro_name}'", items[0])
         
-        # Return the layer definition directly
+        # Return the macro definition directly
         return layer_def
 
     def macro_ref(self, items):
@@ -498,18 +498,20 @@ class ModelTransformer(lark.Transformer):
             self.raise_validation_error(f"Undefined macro '{macro_name}'", items[0])
         
         # Get the base macro definition
-        macro_def = self.macros[macro_name].copy()
+        macro_def = self.macros[macro_name]
         
         # If there are additional parameters, merge them
         if len(items) > 1:
-            params = self._extract_value(items[1])
-            if isinstance(params, dict):
+            new_params = self._extract_value(items[1])
+            if isinstance(new_params, dict):
+                # Create a copy of the original macro
+                macro_def = macro_def.copy()
                 if isinstance(macro_def.get('params'), dict):
-                    macro_def['params'].update(params)
+                    macro_def['params'] = macro_def['params'].copy()
+                    macro_def['params'].update(new_params)
                 else:
-                    macro_def['params'] = params
+                    macro_def['params'] = new_params
         
-        # Return the macro definition preserving the original layer type
         return macro_def
 
     def layers(self, items):
