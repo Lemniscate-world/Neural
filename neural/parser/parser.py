@@ -477,7 +477,7 @@ class ModelTransformer(lark.Transformer):
             items: List containing macro name and layer definitions
         
         Returns:
-            dict: The processed macro definition
+            dict: The processed layer definition (not the macro wrapper)
         """
         macro_name = items[0].value
         layers = []
@@ -490,12 +490,18 @@ class ModelTransformer(lark.Transformer):
                     layers.append(layer_def)
         
         # Store the processed layers in the macros dictionary
-        self.macros[macro_name] = {
-            'type': 'macro',
-            'name': macro_name,
-            'layers': layers
-        }
+        if len(layers) == 1:
+            # For single layer macros, store just the layer definition
+            self.macros[macro_name] = layers[0]
+        else:
+            # For multi-layer macros, store as a macro type
+            self.macros[macro_name] = {
+                'type': 'macro',
+                'name': macro_name,
+                'layers': layers
+            }
         
+        # Return the stored macro definition
         return self.macros[macro_name]
 
     def macro_ref(self, items):
