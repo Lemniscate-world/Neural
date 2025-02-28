@@ -258,5 +258,5 @@ pre-commit install  # Auto-format code on commit
 
 ## 📬 Community
 
-- [Discord Server](https://discord.gg/your-invite-link): Chat with developers
+- [Discord Server](https://discord.gg/645a6Yd5): Chat with developers
 - [Twitter @NLang4438](https://x.com/NLang4438): Updates & announcements
