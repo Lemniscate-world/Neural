@@ -474,11 +474,14 @@ def test_dashboard_theme(dash_app):
 #### Testing Total Visualization ###
 ####################################
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def driver():
-    driver = webdriver.Chrome()
+    options = Options()
+    options.add_argument("--headless")  # Run browser in headless mode
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
     yield driver
-    driver.quit()
+    driver.quit()  # Ensure browser closes even if test fails
 
 def test_dashboard_visualization(driver):  # Use pytest fixture
     # Initialize and start the Dash app
