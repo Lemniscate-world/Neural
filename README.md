@@ -58,7 +58,7 @@ NeuralDbg provides **real-time execution tracing, profiling, and debugging**, al
 
 ## 📦 Installation
 
-```bash
+
 # Clone the repository
 git clone https://github.com/yourusername/neural.git
 cd neural
@@ -69,12 +69,15 @@ source venv/bin/activate  # Linux/macOS
 venv\Scripts\activate     # Windows
 
 # Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
 ```bash
 pip install neural-dsl
-``̀
+```
+
 see v0.1.1 for bug fixes
 
 **Prerequisites**: Python 3.8+, pip
@@ -84,6 +87,7 @@ see v0.1.1 for bug fixes
 ### 1. Define a Model
 
 Create `mnist.neural`:
+
 ```yaml
 network MNISTClassifier {
   input: (28, 28, 1)  # Channels-last format
@@ -126,6 +130,7 @@ neural compile mnist.neural --backend pytorch --output mnist_torch.py
 ```bash
 neural visualize mnist.neural --format png
 ```
+
 This will create architecture.png, shape_propagation.html, and tensor_flow.html for inspecting the network structure and shape propagation.
 
 ![MNIST Architecture]()
@@ -135,6 +140,7 @@ This will create architecture.png, shape_propagation.html, and tensor_flow.html 
 ```bash
 neural debug mnist.neural
 ```
+
 Open your browser to http://localhost:8050 to monitor execution traces, gradients, and anomalies interactively.
 
 ### 6. Use The No-Code Interface
@@ -142,6 +148,7 @@ Open your browser to http://localhost:8050 to monitor execution traces, gradient
 ```bash
 neural --no_code
 ```
+
 Open your browser to http://localhost:8051 to build and compile models via a graphical interface.
 
 ---
