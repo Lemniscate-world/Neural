@@ -386,8 +386,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         layer_choice: "HPO(choice(" layer ("," layer)* "))"
 
-        define: "define" NAME "{" layer+ "}"
-        macro_ref: NAME
+        define: "define" NAME "{" layer "}"
+        macro_ref: NAME ["(" [param_style1] ")"]
+        param_style1: named_params | (value ("," (value | named_param))* )
 
         ?layer: (basic | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom | wrapper | lambda_ | macro_ref )
         custom: NAME "(" param_style1 ")"
@@ -474,60 +475,54 @@ class ModelTransformer(lark.Transformer):
         Handle macro definitions in the DSL.
         
         Args:
-            items: List containing macro name and layer definitions
+            items: List containing macro name and layer definition
         
         Returns:
-            dict: The processed layer definition (not the macro wrapper)
+            dict: The layer definition
         """
         macro_name = items[0].value
-        layers = []
+        layer_def = None
         
-        # Process each layer in the macro definition
-        for layer_item in items[1:]:
-            if layer_item is not None:  # Skip None values
-                layer_def = self._extract_value(layer_item)
-                if isinstance(layer_def, dict):
-                    layers.append(layer_def)
+        # Process the layer definition
+        if len(items) > 1:
+            layer_def = self._extract_value(items[1])
+            if isinstance(layer_def, dict):
+                # Store the layer definition in the macros dictionary
+                self.macros[macro_name] = layer_def
         
-        # Store the processed layers in the macros dictionary
-        if len(layers) == 1:
-            # For single layer macros, store just the layer definition
-            self.macros[macro_name] = layers[0]
-        else:
-            # For multi-layer macros, store as a macro type
-            self.macros[macro_name] = {
-                'type': 'macro',
-                'name': macro_name,
-                'layers': layers
-            }
+        if not layer_def:
+            self.raise_validation_error(f"Invalid macro definition for '{macro_name}'", items[0])
         
-        # Return the stored macro definition
-        return self.macros[macro_name]
+        # Return the layer definition directly
+        return layer_def
 
     def macro_ref(self, items):
         """
         Handle macro references in the DSL.
         
         Args:
-            items: List containing the macro name reference
+            items: List containing the macro name and optional parameters
         
         Returns:
-            dict: The expanded macro definition
+            dict: The expanded macro definition with any additional parameters
         """
         macro_name = items[0].value
-        if (macro_name not in self.macros):
+        if macro_name not in self.macros:
             self.raise_validation_error(f"Undefined macro '{macro_name}'", items[0])
-            
-        macro_def = self.macros[macro_name]
-        if not macro_def or 'layers' not in macro_def:
-            self.raise_validation_error(f"Invalid macro definition for '{macro_name}'", items[0])
-            
-        # Return a deep copy of the macro layers to prevent modifications to the original
-        return {
-            'type': 'macro_ref',
-            'name': macro_name,
-            'layers': macro_def['layers'].copy()
-        }
+        
+        # Get the base macro definition
+        macro_def = self.macros[macro_name].copy()
+        
+        # If there are additional parameters, merge them
+        if len(items) > 1:
+            params = self._extract_value(items[1])
+            if isinstance(params, dict):
+                if 'params' in macro_def:
+                    macro_def['params'].update(params)
+                else:
+                    macro_def['params'] = params
+        
+        return macro_def
 
     def layers(self, items):
         expanded_layers = []
