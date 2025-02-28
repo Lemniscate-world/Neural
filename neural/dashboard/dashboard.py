@@ -27,7 +27,12 @@ from neural.dashboard.tensor_flow import create_animated_network
 server = Flask(__name__)
 
 # Dash app
-app = dash.Dash(__name__, server=server)
+app = dash.Dash(
+    __name__,
+    server=server,
+    title="NeuralDbg: Real-Time Execution Monitoring",
+    external_stylesheets=[themes.DARKLY]
+)
 
 # Initialize WebSocket Connection
 socketio = SocketIO(server, cors_allowed_origins=["http://localhost:8050"])
@@ -51,7 +56,6 @@ trace_data = []
 ########################################################################
 
 @socketio.on("request_trace_update")
-@pysnooper.snoop()
 def send_trace_update():
     global trace_data
     while True:
@@ -396,9 +400,9 @@ def update_resource_graph(n):
     )
     return [fig]
 
-################################
-### Tensor Flow Visualization###
-################################
+#################################
+### Tensor Flow Visualization ###
+#################################
 @app.callback(
     Output("tensor_flow_graph", "figure"),
     Input("interval_component", "n_intervals")
@@ -415,11 +419,6 @@ app = Dash(__name__, external_stylesheets=[themes.DARKLY])  # Darkly theme for D
 app.css.append_css({
     "external_url": "https://custom-theme.com/neural.css"  # Create this file or use inline CSS
 })
-
-###############################
-### 
-
-
 
 
 ########################
