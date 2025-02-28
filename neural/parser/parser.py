@@ -199,12 +199,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_int: NAME "=" INT | NAME ":" INT
         named_string: NAME "=" STRING | NAME ":" STRING
         named_float: NAME "=" FLOAT | NAME ":" FLOAT
+        named_layer: NAME "," explicit_tuple
         simple_number: number1
         rate: "rate" ":" FLOAT
         simple_float: FLOAT
         named_clipvalue: "clipvalue=" FLOAT
         named_clipnorm: "clipnorm=" FLOAT
-        ?named_param: ( rate | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value )
+        ?named_param: ( rate | named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value )
 
         ?param_style1: named_params | (value ("," (value | named_param))* )
 
@@ -371,7 +372,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         device_param: "device:" STRING
         
         CUSTOM_SHAPE: "CustomShape"
-        custom_shape: CUSTOM_SHAPE "(" NAME "," explicit_tuple ")"
+        self_defined_shape: CUSTOM_SHAPE named_layer
 
         math_expr: term (("+"|"-") term)*
         term: factor (("*"|"/") factor)*
@@ -433,6 +434,7 @@ class ModelTransformer(lark.Transformer):
     def __init__(self):
         super().__init__()
         self.variables = {}
+        self.macros = {}
 
     def raise_validation_error(self, msg, item=None, severity=Severity.ERROR):
         if item and hasattr(item, 'meta'):
@@ -449,11 +451,20 @@ class ModelTransformer(lark.Transformer):
 
 
     def define(self, items):
-        return self._extract_value(items[0])
+        # Extract macro name and layers
+        macro_name = items[0].value
+        layer_trees = items[1:]
+        # Transform each layer in the macro
+        transformed_layers = [self.transform(lt) for lt in layer_trees]
+        self.macros[macro_name] = transformed_layers
+        return None  # Macro definition doesn't contribute to the model structure
 
     def macro_ref(self, items):
-        params = self._extract_value(items[0])
-        return {'type': 'Macro', 'params':params}
+        macro_name = items[0].value
+        if macro_name not in self.macros:
+            self.raise_validation_error(f"Macro '{macro_name}' not defined", items[0])
+        # Return the stored layers to be expanded
+        return self.macros[macro_name]
 
     def layer(self, items):
         return self.visit(items[0])
@@ -461,7 +472,9 @@ class ModelTransformer(lark.Transformer):
     def layers(self, items):
         expanded_layers = []
         for item in items:
-            if isinstance(item, tuple) and len(item) == 2 and isinstance(item[1], int):
+            if isinstance(item, list):
+                expanded_layers.extend(item)
+            elif isinstance(item, tuple) and len(item) == 2 and isinstance(item[1], int):
                 layer, count = item
                 expanded_layers.extend([layer] * count)
             else:
@@ -1378,7 +1391,10 @@ class ModelTransformer(lark.Transformer):
     def custom(self, items):
         return {'type': items[0].value, 'params': self._extract_value(items[1])}
 
-    def custom_shape(self, items):
+    def named_layer(self, items):
+        return {'type': items[0].value, 'params': self._extract_value(items[1])}
+
+    def self_defined_shape(self, items):
         layer_name = self._extract_value(items[0])
         custom_dims = self._extract_value(items[1])
         return {"type": "CustomShape", "layer": layer_name, "custom_dims": custom_dims}
