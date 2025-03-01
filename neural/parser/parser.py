@@ -85,9 +85,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         CONV2DTRANSPOSE: "Conv2DTranspose"
         LSTM: "LSTM"
         GRU: "GRU"
-        SimpleRNN: "SimpleRNN"
-        SimpleRNNCell: "SimpleRNNCell"
+        OUTPUT: "Output"
+        DENSE: "Dense"
+        CONV1D: "Conv1D"
+        CONV2D: "Conv2D"
+        CONV3D: "Conv3D"
         LSTMCell: "LSTMCell"
+        SIMPLERNN: "SimpleRNN"
         GRUCell: "GRUCell"
         VARIABLE: /[a-zA-Z_][a-zA-Z0-9_]*/
         STRING: "\"" /[^"]+/ "\"" | "\'" /[^']+/ "\'"
@@ -103,7 +107,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         %ignore WS
 
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /(?!Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell)(?<!Layer)[A-Z][a-zA-Z0-9]*/
+        MACRO_NAME: /(?!Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
         ?start: network | layer | research
 
         neural_file: network
@@ -229,20 +233,20 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         layer_or_repeated: layer ["*" INT]  
 
         lambda_: "Lambda" "(" STRING ")"
-        wrapper: "TimeDistributed" "(" layer ["," named_params] ")"
+        wrapper: "TimeDistributed" "(" layer ["," named_params] ")" [layer_block]
 
         dropout: "Dropout" "(" dropout_params ")"
         dropout_params: FLOAT | named_params
-        dense: "Dense" "(" dense_params ")"
+        dense: DENSE "(" dense_params ")"
         dense_params: (NUMBER ("," (NUMBER | STRING | named_param))* ) | named_params
         flatten: "Flatten" "(" [named_params] ")"
 
         ?recurrent: rnn | bidirectional_rnn | conv_rnn | rnn_cell
         bidirectional_rnn: "Bidirectional(" rnn "," named_params ")"
         rnn: simple_rnn | lstm | gru
-        simple_rnn: "SimpleRNN(" named_params ")"
-        lstm: "LSTM" "(" named_params ")"
-        gru: "GRU" "(" named_params ")"
+        simple_rnn: SIMPLERNN "(" named_params ")"
+        lstm: LSTM "(" named_params ")"
+        gru: GRU "(" named_params ")"
 
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2
         l1: "L1(" named_params ")"
@@ -252,12 +256,12 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         output: OUTPUT "(" named_params ")"
 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
-        conv1d: "Conv1D" "(" param_style1 ")"
-        conv2d: "Conv2D" "(" param_style1 ")"
-        conv3d: "Conv3D" "(" param_style1 ")"
+        conv1d: CONV1D "(" param_style1 ")"
+        conv2d: CONV2D "(" param_style1 ")"
+        conv3d: CONV3D "(" param_style1 ")"
         conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
         conv1d_transpose: "Conv1DTranspose" "(" param_style1 ")"
-        conv2d_transpose: "Conv2DTranspose" "(" param_style1 ")"
+        conv2d_transpose: CONV2DTRANSPOSE "(" param_style1 ")"
         conv3d_transpose: "Conv3DTranspose" "(" param_style1 ")"
         depthwise_conv2d: "DepthwiseConv2D" "(" param_style1 ")"
         separable_conv2d: "SeparableConv2D" "(" param_style1 ")"
@@ -302,9 +306,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         conv_gru: "ConvGRU2D(" named_params ")"
 
         rnn_cell: simple_rnn_cell | lstm_cell | gru_cell
-        simple_rnn_cell: "SimpleRNNCell(" named_params ")"
-        lstm_cell: "LSTMCell(" named_params ")"
-        gru_cell: "GRUCell(" named_params ")"
+        simple_rnn_cell: "SimpleRNNCell" "(" named_params ")"
+        lstm_cell: LSTMCell "(" named_params ")"
+        gru_cell: GRUCell "(" named_params ")"
 
         dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
         simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" named_params ")"
@@ -323,11 +327,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         gru_cell_layer: "GRUCell(" named_params ")"
 
         ?advanced: ( attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic )
-        attention: "Attention" "(" [named_params] ")"
-        transformer: TRANSFORMER "(" [named_params] ")" 
-                    | TRANSFORMER_ENCODER "(" [named_params] ")" 
-                    | TRANSFORMER_DECODER "(" [named_params] ")"
-        residual: "ResidualConnection" "(" [named_params] ")"
+        attention: "Attention" "(" [named_params] ")" [layer_block]
+        transformer: TRANSFORMER "(" [named_params] ")" [layer_block]
+                    | TRANSFORMER_ENCODER "(" [named_params] ")" [layer_block]
+                    | TRANSFORMER_DECODER "(" [named_params] ")" [layer_block]
+        residual: "ResidualConnection" "(" [named_params] ")" [layer_block]
         inception: "Inception" "(" [named_params] ")"
         capsule: "CapsuleLayer" "(" [named_params] ")"
         squeeze_excitation: "SqueezeExcitation" "(" [named_params] ")"
@@ -395,13 +399,14 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         layer_choice: "HPO(choice(" layer ("," layer)* "))"
 
-        define: "define" NAME "{" layer "}"
-        macro_ref: MACRO_NAME "(" [param_style1] ")"
+        define: "define" NAME "{" (_NL* layer_or_repeated)* _NL* "}"
+        macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
-        ?layer: ( conv | pooling | dropout | flatten | dense | output | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom_or_macro | wrapper | lambda_ )
+        ?layer: ( conv | pooling | dropout | flatten | dense | output | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom_or_macro | wrapper | lambda_ ) [layer_block]
         ?custom_or_macro: custom | macro_ref
-        custom: CUSTOM_LAYER "(" param_style1 ")"
+        custom: CUSTOM_LAYER "(" param_style1 ")" [layer_block]
 
+        layer_block: "{" (_NL* layer_or_repeated)* _NL* "}"
         
         
 
@@ -480,43 +485,51 @@ class ModelTransformer(lark.Transformer):
         return layer_def
 
     def define(self, items):
-        """Handle macro definitions"""
         macro_name = items[0].value
-        layer_def = None
+        layers = self._extract_value(items[1])  # Expecting a list from layer_block
         
-        # Process the layer definition
-        if len(items) > 1:
-            layer_def = self._extract_value(items[1])
-            if isinstance(layer_def, dict):
-                # Store the layer definition in the macros dictionary
-                # Store both the original layer definition and a "macro" version
-                self.macros[macro_name] = {
-                    'original': layer_def,
-                    'macro': {
-                        'type': 'Macro',
-                        'params': macro_name
-                    }
-                }
+        if not layers:
+            self.raise_validation_error(f"Macro '{macro_name}' must define at least one layer", items[0])
         
-        if not layer_def:
-            self.raise_validation_error(f"Invalid macro definition for '{macro_name}'", items[0])
-        
-        # Return the original layer definition
-        return layer_def
+        self.macros[macro_name] = {
+            'original': layers if isinstance(layers, list) else [layers],
+            'macro': {'type': 'Macro', 'params': macro_name}
+        }
+        return layers  # Return the layers for potential immediate use
 
     def macro_ref(self, items):
-        """Handle macro references"""
         macro_name = items[0].value
         if macro_name not in self.macros:
             self.raise_validation_error(f"Undefined macro '{macro_name}'", items[0])
-        
-        # Get the macro definition based on context
-        if self.current_macro == 'define':
-            # When defining a macro, return the original layer definition
-            return self.macros[macro_name]['original']
+
+        params = self._extract_value(items[1]) if len(items) > 1 and items[1].data == 'param_style1' else {}
+        sub_layers = self._extract_value(items[2]) if len(items) > 2 and items[2].data == 'layer_block' else []
+
+        macro_def = self.macros[macro_name]['original']
+        if isinstance(macro_def, list):
+            # If macro defines multiple layers, return them with updated params and sub-layers
+            for layer in macro_def:
+                layer['params'].update(params)
+                if sub_layers:
+                    layer.setdefault('sublayers', []).extend(sub_layers)
+            return macro_def
         else:
-            # When referencing a macro, return the macro version
-            return self.macros[macro_name]['macro']
+            # Single layer macro
+            macro_def['params'].update(params)
+            if sub_layers:
+                macro_def.setdefault('sublayers', []).extend(sub_layers)
+            return macro_def
+        
+    def layer_block(self, items):
+        """Process a block of nested layers."""
+        sub_layers = []
+        for item in items:
+            if isinstance(item, tuple) and len(item) == 2 and isinstance(item[1], int):
+                layer, count = item
+                sub_layers.extend([layer] * count)
+            else:
+                sub_layers.append(item)
+        return sub_layers
 
     def layers(self, items):
         expanded_layers = []
@@ -534,13 +547,6 @@ class ModelTransformer(lark.Transformer):
         if len(items) == 2:  # layer and multiplier
             return (items[0], int(items[1]))
         return items[0]  # single layer
-
-    def wrapper(self, items):
-        wrapper_type = items[0]
-        layer = items[1]
-        params = items[2]
-        layer['params'].update(params)
-        return {'type': f"{wrapper_type}({layer['type']})", 'params': layer['params']}
 
     def input_layer(self, items):
         shapes = [self._extract_value(item) for item in items]
@@ -779,10 +785,23 @@ class ModelTransformer(lark.Transformer):
         return tuple(self._extract_value(item) for item in items)
 
     def wrapper(self, items):
-        layer = items[0]
-        params = self._extract_value(items[1]) if len(items) > 1 else {}
-        layer['params'].update(params)
-        return {'type': f"TimeDistributed({layer['type']})", 'params': layer['params']}
+        wrapper_type = items[0]  # e.g., "TimeDistributed"
+        inner_layer = self._extract_value(items[1])  # The wrapped layer
+        param_idx = 2
+        params = {}
+        sub_layers = []
+
+        # Extract additional named parameters if present
+        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'named_params':
+            params = self._extract_value(items[param_idx])
+            param_idx += 1
+
+        # Extract sub-layers if present
+        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'layer_block':
+            sub_layers = self._extract_value(items[param_idx])
+
+        inner_layer['params'].update(params)
+        return {'type': f"{wrapper_type}({inner_layer['type']})", 'params': inner_layer['params'], 'sublayers': sub_layers}
 
     def pooling(self, items):
         return items[0]
@@ -1070,23 +1089,9 @@ class ModelTransformer(lark.Transformer):
         return {'loss': self._extract_value(items[0])}
 
     def network(self, items):
-        """
-        Process network definition including macro expansions.
-        """
         name = str(items[0].value)
         input_layer_config = self._extract_value(items[1])
-        layers_config = []
-        
-        # Process layers, expanding macros as needed
-        raw_layers = self._extract_value(items[2])
-        for layer in raw_layers:
-            if isinstance(layer, dict) and layer.get('type') == 'macro_ref':
-                # Expand macro reference
-                layers_config.extend(layer['layers'])
-            else:
-                layers_config.append(layer)
-        
-        # Rest of the network processing...
+        layers_config = self._extract_value(items[2])  # Already handles nested layers via layers method
         loss_config = self._extract_value(items[3])
         optimizer_config = self._extract_value(items[4])
         
@@ -1294,8 +1299,9 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Attention', 'params': params}
 
     def residual(self, items):
-        params = self._extract_value(items[0]) if items else None
-        return {'type': 'ResidualConnection', 'params': params}
+        params = self._extract_value(items[0]) if items and items[0].data == 'named_params' else {}
+        sub_layers = self._extract_value(items[1]) if len(items) > 1 and items[1].data == 'layer_block' else []
+        return {'type': 'ResidualConnection', 'params': params, 'sublayers': sub_layers}
 
     def inception(self, items):
         params = self._extract_value(items[0]) if items else None
@@ -1338,49 +1344,40 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'QuantumLayer', 'params': params}
 
     def transformer(self, items):
-        # Extract the transformer type token
         if isinstance(items[0], Token):
             transformer_type = items[0].value
         else:
             self.raise_validation_error("Invalid transformer syntax: missing type identifier", items[0])
 
-        # Log items for debugging
-        logger.debug(f"Transformer items: {items}")
-
-        # Extract and process parameters
         params = {}
-        if len(items) > 1:  # Adjust for cases with or without parentheses
-            param_idx = 2 if len(items) > 2 else 1  # Handle params with or without extra tokens
-            if param_idx < len(items):
-                raw_params = self._extract_value(items[param_idx])
-                logger.debug(f"Raw params: {raw_params}")
-                if isinstance(raw_params, list):
-                    for param in raw_params:
-                        if isinstance(param, dict):
-                            params.update(param)
-                elif isinstance(raw_params, dict):
-                    params.update(raw_params)
-                else:
-                    logger.warning(f"Unexpected param type: {type(raw_params)}")
+        sub_layers = []
+        param_idx = 1
 
-        # Set default parameters if missing (optional)
-        if transformer_type == 'TransformerEncoder' and not params:
-            params = {'num_heads': 8, 'ff_dim': 512}  # Default values for testing
-            logger.info("Applied default params for TransformerEncoder")
+        # Extract parameters if present
+        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'named_params':
+            raw_params = self._extract_value(items[param_idx])
+            if isinstance(raw_params, dict):
+                params.update(raw_params)
+            elif isinstance(raw_params, list):
+                for param in raw_params:
+                    if isinstance(param, dict):
+                        params.update(param)
+            param_idx += 1
 
-        # Validate required parameters
+        # Extract sub-layers if present
+        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'layer_block':
+            sub_layers = self._extract_value(items[param_idx])
+
+        # Validation
         for key in ['num_heads', 'ff_dim']:
             if key in params:
                 val = params[key]
                 if isinstance(val, dict) and 'hpo' in val:
                     continue
                 if not isinstance(val, int) or val <= 0:
-                    self.raise_validation_error(
-                        f"{transformer_type} {key} must be a positive integer, got {val}",
-                        items[param_idx] if param_idx < len(items) else None
-                    )
+                    self.raise_validation_error(f"{transformer_type} {key} must be a positive integer, got {val}", items[0])
 
-        return {'type': transformer_type, 'params': params}
+        return {'type': transformer_type, 'params': params, 'sublayers': sub_layers}
 
     def embedding(self, items):
         params = self._extract_value(items[0]) if items else None
@@ -1451,11 +1448,12 @@ class ModelTransformer(lark.Transformer):
     def l1_l2(self, items):
         return {'type': 'L1L2', 'params': self._extract_value(items[0])}
 
+    
     def custom(self, items):
-        """Handle custom layer definitions"""
-        layer_type = items[0].value  # Will include the "Layer" suffix
-        params = self._extract_value(items[1])
-        return {'type': layer_type, 'params': params}
+        layer_type = items[0].value
+        params = self._extract_value(items[1]) if items[1].data == 'param_style1' else {}
+        sub_layers = self._extract_value(items[2]) if len(items) > 2 and items[2].data == 'layer_block' else []
+        return {'type': layer_type, 'params': params, 'sublayers': sub_layers}
 
     def named_layer(self, items):
         return {'type': items[0].value, 'params': self._extract_value(items[1])}
