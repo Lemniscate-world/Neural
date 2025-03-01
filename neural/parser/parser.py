@@ -83,6 +83,12 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         TRANSFORMER_DECODER: "TransformerDecoder"
         OUTPUT: "Output"
         CONV2DTRANSPOSE: "Conv2DTranspose"
+        LSTM: "LSTM"
+        GRU: "GRU"
+        SimpleRNN: "SimpleRNN"
+        SimpleRNNCell: "SimpleRNNCell"
+        LSTMCell: "LSTMCell"
+        GRUCell: "GRUCell"
         VARIABLE: /[a-zA-Z_][a-zA-Z0-9_]*/
         STRING: "\"" /[^"]+/ "\"" | "\'" /[^']+/ "\'"
         %ignore /\#[^\n]*/  // Ignore line comments              
@@ -97,8 +103,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         %ignore WS
 
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /(?!Output|Conv2DTranspose$)[A-Z][a-zA-Z0-9]*(?<!Layer)/  // Matches names not ending with "Layer"
-
+        MACRO_NAME: /(?!Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell)(?<!Layer)[A-Z][a-zA-Z0-9]*/
         ?start: network | layer | research
 
         neural_file: network
@@ -236,8 +241,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         bidirectional_rnn: "Bidirectional(" rnn "," named_params ")"
         rnn: simple_rnn | lstm | gru
         simple_rnn: "SimpleRNN(" named_params ")"
-        lstm: "LSTM(" named_params ")"
-        gru: "GRU(" named_params ")"
+        lstm: "LSTM" "(" named_params ")"
+        gru: "GRU" "(" named_params ")"
 
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2
         l1: "L1(" named_params ")"
@@ -393,13 +398,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         define: "define" NAME "{" layer "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")"
         
-        ?layer: (
-            conv | pooling | dropout | flatten | dense |  
-            output |  
-            recurrent | advanced | activation | merge | 
-            noise | norm_layer | regularization | 
-            custom_or_macro | wrapper | lambda_
-        )
+        ?layer: ( conv | pooling | dropout | flatten | dense | output | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom_or_macro | wrapper | lambda_ )
         ?custom_or_macro: custom | macro_ref
         custom: CUSTOM_LAYER "(" param_style1 ")"
 
