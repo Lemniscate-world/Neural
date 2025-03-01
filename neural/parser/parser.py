@@ -68,25 +68,21 @@ def custom_error_handler(error):
 
 def create_parser(start_rule: str = 'network') -> lark.Lark:
     grammar = r"""
-    // Move these token definitions to the top and fix their format
-    ?CELL: "Cell"i
-    TRANSFORMER: "Transformer"i
-    TRANSFORMER_ENCODER: "TransformerEncoder"i
-    TRANSFORMER_DECODER: "TransformerDecoder"i
-    OUTPUT: "Output"i
-    CONV2DTRANSPOSE: "Conv2DTranspose"i
-    LSTM: "LSTM"i
-    GRU: "GRU"i
-    DENSE: "Dense"i
-    CONV1D: "Conv1D"i
-    CONV2D: "Conv2D"i
-    CONV3D: "Conv3D"i
-    LSTMCELL: "LSTMCell"i
-    SIMPLERNN: "SimpleRNN"i
-    GRUCELL: "GRUCell"i
-
-    // Add case-insensitive matching for layer types
-    %ignore CASE_INSENSITIVE: /[a-zA-Z]/
+    // Layer type definitions with case-insensitive matching
+    TRANSFORMER: /[Tt][Rr][Aa][Nn][Ss][Ff][Oo][Rr][Mm][Ee][Rr]/
+    TRANSFORMER_ENCODER: /[Tt][Rr][Aa][Nn][Ss][Ff][Oo][Rr][Mm][Ee][Rr][Ee][Nn][Cc][Oo][Dd][Ee][Rr]/
+    TRANSFORMER_DECODER: /[Tt][Rr][Aa][Nn][Ss][Ff][Oo][Rr][Mm][Ee][Rr][Dd][Ee][Cc][Oo][Dd][Ee][Rr]/
+    OUTPUT: /[Oo][Uu][Tt][Pp][Uu][Tt]/
+    CONV2DTRANSPOSE: /[Cc][Oo][Nn][Vv]2[Dd][Tt][Rr][Aa][Nn][Ss][Pp][Oo][Ss][Ee]/
+    LSTM: /[Ll][Ss][Tt][Mm]/
+    GRU: /[Gg][Rr][Uu]/
+    DENSE: /[Dd][Ee][Nn][Ss][Ee]/
+    CONV1D: /[Cc][Oo][Nn][Vv]1[Dd]/
+    CONV2D: /[Cc][Oo][Nn][Vv]2[Dd]/
+    CONV3D: /[Cc][Oo][Nn][Vv]3[Dd]/
+    LSTMCELL: /[Ll][Ss][Tt][Mm][Cc][Ee][Ll][Ll]/
+    SIMPLERNN: /[Ss][Ii][Mm][Pp][Ll][Ee][Rr][Nn][Nn]/
+    GRUCELL: /[Gg][Rr][Uu][Cc][Ee][Ll][Ll]/
 
     // Basic tokens
     VARIABLE: /[a-zA-Z_][a-zA-Z0-9_]*/
@@ -94,10 +90,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
     NUMBER: /[+-]?([0-9]*[.])?[0-9]+/
     INT: /[0-9]+/
     FLOAT: /[+-]?([0-9]*[.])?[0-9]+/
-    BOOL: "true"i | "false"i
+    BOOL: /[Tt][Rr][Uu][Ee]/ | /[Ff][Aa][Ll][Ss][Ee]/
     
     // Layer name patterns
-    CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/
+    CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*[Ll][Aa][Yy][Ee][Rr]/
     MACRO_NAME: /(?!Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
 
     // Comments
