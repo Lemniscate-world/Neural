@@ -132,7 +132,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         tuple_: "(" number "," number ")"  
         number: NUMBER  
         number1: INT
-                explicit_tuple: "(" value ("," value)+ ")"
+        explicit_tuple: "(" value ("," value)+ ")"
 
         research: "research" NAME? "{" [research_params] "}"
         research_params: (metrics | references)*
