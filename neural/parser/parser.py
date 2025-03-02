@@ -215,7 +215,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_float: NAME "=" FLOAT | NAME ":" FLOAT
         named_layer: NAME "," explicit_tuple
         simple_number: number1
-        rate: "rate" ":" FLOAT
+        rate: "rate" "=" FLOAT
         simple_float: FLOAT
         named_clipvalue: "clipvalue" "=" FLOAT
         named_clipnorm: "clipnorm" "=" FLOAT
