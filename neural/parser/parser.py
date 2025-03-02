@@ -110,10 +110,12 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         COMMENT: /#[^\n]*/
         WS: /[ \t\f]+/
         _NL: /[\r\n]+/
+        _INDENT: /[ \t]+/
+        _DEDENT: /\}/
 
         %ignore COMMENT
         %ignore WS
-        %ignore _NL
+        
 
         // Grammar rules
         ?start: network | layer | research
