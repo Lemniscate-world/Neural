@@ -434,7 +434,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         grammar,
         start=start_rule,
         parser='lalr',
-        lexer='contextual',
+        lexer='standard',
         debug=True,
         cache=True,
         propagate_positions=True,
