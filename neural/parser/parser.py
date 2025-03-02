@@ -68,45 +68,349 @@ def custom_error_handler(error):
 
 def create_parser(start_rule: str = 'network') -> lark.Lark:
     grammar = r"""
-    // Layer type definitions with case-insensitive matching
-    TRANSFORMER: /[Tt][Rr][Aa][Nn][Ss][Ff][Oo][Rr][Mm][Ee][Rr]/
-    TRANSFORMER_ENCODER: /[Tt][Rr][Aa][Nn][Ss][Ff][Oo][Rr][Mm][Ee][Rr][Ee][Nn][Cc][Oo][Dd][Ee][Rr]/
-    TRANSFORMER_DECODER: /[Tt][Rr][Aa][Nn][Ss][Ff][Oo][Rr][Mm][Ee][Rr][Dd][Ee][Cc][Oo][Dd][Ee][Rr]/
-    OUTPUT: /[Oo][Uu][Tt][Pp][Uu][Tt]/
-    CONV2DTRANSPOSE: /[Cc][Oo][Nn][Vv]2[Dd][Tt][Rr][Aa][Nn][Ss][Pp][Oo][Ss][Ee]/
-    LSTM: /[Ll][Ss][Tt][Mm]/
-    GRU: /[Gg][Rr][Uu]/
-    DENSE: /[Dd][Ee][Nn][Ss][Ee]/
-    CONV1D: /[Cc][Oo][Nn][Vv]1[Dd]/
-    CONV2D: /[Cc][Oo][Nn][Vv]2[Dd]/
-    CONV3D: /[Cc][Oo][Nn][Vv]3[Dd]/
-    LSTMCELL: /[Ll][Ss][Tt][Mm][Cc][Ee][Ll][Ll]/
-    SIMPLERNN: /[Ss][Ii][Mm][Pp][Ll][Ee][Rr][Nn][Nn]/
-    GRUCELL: /[Gg][Rr][Uu][Cc][Ee][Ll][Ll]/
+// Tokens (case-insensitive)
+        TRANSFORMER: "transformer"i
+        TRANSFORMER_ENCODER: "transformerencoder"i
+        TRANSFORMER_DECODER: "transformerdecoder"i
+        OUTPUT: "output"i
+        CONV2DTRANSPOSE: "conv2dtranspose"i
+        LSTM: "lstm"i
+        GRU: "gru"i
+        DENSE: "dense"i
+        CONV1D: "conv1d"i
+        CONV2D: "conv2d"i
+        CONV3D: "conv3d"i
+        LSTMCell: "lstmcell"i
+        SIMPLERNN: "simplernn"i
+        GRUCell: "grucell"i
+        TRUE: "true"i
+        FALSE: "false"i
+        NONE: "none"i
 
-    // Basic tokens
-    VARIABLE: /[a-zA-Z_][a-zA-Z0-9_]*/
-    STRING: "\"" /[^"]+/ "\"" | "'" /[^']+/ "'"
-    NUMBER: /[+-]?([0-9]*[.])?[0-9]+/
-    INT: /[0-9]+/
-    FLOAT: /[+-]?([0-9]*[.])?[0-9]+/
-    BOOL: /[Tt][Rr][Uu][Ee]/ | /[Ff][Aa][Ll][Ss][Ee]/
-    
-    // Layer name patterns
-    CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*[Ll][Aa][Yy][Ee][Rr]/
-    MACRO_NAME: /(?!Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
+        // Basic tokens
+        NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
+        STRING: "\"" /[^"]+/ "\"" | "\'" /[^']+/ "\'"
+        NUMBER: /[+-]?([0-9]*[.])?[0-9]+/
+        INT: /[0-9]+/
+        FLOAT: /[+-]?([0-9]*[.])?[0-9]+/
+        BOOL: TRUE | FALSE
 
-    // Comments
-    COMMENT: /#[^\n]*/
-    %ignore COMMENT
-    
-    // Whitespace
-    %import common.WS
-    %ignore WS
-    
-    // Rest of your grammar rules...
+        // Layer name patterns
+        CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
+        MACRO_NAME: /(?!Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
+
+        // Comments
+        COMMENT: /\#[^\n]*/
+        %ignore COMMENT
+
+        // Whitespace              
+        %import common.NEWLINE -> _NL
+        %import common.WS
+        %ignore WS
+
+        // Grammar rules
+        ?start: network | layer | research
+
+        neural_file: network
+        nr_file: network
+        rnr_file: research
+
+        named_params: named_param ("," named_param)*
+        activation_param: "activation" "=" STRING
+        ordered_params: value ("," value)* 
+        ?value: STRING -> string_value | number | tuple_ | BOOL  
+        tuple_: "(" number "," number ")"  
+        number: NUMBER  
+        number1: INT
+                explicit_tuple: "(" value ("," value)+ ")"
+
+        research: "research" NAME? "{" [research_params] "}"
+        research_params: (metrics | references)*
+        metrics: "metrics" "{" [accuracy_param] [metrics_loss_param] [precision_param] [recall_param] "}"
+        accuracy_param: "accuracy:" FLOAT
+        metrics_loss_param: "loss:" FLOAT
+        precision_param: "precision:" FLOAT
+        recall_param: "recall:" FLOAT
+        references: "references" "{" paper_param+ "}"
+        paper_param: "paper:" STRING
+
+        bool_value: BOOL
+        named_return_sequences: "return_sequences" "=" bool_value
+        named_units: "units" "=" number
+        named_activation: "activation" "=" STRING
+        named_size: NAME ":" explicit_tuple  
+        named_filters: "filters" "=" NUMBER
+        named_strides: "strides" "=" value
+        named_padding: "padding" "=" STRING | "padding" ":" STRING
+        named_dilation_rate: "dilation_rate" "=" value
+        named_groups: "groups" "=" NUMBER
+        named_channels: "channels" "=" NUMBER
+        named_num_heads: "num_heads" "=" NUMBER
+        named_ff_dim: "ff_dim" "=" NUMBER
+        named_input_dim: "input_dim" "=" NUMBER
+        named_output_dim: "output_dim" "=" NUMBER
+        named_rate: "rate" "=" FLOAT
+        named_dropout: "dropout" "=" FLOAT
+        named_axis: "axis" "=" NUMBER
+        named_momentum: "momentum" "=" FLOAT
+        named_epsilon: "epsilon" "=" FLOAT
+        named_center: "center" "=" BOOL
+        named_scale: "scale" "=" BOOL
+        named_beta_initializer: "beta_initializer" "=" STRING
+        named_gamma_initializer: "gamma_initializer" "=" STRING
+        named_moving_mean_initializer: "moving_mean_initializer" "=" STRING
+        named_moving_variance_initializer: "moving_variance_initializer" "=" STRING
+        named_training: "training" "=" BOOL
+        named_trainable: "trainable" "=" BOOL
+        named_use_bias: "use_bias" "=" BOOL
+        named_kernel_initializer: "kernel_initializer" "=" STRING
+        named_bias_initializer: "bias_initializer" "=" STRING
+        named_kernel_regularizer: "kernel_regularizer" "=" STRING
+        named_bias_regularizer: "bias_regularizer" "=" STRING
+        named_activity_regularizer: "activity_regularizer" "=" STRING
+        named_kernel_constraint: "kernel_constraint" "=" STRING
+        named_kernel_size: "kernel_size" "=" value
+        named_bias_constraint: "bias_constraint" "=" STRING
+        named_return_state: "return_state" "=" BOOL
+        named_go_backwards: "go_backwards" "=" BOOL
+        named_stateful: "stateful" "=" BOOL
+        named_time_major: "time_major" "=" BOOL
+        named_unroll: "unroll" "=" BOOL
+        named_input_shape: "input_shape" "=" value
+        named_batch_input_shape: "batch_input_shape" "=" value
+        named_dtype: "dtype" "=" STRING
+        named_name: "name" "=" STRING
+        named_weights: "weights" "=" value
+        named_embeddings_initializer: "embeddings_initializer" "=" STRING
+        named_mask_zero: "mask_zero" "=" BOOL
+        named_input_length: "input_length" "=" NUMBER
+        named_embeddings_regularizer: "embeddings_regularizer" "=" STRING
+        named_embeddings_constraint: "embeddings_constraint" "=" value
+        named_num_layers: "num_layers" "=" NUMBER
+        named_bidirectional: "bidirectional" "=" BOOL
+        named_merge_mode: "merge_mode" "=" STRING
+        named_recurrent_dropout: "recurrent_dropout" "=" FLOAT
+        named_noise_shape: "noise_shape" "=" value
+        named_seed: "seed" "=" NUMBER
+        named_target_shape: "target_shape" "=" value
+        named_data_format: "data_format" "=" STRING
+        named_interpolation: "interpolation" "=" STRING
+        named_crop_to_aspect_ratio: "crop_to_aspect_ratio" "=" BOOL
+        named_mask_value: "mask_value" "=" NUMBER
+        named_return_attention_scores: "return_attention_scores" "=" BOOL
+        named_causal: "causal" "=" BOOL
+        named_use_scale: "use_scale" "=" BOOL
+        named_key_dim: "key_dim" "=" NUMBER
+        named_value_dim: "value_dim" "=" NUMBER
+        named_output_shape: "output_shape" "=" value
+        named_arguments: "arguments" "=" value
+        named_initializer: "initializer" "=" STRING
+        named_regularizer: "regularizer" "=" STRING
+        named_constraint: "constraint" "=" STRING
+        named_l1: "l1" "=" FLOAT
+        named_l2: "l2" "=" FLOAT
+        named_l1_l2: "l1_l2" "=" tuple_
+        named_int: NAME "=" INT | NAME ":" INT
+        named_string: NAME "=" STRING | NAME ":" STRING
+        named_float: NAME "=" FLOAT | NAME ":" FLOAT
+        named_layer: NAME "," explicit_tuple
+        simple_number: number1
+        rate: "rate" ":" FLOAT
+        simple_float: FLOAT
+        named_clipvalue: "clipvalue" "=" FLOAT
+        named_clipnorm: "clipnorm" "=" FLOAT
+        ?named_param: ( rate | named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value )
+
+        ?param_style1: named_params | (value ("," (value | named_param))* )
+
+        network: "network" NAME "{" input_layer layers loss optimizer [training_config] [execution_config] "}"
+
+        config: training_config | execution_config
+        input_layer: "input" ":" shape ("," shape)*
+        shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
+        number_or_none: number | NONE
+        layers: "layers" ":" (_NL* layer_or_repeated)* _NL*
+        layer_or_repeated: layer ["*" INT]  
+
+        lambda_: "Lambda" "(" STRING ")"
+        wrapper: "TimeDistributed" "(" layer ["," named_params] ")" [layer_block]
+
+        dropout: "Dropout" "(" dropout_params ")"
+        dropout_params: FLOAT | named_params
+        dense: DENSE "(" dense_params ")"
+        dense_params: (NUMBER ("," (NUMBER | STRING | named_param))* ) | named_params
+        flatten: "Flatten" "(" [named_params] ")"
+
+        ?recurrent: rnn | bidirectional_rnn | conv_rnn | rnn_cell
+        bidirectional_rnn: "Bidirectional(" rnn "," named_params ")"
+        rnn: simple_rnn | lstm | gru
+        simple_rnn: SIMPLERNN "(" named_params ")"
+        lstm: LSTM "(" named_params ")"
+        gru: GRU "(" named_params ")"
+
+        regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2
+        l1: "L1(" named_params ")"
+        l2: "L2(" named_params ")"
+        l1_l2: "L1L2(" named_params ")"
+
+        output: OUTPUT "(" named_params ")"
+
+        conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
+        conv1d: CONV1D "(" param_style1 ")"
+        conv2d: CONV2D "(" param_style1 ")"
+        conv3d: CONV3D "(" param_style1 ")"
+        conv_transpose: conv1d_transpose | conv2d_transpose | conv3d_transpose
+        conv1d_transpose: "Conv1DTranspose" "(" param_style1 ")"
+        conv2d_transpose: CONV2DTRANSPOSE "(" param_style1 ")"
+        conv3d_transpose: "Conv3DTranspose" "(" param_style1 ")"
+        depthwise_conv2d: "DepthwiseConv2D" "(" param_style1 ")"
+        separable_conv2d: "SeparableConv2D" "(" param_style1 ")"
+
+        pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
+        max_pooling: max_pooling1d | max_pooling2d | max_pooling3d
+        max_pooling1d: "MaxPooling1D" "(" named_params ")"
+        max_pooling2d: "MaxPooling2D" "(" param_style1 ")"
+        max_pooling3d: "MaxPooling3D" "(" named_params ")"
+        pool_size: "pool_size" "=" value
+        average_pooling: average_pooling1d | average_pooling2d | average_pooling3d
+        average_pooling1d: "AveragePooling1D(" named_params ")"
+        average_pooling2d: "AveragePooling2D(" named_params ")"
+        average_pooling3d: "AveragePooling3D(" named_params ")"
+        global_pooling: global_max_pooling | global_average_pooling
+        global_max_pooling: global_max_pooling1d | global_max_pooling2d | global_max_pooling3d
+        global_max_pooling1d: "GlobalMaxPooling1D(" named_params ")"
+        global_max_pooling2d: "GlobalMaxPooling2D(" named_params ")"
+        global_max_pooling3d: "GlobalMaxPooling3D(" named_params ")"
+        global_average_pooling: global_average_pooling1d | global_average_pooling2d | global_average_pooling3d
+        global_average_pooling1d: "GlobalAveragePooling1D(" named_params ")"
+        global_average_pooling2d: "GlobalAveragePooling2D(" named_params ")"
+        global_average_pooling3d: "GlobalAveragePooling3D(" named_params ")"
+        adaptive_pooling: adaptive_max_pooling | adaptive_average_pooling
+        adaptive_max_pooling: adaptive_max_pooling1d | adaptive_max_pooling2d | adaptive_max_pooling3d
+        adaptive_max_pooling1d: "AdaptiveMaxPooling1D(" named_params ")"
+        adaptive_max_pooling2d: "AdaptiveMaxPooling2D(" named_params ")"
+        adaptive_max_pooling3d: "AdaptiveMaxPooling3D(" named_params ")"
+        adaptive_average_pooling: adaptive_average_pooling1d | adaptive_average_pooling2d | adaptive_average_pooling3d
+        adaptive_average_pooling1d: "AdaptiveAveragePooling1D(" named_params ")"
+        adaptive_average_pooling2d: "AdaptiveAveragePooling2D(" named_params ")"
+        adaptive_average_pooling3d: "AdaptiveAveragePooling3D(" named_params ")"
+
+        ?norm_layer: batch_norm | layer_norm | instance_norm | group_norm
+        batch_norm: "BatchNormalization" "(" [named_params] ")"
+        layer_norm: "LayerNormalization" "(" [named_params] ")"
+        instance_norm: "InstanceNormalization" "(" [named_params] ")"
+        group_norm: "GroupNormalization" "(" [named_params] ")"
+
+        conv_rnn: conv_lstm | conv_gru
+        conv_lstm: "ConvLSTM2D(" named_params ")"
+        conv_gru: "ConvGRU2D(" named_params ")"
+
+        rnn_cell: simple_rnn_cell | lstm_cell | gru_cell
+        simple_rnn_cell: "SimpleRNNCell" "(" named_params ")"
+        lstm_cell: LSTMCell "(" named_params ")"
+        gru_cell: GRUCell "(" named_params ")"
+
+        dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
+        simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" named_params ")"
+        gru_dropout: "GRUDropoutWrapper" "(" named_params ")"
+        lstm_dropout: "LSTMDropoutWrapper" "(" named_params ")"
+        bidirectional_rnn_layer: bidirectional_simple_rnn_layer | bidirectional_lstm_layer | bidirectional_gru_layer
+        bidirectional_simple_rnn_layer: "Bidirectional(SimpleRNN(" named_params "))"
+        bidirectional_lstm_layer: "Bidirectional(LSTM(" named_params "))"
+        bidirectional_gru_layer: "Bidirectional(GRU(" named_params "))"
+        conv_rnn_layer: conv_lstm_layer | conv_gru_layer
+        conv_lstm_layer: "ConvLSTM2D(" named_params ")"
+        conv_gru_layer: "ConvGRU2D(" named_params ")"
+        rnn_cell_layer: simple_rnn_cell_layer | lstm_cell_layer | gru_cell_layer
+        simple_rnn_cell_layer: "SimpleRNNCell(" named_params ")"
+        lstm_cell_layer: "LSTMCell(" named_params ")"
+        gru_cell_layer: "GRUCell(" named_params ")"
+
+        ?advanced: ( attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic )
+        attention: "Attention" "(" [named_params] ")" [layer_block]
+        transformer: TRANSFORMER "(" [named_params] ")" [layer_block]
+                    | TRANSFORMER_ENCODER "(" [named_params] ")" [layer_block]
+                    | TRANSFORMER_DECODER "(" [named_params] ")" [layer_block]
+        residual: "ResidualConnection" "(" [named_params] ")" [layer_block]
+        inception: "Inception" "(" [named_params] ")"
+        capsule: "CapsuleLayer" "(" [named_params] ")"
+        squeeze_excitation: "SqueezeExcitation" "(" [named_params] ")"
+        graph: graph_conv | graph_attention
+        graph_conv: "GraphConv" "(" [named_params] ")"
+        graph_attention: "GraphAttention" "(" [named_params] ")"
+        embedding: "Embedding" "(" [named_params] ")"
+        quantum: "QuantumLayer" "(" [named_params] ")"
+        dynamic: "DynamicLayer" "(" [named_params] ")"
+
+        merge: add | subtract | multiply | average | maximum | concatenate | dot
+        add: "Add(" named_params ")"
+        subtract: "Subtract(" named_params ")"
+        multiply: "Multiply(" named_params ")"
+        average: "Average(" named_params ")"
+        maximum: "Maximum(" named_params ")"
+        concatenate: "Concatenate(" named_params ")"
+        dot: "Dot(" named_params ")"
+
+        noise: gaussian_noise | gaussian_dropout | alpha_dropout
+        gaussian_noise: "GaussianNoise(" named_params ")"
+        gaussian_dropout: "GaussianDropout(" named_params ")"
+        alpha_dropout: "AlphaDropout(" named_params ")"
+
+        spatial_dropout1d: "SpatialDropout1D(" named_params ")"
+        spatial_dropout2d: "SpatialDropout2D(" named_params ")"
+        spatial_dropout3d: "SpatialDropout3D(" named_params ")"
+        activity_regularization: "ActivityRegularization(" named_params ")"
+
+        activation: activation_with_params | activation_without_params
+        activation_with_params: "Activation(" STRING "," named_params ")"
+        activation_without_params: "Activation(" STRING ")"
+
+        training_config: "train" "{" training_params "}"
+        training_params: (epochs_param | batch_size_param | optimizer_param | search_method_param | validation_split_param)*
+        epochs_param: "epochs:" INT
+        batch_size_param: "batch_size:" values_list
+        values_list: "[" value ("," value)* "]" | value ("," value)*
+        optimizer_param: "optimizer:" named_optimizer
+        named_optimizer: "named_optimizer(" learning_rate_param ")"
+        learning_rate_param: "learning_rate=" FLOAT
+        search_method_param: "search_method:" STRING
+        validation_split_param: "validation_split:" FLOAT
+
+        loss: "loss" ":" (NAME | STRING) ["(" named_params ")"]
+        optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
+        schedule: NAME "(" params ")"
+        params: [value ("," value)*]
+
+        execution_config: "execution" "{" device_param "}"
+        device_param: "device:" STRING
+        
+        CUSTOM_SHAPE: "CustomShape"
+        self_defined_shape: CUSTOM_SHAPE named_layer
+
+        math_expr: term (("+"|"-") term)*
+        term: factor (("*"|"/") factor)*
+        factor: NUMBER | VARIABLE | "(" math_expr ")" | function_call
+        function_call: NAME "(" math_expr ("," math_expr)* ")"
+
+        hpo_expr: "HPO(" (hpo_choice | hpo_range | hpo_log_range) ")"
+        hpo_choice: "choice(" value ("," value)* ")"
+        hpo_range: "range(" number "," number ("," "step="number)? ")"
+        hpo_log_range: "log_range(" number "," number ")"
+
+        layer_choice: "HPO(choice(" layer ("," layer)* "))"
+
+        define: "define" NAME "{" (_NL* layer_or_repeated)* _NL* "}"
+        macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
+        
+        ?layer: ( conv | pooling | dropout | flatten | dense | output | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom_or_macro | wrapper | lambda_ ) [layer_block]
+        ?custom_or_macro: custom | macro_ref
+        custom: CUSTOM_LAYER "(" param_style1 ")" [layer_block]
+
+        layer_block: "{" (_NL* layer_or_repeated)* _NL* "}"
+        
+        
+
     """
-    
     return lark.Lark(
         grammar,
         start=start_rule,
@@ -115,7 +419,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         debug=True,
         cache=True,
         propagate_positions=True,
-        case_insensitive=True
     )
 
 def safe_parse(parser, text):
@@ -196,7 +499,7 @@ class ModelTransformer(lark.Transformer):
 
     def macro_ref(self, items):
         macro_name = items[0].value
-        if (macro_name not in self.macros):
+        if macro_name not in self.macros:
             self.raise_validation_error(f"Undefined macro '{macro_name}'", items[0])
 
         params = self._extract_value(items[1]) if len(items) > 1 and items[1].data == 'param_style1' else {}

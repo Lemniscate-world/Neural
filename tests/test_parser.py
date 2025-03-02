@@ -643,6 +643,151 @@ def test_validation_rules(network_parser, transformer, network_string, expected_
     with pytest.raises(DSLValidationError) as exc_info:
         transformer.parse_network(network_string)
     assert expected_error_msg in str(exc_info.value), f"Error message mismatch for {test_id}"
+    def test_grammar_token_definitions():
+        """Test that grammar token definitions are correct and complete."""
+        parser = create_parser()
+        lexer_conf = parser.parser.lexer_conf
+        
+        # Test all expected token patterns
+        token_patterns = {
+            'TRANSFORMER': r'transformer',
+            'LSTM': r'lstm',
+            'GRU': r'gru',
+            'DENSE': r'dense',
+            'CONV2D': r'conv2d',
+            'NAME': r'[a-zA-Z_][a-zA-Z0-9_]*',
+            'NUMBER': r'[+-]?([0-9]*[.])?[0-9]+',
+            'STRING': r'\"[^"]+\"|\'[^\']+\'',
+            'CUSTOM_LAYER': r'[A-Z][a-zA-Z0-9]*Layer'
+        }
+        
+        for token_name, pattern in token_patterns.items():
+            matching_token = next((t for t in lexer_conf.terminals if t.name == token_name), None)
+            assert matching_token is not None, f"Token {token_name} not found in grammar"
+            assert str(matching_token.pattern) == pattern, f"Unexpected pattern for {token_name}"
 
+    def test_rule_dependencies():
+        """Test that grammar rules have correct dependencies."""
+        parser = create_parser()
+        rules = {rule.origin.name: rule for rule in parser.grammar.rules}
+        
+        # Check essential rule dependencies
+        dependencies = {
+            'network': ['input_layer', 'layers', 'loss', 'optimizer'],
+            'layer': ['conv', 'pooling', 'dropout', 'flatten', 'dense'],
+            'conv': ['conv1d', 'conv2d', 'conv3d'],
+            'pooling': ['max_pooling', 'average_pooling', 'global_pooling']
+        }
+        
+        for rule_name, required_deps in dependencies.items():
+            assert rule_name in rules, f"Missing rule: {rule_name}"
+            rule = rules[rule_name]
+            for dep in required_deps:
+                assert dep in str(rule), f"Rule {rule_name} missing dependency {dep}"
+
+    @pytest.mark.parametrize("rule_name,valid_inputs", [
+        ('NAME', ['valid_name', '_valid_name', 'ValidName123']),
+        ('NUMBER', ['123', '-123', '123.456', '-123.456']),
+        ('STRING', ['"valid string"', "'valid string'"]),
+        ('CUSTOM_LAYER', ['CustomLayer', 'MyTestLayer', 'ConvLayer'])
+    ])
+    def test_token_patterns(rule_name, valid_inputs):
+        """Test that token patterns match expected inputs."""
+        parser = create_parser()
+        for input_str in valid_inputs:
+            try:
+                result = parser.parse(f"network TestNet {{ input: (1,1) layers: {input_str} }}")
+                assert result is not None
+            except Exception as e:
+                pytest.fail(f"Failed to parse {rule_name} with input {input_str}: {str(e)}")
+
+    def test_rule_precedence():
+        """Test that grammar rules have correct precedence."""
+        parser = create_parser()
+        test_cases = [
+            ('dense_basic', 'Dense(10)'),
+            ('dense_params', 'Dense(units=10, activation="relu")'),
+            ('conv_basic', 'Conv2D(32, (3,3))'),
+            ('conv_params', 'Conv2D(filters=32, kernel_size=(3,3))'),
+            ('nested_block', 'Transformer() { Dense(10) }')
+        ]
+        
+        for test_id, test_input in test_cases:
+            try:
+                result = parser.parse(f"network TestNet {{ input: (1,1) layers: {test_input} }}")
+                assert result is not None, f"Failed to parse {test_id}"
+            except Exception as e:
+                pytest.fail(f"Failed to parse {test_id}: {str(e)}")
+
+    def test_grammar_ambiguity():
+        """Test that grammar doesn't have ambiguous rules."""
+        parser = create_parser()
+        test_cases = [
+            ('params_order1', 'Dense(10, "relu")'),
+            ('params_order2', 'Dense(units=10, activation="relu")'),
+            ('mixed_params', 'Conv2D(32, kernel_size=(3,3))'),
+            ('nested_params', 'Transformer(num_heads=8) { Dense(10) }')
+        ]
+        
+        for test_id, test_input in test_cases:
+            try:
+                results = list(parser.parse_interactive(f"network TestNet {{ input: (1,1) layers: {test_input} }}"))
+                assert len(results) == 1, f"Ambiguous parsing for {test_id}"
+            except Exception as e:
+                pytest.fail(f"Failed to parse {test_id}: {str(e)}")
+
+    def test_error_recovery():
+        """Test parser's error recovery capabilities."""
+        parser = create_parser()
+        test_cases = [
+            ('missing_param', 'Dense()', DSLValidationError),
+            ('invalid_param', 'Dense("invalid")', DSLValidationError),
+            ('incomplete_block', 'Transformer() {', lark.UnexpectedToken),
+            ('missing_close', 'network Test { input: (1,1) layers: Dense(10)', lark.UnexpectedEOF)
+        ]
+        
+        for test_id, test_input, expected_error in test_cases:
+            with pytest.raises(expected_error):
+                parser.parse(test_input)
+
+    @pytest.mark.parametrize("test_input,expected_error", [
+        ('network Test { input: (1,1) layers: Dense(units=-10) }', 'units must be positive'),
+        ('network Test { input: (1,1) layers: Dropout(rate=1.5) }', 'rate must be between 0 and 1'),
+        ('network Test { input: (1,1) layers: Conv2D(filters=0) }', 'filters must be positive')
+    ])
+    def test_semantic_validation(test_input, expected_error):
+        """Test semantic validation of parsed values."""
+        parser = create_parser()
+        with pytest.raises(DSLValidationError) as exc_info:
+            parser.parse(test_input)
+        assert expected_error in str(exc_info.value)
+
+    def test_grammar_completeness():
+        """Test that grammar covers all required language features."""
+        parser = create_parser()
+        features = [
+            'layer_definition',
+            'parameter_passing',
+            'nested_blocks',
+            'comments',
+            'device_specification',
+            'hyperparameter_optimization'
+        ]
+        
+        test_inputs = {
+            'layer_definition': 'Dense(10)',
+            'parameter_passing': 'Dense(units=10, activation="relu")',
+            'nested_blocks': 'Transformer() { Dense(10) }',
+            'comments': 'Dense(10) # comment',
+            'device_specification': 'Dense(10) @ "cuda:0"',
+            'hyperparameter_optimization': 'Dense(HPO(choice(64, 128)))'
+        }
+        
+        for feature, test_input in test_inputs.items():
+            try:
+                result = parser.parse(f"network TestNet {{ input: (1,1) layers: {test_input} }}")
+                assert result is not None, f"Failed to parse feature: {feature}"
+            except Exception as e:
+                pytest.fail(f"Failed to parse feature {feature}: {str(e)}")
 if __name__ == "__main__":
     pytest.main(["-v", "--log-level=DEBUG"])
