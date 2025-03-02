@@ -69,6 +69,25 @@ def custom_error_handler(error):
 def create_parser(start_rule: str = 'network') -> lark.Lark:
     grammar = r"""
         // Layer type tokens (case-insensitive)
+        DENSE: "dense"i
+        CONV2D: "conv2d"i
+        CONV1D: "conv1d"i
+        CONV3D: "conv3d"i
+        DROPOUT: "dropout"i
+        FLATTEN: "flatten"i
+        LSTM: "lstm"i
+        GRU: "gru"i
+        SIMPLERNN: "simplernn"i
+        OUTPUT: "output"i
+        TRANSFORMER: "transformer"i
+        TRANSFORMER_ENCODER: "transformerencoder"i
+        TRANSFORMER_DECODER: "transformerdecoder"i
+        CONV2DTRANSPOSE: "conv2dtranspose"i
+        LSTMCELL: "lstmcell"i
+        GRUCELL: "grucell"i
+
+
+        // Layer type tokens (case-insensitive)
         LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i 
                     | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i
                     | "transformer"i | "transformerencoder"i | "transformerdecoder"i
@@ -101,6 +120,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Grammar rules
         ?start: network | layer | research
+        ?layer: basic_layer
+             | advanced_layer
+             | special_layer
 
         neural_file: network
         nr_file: network
@@ -393,7 +415,30 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         define: "define" NAME "{" (_NL* layer_or_repeated)* _NL* "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
-        ?layer: ( conv | pooling | dropout | flatten | dense | output | recurrent | advanced | activation | merge | noise | norm_layer | regularization | custom_or_macro | wrapper | lambda_ ) [layer_block]
+        basic_layer: layer_type "(" [layer_params] ")" [layer_block]
+        layer_type: DENSE
+                 | CONV2D
+                 | CONV1D
+                 | CONV3D
+                 | DROPOUT
+                 | FLATTEN
+                 | LSTM
+                 | GRU
+                 | SIMPLERNN
+                 | OUTPUT
+                 | TRANSFORMER
+                 | TRANSFORMER_ENCODER
+                 | TRANSFORMER_DECODER
+                 | CONV2DTRANSPOSE
+                 | LSTMCELL
+                 | GRUCELL
+
+        advanced_layer: (attention | transformer | residual | inception | capsule | 
+                        squeeze_excitation | graph | embedding | quantum | dynamic)
+
+        special_layer: custom | macro_ref | wrapper | lambda_
+
+        
         ?custom_or_macro: custom | macro_ref
         custom: CUSTOM_LAYER "(" param_style1 ")" [layer_block]
 
