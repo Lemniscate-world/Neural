@@ -88,10 +88,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i 
-                    | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i
-                    | "transformer"i | "transformerencoder"i | "transformerdecoder"i
-                    | "conv2dtranspose"i | "lstmcell"i | "grucell"i
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "lstmcell"i | "grucell"i
 
 
         // Basic tokens
@@ -109,20 +106,18 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
         MACRO_NAME: /(?!Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
 
-        // Comments
-        COMMENT: /\#[^\n]*/
-        %ignore COMMENT
+        // Comments and whitespace
+        COMMENT: /#[^\n]*/
+        WS: /[ \t\f]+/
+        _NL: /[\r\n]+/
 
-        // Whitespace              
-        %import common.NEWLINE -> _NL
-        %import common.WS
+        %ignore COMMENT
         %ignore WS
+        %ignore _NL
 
         // Grammar rules
         ?start: network | layer | research
-        ?layer: basic_layer
-             | advanced_layer
-             | special_layer
+        ?layer: basic_layer | advanced_layer | special_layer
 
         neural_file: network
         nr_file: network
@@ -416,22 +411,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [layer_params] ")" [layer_block]
-        layer_type: DENSE
-                 | CONV2D
-                 | CONV1D
-                 | CONV3D
-                 | DROPOUT
-                 | FLATTEN
-                 | LSTM
-                 | GRU
-                 | SIMPLERNN
-                 | OUTPUT
-                 | TRANSFORMER
-                 | TRANSFORMER_ENCODER
-                 | TRANSFORMER_DECODER
-                 | CONV2DTRANSPOSE
-                 | LSTMCELL
-                 | GRUCELL
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL
 
         advanced_layer: (attention | transformer | residual | inception | capsule | 
                         squeeze_excitation | graph | embedding | quantum | dynamic)
