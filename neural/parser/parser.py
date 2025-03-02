@@ -115,6 +115,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         %ignore COMMENT
         %ignore WS
+        %ignore _NL
         
 
         // Grammar rules
