@@ -410,7 +410,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         layer_choice: "HPO(choice(" layer ("," layer)* "))"
 
-        define: "define" NAME "{" (_NL* layer_or_repeated)* _NL* "}"
+        define: "define" NAME "{" ( layer_or_repeated)*  "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [layer_params] ")" [layer_block]
