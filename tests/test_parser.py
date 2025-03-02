@@ -765,29 +765,111 @@ def test_validation_rules(network_parser, transformer, network_string, expected_
     def test_grammar_completeness():
         """Test that grammar covers all required language features."""
         parser = create_parser()
-        features = [
-            'layer_definition',
-            'parameter_passing',
-            'nested_blocks',
-            'comments',
-            'device_specification',
-            'hyperparameter_optimization'
-        ]
-        
-        test_inputs = {
-            'layer_definition': 'Dense(10)',
-            'parameter_passing': 'Dense(units=10, activation="relu")',
-            'nested_blocks': 'Transformer() { Dense(10) }',
-            'comments': 'Dense(10) # comment',
-            'device_specification': 'Dense(10) @ "cuda:0"',
-            'hyperparameter_optimization': 'Dense(HPO(choice(64, 128)))'
-        }
-        
-        for feature, test_input in test_inputs.items():
-            try:
-                result = parser.parse(f"network TestNet {{ input: (1,1) layers: {test_input} }}")
-                assert result is not None, f"Failed to parse feature: {feature}"
-            except Exception as e:
-                pytest.fail(f"Failed to parse feature {feature}: {str(e)}")
-if __name__ == "__main__":
-    pytest.main(["-v", "--log-level=DEBUG"])
+        # Additional Layer Parsing Tests
+        @pytest.mark.parametrize(
+            "layer_string, expected, test_id",
+            [
+                # Extended Basic Layer Tests
+                ('Dense(64, activation="tanh")', 
+                 {'type': 'Dense', 'params': {'units': 64, 'activation': 'tanh'}, 'sublayers': []}, 
+                 "dense-tanh"),
+                
+                # Multiple Parameter Tests
+                ('Conv2D(32, (3,3), strides=(2,2), padding="same", activation="relu")',
+                 {'type': 'Conv2D', 'params': {
+                     'filters': 32, 
+                     'kernel_size': (3,3),
+                     'strides': (2,2),
+                     'padding': 'same',
+                     'activation': 'relu'
+                 }, 'sublayers': []},
+                 "conv2d-multiple-params"),
+                
+                # Layer with Mixed Parameter Styles
+                ('LSTM(128, return_sequences=true, dropout=0.2)',
+                 {'type': 'LSTM', 'params': {
+                     'units': 128,
+                     'return_sequences': True,
+                     'dropout': 0.2
+                 }, 'sublayers': []},
+                 "lstm-mixed-params"),
+                
+                # Nested Layer with Complex Configuration
+                ('''TransformerEncoder(num_heads=8, ff_dim=256) {
+                    LayerNormalization()
+                    Dense(64, "relu")
+                    Dropout(0.1)
+                }''',
+                 {'type': 'TransformerEncoder', 
+                  'params': {'num_heads': 8, 'ff_dim': 256},
+                  'sublayers': [
+                      {'type': 'LayerNormalization', 'params': None, 'sublayers': []},
+                      {'type': 'Dense', 'params': {'units': 64, 'activation': 'relu'}, 'sublayers': []},
+                      {'type': 'Dropout', 'params': {'rate': 0.1}, 'sublayers': []}
+                  ]},
+                 "transformer-complex"),
+                
+                # Edge Cases
+                ('Dense(0)', None, "dense-zero-units"),
+                ('Conv2D(32, (0,0))', None, "conv2d-zero-kernel"),
+                ('Dropout(2.0)', None, "dropout-invalid-rate"),
+                ('LSTM(units=-1)', None, "lstm-negative-units"),
+                
+                # Device Specification Tests
+                ('Dense(128) @ "cpu"',
+                 {'type': 'Dense', 'params': {'units': 128, 'device': 'cpu'}, 'sublayers': []},
+                 "dense-cpu-device"),
+                ('Dense(128) @ "invalid_device"', None, "dense-invalid-device"),
+                
+                # Custom Layer Tests
+                ('CustomTestLayer(param1=10, param2="test")',
+                 {'type': 'CustomTestLayer', 'params': {'param1': 10, 'param2': 'test'}, 'sublayers': []},
+                 "custom-layer-basic"),
+                
+                # Activation Layer Tests
+                ('Activation("leaky_relu", alpha=0.1)',
+                 {'type': 'Activation', 'params': {'function': 'leaky_relu', 'alpha': 0.1}, 'sublayers': []},
+                 "activation-with-params"),
+                
+                # Layer with HPO Parameters
+                ('Dense(HPO(choice(32, 64, 128)), activation=HPO(choice("relu", "tanh")))',
+                 {'type': 'Dense', 
+                  'params': {
+                      'units': {'hpo': {'type': 'categorical', 'values': [32, 64, 128]}},
+                      'activation': {'hpo': {'type': 'categorical', 'values': ['relu', 'tanh']}}
+                  }, 'sublayers': []},
+                 "dense-hpo-multiple"),
+            ]
+        )
+        def test_extended_layer_parsing(layer_parser, transformer, layer_string, expected, test_id):
+            """Test parsing of various layer configurations with extended test cases."""
+            if expected is None:
+                with pytest.raises((exceptions.UnexpectedCharacters, 
+                                  exceptions.UnexpectedToken, 
+                                  DSLValidationError)):
+                    tree = layer_parser.parse(layer_string)
+                    transformer.transform(tree)
+            else:
+                tree = layer_parser.parse(layer_string)
+                result = transformer.transform(tree)
+                assert result == expected, f"Failed for {test_id}: expected {expected}, got {result}"
+
+        @pytest.mark.parametrize(
+            "layer_string, validation_error_msg, test_id",
+            [
+                ('Dense(units="invalid")', "units must be a number", "dense-invalid-units-type"),
+                ('Conv2D(filters=-5, kernel_size=(3,3))', "filters must be positive", "conv2d-negative-filters"),
+                ('LSTM(units=0, return_sequences=true)', "units must be positive", "lstm-zero-units"),
+                ('Dropout(rate=1.5)', "rate must be between 0 and 1", "dropout-high-rate"),
+                ('BatchNormalization(momentum=2.0)', "momentum must be between 0 and 1", "batchnorm-invalid-momentum"),
+                ('Dense(128) @ "unknown_device"', "Invalid device specification", "invalid-device-spec"),
+                ('Conv2D(32, (-1,-1))', "kernel size must be positive", "conv2d-negative-kernel"),
+                ('MaxPooling2D(pool_size=(0,0))', "pool size must be positive", "maxpool-zero-size"),
+            ]
+        )
+        def test_layer_validation_errors(layer_parser, transformer, layer_string, validation_error_msg, test_id):
+            """Test validation error messages for invalid layer configurations."""
+            with pytest.raises(DSLValidationError) as exc_info:
+                tree = layer_parser.parse(layer_string)
+                transformer.transform(tree)
+            assert validation_error_msg in str(exc_info.value), f"Error message mismatch for {test_id}"

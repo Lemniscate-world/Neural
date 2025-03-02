@@ -68,24 +68,12 @@ def custom_error_handler(error):
 
 def create_parser(start_rule: str = 'network') -> lark.Lark:
     grammar = r"""
-// Tokens (case-insensitive)
-        TRANSFORMER: "transformer"i
-        TRANSFORMER_ENCODER: "transformerencoder"i
-        TRANSFORMER_DECODER: "transformerdecoder"i
-        OUTPUT: "output"i
-        CONV2DTRANSPOSE: "conv2dtranspose"i
-        LSTM: "lstm"i
-        GRU: "gru"i
-        DENSE: "dense"i
-        CONV1D: "conv1d"i
-        CONV2D: "conv2d"i
-        CONV3D: "conv3d"i
-        LSTMCell: "lstmcell"i
-        SIMPLERNN: "simplernn"i
-        GRUCell: "grucell"i
-        TRUE: "true"i
-        FALSE: "false"i
-        NONE: "none"i
+        // Layer type tokens (case-insensitive)
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i 
+                    | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i
+                    | "transformer"i | "transformerencoder"i | "transformerdecoder"i
+                    | "conv2dtranspose"i | "lstmcell"i | "grucell"i
+
 
         // Basic tokens
         NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
@@ -93,6 +81,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         NUMBER: /[+-]?([0-9]*[.])?[0-9]+/
         INT: /[0-9]+/
         FLOAT: /[+-]?([0-9]*[.])?[0-9]+/
+        TRUE.2: "true"i
+        FALSE.2: "false"i
+        NONE.2: "none"i
         BOOL: TRUE | FALSE
 
         // Layer name patterns
