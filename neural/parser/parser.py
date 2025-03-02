@@ -240,7 +240,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         input_layer: "input" ":" shape ("," shape)*
         shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
         number_or_none: number | NONE
-        layers: "layers" ":" (_NL* layer_or_repeated)* _NL*
+        layers: "layers" ":" ( layer_or_repeated)* 
         layer_or_repeated: layer ["*" INT]  
 
         lambda_: "Lambda" "(" STRING ")"
@@ -425,7 +425,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ?custom_or_macro: custom | macro_ref
         custom: CUSTOM_LAYER "(" param_style1 ")" [layer_block]
 
-        layer_block: "{" (_NL* layer_or_repeated)* _NL* "}"
+        layer_block: "{" (layer_or_repeated)* "}"
         
         
 
