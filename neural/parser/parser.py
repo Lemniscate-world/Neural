@@ -7,6 +7,8 @@ import json
 import plotly.graph_objects as go
 import logging
 from enum import Enum
+from lark.visitors import VisitError
+
 
 logger = logging.getLogger('neural.parser')
 logging.basicConfig(
