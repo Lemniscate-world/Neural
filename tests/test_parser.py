@@ -2,6 +2,8 @@ import os
 import sys
 import pytest
 from lark import Lark, exceptions
+from lark.visitors import VisitError
+
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -125,7 +127,7 @@ def transformer():
 )
 def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_id):
     if expected is None:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, exceptions.VisitError)):
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, VisitError)):
             tree = layer_parser.parse(layer_string)
             transformer.transform(tree)
     else:
@@ -296,7 +298,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
 )
 def test_network_parsing(network_parser, transformer, network_string, expected, raises_error, test_id):
     if raises_error:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, exceptions.VisitError)):
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, VisitError)):
             transformer.parse_network(network_string)
     else:
         result = transformer.parse_network(network_string)
@@ -585,7 +587,7 @@ def test_comment_parsing(layer_parser, transformer, comment_string, expected, te
 )
 def test_severity_level_parsing(layer_parser, transformer, layer_string, expected_result, expected_warnings, raises_error, test_id):
     if raises_error:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, exceptions.VisitError)):
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, VisitError)):
             tree = layer_parser.parse(layer_string)
             transformer.transform(tree)
     else:
