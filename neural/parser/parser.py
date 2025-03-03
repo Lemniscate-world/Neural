@@ -72,9 +72,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
     grammar = r"""
         // Layer type tokens (case-insensitive)
         DENSE: "dense"i
-        MAXPOOLING2D: "MaxPooling2D"i
-        MAXPOOLING2D: "MaxPooling2D"i
-        MAXPOOLING3D: "MaxPooling3D"i
+        MAXPOOLING1D: "maxpooling1d"i
+        MAXPOOLING2D: "maxpooling2d"i
+        MAXPOOLING3D: "maxpooling3d"i
         CONV2D: "conv2d"i
         CONV1D: "conv1d"i
         CONV3D: "conv3d"i
