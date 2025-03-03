@@ -1541,7 +1541,7 @@ class ModelTransformer(lark.Transformer):
             model['shape_info'] = []
             model['warnings'] = warnings  # Ensure warnings are always included
             return model
-        except (lark.LarkError, DSLValidationError, lark.VisitError) as e:
+        except (lark.LarkError, DSLValidationError, VisitError) as e:
             log_by_severity(Severity.ERROR, f"Error parsing network: {str(e)}")
             raise
 
