@@ -88,7 +88,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "lstmcell"i | "grucell"i
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i 
 
 
         // Basic tokens
@@ -318,8 +318,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         rnn_cell: simple_rnn_cell | lstm_cell | gru_cell
         simple_rnn_cell: "SimpleRNNCell" "(" named_params ")"
-        lstm_cell: LSTMCell "(" named_params ")"
-        gru_cell: GRUCell "(" named_params ")"
+        lstm_cell: LSTMCELL "(" named_params ")"
+        gru_cell: GRUCELL "(" named_params ")"
 
         dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
         simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" named_params ")"
@@ -334,8 +334,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         conv_gru_layer: "ConvGRU2D(" named_params ")"
         rnn_cell_layer: simple_rnn_cell_layer | lstm_cell_layer | gru_cell_layer
         simple_rnn_cell_layer: "SimpleRNNCell(" named_params ")"
-        lstm_cell_layer: "LSTMCell(" named_params ")"
-        gru_cell_layer: "GRUCell(" named_params ")"
+        lstm_cell_layer: "LSTMCell" "(" named_params ")"
+        gru_cell_layer: "GRUCell" "(" named_params ")"
 
         ?advanced: ( attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic )
         attention: "Attention" "(" [named_params] ")" [layer_block]
@@ -400,7 +400,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         math_expr: term (("+"|"-") term)*
         term: factor (("*"|"/") factor)*
-        factor: NUMBER | VARIABLE | "(" math_expr ")" | function_call
+        factor: NUMBER | NAME| "(" math_expr ")" | function_call
         function_call: NAME "(" math_expr ("," math_expr)* ")"
 
         hpo_expr: "HPO(" (hpo_choice | hpo_range | hpo_log_range) ")"
@@ -413,11 +413,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         define: "define" NAME "{" ( layer_or_repeated)*  "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
-        basic_layer: layer_type "(" [layer_params] ")" [layer_block]
+        basic_layer: layer_type "(" [param_style1] ")" [layer_block]
         layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL
 
-        advanced_layer: (attention | transformer | residual | inception | capsule | 
-                        squeeze_excitation | graph | embedding | quantum | dynamic)
+        advanced_layer: (attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic)
 
         special_layer: custom | macro_ref | wrapper | lambda_
 
@@ -434,7 +433,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         grammar,
         start=start_rule,
         parser='lalr',
-        lexer='standard',
+        lexer='contextual',
         debug=True,
         cache=True,
         propagate_positions=True,
