@@ -34,3 +34,7 @@ scipy>=1.7
 seaborn>=0.11
 statsmodels>=0.13
 sympy>=1.9
+onnx>=1.10
+onnxruntime>=1.10
+flask_httpauth>=4.4
+flask_cors>=3.1

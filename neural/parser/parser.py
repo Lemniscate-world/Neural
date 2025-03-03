@@ -548,6 +548,26 @@ class ModelTransformer(lark.Transformer):
                 sub_layers.append(item)
         return sub_layers
 
+    def basic_layer(self, items):
+        layer_type_node = items[0]
+        layer_type = layer_type_node.children[0].value.upper()  # Ensure uppercase to match method names
+
+        params_node = items[1] if len(items) > 1 else None
+        params = self._extract_value(params_node) if params_node else {}
+
+        sublayers_node = items[2] if len(items) > 2 else None
+        sublayers = self._extract_value(sublayers_node) if sublayers_node else []
+
+        # Dispatch to layer-specific method based on layer_type
+        method_name = layer_type.lower()
+        if hasattr(self, method_name):
+            layer_info = getattr(self, method_name)([params_node])
+            layer_info['sublayers'] = sublayers
+            return layer_info
+        else:
+            self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
+            return {'type': layer_type, 'params': params, 'sublayers': sublayers}
+
     def layers(self, items):
         expanded_layers = []
         for item in items:
