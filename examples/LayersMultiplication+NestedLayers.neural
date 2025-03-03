@@ -1,0 +1,9 @@
+define MyBlock {
+  Conv2D(32, (3,3), activation="relu")
+  MaxPooling2D((2,2))
+}
+
+network MyNetwork {
+  input: (28, 28, 1)
+  layers: MyBlock() * 3  # Reuse macro 3 times
+}

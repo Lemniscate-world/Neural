@@ -461,6 +461,9 @@ def safe_parse(parser, text):
         else:
             raise DSLValidationError(f"Parsing failed: {str(e)}") from e
 
+network_parser = create_parser('network')
+layer_parser = create_parser('layer')
+research_parser = create_parser('research')
 
 class ModelTransformer(lark.Transformer):
     def __init__(self):
