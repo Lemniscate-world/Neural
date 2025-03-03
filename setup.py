@@ -34,6 +34,9 @@ setup(
         "torchvision",
         "multiprocess",
         "pysnooper",
+        "onnx",
+        "flask-cors",
+        "flask-httpauth"
     ],
     entry_points={
         "console_scripts": ["neural=neural.cli:cli"]

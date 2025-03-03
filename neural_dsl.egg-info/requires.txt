@@ -25,3 +25,6 @@ transformers
 torchvision
 multiprocess
 pysnooper
+onnx
+flask-cors
+flask-httpauth
