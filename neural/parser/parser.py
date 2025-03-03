@@ -72,6 +72,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
     grammar = r"""
         // Layer type tokens (case-insensitive)
         DENSE: "dense"i
+        MAXPOOLING2D: "MaxPooling2D"i
+        MAXPOOLING2D: "MaxPooling2D"i
+        MAXPOOLING3D: "MaxPooling3D"i
         CONV2D: "conv2d"i
         CONV1D: "conv1d"i
         CONV3D: "conv3d"i
@@ -90,7 +93,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i 
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i
 
 
         // Basic tokens
@@ -106,7 +109,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Layer name patterns
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /(?!Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
+        MACRO_NAME: /(?!Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
 
         // Comments and whitespace
         COMMENT: /#[^\n]*/
@@ -280,9 +283,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
         max_pooling: max_pooling1d | max_pooling2d | max_pooling3d
-        max_pooling1d: "MaxPooling1D" "(" named_params ")"
-        max_pooling2d: "MaxPooling2D" "(" param_style1 ")"
-        max_pooling3d: "MaxPooling3D" "(" named_params ")"
+        max_pooling1d: MAXPOOLING1D "(" named_params ")"
+        max_pooling2d: MAXPOOLING2D "(" param_style1 ")"
+        max_pooling3d: MAXPOOLING3D "(" named_params ")"
         pool_size: "pool_size" "=" value
         average_pooling: average_pooling1d | average_pooling2d | average_pooling3d
         average_pooling1d: "AveragePooling1D(" named_params ")"
