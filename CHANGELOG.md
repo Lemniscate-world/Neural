@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.2.1] - 04-03-2025
+
+### Added
+- **Macros for the DSL**:
+  - Introduced `define` blocks to simplify reusable layer structures.
+  - Allows parameter overrides in macro references.
+  - Improved error messages for macro expansion.
+- **Basic PyTorch Training Loop**:
+  - Added a simple training loop for PyTorch, requiring user-provided DataLoader.
+- **JSON Schema for Code Editors**:
+  - Introduced `neural-schema.json` for syntax validation and autocompletion.
+
+### Fixed
+- **TensorFlow Code Generation**:
+  - Fixed optimizer import handling (`Adam` is now imported explicitly).
+  - Corrected loss function extraction from model data.
+  - Ensured formatting consistency in `model.compile()`.
+- **Layer Multiplication Bug**:
+  - Fixed incorrect dictionary key (`multiply` → `*`).
+- **Macro Parsing Errors**:
+  - Macros now store correct layer definitions.
+  - Fixed grammar conflicts between standard layer names and macros.
+- **Dashboard Test Issues**:
+  - Fixed title assertion errors.
+  - Improved resource cleanup.
+
+### Improved
+- **Error Handling**:
+  - Better distinction between custom layers and macros.
+  - Clearer messages when parsing macros and layer structures.
+- **Logging**:
+  - Replaced `print()` statements with `logger.warning()` for unsupported PyTorch layers.
+- **Nested Configurations**:
+  - Layers can now contain sub-layers using `{}` (useful for Transformer and Residual networks).
+
+### Known Issues
+- **Neural is still in an early, very buggy state**. This release is primarily to showcase progress.
+- Macro support is functional but requires further testing with complex architectures.
+
+---
+
+⚠️ **Neural is a work in progress! Expect bugs and missing features.** Feedback is welcome!
+
+
+
 ## [0.2.0] - 25-02-2025
 
 ### Added
