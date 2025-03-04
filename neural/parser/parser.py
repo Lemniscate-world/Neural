@@ -557,6 +557,19 @@ class ModelTransformer(lark.Transformer):
         return sub_layers
 
     def basic_layer(self, items):
+        """
+        Parses a basic layer from the provided items and dispatches to the corresponding
+        layer-specific method based on the layer type.
+
+        Args:
+            items (list): A list containing the layer type node, parameters node, and sublayers node.
+
+        Returns:
+            dict: A dictionary containing the layer type, parameters, and sublayers.
+
+        Raises:
+            ValidationError: If the layer type is unsupported.
+        """
         layer_type_node = items[0]
         layer_type = layer_type_node.children[0].value.upper()  # Ensure uppercase to match method names
 
@@ -858,7 +871,7 @@ class ModelTransformer(lark.Transformer):
         value = self._extract_value(items[0])
         return {'pool_size': value}
 
-    def max_pooling1d(self, items):
+    def maxpooling1d(self, items):
         param_nodes = items[0].children
         params = {}
         param_vals = [self._extract_value(child) for child in param_nodes]
@@ -883,7 +896,7 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'MaxPooling1D', 'params': params}
 
     @pysnooper.snoop()
-    def max_pooling2d(self, items):
+    def maxpooling2d(self, items):
         param_style = self._extract_value(items[0])
         params = {}
         if isinstance(param_style, list):
@@ -907,9 +920,20 @@ class ModelTransformer(lark.Transformer):
                         self.raise_validation_error(f"MaxPooling2D {key} must be positive integers, got {val}", items[0])
                 elif not isinstance(val, int) or val <= 0:
                     self.raise_validation_error(f"MaxPooling2D {key} must be a positive integer, got {val}", items[0])
+        
+        if 'pool_size' in params:
+            pool_size = params['pool_size']
+            if isinstance(pool_size, (list, tuple)):
+                if not all(isinstance(v, int) and v > 0 for v in pool_size):
+                    self.raise_validation_error("pool size must be positive", items[0])
+            elif not isinstance(pool_size, int) or pool_size <= 0:
+                self.raise_validation_error("pool size must be positive", items[0])
+        else:
+            self.raise_validation_error("Missing required parameter 'pool_size'", items[0])
+        
         return {'type': 'MaxPooling2D', 'params': params}
 
-    def max_pooling3d(self, items):
+    def maxpooling3d(self, items):
         param_nodes = items[0].children
         params = {}
         param_vals = [self._extract_value(child) for child in param_nodes]
