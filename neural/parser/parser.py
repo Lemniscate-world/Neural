@@ -917,9 +917,9 @@ class ModelTransformer(lark.Transformer):
                 val = params[key]
                 if isinstance(val, (list, tuple)):
                     if not all(isinstance(v, int) and v > 0 for v in val):
-                        self.raise_validation_error(f"MaxPooling2D {key} must be positive integers, got {val}", items[0])
+                        self.raise_validation_error(f"MaxPooling2D {key.strip("_")} must be positive integers, got {val}", items[0])
                 elif not isinstance(val, int) or val <= 0:
-                    self.raise_validation_error(f"MaxPooling2D {key} must be a positive integer, got {val}", items[0])
+                    self.raise_validation_error(f"MaxPooling2D {key.strip("_")} must be a positive integer, got {val}", items[0])
         
         if 'pool_size' in params:
             pool_size = params['pool_size']
