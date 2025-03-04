@@ -656,7 +656,7 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'execution_config', 'params': params}
 
     def dense(self, items):
-        param_nodes = items[0].children
+        param_nodes = self._extract_value(items[0])
         params = {}
         ordered_params = []
         named_params = {}
