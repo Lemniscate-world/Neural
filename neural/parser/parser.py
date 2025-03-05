@@ -90,10 +90,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         CONV2DTRANSPOSE: "conv2dtranspose"i
         LSTMCELL: "lstmcell"i
         GRUCELL: "grucell"i
+        BATCHNORMALIZATION: "batchnormalization"i
 
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i
 
 
         // Basic tokens
