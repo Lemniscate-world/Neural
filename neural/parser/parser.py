@@ -572,7 +572,7 @@ class ModelTransformer(lark.Transformer):
         layer_type_node = items[0]
         layer_type = layer_type_node.children[0].value.upper()
         params_node = items[1] if len(items) > 1 else None
-        params = self._extract_value(params_node) if params_node else {}
+        params = self._extract_value(params_node) if params_node else None
         sublayers_node = items[2] if len(items) > 2 else None
         sublayers = self._extract_value(sublayers_node) if sublayers_node else []
         method_name = layer_type.lower()
