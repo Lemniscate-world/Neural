@@ -2,7 +2,6 @@ import os
 import sys
 import pytest
 from lark import Lark, exceptions
-from lark.visitors import VisitError
 
 
 # Add parent directory to path
