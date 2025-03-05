@@ -558,11 +558,10 @@ class ModelTransformer(lark.Transformer):
 
     def basic_layer(self, items):
         """
-        Parses a basic layer from the provided items and dispatches to the corresponding
-        layer-specific method based on the layer type.
+        Parses a basic layer from the given items and returns its information.
 
         Args:
-            items (list): A list containing the layer type node, parameters node, and sublayers node.
+            items (list): A list of nodes representing the layer type, parameters, and sublayers.
 
         Returns:
             dict: A dictionary containing the layer type, parameters, and sublayers.
@@ -571,24 +570,20 @@ class ModelTransformer(lark.Transformer):
             ValidationError: If the layer type is unsupported.
         """
         layer_type_node = items[0]
-        layer_type = layer_type_node.children[0].value.upper()  # Ensure uppercase to match method names
-
+        layer_type = layer_type_node.children[0].value.upper()
         params_node = items[1] if len(items) > 1 else None
         params = self._extract_value(params_node) if params_node else {}
-
         sublayers_node = items[2] if len(items) > 2 else None
         sublayers = self._extract_value(sublayers_node) if sublayers_node else []
-
-        # Dispatch to layer-specific method based on layer_type
         method_name = layer_type.lower()
         if hasattr(self, method_name):
-            layer_info = getattr(self, method_name)([params_node])
+            layer_info = getattr(self, method_name)([params])  # Pass params directly
             layer_info['sublayers'] = sublayers
             return layer_info
         else:
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
             return {'type': layer_type, 'params': params, 'sublayers': sublayers}
-
+        
     def layers(self, items):
         expanded_layers = []
         for item in items:
@@ -656,38 +651,47 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'execution_config', 'params': params}
 
     def dense(self, items):
-        param_nodes = items[0]
-        params = {}
-        ordered_params = []
-        named_params = {}
-        for child in param_nodes:
-            param = self._extract_value(child)
-            if isinstance(param, dict):
-                named_params.update(param)
-            else:
-                ordered_params.append(param)
-        if ordered_params:
-            # Validate units is an integer
-            units = ordered_params[0]
-            if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
-                self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
-            units = int(units)
-            params['units'] = units
-            if len(ordered_params) > 1:
-                activation = ordered_params[1]
-                if not isinstance(activation, str):
-                    self.raise_validation_error(f"Dense activation must be a string, got {activation}", items[0])
-                params['activation'] = activation
-        params.update(named_params)
-        if 'units' in params:
-            units = params['units']
-            if not isinstance(units, int):
-                self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
+        # items[0] is now the pre-transformed params (dict or None)
+        params = items[0] if items and items[0] is not None else {}
+        
+        # If params is not a dict (e.g., for positional args), handle it separately
+        if not isinstance(params, dict):
+            param_nodes = items[0] if items[0] else []
+            ordered_params = []
+            named_params = {}
+            for child in param_nodes:
+                param = self._extract_value(child)
+                if isinstance(param, dict):
+                    named_params.update(param)
+                else:
+                    ordered_params.append(param)
+            params = {}
+            if ordered_params:
+                units = ordered_params[0]
+                if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
+                    self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
+                params['units'] = int(units)
+                if len(ordered_params) > 1:
+                    activation = ordered_params[1]
+                    if not isinstance(activation, str):
+                        self.raise_validation_error(f"Dense activation must be a string, got {activation}", items[0])
+                    params['activation'] = activation
+            params.update(named_params)
+        
+        # Validate units
         if 'units' not in params:
-            self.raise_validation_error("Dense layer requires 'units' parameter", items[0])
+            self.raise_validation_error("Dense layer requires 'units' parameter", items[0] if items else None)
+        units = params['units']
+        if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
+            self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0] if items else None)
+        params['units'] = int(units)
+        
+        # Validate activation if present
+        if 'activation' in params and not isinstance(params['activation'], str):
+            self.raise_validation_error(f"Dense activation must be a string, got {params['activation']}", items[0] if items else None)
+        
         return {"type": "Dense", "params": params}
-
-
+    
     def conv(self, items):
         return items[0]
 
@@ -1259,16 +1263,16 @@ class ModelTransformer(lark.Transformer):
             return {k: self._extract_value(v) for k, v in item.items()}
         return item
     def named_float(self, items):
-        return {items[0].value: self._extract_value(items[1])}
+        return {items[0].value: self._extract_value(items[0])}
 
     def named_int(self, items):
-        return {items[0].value: self._extract_value(items[1])}
+        return {items[0].value: self._extract_value(items[0])}
 
     def named_param(self, items):
-        return {items[0].value: self._extract_value(items[1])}
+        return {items[0].value: self._extract_value(items[0])}
 
     def named_string(self, items):
-        return {items[0].value: self._extract_value(items[1])}
+        return {items[0].value: self._extract_value(items[0])}
 
     def number(self, items):
         return self._extract_value(items[0])
