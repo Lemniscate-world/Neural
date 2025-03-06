@@ -312,7 +312,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         adaptive_average_pooling3d: "AdaptiveAveragePooling3D(" named_params ")"
 
         ?norm_layer: batch_norm | layer_norm | instance_norm | group_norm
-        batch_norm: "BatchNormalization" "(" [named_params] ")"
+        batch_norm: BATCHNORMALIZATION "(" [named_params] ")"
         layer_norm: "LayerNormalization" "(" [named_params] ")"
         instance_norm: "InstanceNormalization" "(" [named_params] ")"
         group_norm: "GroupNormalization" "(" [named_params] ")"
