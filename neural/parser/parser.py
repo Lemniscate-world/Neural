@@ -239,13 +239,15 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         ?param_style1: named_params | (value ("," (value | named_param))* )
 
-        network: "network" NAME "{" input_layer layers loss optimizer [training_config] [execution_config] "}"
+        network: "network" NAME "{" input_layer layers [loss] [optimizer] [training_config] [execution_config] "}"
 
         config: training_config | execution_config
         input_layer: "input" ":" shape ("," shape)*
         shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
         number_or_none: number | NONE
+
         layers: "layers" ":" ( layer_or_repeated)* 
+        
         layer_or_repeated: layer ["*" INT]  
 
         lambda_: "Lambda" "(" STRING ")"
@@ -708,6 +710,8 @@ class ModelTransformer(lark.Transformer):
         units = params['units']
         if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
             self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0] if items else None)
+        if units <= 0:  # Add explicit positive check
+            self.raise_validation_error(f"Dense units must be positive, got {units}", items[0] if items else None)
         params['units'] = int(units)
         
         # Validate activation if present
