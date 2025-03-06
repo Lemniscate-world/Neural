@@ -477,6 +477,28 @@ class ModelTransformer(lark.Transformer):
         self.variables = {}
         self.macros = {}
         self.current_macro = None
+        self.layer_type_map = {
+            'DENSE': 'dense',
+            'CONV2D': 'conv2d',
+            'CONV1D': 'conv1d',
+            'CONV3D': 'conv3d',
+            'DROPOUT': 'dropout',
+            'FLATTEN': 'flatten',
+            'LSTM': 'lstm',
+            'GRU': 'gru',
+            'SIMPLERNN': 'simple_rnn',
+            'OUTPUT': 'output',
+            'TRANSFORMER': 'transformer',
+            'TRANSFORMER_ENCODER': 'transformer',
+            'TRANSFORMER_DECODER': 'transformer',
+            'CONV2DTRANSPOSE': 'conv2d_transpose',
+            'LSTMCELL': 'lstm_cell',
+            'GRUCELL': 'gru_cell',
+            'MAXPOOLING1D': 'maxpooling1d',
+            'MAXPOOLING2D': 'maxpooling2d',
+            'MAXPOOLING3D': 'maxpooling3d',
+            'BATCHNORMALIZATION': 'batch_norm',
+        }
 
     def raise_validation_error(self, msg, item=None, severity=Severity.ERROR):
         if item and hasattr(item, 'meta'):
@@ -576,9 +598,10 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(params_node) if params_node else None
         sublayers_node = items[2] if len(items) > 2 else None
         sublayers = self._extract_value(sublayers_node) if sublayers_node else []
-        method_name = layer_type.lower()
-        if hasattr(self, method_name):
-            layer_info = getattr(self, method_name)([params])  # Pass params directly
+        
+        method_name = self.layer_type_map.get(layer_type)
+        if method_name and hasattr(self, method_name):
+            layer_info = getattr(self, method_name)([params])
             layer_info['sublayers'] = sublayers
             return layer_info
         else:
