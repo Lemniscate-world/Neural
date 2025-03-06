@@ -677,16 +677,18 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'execution_config', 'params': params}
 
     def dense(self, items):
-        # items[0] is now the pre-transformed params (dict or None)
+        logger.debug(f"dense called with items: {items}")
         params = items[0] if items and items[0] is not None else {}
+        logger.debug(f"Initial params: {params}")
         
-        # If params is not a dict (e.g., for positional args), handle it separately
         if not isinstance(params, dict):
+            logger.debug("Processing positional params")
             param_nodes = items[0] if items[0] else []
             ordered_params = []
             named_params = {}
             for child in param_nodes:
                 param = self._extract_value(child)
+                logger.debug(f"Extracted param: {param}")
                 if isinstance(param, dict):
                     named_params.update(param)
                 else:
@@ -704,20 +706,22 @@ class ModelTransformer(lark.Transformer):
                     params['activation'] = activation
             params.update(named_params)
         
-        # Validate units
+        logger.debug(f"Final params before validation: {params}")
         if 'units' not in params:
             self.raise_validation_error("Dense layer requires 'units' parameter", items[0] if items else None)
         units = params['units']
+        logger.debug(f"Units value: {units}")
         if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
             self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0] if items else None)
-        if units <= 0:  # Add explicit positive check
+        if units <= 0:
+            logger.debug(f"Units <= 0 detected: {units}")
             self.raise_validation_error(f"Dense units must be positive, got {units}", items[0] if items else None)
         params['units'] = int(units)
         
-        # Validate activation if present
         if 'activation' in params and not isinstance(params['activation'], str):
             self.raise_validation_error(f"Dense activation must be a string, got {params['activation']}", items[0] if items else None)
         
+        logger.debug(f"Returning: {{'type': 'Dense', 'params': {params}}}")
         return {"type": "Dense", "params": params}
     
     def conv(self, items):
