@@ -154,7 +154,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         bool_value: BOOL
         named_return_sequences: "return_sequences" "=" bool_value
         named_units: "units" "=" number
-        named_activation: "activation" "=" STRING
+        named_activation: "activation" "=" STRING | "activation" "=" hpo_expr
         named_size: NAME ":" explicit_tuple  
         named_filters: "filters" "=" NUMBER
         named_strides: "strides" "=" value
@@ -235,9 +235,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         simple_float: FLOAT
         named_clipvalue: "clipvalue" "=" FLOAT
         named_clipnorm: "clipnorm" "=" FLOAT
-        ?named_param: ( named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value | NAME "=" hpo_expr | hpo_expr )
+        ?named_param: ( named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value | NAME "=" hpo_expr )
 
-        ?param_style1: named_params | "("value ("," (value | named_param))* ")" | hpo
+        ?param_style1: named_params | "("value ("," (value | named_param))* ")" | hpo_with_params
 
         network: "network" NAME "{" input_layer layers [loss] [optimizer] [training_config] [execution_config] "}"
 
@@ -410,16 +410,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         factor: NUMBER | NAME| "(" math_expr ")" | function_call
         function_call: NAME "(" math_expr ("," math_expr)* ")"
 
+        hpo_with_params: hpo_expr ("," named_params)*
         hpo: hpo_expr | layer_choice
         // HPO for Hyperparameters
-        hpo_expr: "HPO" "(" (hpo_choice | hpo_range | hpo_log_range | hpo_activation)* ")"
+        hpo_expr: "HPO" "(" (hpo_choice | hpo_range | hpo_log_range )* ")"
         hpo_choice: "choice" "(" value ("," value)* ")" 
         hpo_range: "range" "(" number "," number ("," "step="number)? ")"
         hpo_log_range: "log_range" "(" number "," number ")"
-        hpo_activation: "activation" "=" "HPO" "(" hpo_choice ")"
-        hpo_units: "units" "=" hpo_choice
-        hpo_dropout: "dropout" "=" hpo_range
-        hpo_rate: "rate" "=" hpo_range
         // HPO for layer choice
         layer_choice: "HPO" "(" "choice" "(" layer ("," layer)* "))"
 
