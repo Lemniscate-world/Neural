@@ -690,30 +690,32 @@ class ModelTransformer(lark.Transformer):
         logger.debug(f"dense called with items: {items}")
         params = items[0] if items and items[0] is not None else {}
         
-        if not isinstance(params, dict):
+        if not isinstance(params, dict):  # Handle list from param_style1
             param_nodes = items[0] if items[0] else []
             ordered_params = []
             named_params = {}
             for child in param_nodes:
                 param = self._extract_value(child)
                 if isinstance(param, dict):
-                    named_params.update(param)
+                    if 'hpo' in param:  # HPO without a key (positional)
+                        ordered_params.append(param)
+                    else:
+                        named_params.update(param)
                 else:
                     ordered_params.append(param)
             params = {}
             if ordered_params:
-                params['units'] = ordered_params[0]  # Could be HPO or int
                 if len(ordered_params) > 1:
-                    params['activation'] = ordered_params[1]
+                    self.raise_validation_error("Dense with multiple positional parameters not supported with HPO", items[0])
+                params['units'] = ordered_params[0]  # First HPO is units
             params.update(named_params)
         
         if 'units' not in params:
             self.raise_validation_error("Dense layer requires 'units' parameter", items[0])
         
-        # Handle units (HPO or number)
         units = params['units']
-        if isinstance(units, dict) and 'hpo' in units:
-            params['units'] = units  # Keep HPO structure
+        if isinstance(units, dict):  # HPO case
+            pass  # Already in correct format
         else:
             if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
                 self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
@@ -721,17 +723,15 @@ class ModelTransformer(lark.Transformer):
                 self.raise_validation_error(f"Dense units must be positive, got {units}", items[0])
             params['units'] = int(units)
         
-        # Handle activation (HPO or string)
         if 'activation' in params:
             activation = params['activation']
-            if not isinstance(activation, (str, dict)):
+            if isinstance(activation, dict):  # HPO case
+                pass
+            elif not isinstance(activation, str):
                 self.raise_validation_error(f"Dense activation must be a string or HPO, got {activation}", items[0])
-            if isinstance(activation, dict) and 'hpo' not in activation:
-                self.raise_validation_error(f"Invalid activation HPO structure: {activation}", items[0])
         
         logger.debug(f"Returning: {{'type': 'Dense', 'params': {params}}}")
         return {"type": "Dense", "params": params}
-    
     def conv(self, items):
         return items[0]
 
@@ -1584,6 +1584,9 @@ class ModelTransformer(lark.Transformer):
     ## HPO ##
     def hpo_expr(self, items):
         return {"hpo": self._extract_value(items[0])}
+    
+    def hpo_with_params(self, items):
+        return [self._extract_value(item) for item in items]
 
     def hpo_choice(self, items):
         return {"type": "categorical", "values": [self._extract_value(x) for x in items]}
