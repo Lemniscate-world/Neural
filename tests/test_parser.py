@@ -2,6 +2,7 @@ import os
 import sys
 import pytest
 from lark import Lark, exceptions
+from lark.exceptions import VisitError
 
 
 # Add parent directory to path
@@ -753,17 +754,19 @@ def test_error_recovery():
                 parser.parse(test_input)
 
 @pytest.mark.parametrize("test_input,expected_error", [
-        ('network Test { input: (1,1) layers: Dense(units=-10) }', 'units must be positive'),
-        ('network Test { input: (1,1) layers: Dropout(rate=1.5) }', 'rate must be between 0 and 1'),
-        ('network Test { input: (1,1) layers: Conv2D(filters=0) }', 'filters must be positive')
-    ])
+    ('network Test { input: (1,1) layers: Dense(units=-10) }', 'units must be positive'),
+    ('network Test { input: (1,1) layers: Dropout(rate=1.5) }', 'rate must be between 0 and 1'),
+    ('network Test { input: (1,1) layers: Conv2D(filters=0) }', 'filters must be positive')
+])
 def test_semantic_validation(test_input, expected_error):
-        """Test semantic validation of parsed values."""
-        parser = create_parser()
-        with pytest.raises(DSLValidationError) as exc_info:
-            parser.parse(test_input)
-        assert expected_error in str(exc_info.value)
-
+    parser = create_parser()
+    transformer = ModelTransformer()
+    with pytest.raises(VisitError) as exc_info:
+        tree = parser.parse(test_input)
+        transformer.transform(tree)
+    assert isinstance(exc_info.value.__context__, DSLValidationError)
+    assert expected_error in str(exc_info.value.__context__)
+    
 def test_grammar_completeness():
         """Test that grammar covers all required language features."""
         parser = create_parser()

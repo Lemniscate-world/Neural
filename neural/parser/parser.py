@@ -603,9 +603,12 @@ class ModelTransformer(lark.Transformer):
         
         method_name = self.layer_type_map.get(layer_type)
         if method_name and hasattr(self, method_name):
-            layer_info = getattr(self, method_name)([params])
-            layer_info['sublayers'] = sublayers
-            return layer_info
+            try:
+                layer_info = getattr(self, method_name)([params])
+                layer_info['sublayers'] = sublayers
+                return layer_info
+            except DSLValidationError as e:
+                raise e  # Re-raise DSLValidationError directly
         else:
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
             return {'type': layer_type, 'params': params, 'sublayers': sublayers}
