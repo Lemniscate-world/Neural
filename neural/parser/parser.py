@@ -613,6 +613,9 @@ class ModelTransformer(lark.Transformer):
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
             return {'type': layer_type, 'params': params, 'sublayers': sublayers}
         
+    def advanced_layer(self, items):
+        return self._extract_value(items[0])
+    
     def layers(self, items):
         expanded_layers = []
         for item in items:
@@ -1402,9 +1405,13 @@ class ModelTransformer(lark.Transformer):
     def device_param(self, items):
         return {'device': self._extract_value(items[0])}
 
+
+    ### Advanced Layers ###
+
     def attention(self, items):
         params = self._extract_value(items[0]) if items else None
-        return {'type': 'Attention', 'params': params}
+        sub_layers = self._extract_value(items[1]) if len(items) > 1 and items[1].data == 'layer_block' else []
+        return {'type': 'Attention', 'params': params, 'sublayers': sub_layers}
 
     def residual(self, items):
         params = self._extract_value(items[0]) if items and items[0].data == 'named_params' else {}
