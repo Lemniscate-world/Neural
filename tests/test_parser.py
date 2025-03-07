@@ -766,7 +766,7 @@ def test_semantic_validation(test_input, expected_error):
         transformer.transform(tree)
     assert isinstance(exc_info.value.__context__, DSLValidationError)
     assert expected_error in str(exc_info.value.__context__)
-    
+
 def test_grammar_completeness():
         """Test that grammar covers all required language features."""
         parser = create_parser()
@@ -844,6 +844,21 @@ def test_grammar_completeness():
                       'activation': {'hpo': {'type': 'categorical', 'values': ['relu', 'tanh']}}
                   }, 'sublayers': []},
                  "dense-hpo-multiple"),
+            ],
+            ids=[
+                "dense-tanh",
+                "conv2d-multiple-params",
+                "lstm-mixed-params",
+                "transformer-complex",
+                "dense-zero-units",
+                "conv2d-zero-kernel",
+                "dropout-invalid-rate",
+                "lstm-negative-units",
+                "dense-cpu-device",
+                "dense-invalid-device",
+                "custom-layer-basic",
+                "activation-with-params",
+                "dense-hpo-multiple",
             ]
         )
 def test_extended_layer_parsing(layer_parser, transformer, layer_string, expected, test_id):

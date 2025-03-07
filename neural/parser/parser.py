@@ -410,12 +410,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         factor: NUMBER | NAME| "(" math_expr ")" | function_call
         function_call: NAME "(" math_expr ("," math_expr)* ")"
 
+        // HPO for Hyperparameters
         hpo_expr: "HPO" "(" (hpo_choice | hpo_range | hpo_log_range) ")"
         hpo_choice: "choice" "(" value ("," value)* ")"
         hpo_range: "range" "(" number "," number ("," "step="number)? ")"
         hpo_log_range: "log_range" "(" number "," number ")"
-
-        layer_choice: "HPO(choice(" layer ("," layer)* "))"
+        // HPO for layer choice
+        layer_choice: "HPO" "(" "choice" "(" layer ("," layer)* "))"
 
         define: "define" NAME "{" ( layer_or_repeated)*  "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
