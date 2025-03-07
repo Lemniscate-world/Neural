@@ -235,9 +235,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         simple_float: FLOAT
         named_clipvalue: "clipvalue" "=" FLOAT
         named_clipnorm: "clipnorm" "=" FLOAT
-        ?named_param: ( named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value )
+        ?named_param: ( named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value | NAME "=" hpo_expr | hpo_expr )
 
-        ?param_style1: named_params | (value ("," (value | named_param))* ) | hpo
+        ?param_style1: named_params | "("value ("," (value | named_param))* ")" | hpo
 
         network: "network" NAME "{" input_layer layers [loss] [optimizer] [training_config] [execution_config] "}"
 
@@ -255,7 +255,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         dropout: "Dropout" "(" dropout_params ")"
         dropout_params: FLOAT | named_params
-        dense: DENSE "(" dense_params | hpo ")"
+        dense: DENSE "(" dense_params | hpo ("," hpo)* ")"
         dense_params: (NUMBER ("," (NUMBER | STRING | named_param))* ) | named_params
         flatten: "Flatten" "(" [named_params] ")"
 
@@ -380,8 +380,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         activity_regularization: "ActivityRegularization(" named_params ")"
 
         activation: activation_with_params | activation_without_params
-        activation_with_params: "Activation(" STRING "," named_params ")"
-        activation_without_params: "Activation(" STRING ")"
+        activation_with_params: "Activation" "(" STRING "," named_params ")"
+        activation_without_params: "Activation" "(" STRING ")"
 
         training_config: "train" "{" training_params "}"
         training_params: (epochs_param | batch_size_param | optimizer_param | search_method_param | validation_split_param)*
@@ -412,10 +412,14 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         hpo: hpo_expr | layer_choice
         // HPO for Hyperparameters
-        hpo_expr: "HPO" "(" (hpo_choice | hpo_range | hpo_log_range) ")"
-        hpo_choice: "choice" "(" value ("," value)* ")"
+        hpo_expr: "HPO" "(" (hpo_choice | hpo_range | hpo_log_range | hpo_activation)* ")"
+        hpo_choice: "choice" "(" value ("," value)* ")" 
         hpo_range: "range" "(" number "," number ("," "step="number)? ")"
         hpo_log_range: "log_range" "(" number "," number ")"
+        hpo_activation: "activation" "=" "HPO" "(" hpo_choice ")"
+        hpo_units: "units" "=" hpo_choice
+        hpo_dropout: "dropout" "=" hpo_range
+        hpo_rate: "rate" "=" hpo_range
         // HPO for layer choice
         layer_choice: "HPO" "(" "choice" "(" layer ("," layer)* "))"
 
@@ -429,7 +433,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         special_layer: custom | macro_ref | wrapper | lambda_
 
-        
         ?custom_or_macro: custom | macro_ref
         custom: CUSTOM_LAYER "(" param_style1 ")" [layer_block]
 
@@ -504,11 +507,6 @@ class ModelTransformer(lark.Transformer):
             'BATCHNORMALIZATION': 'batch_norm',
         }
 
-    def hpo(self, items):
-        if isinstance(items, Tree):
-            params = self._extract_value(items)
-            return {'type': 'HPO', 'params': params}
-        return self._extract_value(items[0])
 
     def raise_validation_error(self, msg, item=None, severity=Severity.ERROR):
         if item and hasattr(item, 'meta'):
@@ -541,6 +539,7 @@ class ModelTransformer(lark.Transformer):
             self.raise_validation_error(f"Invalid layer definition: {layer_def}", layer_item)
             
         return layer_def
+
 
     def define(self, items):
         macro_name = items[0].value
@@ -693,47 +692,45 @@ class ModelTransformer(lark.Transformer):
     def dense(self, items):
         logger.debug(f"dense called with items: {items}")
         params = items[0] if items and items[0] is not None else {}
-        logger.debug(f"Initial params: {params}")
         
         if not isinstance(params, dict):
-            logger.debug("Processing positional params")
             param_nodes = items[0] if items[0] else []
             ordered_params = []
             named_params = {}
             for child in param_nodes:
                 param = self._extract_value(child)
-                logger.debug(f"Extracted param: {param}")
                 if isinstance(param, dict):
                     named_params.update(param)
                 else:
                     ordered_params.append(param)
             params = {}
             if ordered_params:
-                units = ordered_params[0]
-                if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
-                    self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
-                params['units'] = int(units)
+                params['units'] = ordered_params[0]  # Could be HPO or int
                 if len(ordered_params) > 1:
-                    activation = ordered_params[1]
-                    if not isinstance(activation, str):
-                        self.raise_validation_error(f"Dense activation must be a string, got {activation}", items[0])
-                    params['activation'] = activation
+                    params['activation'] = ordered_params[1]
             params.update(named_params)
         
-        logger.debug(f"Final params before validation: {params}")
         if 'units' not in params:
-            self.raise_validation_error("Dense layer requires 'units' parameter", items[0] if items else None)
-        units = params['units']
-        logger.debug(f"Units value: {units}")
-        if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
-            self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0] if items else None)
-        if units <= 0:
-            logger.debug(f"Units <= 0 detected: {units}")
-            self.raise_validation_error(f"Dense units must be positive, got {units}", items[0] if items else None)
-        params['units'] = int(units)
+            self.raise_validation_error("Dense layer requires 'units' parameter", items[0])
         
-        if 'activation' in params and not isinstance(params['activation'], str):
-            self.raise_validation_error(f"Dense activation must be a string, got {params['activation']}", items[0] if items else None)
+        # Handle units (HPO or number)
+        units = params['units']
+        if isinstance(units, dict) and 'hpo' in units:
+            params['units'] = units  # Keep HPO structure
+        else:
+            if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
+                self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
+            if units <= 0:
+                self.raise_validation_error(f"Dense units must be positive, got {units}", items[0])
+            params['units'] = int(units)
+        
+        # Handle activation (HPO or string)
+        if 'activation' in params:
+            activation = params['activation']
+            if not isinstance(activation, (str, dict)):
+                self.raise_validation_error(f"Dense activation must be a string or HPO, got {activation}", items[0])
+            if isinstance(activation, dict) and 'hpo' not in activation:
+                self.raise_validation_error(f"Invalid activation HPO structure: {activation}", items[0])
         
         logger.debug(f"Returning: {{'type': 'Dense', 'params': {params}}}")
         return {"type": "Dense", "params": params}
@@ -1586,6 +1583,8 @@ class ModelTransformer(lark.Transformer):
         custom_dims = self._extract_value(items[1])
         return {"type": "CustomShape", "layer": layer_name, "custom_dims": custom_dims}
 
+
+    ## HPO ##
     def hpo_expr(self, items):
         return {"hpo": self._extract_value(items[0])}
 
