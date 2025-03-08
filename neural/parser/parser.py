@@ -132,12 +132,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         nr_file: network
         rnr_file: research
 
-        named_params: named_param ("," named_param)*
+        
         activation_param: "activation" "=" STRING
         ordered_params: value ("," value)* 
-        ?value: STRING -> string_value | number | tuple_ | BOOL  
-        tuple_: "(" number "," number ")"  
-        number: NUMBER  
         number1: INT
         explicit_tuple: "(" value ("," value)+ ")"
 
@@ -237,7 +234,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_clipnorm: "clipnorm" "=" FLOAT
         ?named_param: ( named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value | NAME "=" hpo_expr )
 
-        ?param_style1: named_params | "("value ("," (value | named_param))* ")" | hpo_with_params
 
         network: "network" NAME "{" input_layer layers [loss] [optimizer] [training_config] [execution_config] "}"
 
@@ -255,8 +251,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         dropout: "Dropout" "(" dropout_params ")"
         dropout_params: FLOAT | named_params
-        dense: DENSE "(" dense_params | hpo ("," hpo)* ")"
-        dense_params: (NUMBER ("," (NUMBER | STRING | named_param))* ) | named_params
         flatten: "Flatten" "(" [named_params] ")"
 
         ?recurrent: rnn | bidirectional_rnn | conv_rnn | rnn_cell
@@ -396,8 +390,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         loss: "loss" ":" (NAME | STRING) ["(" named_params ")"]
         optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
-        schedule: NAME "(" params ")"
-        params: [value ("," value)*]
+        schedule: NAME "(" valparams ")"
+        valparams: [value ("," value)*]
 
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" STRING
@@ -424,6 +418,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [param_style1] ")" [layer_block]
+        ?param_style1: params | hpo_with_params
+        params: param ("," param)*
+        ?param: named_param | value
+        ?value: STRING -> string_value | number | tuple_ | BOOL  
+        tuple_: "(" number "," number ")"  
+        number: NUMBER  
+        named_params: named_param ("," named_param)*
         layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION
 
         advanced_layer: (attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic)
@@ -688,34 +689,38 @@ class ModelTransformer(lark.Transformer):
 
     def dense(self, items):
         logger.debug(f"dense called with items: {items}")
-        params = items[0] if items and items[0] is not None else {}
-        
-        if not isinstance(params, dict):  # Handle list from param_style1
-            param_nodes = items[0] if items[0] else []
+        params = {}
+        if items and items[0] is not None:
+            param_node = items[0]  # From param_style1
+            param_values = self._extract_value(param_node) if param_node else []
+
             ordered_params = []
             named_params = {}
-            for child in param_nodes:
-                param = self._extract_value(child)
-                if isinstance(param, dict):
-                    if 'hpo' in param:  # HPO without a key (positional)
-                        ordered_params.append(param)
+            if isinstance(param_values, list):
+                for val in param_values:
+                    if isinstance(val, dict):
+                        named_params.update(val)
                     else:
-                        named_params.update(param)
-                else:
-                    ordered_params.append(param)
-            params = {}
+                        ordered_params.append(val)
+            elif isinstance(param_values, dict):
+                named_params = param_values
+
+            # Map positional arguments
             if ordered_params:
-                if len(ordered_params) > 1:
-                    self.raise_validation_error("Dense with multiple positional parameters not supported with HPO", items[0])
-                params['units'] = ordered_params[0]  # First HPO is units
+                if len(ordered_params) >= 1:
+                    params['units'] = ordered_params[0]
+                if len(ordered_params) >= 2:
+                    params['activation'] = ordered_params[1]
+                if len(ordered_params) > 2:
+                    self.raise_validation_error("Dense with more than two positional parameters is not supported", items[0])
             params.update(named_params)
-        
+
         if 'units' not in params:
             self.raise_validation_error("Dense layer requires 'units' parameter", items[0])
         
         units = params['units']
         if isinstance(units, dict):  # HPO case
-            pass  # Already in correct format
+            pass
         else:
             if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
                 self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
@@ -732,6 +737,7 @@ class ModelTransformer(lark.Transformer):
         
         logger.debug(f"Returning: {{'type': 'Dense', 'params': {params}}}")
         return {"type": "Dense", "params": params}
+    
     def conv(self, items):
         return items[0]
 
