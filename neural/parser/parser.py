@@ -668,15 +668,19 @@ class ModelTransformer(lark.Transformer):
             merged_params = {}
             for elem in param_style:
                 if isinstance(elem, dict):
-                    merged_params.update(elem)
+                    if 'hpo' in elem:
+                        merged_params['rate'] = elem
+                        self._track_hpo('Dropout', 'rate', elem, items[0])  # Track HPO
+                    else:
+                        merged_params.update(elem)
                 else:
                     merged_params['rate'] = elem
             param_style = merged_params
 
         if isinstance(param_style, dict):
             params = param_style.copy()
-            if 'rate' in params:
-                rate = params['rate']
+            if 'rate' in params and 'hpo' in params['rate']:
+                self._track_hpo('Dropout', 'rate', params['rate'], items[0])
                 if not isinstance(rate, (int, float)):
                     self.raise_validation_error(f"Dropout rate must be a number, got {rate}", items[0], Severity.ERROR)
                 elif not 0 <= rate <= 1:
@@ -691,8 +695,12 @@ class ModelTransformer(lark.Transformer):
             self.raise_validation_error("Invalid parameters for Dropout", items[0], Severity.ERROR)
         
         return {'type': 'Dropout', 'params': params}
+    
     def output(self, items):
-        return {'type': 'Output', 'params': self._extract_value(items[0])}
+        params = self._extract_value(items[0])
+        if isinstance(params, dict) and 'units' in params and 'hpo' in params['units']:
+            self._track_hpo('Output', 'units', params['units'], items[0])  # Track HPO
+        return {'type': 'Output', 'params': params}
 
     def regularization(self, items):
         return {'type': items[0].data.capitalize(), 'params': self._extract_value(items[0].children[0])}
@@ -854,6 +862,8 @@ class ModelTransformer(lark.Transformer):
     def optimizer(self, items):
         name = str(items[0].value).strip('"')
         params = self._extract_value(items[1]) if len(items) > 1 else {}
+        if 'learning_rate' in params and 'hpo' in params['learning_rate']:
+            self._track_hpo('Optimizer', 'learning_rate', params['learning_rate'], items[1])  # Track HPO
         return {"type": name, "params": params}
 
     def schedule(self, items):

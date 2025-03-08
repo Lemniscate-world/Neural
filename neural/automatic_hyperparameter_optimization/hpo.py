@@ -1,4 +1,4 @@
-# AHPO.py (updated)
+# AHPO.py
 import optuna
 import torch
 import torch.nn as nn
@@ -27,8 +27,7 @@ class DynamicModel(nn.Module):
             if layer['type'] == 'Dense':
                 if 'hpo' in params['units']:
                     hpo = next(h for h in hpo_params if h['layer_type'] == 'Dense' and h['param_name'] == 'units')
-                    if hpo['hpo']['type'] == 'categorical':
-                        units = trial.suggest_categorical('dense_units', hpo['hpo']['values'])
+                    units = trial.suggest_categorical('dense_units', hpo['hpo']['values'])
                     params['units'] = units
                 self.layers.append(nn.Linear(in_features, params['units']))
                 if params.get('activation') == 'relu':
@@ -37,11 +36,14 @@ class DynamicModel(nn.Module):
             elif layer['type'] == 'Dropout':
                 if 'hpo' in params['rate']:
                     hpo = next(h for h in hpo_params if h['layer_type'] == 'Dropout' and h['param_name'] == 'rate')
-                    if hpo['hpo']['type'] == 'range':
-                        rate = trial.suggest_float('dropout_rate', hpo['hpo']['start'], hpo['hpo']['end'], step=hpo['hpo']['step'])
+                    rate = trial.suggest_float('dropout_rate', hpo['hpo']['start'], hpo['hpo']['end'], step=hpo['hpo']['step'])
                     params['rate'] = rate
                 self.layers.append(nn.Dropout(params['rate']))
             elif layer['type'] == 'Output':
+                if 'hpo' in params['units']:
+                    hpo = next(h for h in hpo_params if h['layer_type'] == 'Output' and h['param_name'] == 'units')
+                    units = trial.suggest_categorical('output_units', hpo['hpo']['values'])
+                    params['units'] = units
                 self.layers.append(nn.Linear(in_features, params['units']))
                 if params.get('activation') == 'softmax':
                     self.layers.append(nn.Softmax(dim=1))
@@ -56,7 +58,7 @@ class DynamicModel(nn.Module):
 # Training Loop
 def train_model(model, optimizer, train_loader, val_loader, device='cpu', epochs=1):
     model.to(device)
-    criterion = nn.CrossEntropyLoss()  # Matches MNIST classification
+    criterion = nn.CrossEntropyLoss()
     model.train()
     for _ in range(epochs):
         for data, target in train_loader:
@@ -80,7 +82,6 @@ def objective(trial, config):
     transformer = ModelTransformer()
     model_dict, hpo_params = transformer.parse_network_with_hpo(config)
     
-    # Hyperparameters from DSL and trial
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
     train_loader = get_data(batch_size, train=True)
     val_loader = get_data(batch_size, train=False)
@@ -104,7 +105,7 @@ def optimize_and_return(config, n_trials=10):
     study.optimize(lambda trial: objective(trial, config), n_trials=n_trials)
     return study.best_params
 
-# Test with your HPOExample (modified for MNIST)
+# Test Config
 config = """
 network HPOExample {
     input: (28,28,1)
@@ -116,5 +117,5 @@ network HPOExample {
     optimizer: "Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))"
 }
 """
-best_params = optimize_and_return(config)
+best_params = optimize_and_return(config, n_trials=5)
 print(f"Best params: {best_params}")
