@@ -100,9 +100,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Basic tokens
         NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
         STRING: "\"" /[^"]+/ "\"" | "\'" /[^']+/ "\'"
-        NUMBER: /[+-]?([0-9]*[.])?[0-9]+/
-        INT: /[0-9]+/
-        FLOAT: /[+-]?([0-9]*[.])?[0-9]+/
+        INT: /[+-]?[0-9]+/
+        FLOAT: /[+-]?[0-9]*\.[0-9]+/ 
+        NUMBER: INT | FLOAT 
         TRUE.2: "true"i
         FALSE.2: "false"i
         NONE.2: "none"i
