@@ -8,7 +8,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
-from neural.automatic_hyperparameter_optimization.AHPO import TestModel, train_model, get_data, objective
+from neural.automatic_hyperparameter_optimization.hpo import TestModel, train_model, get_data, objective
 
 def test_model_forward():
     model = TestModel()
