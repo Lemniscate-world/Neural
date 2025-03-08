@@ -504,6 +504,7 @@ class ModelTransformer(lark.Transformer):
             'MAXPOOLING3D': 'maxpooling3d',
             'BATCHNORMALIZATION': 'batch_norm',
         }
+        self.hpo_params = []
 
     def _track_hpo(self, layer_type, param_name, hpo_data, node):
         self.hpo_params.append({
@@ -512,6 +513,11 @@ class ModelTransformer(lark.Transformer):
             'hpo': hpo_data['hpo'],
             'node': node  # Optional: for debugging
         })
+
+    def parse_network_with_hpo(self, config):
+        tree = create_parser('network').parse(config)
+        model = self.transform(tree)
+        return model, self.hpo_params
 
 
     def raise_validation_error(self, msg, item=None, severity=Severity.ERROR):
