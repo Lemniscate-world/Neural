@@ -679,12 +679,15 @@ class ModelTransformer(lark.Transformer):
 
         if isinstance(param_style, dict):
             params = param_style.copy()
-            if 'rate' in params and 'hpo' in params['rate']:
-                self._track_hpo('Dropout', 'rate', params['rate'], items[0])
-                if not isinstance(rate, (int, float)):
-                    self.raise_validation_error(f"Dropout rate must be a number, got {rate}", items[0], Severity.ERROR)
-                elif not 0 <= rate <= 1:
-                    self.raise_validation_error(f"Dropout rate should be between 0 and 1, got {rate}", items[0], Severity.WARNING)
+            if 'rate' in params:
+                if 'hpo' in params['rate']:
+                    self._track_hpo('Dropout', 'rate', params['rate'], items[0])
+                else:  # Validate only if not HPO
+                    rate = params['rate']
+                    if not isinstance(rate, (int, float)):
+                        self.raise_validation_error(f"Dropout rate must be a number, got {rate}", items[0], Severity.ERROR)
+                    elif not 0 <= rate <= 1:
+                        self.raise_validation_error(f"Dropout rate should be between 0 and 1, got {rate}", items[0], Severity.WARNING)
             else:
                 self.raise_validation_error("Dropout requires a 'rate' parameter", items[0], Severity.ERROR)
         elif isinstance(param_style, (int, float)):
@@ -881,11 +884,15 @@ class ModelTransformer(lark.Transformer):
         params = {}
         for item in items:
             if isinstance(item, Tree):
-                params.update(self._extract_value(item))
+                result = self._extract_value(item)
+                if isinstance(result, dict):
+                    params.update(result)
+                else:
+                    self.raise_validation_error(f"Expected dictionary from {item.data}, got {result}", item)
             elif isinstance(item, dict):
                 params.update(item)
         
-        # Ensure validation_split is between 0 and 1
+        # Ensure validation_split is between 0 and 1 (if applicable)
         if "validation_split" in params:
             val_split = params["validation_split"]
             if not (0 <= val_split <= 1):
@@ -1282,6 +1289,10 @@ class ModelTransformer(lark.Transformer):
             'training_config': training_config,
             'execution_config': execution_config.get('params', {'device': 'auto'})
         }
+
+    def search_method_param(self, items):
+        value = self._extract_value(items[0])  # Extract "bayesian" from STRING token
+        return {'search_method': value}
 
     def named_params(self, items):
         params = {}

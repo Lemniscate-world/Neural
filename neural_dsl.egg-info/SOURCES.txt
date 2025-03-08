@@ -5,8 +5,8 @@ setup.py
 ./neural/cli.py
 ./neural/example_tensorflow.py
 ./neural/test.py
-./neural/automatic_hyperparameter_optimization/AHPO.py
 ./neural/automatic_hyperparameter_optimization/__init__.py
+./neural/automatic_hyperparameter_optimization/hpo.py
 ./neural/code_generation/__init__.py
 ./neural/code_generation/code_generator.py
 ./neural/dashboard/__init__.py
@@ -35,8 +35,8 @@ neural/__init__.py
 neural/cli.py
 neural/example_tensorflow.py
 neural/test.py
-neural/automatic_hyperparameter_optimization/AHPO.py
 neural/automatic_hyperparameter_optimization/__init__.py
+neural/automatic_hyperparameter_optimization/hpo.py
 neural/code_generation/__init__.py
 neural/code_generation/code_generator.py
 neural/dashboard/__init__.py
