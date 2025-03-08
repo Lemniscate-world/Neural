@@ -863,11 +863,49 @@ class ModelTransformer(lark.Transformer):
         return items[0].value.strip('"')
 
     def optimizer(self, items):
-        name = str(items[0].value).strip('"')
-        params = self._extract_value(items[1]) if len(items) > 1 else {}
-        if 'learning_rate' in params and 'hpo' in params['learning_rate']:
-            self._track_hpo('Optimizer', 'learning_rate', params['learning_rate'], items[1])  # Track HPO
-        return {"type": name, "params": params}
+        params = {}
+        opt_type = None
+        
+        # Extract the value from the first item
+        opt_value = self._extract_value(items[0])
+        
+        if isinstance(opt_value, str):
+            # Check if it contains parameters (e.g., "Adam(learning_rate=HPO(...))")
+            if '(' in opt_value and ')' in opt_value:
+                # Split into type and params string
+                opt_type = opt_value[:opt_value.index('(')].strip()
+                param_str = opt_value[opt_value.index('(')+1:opt_value.rindex(')')].strip()
+                
+                # Parse the parameter string (e.g., "learning_rate=HPO(log_range(1e-4, 1e-2))")
+                param_parts = param_str.split('=', 1)
+                if len(param_parts) == 2:
+                    param_name = param_parts[0].strip()  # e.g., "learning_rate"
+                    param_value = param_parts[1].strip()  # e.g., "HPO(log_range(1e-4, 1e-2))"
+                    
+                    # Check if it’s an HPO expression
+                    if param_value.startswith('HPO(') and param_value.endswith(')'):
+                        hpo_str = param_value[4:-1]  # Extract "log_range(1e-4, 1e-2)"
+                        hpo_config = self._parse_hpo(hpo_str, items[0])
+                        params[param_name] = hpo_config
+                    else:
+                        # Handle scalar values if needed (e.g., "learning_rate=0.001")
+                        try:
+                            params[param_name] = float(param_value)
+                        except ValueError:
+                            params[param_name] = param_value
+            else:
+                # Simple optimizer with no params (e.g., "adam")
+                opt_type = opt_value.lower() if opt_value.lower() in ['adam', 'sgd', 'rmsprop'] else opt_value
+        
+        elif isinstance(opt_value, dict):
+            # Handle case where optimizer params are already parsed as a dict
+            params = opt_value
+            opt_type = params.pop('type', None) or 'Adam'  # Default to Adam if no type specified
+        
+        if not opt_type:
+            self.raise_validation_error("Optimizer type must be specified", items[0], Severity.ERROR)
+        
+        return {'type': opt_type, 'params': params}
 
     def schedule(self, items):
         return {"type": items[0].value, "args": [self._extract_value(x) for x in items[1].children]}
@@ -1642,6 +1680,23 @@ class ModelTransformer(lark.Transformer):
 
 
     ## HPO ##
+
+    def _parse_hpo(self, hpo_str, item):
+        """Helper method to parse HPO expressions like 'log_range(1e-4, 1e-2)'."""
+        if hpo_str.startswith('choice('):
+            values = [int(v.strip()) for v in hpo_str[7:-1].split(',')]
+            return {'hpo': {'type': 'categorical', 'values': values}}
+        elif hpo_str.startswith('range('):
+            parts = [float(v.strip()) for v in hpo_str[6:-1].split(',')]
+            if len(parts) == 3:
+                return {'hpo': {'type': 'range', 'start': parts[0], 'end': parts[1], 'step': parts[2]}}
+        elif hpo_str.startswith('log_range('):
+            parts = [float(v.strip()) for v in hpo_str[10:-1].split(',')]
+            if len(parts) == 2:
+                return {'hpo': {'type': 'log_range', 'low': parts[0], 'high': parts[1]}}
+        self.raise_validation_error(f"Invalid HPO expression: {hpo_str}", item, Severity.ERROR)
+        return {}
+
     def hpo_expr(self, items):
         return {"hpo": self._extract_value(items[0])}
     
@@ -1664,6 +1719,8 @@ class ModelTransformer(lark.Transformer):
 
     def layer_choice(self, items):
         return {"hpo_type": "layer_choice", "options": [self._extract_value(item) for item in items]}
+
+    ######
 
     def parse_network(self, config: str, framework: str = 'auto'):
         warnings = []
