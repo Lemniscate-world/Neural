@@ -491,19 +491,27 @@ class ModelTransformer(lark.Transformer):
             'FLATTEN': 'flatten',
             'LSTM': 'lstm',
             'GRU': 'gru',
-            'SIMPLERNN': 'simple_rnn',
+            'SIMPLERNN': 'simplernn',
             'OUTPUT': 'output',
             'TRANSFORMER': 'transformer',
             'TRANSFORMER_ENCODER': 'transformer',
             'TRANSFORMER_DECODER': 'transformer',
             'CONV2DTRANSPOSE': 'conv2d_transpose',
-            'LSTMCELL': 'lstm_cell',
-            'GRUCELL': 'gru_cell',
+            'LSTMCELL': 'lstmcell',
+            'GRUCELL': 'grucell',
             'MAXPOOLING1D': 'maxpooling1d',
             'MAXPOOLING2D': 'maxpooling2d',
             'MAXPOOLING3D': 'maxpooling3d',
             'BATCHNORMALIZATION': 'batch_norm',
         }
+
+    def _track_hpo(self, layer_type, param_name, hpo_data, node):
+        self.hpo_params.append({
+            'layer_type': layer_type,
+            'param_name': param_name,
+            'hpo': hpo_data['hpo'],
+            'node': node  # Optional: for debugging
+        })
 
 
     def raise_validation_error(self, msg, item=None, severity=Severity.ERROR):
@@ -699,7 +707,10 @@ class ModelTransformer(lark.Transformer):
             if isinstance(param_values, list):
                 for val in param_values:
                     if isinstance(val, dict):
-                        named_params.update(val)
+                        if 'hpo' in val:  # Handle HPO as units
+                            named_params['units'] = val
+                        else:
+                            named_params.update(val)
                     else:
                         ordered_params.append(val)
             elif isinstance(param_values, dict):
@@ -720,7 +731,7 @@ class ModelTransformer(lark.Transformer):
         
         units = params['units']
         if isinstance(units, dict):  # HPO case
-            pass
+            pass  # Allow HPO dict, no further validation needed here
         else:
             if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
                 self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
@@ -1088,7 +1099,7 @@ class ModelTransformer(lark.Transformer):
                 self.raise_validation_error(f"GRU units must be a positive integer, got {units}", items[0])
         return {'type': 'GRU', 'params': params}
 
-    def simple_rnn(self, items):
+    def simplernn(self, items):
         params = self._extract_value(items[0])
         if 'units' in params:
             units = params['units']
@@ -1126,17 +1137,33 @@ class ModelTransformer(lark.Transformer):
     def conv_gru_layer(self, items):
         return {'type': 'ConvGRU2D', 'params': self._extract_value(items[0])}
 
+    ## Cell Layers ##
+
     def rnn_cell_layer(self, items):
         return {'type': 'RNNCell', 'params': self._extract_value(items[0])}
 
     def simple_rnn_cell(self, items):
         return {'type': 'SimpleRNNCell', 'params': self._extract_value(items[0])}
 
-    def lstm_cell(self, items):
+    def lstmcell(self, items):
         return {'type': 'LSTMCell', 'params': self._extract_value(items[0])}
 
-    def gru_cell(self, items):
-        return {'type': 'GRUCell', 'params': self._extract_value(items[0])}
+    def grucell(self, items):
+        params = {}
+        if items and items[0] is not None:
+            param_node = items[0]  # From param_style1
+            param_values = self._extract_value(param_node) if param_node else []
+            if isinstance(param_values, list):
+                for val in param_values:
+                    if isinstance(val, dict):
+                        params.update(val)
+                    else:
+                        params['units'] = val  # Handle positional units if present
+            elif isinstance(param_values, dict):
+                params = param_values
+        if 'units' not in params:
+            self.raise_validation_error("GRUCell requires 'units' parameter", items[0])
+        return {"type": "GRUCell", "params": params}
 
     def simple_rnn_dropout(self, items):
         return {"type": "SimpleRNNDropoutWrapper", 'params': self._extract_value(items[0])}
