@@ -446,3 +446,25 @@ def generate_pytorch_layer(layer_type, params, input_shape=None):
     else:
         warnings.warn(f"Unsupported layer type '{layer_type}' for pytorch. Skipping.", UserWarning)
         return None
+    
+def generate_optimized_dsl(config, best_params):
+    transformer = ModelTransformer()
+    model_dict, hpo_params = transformer.parse_network_with_hpo(config)
+    
+    lines = config.strip().split('\n')
+    for i, line in enumerate(lines):
+        for hpo in hpo_params:
+            if hpo['layer_type'] == 'Dense' and hpo['param_name'] == 'units':
+                if 'Dense(HPO(choice(128, 256)))' in line:
+                    lines[i] = line.replace('Dense(HPO(choice(128, 256)))', f"Dense({best_params['dense_units']})")
+            elif hpo['layer_type'] == 'Dropout' and hpo['param_name'] == 'rate':
+                if 'Dropout(HPO(range(0.3, 0.7, step=0.1)))' in line:
+                    lines[i] = line.replace('Dropout(HPO(range(0.3, 0.7, step=0.1)))', f"Dropout({best_params['dropout_rate']})")
+            elif hpo['param_name'] == 'learning_rate':
+                if 'optimizer: "Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))"' in line:
+                    lines[i] = line.replace('Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))', f"Adam(learning_rate={best_params['learning_rate']})")
+    return '\n'.join(lines)
+
+# Example usage
+optimized_config = generate_optimized_dsl(config, best_params)
+print(f"Optimized DSL:\n{optimized_config}")
