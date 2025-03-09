@@ -952,7 +952,6 @@ class ModelTransformer(lark.Transformer):
         values = [self._extract_value(x) for x in items]
         return values[0] if len(values) == 1 else values
 
-
     def optimizer_param(self, items):
         return {'optimizer': self._extract_value(items[0])}
 
@@ -1284,8 +1283,6 @@ class ModelTransformer(lark.Transformer):
     def recall_param(self, items):
         return {'recall': self._extract_value(items[0])}
 
-
-
     def paper_param(self, items):
         # Extract the string value from the 'paper:' parameter
         return self._extract_value(items[0])
@@ -1488,12 +1485,6 @@ class ModelTransformer(lark.Transformer):
     def named_return_sequences(self, items):
         return {"return_sequences": self._extract_value(items[0])}
 
-    def named_num_heads(self, items):
-        return {"num_heads": self._extract_value(items[0])}
-
-    def named_ff_dim(self, items):
-        return {"ff_dim": self._extract_value(items[0])}
-
     def named_input_dim(self, items):
         return {"input_dim": self._extract_value(items[0])}
 
@@ -1559,8 +1550,9 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'QuantumLayer', 'params': params}
 
-    ## Transformers - Encoders - Decoders ##
 
+    ## Transformers - Encoders - Decoders ##
+    @pysnooper.snoop()
     def transformer(self, items):
         if isinstance(items[0], Token):
             transformer_type = items[0].value
@@ -1571,11 +1563,14 @@ class ModelTransformer(lark.Transformer):
         sub_layers = []
         param_idx = 1
 
+        print(items[2])
+        print(items[1])
+
         # Extract parameters if present
-        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'named_params':
+        if len(items) > param_idx and isinstance(items[param_idx], dict) and 'named_params' in items[param_idx]:
             raw_params = self._extract_value(items[param_idx])
             if isinstance(raw_params, dict):
-                params.update(raw_params)
+                params = self._extract_value(raw_params[1])
             elif isinstance(raw_params, list):
                 for param in raw_params:
                     if isinstance(param, dict):
@@ -1596,6 +1591,16 @@ class ModelTransformer(lark.Transformer):
                     self.raise_validation_error(f"{transformer_type} {key} must be a positive integer, got {val}", items[0])
 
         return {'type': transformer_type, 'params': params, 'sublayers': sub_layers}
+
+    def named_num_heads(self, items):
+        params = self._extract_value(items[0]) if items else None
+        return {'type':"num_heads", 'params': params }
+
+    def named_ff_dim(self, items):
+        parmas = self._extract_value(items[0]) if items else None
+        return {'type':"ff_dim", 'params': params}
+
+
 
     def embedding(self, items):
         params = self._extract_value(items[0]) if items else None
