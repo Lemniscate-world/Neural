@@ -626,6 +626,12 @@ class ModelTransformer(lark.Transformer):
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
             return {'type': layer_type, 'params': params, 'sublayers': sublayers}
         
+    def params(self, items):
+        return [self._extract_value(item) for item in items]
+    
+    def param(self, items):
+        return self._extract_value(items[0])
+
     def advanced_layer(self, items):
         return self._extract_value(items[0])
     
