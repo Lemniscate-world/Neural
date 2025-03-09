@@ -1574,13 +1574,10 @@ class ModelTransformer(lark.Transformer):
                 for param in raw_params:
                     if isinstance(param, dict):
                         params.update(param)
-            param_idx += 1
-
-        # Transformer Nested Layers
-
+        param_idx += 1
 
         # Extract sub-layers if present
-        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'layer_block':
+        if len(items) > param_idx and isinstance(items[param_idx], list):
             sub_layers = self._extract_value(items[param_idx])
 
         # Validation
