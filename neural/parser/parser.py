@@ -253,12 +253,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         dropout_params: FLOAT | named_params
         flatten: "Flatten" "(" [named_params] ")"
 
-        ?recurrent: rnn | bidirectional_rnn | conv_rnn | rnn_cell
-        bidirectional_rnn: "Bidirectional(" rnn "," named_params ")"
-        rnn: simple_rnn | lstm | gru
-        simple_rnn: SIMPLERNN "(" named_params ")"
-        lstm: LSTM "(" named_params ")"
-        gru: GRU "(" named_params ")"
 
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2
         l1: "L1(" named_params ")"
@@ -1143,6 +1137,7 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'GroupNormalization', 'params': params}
 
+    @pysnooper.snoop()
     def lstm(self, items):
         params = self._extract_value(items[0])
         if 'units' in params:
@@ -1329,6 +1324,8 @@ class ModelTransformer(lark.Transformer):
         value = self._extract_value(items[0])  # Extract "bayesian" from STRING token
         return {'search_method': value}
 
+    ## Named Parameters ##
+
     def named_params(self, items):
         params = {}
         for item in items:
@@ -1336,7 +1333,14 @@ class ModelTransformer(lark.Transformer):
                 params.update(self._extract_value(item))
             elif isinstance(item, dict):
                 params.update(item)
+            elif isinstance(item, list):
+                for i in item:
+                    params.update(self._extract_value(i))
         return params
+
+    
+    def named_param(self, items):
+        return {items[0].value: self._extract_value(items[0])}
 
     def _extract_value(self, item):
         if isinstance(item, Token):
@@ -1397,14 +1401,13 @@ class ModelTransformer(lark.Transformer):
         elif isinstance(item, dict):
             return {k: self._extract_value(v) for k, v in item.items()}
         return item
+    
     def named_float(self, items):
         return {items[0].value: self._extract_value(items[0])}
 
     def named_int(self, items):
         return {items[0].value: self._extract_value(items[0])}
 
-    def named_param(self, items):
-        return {items[0].value: self._extract_value(items[0])}
 
     def named_string(self, items):
         return {items[0].value: self._extract_value(items[0])}
