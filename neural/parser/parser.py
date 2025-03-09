@@ -110,7 +110,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Layer name patterns
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /(?!BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
+        MACRO_NAME: /(?!TransformerEncoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
 
         // Comments and whitespace
         COMMENT: /#[^\n]*/
@@ -338,11 +338,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         lstm_cell_layer: "LSTMCell" "(" named_params ")"
         gru_cell_layer: "GRUCell" "(" named_params ")"
 
-        ?advanced: ( attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic )
-        attention: "Attention" "(" [named_params] ")" [layer_block]
-        transformer: TRANSFORMER "(" [named_params] ")" [layer_block]
-                    | TRANSFORMER_ENCODER "(" [named_params] ")" [layer_block]
-                    | TRANSFORMER_DECODER "(" [named_params] ")" [layer_block]
+        
         residual: "ResidualConnection" "(" [named_params] ")" [layer_block]
         inception: "Inception" "(" [named_params] ")"
         capsule: "CapsuleLayer" "(" [named_params] ")"
@@ -427,7 +423,12 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_params: named_param ("," named_param)*
         layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION
 
-        advanced_layer: (attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic)
+        ?advanced_layer: (attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic)
+        attention: "Attention" "(" [named_params] ")" [layer_block]
+        transformer: TRANSFORMER "(" [named_params] ")" [layer_block]
+                    | TRANSFORMER_ENCODER "(" [named_params] ")" [layer_block]
+                    | TRANSFORMER_DECODER "(" [named_params] ")" [layer_block]
+
 
         special_layer: custom | macro_ref | wrapper | lambda_
 
@@ -680,7 +681,7 @@ class ModelTransformer(lark.Transformer):
         if isinstance(param_style, dict):
             params = param_style.copy()
             if 'rate' in params:
-                if 'hpo' in params['rate']:
+                if not isinstance(params['rate'], float) and 'hpo' in params['rate']:
                     self._track_hpo('Dropout', 'rate', params['rate'], items[0])
                 else:  # Validate only if not HPO
                     rate = params['rate']
@@ -1557,6 +1558,8 @@ class ModelTransformer(lark.Transformer):
     def quantum(self, items):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'QuantumLayer', 'params': params}
+
+    ## Transformers - Encoders - Decoders ##
 
     def transformer(self, items):
         if isinstance(items[0], Token):
