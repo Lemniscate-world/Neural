@@ -422,12 +422,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         number: NUMBER  
         named_params: named_param ("," named_param)*
         layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION
-
         ?advanced_layer: (attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic)
-        attention: "Attention" "(" [named_params] ")" [layer_block]
-        transformer: TRANSFORMER "(" [named_params] ")" [layer_block]
-                    | TRANSFORMER_ENCODER "(" [named_params] ")" [layer_block]
-                    | TRANSFORMER_DECODER "(" [named_params] ")" [layer_block]
+        attention: "Attention" "(" [param_style1] ")" [layer_block]
+        transformer: TRANSFORMER "(" [param_style1] ")" [layer_block]
+                    | TRANSFORMER_ENCODER "(" [param_style1] ")" [layer_block]
+                    | TRANSFORMER_DECODER "(" [param_style1] ")" [layer_block]
 
 
         special_layer: custom | macro_ref | wrapper | lambda_
@@ -1566,16 +1565,19 @@ class ModelTransformer(lark.Transformer):
         print(items[2])
         print(items[1])
 
-        # Extract parameters if present
-        if len(items) > param_idx and isinstance(items[param_idx], dict) and 'named_params' in items[param_idx]:
+        # Transformer Parameters
+        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'params':
             raw_params = self._extract_value(items[param_idx])
             if isinstance(raw_params, dict):
-                params = self._extract_value(raw_params[1])
+                params = self._extract_value(raw_params[0])
             elif isinstance(raw_params, list):
                 for param in raw_params:
                     if isinstance(param, dict):
                         params.update(param)
             param_idx += 1
+
+        # Transformer Nested Layers
+
 
         # Extract sub-layers if present
         if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'layer_block':
@@ -1594,11 +1596,11 @@ class ModelTransformer(lark.Transformer):
 
     def named_num_heads(self, items):
         params = self._extract_value(items[0]) if items else None
-        return {'type':"num_heads", 'params': params }
+        return {"num_heads": params }
 
     def named_ff_dim(self, items):
-        parmas = self._extract_value(items[0]) if items else None
-        return {'type':"ff_dim", 'params': params}
+        params = self._extract_value(items[0]) if items else None
+        return {"ff_dim": params}
 
 
 
