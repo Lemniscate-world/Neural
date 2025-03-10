@@ -1145,27 +1145,94 @@ class ModelTransformer(lark.Transformer):
 
     @pysnooper.snoop()
     def lstm(self, items):
-        params = self._extract_value(items[0])
-        if 'units' in params:
-            units = params['units']
-            if not isinstance(units, int) or units <= 0:
-                self.raise_validation_error(f"LSTM units must be a positive integer, got {units}", items[0])
+        params = {}
+        if items and items[0] is not None:
+            param_node = items[0]  # From param_style1
+            param_values = self._extract_value(param_node)
+            if isinstance(param_values, list):
+                for val in param_values:
+                    if isinstance(val, dict):
+                        params.update(val)
+                    else:
+                        # Handle positional units parameter if present
+                        if 'units' not in params:
+                            params['units'] = val
+            elif isinstance(param_values, dict):
+                params = param_values
+
+        if 'units' not in params:
+            self.raise_validation_error("LSTM requires 'units' parameter", items[0])
+        
+        units = params['units']
+        if isinstance(units, dict) and 'hpo' in units:
+            pass  # HPO handled elsewhere
+        else:
+            if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
+                self.raise_validation_error(f"LSTM units must be an integer, got {units}", items[0])
+            if units <= 0:
+                self.raise_validation_error(f"LSTM units must be positive, got {units}", items[0])
+            params['units'] = int(units)
+        
         return {'type': 'LSTM', 'params': params}
 
     def gru(self, items):
-        params = self._extract_value(items[0])
-        if 'units' in params:
-            units = params['units']
-            if not isinstance(units, int) or units <= 0:
-                self.raise_validation_error(f"GRU units must be a positive integer, got {units}", items[0])
-        return {'type': 'GRU', 'params': params}
+        params = {}
+        if items and items[0] is not None:
+            param_node = items[0]
+            param_values = self._extract_value(param_node)
+            if isinstance(param_values, list):
+                for val in param_values:
+                    if isinstance(val, dict):
+                        params.update(val)
+                    else:
+                        if 'units' not in params:
+                            params['units'] = val
+            elif isinstance(param_values, dict):
+                params = param_values
 
+        if 'units' not in params:
+            self.raise_validation_error("GRU requires 'units' parameter", items[0])
+        
+        units = params['units']
+        if isinstance(units, dict) and 'hpo' in units:
+            pass
+        else:
+            if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
+                self.raise_validation_error(f"GRU units must be an integer, got {units}", items[0])
+            if units <= 0:
+                self.raise_validation_error(f"GRU units must be positive, got {units}", items[0])
+            params['units'] = int(units)
+        
+        return {'type': 'GRU', 'params': params}
+    
     def simplernn(self, items):
-        params = self._extract_value(items[0])
-        if 'units' in params:
-            units = params['units']
-            if not isinstance(units, int) or units <= 0:
-                self.raise_validation_error(f"SimpleRNN units must be a positive integer, got {units}", items[0])
+        params = {}
+        if items and items[0] is not None:
+            param_node = items[0]
+            param_values = self._extract_value(param_node)
+            if isinstance(param_values, list):
+                for val in param_values:
+                    if isinstance(val, dict):
+                        params.update(val)
+                    else:
+                        if 'units' not in params:
+                            params['units'] = val
+            elif isinstance(param_values, dict):
+                params = param_values
+
+        if 'units' not in params:
+            self.raise_validation_error("SimpleRNN requires 'units' parameter", items[0])
+        
+        units = params['units']
+        if isinstance(units, dict) and 'hpo' in units:
+            pass
+        else:
+            if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
+                self.raise_validation_error(f"SimpleRNN units must be an integer, got {units}", items[0])
+            if units <= 0:
+                self.raise_validation_error(f"SimpleRNN units must be positive, got {units}", items[0])
+            params['units'] = int(units)
+        
         return {'type': 'SimpleRNN', 'params': params}
 
     def conv_lstm(self, items):
