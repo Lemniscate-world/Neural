@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.2.2] - 05-03-2025
+
+### Fixed
+- **Layer Parameter Parsing**:
+  - Unified parameter merging for `Dense`, `LSTM`, `GRUCell`, and `GaussianNoise` layers (#98, #110, #126, #355)
+  - Resolved nested list flattening in `GaussianNoise(stddev=...)` (#126)
+  - Fixed `STRING` token regex conflicts in activation functions (#154)
+- **Validation & Error Handling**:
+  - Added strict positive integer checks for `Dense.units` and `Conv2D.filters` (#159)
+  - Fixed `VisitError` wrapping to expose raw `DSLValidationError` context (#159)
+- **HPO Support**:
+  - Corrected HPO grammar rules (`HPO(choice(...))` (#297)
+  - Added HPO tracking for `units` and `activation` in `Dense` layers (#131, #297)
+- **Macro System**:
+  - Fixed macro parameter override logic during expansion
+
+### Improved
+- **Parameter Merging**:
+  - Recursive list flattening for all layers (e.g., `[[{'units': 64}]]` → `{'units': 64}`)
+  - Positional/named parameter unification (supports both `Dense(128)` and `Dense(units=128)`)
+- **Error Messaging**:
+  - Added line/column numbers to validation errors (e.g., `ERROR at line 5: Dense units must be positive`)
+  - Expanded documentation with explicit error examples
+- **Grammar Robustness**:
+  - Resolved `NUMBER`/`FLOAT`/`INT` token conflicts (#342)
+  - Simplified `param_style1` rules to prevent nested parentheses ambiguity
+
+### Known Issues
+- Limited PyTorch layer support (WIP)
+- Macros with nested layer blocks may cause parser instability
+- HPO `log_range()` requires explicit casting for integer parameters
+
+---
+
 ## [0.2.1] - 04-03-2025
 
 ### Added
@@ -43,7 +77,7 @@
 
 ⚠️ **Neural is a work in progress! Expect bugs and missing features.** Feedback is welcome!
 
-
+---
 
 ## [0.2.0] - 25-02-2025
 

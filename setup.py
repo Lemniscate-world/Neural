@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="neural-dsl",
-    version="0.2.1",
+    version="0.2.2",
     packages=find_packages(where="."),
     package_dir={"": "."},
     install_requires=[
