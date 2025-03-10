@@ -394,14 +394,17 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         hpo_with_params: hpo_expr ("," named_params)*
         hpo: hpo_expr | layer_choice
+        
         // HPO for Hyperparameters
         hpo_expr: "HPO" "(" (hpo_choice | hpo_range | hpo_log_range )* ")"
         hpo_choice: "choice" "(" value ("," value)* ")" 
         hpo_range: "range" "(" number "," number ("," "step="number)? ")"
         hpo_log_range: "log_range" "(" number "," number ")"
+        
         // HPO for layer choice
         layer_choice: "HPO" "(" "choice" "(" layer ("," layer)* "))"
 
+        // MACROS AND RELATED RULES
         define: "define" NAME "{" ( layer_or_repeated)*  "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
@@ -559,6 +562,7 @@ class ModelTransformer(lark.Transformer):
         }
         return layers  # Return the layers for potential immediate use
 
+    @pysnooper.snoop()
     def macro_ref(self, items):
         macro_name = items[0].value
         if macro_name not in self.macros:
