@@ -1,6 +1,7 @@
 import os
 import sys
 import pytest
+import lark
 from lark import Lark, exceptions
 from lark.exceptions import VisitError
 
@@ -416,9 +417,10 @@ def test_research_parsing(research_parser, transformer, research_string, expecte
 )
 def test_macro_parsing(define_parser, layer_parser, transformer, config, expected_definition, expected_reference, raises_error, test_id):
     if raises_error:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError)):
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken)), pytest.raises(DSLValidationError) as exc_info:
             tree = layer_parser.parse(config)
             transformer.transform(tree)
+        assert "Undefined macro" in str(exc_info.value), f"Error message mismatch in {test_id}"
     else:
         define_tree = define_parser.parse(config)
         definition_result = transformer.transform(define_tree)
