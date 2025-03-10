@@ -99,7 +99,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Basic tokens
         NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
-        STRING: "\"" /[^"]+/ "\"" | "\'" /[^']+/ "\'"
+        STRING: /"[^"]*"/ | /'[^']*'/
         INT: /[+-]?[0-9]+/
         FLOAT: /[+-]?[0-9]*\.[0-9]+/ 
         NUMBER: INT | FLOAT 
@@ -243,7 +243,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ?layer: basic_layer | advanced_layer | special_layer
         config: training_config | execution_config
 
-        
+
         shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
         number_or_none: number | NONE
 
@@ -409,6 +409,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [param_style1] ")" [layer_block]
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
@@ -416,7 +417,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         tuple_: "(" number "," number ")"  
         number: NUMBER  
         named_params: named_param ("," named_param)*
-        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION
         ?advanced_layer: (attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic)
         attention: "Attention" "(" [param_style1] ")" [layer_block]
         transformer: TRANSFORMER "(" [param_style1] ")" [layer_block]
