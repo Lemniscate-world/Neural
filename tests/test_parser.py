@@ -689,38 +689,42 @@ def test_rule_dependencies():
                 assert dep in str(rule), f"Rule {rule_name} missing dependency {dep}"
 
 @pytest.mark.parametrize("rule_name,valid_inputs", [
-        ('NAME', ['valid_name', '_valid_name', 'ValidName123']),
-        ('NUMBER', ['123', '-123', '123.456', '-123.456']),
-        ('STRING', ['"valid string"', "'valid string'"]),
-        ('CUSTOM_LAYER', ['CustomLayer', 'MyTestLayer', 'ConvLayer'])
-    ])
+    ('NAME', ['valid_name', '_valid_name', 'ValidName123']),
+    ('NUMBER', ['123', '-123', '123.456', '-123.456']),
+    ('STRING', ['"relu"', "'softmax'"]),  # Strings in valid contexts (as activation functions)
+    ('CUSTOM_LAYER', ['CustomLayer', 'MyTestLayer', 'ConvLayer'])
+])
 def test_token_patterns(rule_name, valid_inputs):
     """Test that token patterns match expected inputs."""
     parser = create_parser()
     for input_str in valid_inputs:
         try:
-            result = parser.parse(f"network TestNet {{ input: (1,1) layers: {input_str} }}")
+            if rule_name == 'STRING':
+                # Test STRING token in a valid context (as activation function)
+                result = parser.parse(f'network TestNet {{ input: (1,1) layers: Dense(10, {input_str}) }}')
+            else:
+                result = parser.parse(f"network TestNet {{ input: (1,1) layers: {input_str} }}")
             assert result is not None
         except Exception as e:
             pytest.fail(f"Failed to parse {rule_name} with input {input_str}: {str(e)}")
 
 def test_rule_precedence():
-        """Test that grammar rules have correct precedence."""
-        parser = create_parser()
-        test_cases = [
-            ('dense_basic', 'Dense(10)'),
-            ('dense_params', 'Dense(units=10, activation="relu")'),
-            ('conv_basic', 'Conv2D(32, (3,3))'),
-            ('conv_params', 'Conv2D(filters=32, kernel_size=(3,3))'),
-            ('nested_block', 'Transformer() { Dense(10) }')
-        ]
+    """Test that grammar rules have correct precedence."""
+    parser = create_parser()
+    test_cases = [
+        ('dense_basic', 'Dense(10)'),
+        ('dense_params', 'Dense(units=10, activation="relu")'),
+        ('conv_basic', 'Conv2D(32, (3,3))'),
+        ('conv_params', 'Conv2D(filters=32, kernel_size=(3,3))'),
+        ('nested_block', 'Transformer() { Dense(10) }')
+    ]
         
-        for test_id, test_input in test_cases:
-            try:
-                result = parser.parse(f"network TestNet {{ input: (1,1) layers: {test_input} }}")
-                assert result is not None, f"Failed to parse {test_id}"
-            except Exception as e:
-                pytest.fail(f"Failed to parse {test_id}: {str(e)}")
+    for test_id, test_input in test_cases:
+        try:
+            result = parser.parse(f"network TestNet {{ input: (1,1) layers: {test_input} }}")
+            assert result is not None, f"Failed to parse {test_id}"
+        except Exception as e:
+            pytest.fail(f"Failed to parse {test_id}: {str(e)}")
 
 def test_grammar_ambiguity():
         """Test that grammar doesn't have ambiguous rules."""
