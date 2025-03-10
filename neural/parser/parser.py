@@ -91,10 +91,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         LSTMCELL: "lstmcell"i
         GRUCELL: "grucell"i
         BATCHNORMALIZATION: "batchnormalization"i
+        GAUSSIANNOISE: "gaussiannoise"i
 
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i
 
 
         // Basic tokens
@@ -110,7 +111,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Layer name patterns
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /(?!TransformerEncoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
+        MACRO_NAME: /(?!GaussianNoise|TransformerEncoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
 
         // Comments and whitespace
         COMMENT: /#[^\n]*/
@@ -355,10 +356,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         concatenate: "Concatenate(" named_params ")"
         dot: "Dot(" named_params ")"
 
-        noise: gaussian_noise | gaussian_dropout | alpha_dropout
-        gaussian_noise: "GaussianNoise(" named_params ")"
-        gaussian_dropout: "GaussianDropout(" named_params ")"
-        alpha_dropout: "AlphaDropout(" named_params ")"
 
         spatial_dropout1d: "SpatialDropout1D(" named_params ")"
         spatial_dropout2d: "SpatialDropout2D(" named_params ")"
@@ -409,7 +406,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [param_style1] ")" [layer_block]
-        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
@@ -498,6 +495,7 @@ class ModelTransformer(lark.Transformer):
             'MAXPOOLING2D': 'maxpooling2d',
             'MAXPOOLING3D': 'maxpooling3d',
             'BATCHNORMALIZATION': 'batch_norm',
+            'GAUSSIANNOISE': 'gaussian_noise',
         }
         self.hpo_params = []
 
@@ -1398,24 +1396,6 @@ class ModelTransformer(lark.Transformer):
         value = self._extract_value(items[0])  # Extract "bayesian" from STRING token
         return {'search_method': value}
 
-    ## Named Parameters ##
-
-    def named_params(self, items):
-        params = {}
-        for item in items:
-            if isinstance(item, Tree):
-                params.update(self._extract_value(item))
-            elif isinstance(item, dict):
-                params.update(item)
-            elif isinstance(item, list):
-                for i in item:
-                    params.update(self._extract_value(i))
-        return params
-
-    
-    def named_param(self, items):
-        return {items[0].value: self._extract_value(items[0])}
-
     def _extract_value(self, item):
         if isinstance(item, Token):
             if item.type == 'NAME':
@@ -1475,16 +1455,33 @@ class ModelTransformer(lark.Transformer):
         elif isinstance(item, dict):
             return {k: self._extract_value(v) for k, v in item.items()}
         return item
+
+    ## Named Parameters ##
+
+    def named_params(self, items):
+        params = {}
+        for item in items:
+            if isinstance(item, Tree):
+                params.update(self._extract_value(item))
+            elif isinstance(item, dict):
+                params.update(item)
+            elif isinstance(item, list):
+                for i in item:
+                    params.update(self._extract_value(i))
+        return params
+
+    
+    def named_param(self, items):
+        return {items[0].value: self._extract_value(items[1])}
     
     def named_float(self, items):
-        return {items[0].value: self._extract_value(items[0])}
+        return {items[0].value: self._extract_value(items[1])}
 
     def named_int(self, items):
-        return {items[0].value: self._extract_value(items[0])}
-
+        return {items[0].value: self._extract_value(items[1])}
 
     def named_string(self, items):
-        return {items[0].value: self._extract_value(items[0])}
+        return {items[0].value: self._extract_value(items[1])}
 
     def number(self, items):
         return self._extract_value(items[0])
@@ -1628,6 +1625,7 @@ class ModelTransformer(lark.Transformer):
 
 
     ## Transformers - Encoders - Decoders ##
+
     @pysnooper.snoop()
     def transformer(self, items):
         if isinstance(items[0], Token):
@@ -1676,8 +1674,6 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0]) if items else None
         return {"ff_dim": params}
 
-
-
     def embedding(self, items):
         params = self._extract_value(items[0]) if items else None
         for key in ['input_dim', 'output_dim']:
@@ -1711,8 +1707,28 @@ class ModelTransformer(lark.Transformer):
     def dot(self, items):
         return {'type': 'Dot', 'params': self._extract_value(items[0])}
 
+    ## Statistical Noises ##
+
+    @pysnooper.snoop()
     def gaussian_noise(self, items):
-        return {'type': 'GaussianNoise', 'params': self._extract_value(items[0])}
+        raw_params = self._extract_value(items[0])
+        params = {}
+        
+        if isinstance(raw_params, list):
+            # Flatten nested lists and merge dictionaries
+            for param in raw_params:
+                if isinstance(param, dict):
+                    params.update(param)
+                elif isinstance(param, list):
+                    for sub_param in param:
+                        params.update(sub_param)
+        elif isinstance(raw_params, dict):
+            params = raw_params
+        
+        return {'type': 'GaussianNoise', 'params': params}
+    
+    def stddev(self, items):
+        return {'stddev': self._extract_value(items[1])}
 
     def gaussian_dropout(self, items):
         return {'type': 'GaussianDropout', 'params': self._extract_value(items[0])}
