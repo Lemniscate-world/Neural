@@ -126,7 +126,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Grammar rules
         ?start: network | layer | research
-        ?layer: basic_layer | advanced_layer | special_layer
 
         neural_file: network
         nr_file: network
@@ -236,15 +235,18 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         network: "network" NAME "{" input_layer layers [loss] [optimizer] [training_config] [execution_config] "}"
-
-        config: training_config | execution_config
         input_layer: "input" ":" shape ("," shape)*
+        layers: "layers" ":" ( layer_or_repeated)*
+        loss: "loss" ":" (NAME | STRING) ["(" named_params ")"]
+        optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
+        layer_or_repeated: layer ["*" INT] 
+        ?layer: basic_layer | advanced_layer | special_layer
+        config: training_config | execution_config
+
+        
         shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
         number_or_none: number | NONE
 
-        layers: "layers" ":" ( layer_or_repeated)* 
-        
-        layer_or_repeated: layer ["*" INT]  
 
         lambda_: "Lambda" "(" STRING ")"
         wrapper: "TimeDistributed" "(" layer ["," named_params] ")" [layer_block]
@@ -378,8 +380,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         search_method_param: "search_method:" STRING
         validation_split_param: "validation_split:" FLOAT
 
-        loss: "loss" ":" (NAME | STRING) ["(" named_params ")"]
-        optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
+
         schedule: NAME "(" valparams ")"
         valparams: [value ("," value)*]
 

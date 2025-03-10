@@ -695,14 +695,14 @@ def test_rule_dependencies():
         ('CUSTOM_LAYER', ['CustomLayer', 'MyTestLayer', 'ConvLayer'])
     ])
 def test_token_patterns(rule_name, valid_inputs):
-        """Test that token patterns match expected inputs."""
-        parser = create_parser()
-        for input_str in valid_inputs:
-            try:
-                result = parser.parse(f"network TestNet {{ input: (1,1) layers: {input_str} }}")
-                assert result is not None
-            except Exception as e:
-                pytest.fail(f"Failed to parse {rule_name} with input {input_str}: {str(e)}")
+    """Test that token patterns match expected inputs."""
+    parser = create_parser()
+    for input_str in valid_inputs:
+        try:
+            result = parser.parse(f"network TestNet {{ input: (1,1) layers: {input_str} }}")
+            assert result is not None
+        except Exception as e:
+            pytest.fail(f"Failed to parse {rule_name} with input {input_str}: {str(e)}")
 
 def test_rule_precedence():
         """Test that grammar rules have correct precedence."""
