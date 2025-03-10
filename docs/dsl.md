@@ -168,6 +168,56 @@ network HPOExample {
 }
 ```
 
+### Parameter Types
+```yaml
+# Categorical Choice
+HPO(choice(128, 256, 512))      # Select from discrete values
+
+# Range with Step
+HPO(range(0.3, 0.7, step=0.1))  # Linear range with step size
+
+# Logarithmic Range
+HPO(log_range(1e-4, 1e-2))      # Log-scale range for learning rates
+```
+
+### Supported Parameters
+| Parameter | HPO Type | Example |
+|-----------|----------|---------|
+| Dense units | `choice` | `Dense(HPO(choice(64, 128, 256)))` |
+| Dropout rate | `range` | `Dropout(HPO(range(0.3, 0.7, step=0.1)))` |
+| Learning rate | `log_range` | `Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))` |
+
+### Validation Rules
+- Dense units must be positive integers
+- Dropout rate must be between 0 and 1
+- Learning rate must be positive
+- Step size must be provided for range type
+
+---
+
+## Training Configuration
+
+### Basic Setup
+```yaml
+network MyModel {
+    train {
+        epochs: 100
+        batch_size: 32
+        validation_split: 0.2
+        search_method: "bayesian"  # For HPO
+    }
+}
+```
+
+### Optimizer Configuration
+```yaml
+optimizer: Adam(
+    learning_rate=HPO(log_range(1e-4, 1e-2)),
+    beta_1=0.9,
+    beta_2=0.999
+)
+```
+
 ---
 
 ## Development Guide
@@ -198,6 +248,27 @@ coverage run -m pytest && coverage html
 3. Backward compatibility checks
 4. Pre-commit hook validation
 
-[Full API Docs](https://neural-dsl.dev/api) | 
+---
+
+## Migration Guide
+
+### From v0.2.1 to v0.2.2
+
+#### Old Style (Deprecated)
+```yaml
+network OldStyle {
+    layers: Dense("64")  # String numbers
+    optimizer: Adam(learning_rate="0.001")
+}
+```
+
+#### New Style (Recommended)
+```yaml
+network NewStyle {
+    layers: Dense(64)    # Integer numbers
+    optimizer: Adam(learning_rate=0.001)
+}
+```
+
 [Report Issues](https://github.com/neural-dsl/issues)
 
