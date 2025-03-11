@@ -93,10 +93,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         BATCHNORMALIZATION: "batchnormalization"i
         GAUSSIANNOISE: "gaussiannoise"i
         LAYERNORMALIZATION: "layernormalization"i
+        INSTANCENORMALIZATION: "instancenormalization"i
 
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i
 
 
         // Basic tokens
@@ -410,7 +411,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [param_style1] ")" [layer_block]
-        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
@@ -432,8 +433,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         layer_block: "{" (layer_or_repeated)* "}"
         
-        
-
     """
     return lark.Lark(
         grammar,
@@ -501,6 +500,7 @@ class ModelTransformer(lark.Transformer):
             'BATCHNORMALIZATION': 'batch_norm',
             'GAUSSIANNOISE': 'gaussian_noise',
             'LAYERNORMALIZATION': 'layer_norm',
+            'INSTANCENORMALIZATION': 'instance_norm',
         }
         self.hpo_params = []
 
