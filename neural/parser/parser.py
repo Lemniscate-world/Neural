@@ -1729,27 +1729,26 @@ class ModelTransformer(lark.Transformer):
             transformer_type = items[0].value
         else:
             self.raise_validation_error("Invalid transformer syntax: missing type identifier", items[0])
-
         params = {}
         sub_layers = []
         param_idx = 1
 
-        # Transformer Parameters
-        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'params':
+        # Process parameters
+        if len(items) > param_idx:
             raw_params = self._extract_value(items[param_idx])
-            if isinstance(raw_params, dict):
-                params = self._extract_value(raw_params[0])
-            elif isinstance(raw_params, list):
+            if isinstance(raw_params, list):
                 for param in raw_params:
                     if isinstance(param, dict):
                         params.update(param)
-        param_idx += 1
+            elif isinstance(raw_params, dict):
+                params.update(raw_params)
+            param_idx += 1
 
-        # Extract sub-layers if present
-        if len(items) > param_idx and isinstance(items[param_idx], list):
+        # Process sub-layers if present
+        if len(items) > param_idx:
             sub_layers = self._extract_value(items[param_idx])
 
-        # Validation
+        # Validate parameters
         for key in ['num_heads', 'ff_dim']:
             if key in params:
                 val = params[key]
