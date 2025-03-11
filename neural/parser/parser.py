@@ -1149,7 +1149,11 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'InstanceNormalization', 'params': params}
 
     def group_norm(self, items):
-        params = self._extract_value(items[0]) if items else None
+        raw_params = self._extract_value(items[0]) if items else None
+        if isinstance(raw_params, list):
+            params = self._extract_value(raw_params)
+        elif isinstance(raw_params, dict):
+            params.update(raw_params)
         return {'type': 'GroupNormalization', 'params': params}
 
     ############
