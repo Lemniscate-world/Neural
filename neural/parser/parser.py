@@ -1156,6 +1156,7 @@ class ModelTransformer(lark.Transformer):
             momentum = params['momentum']
             if not isinstance(momentum, (int, float)) or not 0 <= momentum <= 1:
                 self.raise_validation_error(f"BatchNormalization momentum must be between 0 and 1, got {momentum}", items[0])
+        
         return {'type': 'BatchNormalization', 'params': params}
 
     def layer_norm(self, items):
