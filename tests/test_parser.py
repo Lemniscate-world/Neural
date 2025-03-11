@@ -897,7 +897,7 @@ def test_extended_layer_parsing(layer_parser, transformer, layer_string, expecte
         )
 def test_layer_validation_errors(layer_parser, transformer, layer_string, validation_error_msg, test_id):
         """Test validation error messages for invalid layer configurations."""
-        with pytest.raises(DSLValidationError) as exc_info:
+        with pytest.raises(VisitError) as exc_info:
             tree = layer_parser.parse(layer_string)
             transformer.transform(tree)
-        assert validation_error_msg in str(exc_info.value), f"Error message mismatch for {test_id}"
+        assert validation_error_msg in str(exc_info.value.__context__), f"Error message mismatch for {test_id}"
