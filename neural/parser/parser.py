@@ -1130,6 +1130,8 @@ class ModelTransformer(lark.Transformer):
     def adaptive_average_pooling3d(self, items):
         return {'type': 'AdaptiveAveragePooling3D', 'params': self._extract_value(items[0])}
 
+    ## Normalization ##
+
     def batch_norm(self, items):
         params = self._extract_value(items[0]) if items else None
         if params and 'axis' in params:
@@ -1149,6 +1151,8 @@ class ModelTransformer(lark.Transformer):
     def group_norm(self, items):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'GroupNormalization', 'params': params}
+
+    ############
 
     @pysnooper.snoop()
     def lstm(self, items):
