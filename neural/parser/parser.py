@@ -1132,6 +1132,9 @@ class ModelTransformer(lark.Transformer):
 
     ## Normalization ##
 
+    def norm_layer(self, items):
+        return self._extract_value(items[0])
+
     def batch_norm(self, items):
         params = self._extract_value(items[0]) if items else None
         if params and 'axis' in params:
@@ -1148,12 +1151,11 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'InstanceNormalization', 'params': params}
 
+    @pysnooper.snoop()
     def group_norm(self, items):
         raw_params = self._extract_value(items[0]) if items else None
         if isinstance(raw_params, list):
             params = self._extract_value(raw_params)
-        elif isinstance(raw_params, dict):
-            params.update(raw_params)
         return {'type': 'GroupNormalization', 'params': params}
 
     ############
