@@ -1153,7 +1153,7 @@ class ModelTransformer(lark.Transformer):
 
     @pysnooper.snoop()
     def group_norm(self, items):
-        raw_params = self._extract_value(items[0]) if items else None
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'GroupNormalization', 'params': params}
 
     ############
