@@ -491,7 +491,7 @@ class ModelTransformer(lark.Transformer):
             'LSTM': 'lstm',
             'GRU': 'gru',
             'SIMPLERNN': 'simplernn',
-            'SIMPLE_RNN_DROPOUT_WRAPPER': 'simple_rnn_dropout',
+            'SIMPLERNNDROPOUTWRAPPER': 'simple_rnn_dropout',
             'OUTPUT': 'output',
             'TRANSFORMER': 'transformer',
             'TRANSFORMER_ENCODER': 'transformer',
@@ -1371,8 +1371,27 @@ class ModelTransformer(lark.Transformer):
         return {"type": "GRUCell", "params": params}
 
     def simple_rnn_dropout(self, items):
-        return {"type": "SimpleRNNDropoutWrapper", 'params': self._extract_value(items[0])}
-
+        param_style = self._extract_value(items[0])
+        params = {}
+        
+        # Handle both positional and named parameters
+        if isinstance(param_style, list):
+            for param in param_style:
+                if isinstance(param, dict):
+                    params.update(param)
+                else:
+                    # Handle positional 'units' parameter
+                    if 'units' not in params:
+                        params['units'] = param
+        elif isinstance(param_style, dict):
+            params.update(param_style)
+        
+        # Validate required 'units' parameter
+        if 'units' not in params:
+            self.raise_validation_error("SimpleRNNDropoutWrapper requires 'units' parameter", items[0])
+        
+        return {"type": "SimpleRNNDropoutWrapper", 'params': params}
+    
     def gru_dropout(self, items):
         return {"type": "GRUDropoutWrapper", 'params': self._extract_value(items[0])}
 
