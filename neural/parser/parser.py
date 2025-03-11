@@ -1734,9 +1734,6 @@ class ModelTransformer(lark.Transformer):
         sub_layers = []
         param_idx = 1
 
-        print(items[2])
-        print(items[1])
-
         # Transformer Parameters
         if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'params':
             raw_params = self._extract_value(items[param_idx])
