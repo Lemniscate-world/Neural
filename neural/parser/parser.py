@@ -1145,8 +1145,17 @@ class ModelTransformer(lark.Transformer):
     def norm_layer(self, items):
         return self._extract_value(items[0])
 
+    @pysnooper.snoop()
     def batch_norm(self, items):
-        params = self._extract_value(items[0]) if items else None
+        raw_params = self._extract_value(items[0]) if items else None
+        params = {}
+        if isinstance(raw_params, list):
+            item = raw_params[0] if raw_params else None
+            if isinstance(item, dict):
+                params.update(item)
+            else:
+                self.raise_validation_error("Invalid parameters for BatchNormalization", items[0])
+                
         if params and 'axis' in params:
             axis = params['axis']
             if not isinstance(axis, int):
@@ -1158,6 +1167,9 @@ class ModelTransformer(lark.Transformer):
                 self.raise_validation_error(f"BatchNormalization momentum must be between 0 and 1, got {momentum}", items[0])
         
         return {'type': 'BatchNormalization', 'params': params}
+    
+    def named_momentum(self, items):
+        return {'momentum': self._extract_value(items[0])}
 
     def layer_norm(self, items):
         params = self._extract_value(items[0]) if items else None
