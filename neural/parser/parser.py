@@ -1147,25 +1147,37 @@ class ModelTransformer(lark.Transformer):
 
     @pysnooper.snoop()
     def batch_norm(self, items):
-        raw_params = self._extract_value(items[0]) if items else None
-        params = {}
-        if isinstance(raw_params, list):
-            item = raw_params[0] if raw_params else None
-            if isinstance(item, dict):
-                params.update(item)
-            else:
-                self.raise_validation_error("Invalid parameters for BatchNormalization", items[0])
-                
-        if params and 'axis' in params:
-            axis = params['axis']
-            if not isinstance(axis, int):
-                self.raise_validation_error(f"BatchNormalization axis must be an integer, got {axis}", items[0])
-
-        if params and 'momentum' in params:
-            momentum = params['momentum']
-            if not isinstance(momentum, (int, float)) or not 0 <= momentum <= 1:
-                self.raise_validation_error(f"BatchNormalization momentum must be between 0 and 1, got {momentum}", items[0])
+        """Process BatchNormalization layer with or without parameters."""
+        raw_params = self._extract_value(items[0]) if items and items[0] is not None else None
+        params = None  # Default to None for empty parameters
         
+        if raw_params:
+            params = {}  # Initialize params dict only if we have parameters
+            if isinstance(raw_params, list):
+                for item in raw_params:
+                    if isinstance(item, dict):
+                        params.update(item)
+            elif isinstance(raw_params, dict):
+                params = raw_params
+
+            # Validate parameters if they exist
+            if params:
+                if 'axis' in params:
+                    axis = params['axis']
+                    if not isinstance(axis, int):
+                        self.raise_validation_error(
+                            f"BatchNormalization axis must be an integer, got {axis}", 
+                            items[0]
+                        )
+
+                if 'momentum' in params:
+                    momentum = params['momentum']
+                    if not isinstance(momentum, (int, float)) or not 0 <= momentum <= 1:
+                        self.raise_validation_error(
+                            f"BatchNormalization momentum must be between 0 and 1, got {momentum}", 
+                            items[0]
+                        )
+
         return {'type': 'BatchNormalization', 'params': params}
     
     def named_momentum(self, items):
