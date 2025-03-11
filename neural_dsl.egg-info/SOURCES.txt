@@ -30,6 +30,7 @@ setup.py
 ./neural/shape_propagation/data_to_dashboard.py
 ./neural/shape_propagation/shape_propagator.py
 ./neural/training/__init__.py
+./neural/training/device.py
 ./neural/training/training.py
 neural/__init__.py
 neural/cli.py
@@ -60,6 +61,7 @@ neural/shape_propagation/__init__.py
 neural/shape_propagation/data_to_dashboard.py
 neural/shape_propagation/shape_propagator.py
 neural/training/__init__.py
+neural/training/device.py
 neural/training/training.py
 neural_dsl.egg-info/PKG-INFO
 neural_dsl.egg-info/SOURCES.txt

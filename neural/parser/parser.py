@@ -1306,7 +1306,20 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'SimpleRNNCell', 'params': self._extract_value(items[0])}
 
     def lstmcell(self, items):
-        return {'type': 'LSTMCell', 'params': self._extract_value(items[0])}
+        raw_params = self._extract_value(items[0])
+        if isinstance(raw_params, list):
+            params = {}
+            for item in raw_params:
+                if isinstance(item, dict):
+                    params.update(item)
+                else:
+                    self.raise_validation_error("Invalid parameters for LSTMCell", items[0])
+        else:
+            params = raw_params
+
+        if 'units' not in params:   
+            self.raise_validation_error("LSTMCell requires 'units' parameter", items)
+        return {'type': 'LSTMCell', 'params': params}
 
     def grucell(self, items):
         params = {}
