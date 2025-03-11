@@ -886,7 +886,7 @@ def test_extended_layer_parsing(layer_parser, transformer, layer_string, expecte
             "layer_string, validation_error_msg, test_id",
             [
                 ('Dense(units="invalid")', "units must be a number", "dense-invalid-units-type"),
-                ('Conv2D(filters=-5, kernel_size=(3,3))', "filters must be positive", "conv2d-negative-filters"),
+                ('Conv2D(filters=-5, kernel_size=(3,3))', "Conv2D filters must be a positive integer", "conv2d-negative-filters"),
                 ('LSTM(units=0, return_sequences=true)', "units must be positive", "lstm-zero-units"),
                 ('Dropout(rate=1.5)', "Dropout rate should be between 0 and 1", "dropout-high-rate"),
                 ('BatchNormalization(momentum=2.0)', "momentum must be between 0 and 1", "batchnorm-invalid-momentum"),
