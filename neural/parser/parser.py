@@ -1156,8 +1156,11 @@ class ModelTransformer(lark.Transformer):
         raw_params = self._extract_value(items[0]) if items else None
         params = {}
         if isinstance(raw_params, list):
-            for item in raw_params if isinstance(item, dict) else [raw_params]:
+            item = raw_params[0] if raw_params else None
+            if isinstance(item, dict):
                 params.update(item)
+            else:
+                self.raise_validation_error("Invalid parameters for GroupNormalization", items[0])
         return {'type': 'GroupNormalization', 'params': params}
 
     ############
