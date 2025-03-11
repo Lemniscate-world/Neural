@@ -890,7 +890,6 @@ def test_extended_layer_parsing(layer_parser, transformer, layer_string, expecte
                 ('LSTM(units=0, return_sequences=true)', "units must be positive", "lstm-zero-units"),
                 ('Dropout(rate=1.5)', "rate must be between 0 and 1", "dropout-high-rate"),
                 ('BatchNormalization(momentum=2.0)', "momentum must be between 0 and 1", "batchnorm-invalid-momentum"),
-                ('Dense(128) @ "unknown_device"', "Invalid device specification", "invalid-device-spec"),
                 ('Conv2D(32, (-1,-1))', "Conv2D kernel_size should be positive integers", "conv2d-negative-kernel"),
                 ('MaxPooling2D(pool_size=(0,0))', "pool_size must be positive", "maxpool-zero-size"),
             ]

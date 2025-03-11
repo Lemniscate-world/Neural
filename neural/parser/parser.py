@@ -331,14 +331,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         bidirectional_lstm_layer: "Bidirectional(LSTM(" named_params "))"
         bidirectional_gru_layer: "Bidirectional(GRU(" named_params "))"
         conv_rnn_layer: conv_lstm_layer | conv_gru_layer
-        conv_lstm_layer: "ConvLSTM2D(" named_params ")"
-        conv_gru_layer: "ConvGRU2D(" named_params ")"
+        conv_lstm_layer: "ConvLSTM2D" "(" named_params ")"
+        conv_gru_layer: "ConvGRU2D" "(" named_params ")"
         rnn_cell_layer: simple_rnn_cell_layer | lstm_cell_layer | gru_cell_layer
-        simple_rnn_cell_layer: "SimpleRNNCell(" named_params ")"
+        simple_rnn_cell_layer: "SimpleRNNCell" "(" named_params ")"
         lstm_cell_layer: "LSTMCell" "(" named_params ")"
         gru_cell_layer: "GRUCell" "(" named_params ")"
 
-        
         residual: "ResidualConnection" "(" [named_params] ")" [layer_block]
         inception: "Inception" "(" [named_params] ")"
         capsule: "CapsuleLayer" "(" [named_params] ")"
@@ -351,14 +350,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         dynamic: "DynamicLayer" "(" [named_params] ")"
 
         merge: add | subtract | multiply | average | maximum | concatenate | dot
-        add: "Add(" named_params ")"
-        subtract: "Subtract(" named_params ")"
-        multiply: "Multiply(" named_params ")"
-        average: "Average(" named_params ")"
-        maximum: "Maximum(" named_params ")"
+        add: "Add" "(" named_params ")"
+        subtract: "Subtract" "(" named_params ")"
+        multiply: "Multiply" "(" named_params ")"
+        average: "Average" "(" named_params ")"
+        maximum: "Maximum" "(" named_params ")"
         concatenate: "Concatenate(" named_params ")"
-        dot: "Dot(" named_params ")"
-
+        dot: "Dot" "(" named_params ")"
 
         spatial_dropout1d: "SpatialDropout1D(" named_params ")"
         spatial_dropout2d: "SpatialDropout2D(" named_params ")"
@@ -369,17 +367,20 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         activation_with_params: "Activation" "(" STRING "," named_params ")"
         activation_without_params: "Activation" "(" STRING ")"
 
-        training_config: "train" "{" training_params "}"
-        training_params: (epochs_param | batch_size_param | optimizer_param | search_method_param | validation_split_param)*
+        // Training & Configurations
+        training_config: "train" "{" training_params  "}"
+        training_params: (epochs_param | batch_size_param | optimizer_param | search_method_param | validation_split_param | device)*
+        device: "@" NAME
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" values_list
         values_list: "[" value ("," value)* "]" | value ("," value)*
+        
+        
         optimizer_param: "optimizer:" named_optimizer
         named_optimizer: "named_optimizer(" learning_rate_param ")"
         learning_rate_param: "learning_rate=" FLOAT
         search_method_param: "search_method:" STRING
         validation_split_param: "validation_split:" FLOAT
-
 
         schedule: NAME "(" valparams ")"
         valparams: [value ("," value)*]
@@ -433,6 +434,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         custom: CUSTOM_LAYER "(" param_style1 ")" [layer_block]
 
         layer_block: "{" (layer_or_repeated)* "}"
+
         
     """
     return lark.Lark(
@@ -916,6 +918,8 @@ class ModelTransformer(lark.Transformer):
 
     def schedule(self, items):
         return {"type": items[0].value, "args": [self._extract_value(x) for x in items[1].children]}
+    
+    ## Training And Configurations ##
 
     def training_config(self, items):
         params = self._extract_value(items[0]) if items else {}
@@ -945,6 +949,9 @@ class ModelTransformer(lark.Transformer):
         
         return params
 
+    def device(self, items):
+        return{'device': self._extract_value(items[0])}
+
     def validation_split_param(self, items):
         return {'validation_split': self._extract_value(items[0])}
 
@@ -953,6 +960,9 @@ class ModelTransformer(lark.Transformer):
 
     def batch_size_param(self, items):
         return {'batch_size': self._extract_value(items[0])}
+
+    ###############
+
 
     def values_list(self, items):
         values = [self._extract_value(x) for x in items]
