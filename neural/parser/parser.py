@@ -502,7 +502,7 @@ class ModelTransformer(lark.Transformer):
             'GAUSSIANNOISE': 'gaussian_noise',
             'LAYERNORMALIZATION': 'layer_norm',
             'INSTANCENORMALIZATION': 'instance_norm',
-            'GROUPNORAMLIZATION': 'group_norm',
+            'GROUPNORMALIZATION': 'group_norm',
         }
         self.hpo_params = []
 
