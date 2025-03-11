@@ -83,6 +83,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         LSTM: "lstm"i
         GRU: "gru"i
         SIMPLERNN: "simplernn"i
+        SIMPLE_RNN_DROPOUT_WRAPPER: "SimpleRNNDropoutWrapper"i
         OUTPUT: "output"i
         TRANSFORMER: "transformer"i
         TRANSFORMER_ENCODER: "transformerencoder"i
@@ -323,7 +324,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         gru_cell: GRUCELL "(" named_params ")"
 
         dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
-        simple_rnn_dropout: "SimpleRNNDropoutWrapper" "(" named_params ")"
+        simple_rnn_dropout: SIMPLE_RNN_DROPOUT_WRAPPER "(" named_params ")"
         gru_dropout: "GRUDropoutWrapper" "(" named_params ")"
         lstm_dropout: "LSTMDropoutWrapper" "(" named_params ")"
         bidirectional_rnn_layer: bidirectional_simple_rnn_layer | bidirectional_lstm_layer | bidirectional_gru_layer
