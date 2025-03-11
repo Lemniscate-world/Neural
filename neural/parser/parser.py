@@ -154,7 +154,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         bool_value: BOOL
         named_return_sequences: "return_sequences" "=" bool_value
-        named_units: "units" "=" number
+        named_units: "units" "=" value
         named_activation: "activation" "=" STRING | "activation" "=" hpo_expr
         named_size: NAME ":" explicit_tuple  
         named_filters: "filters" "=" NUMBER
@@ -758,14 +758,15 @@ class ModelTransformer(lark.Transformer):
             self.raise_validation_error("Dense layer requires 'units' parameter", items[0])
         
         units = params['units']
-        if isinstance(units, dict):  # HPO case
-            pass  # Allow HPO dict, no further validation needed here
+        # Check if units is a valid number or HPO
+        if isinstance(units, dict) and 'hpo' in units:
+            pass  # HPO handled elsewhere
         else:
-            if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
-                self.raise_validation_error(f"Dense units must be an integer, got {units}", items[0])
+            if not isinstance(units, (int, float)):
+                self.raise_validation_error(f"Dense units must be a number, got {units}", items[0])
             if units <= 0:
                 self.raise_validation_error(f"Dense units must be positive, got {units}", items[0])
-            params['units'] = int(units)
+            params['units'] = int(units)  # Convert to int if applicable
         
         if 'activation' in params:
             activation = params['activation']
