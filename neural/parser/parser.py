@@ -696,13 +696,13 @@ class ModelTransformer(lark.Transformer):
                     if not isinstance(rate, (int, float)):
                         self.raise_validation_error(f"Dropout rate must be a number, got {rate}", items[0], Severity.ERROR)
                     elif not 0 <= rate <= 1:
-                        self.raise_validation_error(f"Dropout rate should be between 0 and 1, got {rate}", items[0], Severity.WARNING)
+                        self.raise_validation_error(f"Dropout rate should be between 0 and 1, got {rate}", items[0], Severity.ERROR)
             else:
                 self.raise_validation_error("Dropout requires a 'rate' parameter", items[0], Severity.ERROR)
         elif isinstance(param_style, (int, float)):
             params['rate'] = param_style
             if not 0 <= params['rate'] <= 1:
-                self.raise_validation_error(f"Dropout rate should be between 0 and 1, got {params['rate']}", items[0], Severity.WARNING)
+                self.raise_validation_error(f"Dropout rate should be between 0 and 1, got {params['rate']}", items[0], Severity.ERROR)
         else:
             self.raise_validation_error("Invalid parameters for Dropout", items[0], Severity.ERROR)
         
