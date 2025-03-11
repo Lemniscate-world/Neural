@@ -82,8 +82,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         FLATTEN: "flatten"i
         LSTM: "lstm"i
         GRU: "gru"i
+        SIMPLE_RNN_DROPOUT_WRAPPER: "simplernndropoutwrapper"i
         SIMPLERNN: "simplernn"i
-        SIMPLE_RNN_DROPOUT_WRAPPER: "SimpleRNNDropoutWrapper"i
         OUTPUT: "output"i
         TRANSFORMER: "transformer"i
         TRANSFORMER_ENCODER: "transformerencoder"i
@@ -99,7 +99,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i
 
 
         // Basic tokens
