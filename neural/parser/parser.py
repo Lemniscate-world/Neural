@@ -639,7 +639,7 @@ class ModelTransformer(lark.Transformer):
         device_spec_node = items[2] if len(items) > 2 else None  # device_spec is third item
         sublayers_node = items[3] if len(items) > 3 else None    # sublayers are fourth
 
-        raw_params = self._extract_value(params_node) if params_node else {}
+        raw_params = self._extract_value(params_node) if params_node else None
         device = self._extract_value(device_spec_node) if device_spec_node else None
 
         method_name = self.layer_type_map.get(layer_type)
@@ -665,6 +665,7 @@ class ModelTransformer(lark.Transformer):
         if len(items) > 1 and isinstance(items[1], Token) and items[1].type == "STRING":
             return items[1].value.strip('"')
         return self._extract_value(items[0])
+    
     def params(self, items):
         return [self._extract_value(item) for item in items]
     
