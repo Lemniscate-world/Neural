@@ -96,10 +96,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         LAYERNORMALIZATION: "layernormalization"i
         INSTANCENORMALIZATION: "instancenormalization"i
         GROUPNORMALIZATION: "groupnormalization"i
+        ACTIVATION: "activation"i
 
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i
 
 
         // Basic tokens
@@ -115,7 +116,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Layer name patterns
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /(?!GroupNormalization|InstanceNormalization|LayerNormalization|GaussianNoise|TransformerEncoder|TransformerDecoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
+        MACRO_NAME: /(?!Activation|GroupNormalization|InstanceNormalization|LayerNormalization|GaussianNoise|TransformerEncoder|TransformerDecoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
 
         // Comments and whitespace
         COMMENT: /#[^\n]*/
@@ -366,8 +367,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Activation Layers
         activation: activation_with_params | activation_without_params
-        activation_with_params: "Activation" "(" STRING "," named_params ")"
-        activation_without_params: "Activation" "(" STRING ")"
+        activation_with_params: ACTIVATION "(" STRING "," named_params ")"
+        activation_without_params: ACTIVATION "(" STRING ")"
 
         // Training & Configurations
         training_config: "train" "{" training_params  "}"
@@ -415,7 +416,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [param_style1] ")" [layer_block]
-        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
