@@ -1799,8 +1799,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'CapsuleLayer', 'params': params}
 
     def squeeze_excitation(self, items):
-        params = self._extract_value(items[0]) if items else None
-        return {'type': 'SqueezeExcitation', 'params': params}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'SqueezeExcitation', 'params': params, 'sublayers': []}
 
     def quantum(self, items):
         params = self._extract_value(items[0]) if items else None
