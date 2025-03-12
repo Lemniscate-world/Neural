@@ -1013,8 +1013,17 @@ class ModelTransformer(lark.Transformer):
         
         return params
 
-    def device(self, items):
-        return{'device': self._extract_value(items[0])}
+    def device_spec(self, items):
+        """Process device specification correctly."""
+        if len(items) > 1 and isinstance(items[1], Token) and items[1].type == "STRING":
+            device = items[1].value.strip('"')
+        else:
+            device = self._extract_value(items[0])
+        
+        allowed_devices = ["cpu", "cuda", "tpu", "auto", "cuda:0", "cuda:1"]  # Example allowed devices
+        if device.lower() not in [d.lower() for d in allowed_devices]:
+            self.raise_validation_error(f"Invalid device '{device}'. Allowed devices are: {allowed_devices}", items[0], Severity.ERROR)
+        return device
 
     def validation_split_param(self, items):
         return {'validation_split': self._extract_value(items[0])}
