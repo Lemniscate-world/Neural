@@ -1705,6 +1705,9 @@ class ModelTransformer(lark.Transformer):
 
     #########
 
+    def attention(self, items):
+        params = self._extract_value(items[0]) if items else None
+        return {'type': 'Attention', 'params': params, 'sublayers': []}
     
 
     def residual(self, items):
