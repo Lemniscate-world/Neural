@@ -885,13 +885,22 @@ def test_extended_layer_parsing(layer_parser, transformer, layer_string, expecte
 @pytest.mark.parametrize(
     "layer_string, validation_error_msg, test_id",
     [
-        ('Dense(units="invalid")', "Dense units must be a number"),
-        ('Conv2D(filters=-5, kernel_size=(3,3))', "Conv2D filters must be a positive integer"),
-        ('LSTM(units=0, return_sequences=true)', "LSTM units must be positive"),
-        ('Dropout(rate=1.5)', "Dropout rate should be between 0 and 1"),
-        ('BatchNormalization(momentum=2.0)', "BatchNormalization momentum must be between 0 and 1"),
-        ('Conv2D(32, (-1,-1))', "Conv2D kernel_size must be positive integers"),
-        ('MaxPooling2D(pool_size=(0,0))', "pool_size must be positive"),
+        ('Dense(units="invalid")', "Dense units must be a number", "dense-invalid-units-type"),
+        ('Conv2D(filters=-5, kernel_size=(3,3))', "Conv2D filters must be a positive integer", "conv2d-negative-filters"),
+        ('LSTM(units=0, return_sequences=true)', "LSTM units must be positive", "lstm-zero-units"),
+        ('Dropout(rate=1.5)', "Dropout rate should be between 0 and 1", "dropout-high-rate"),
+        ('BatchNormalization(momentum=2.0)', "BatchNormalization momentum must be between 0 and 1", "batchnorm-invalid-momentum"),
+        ('Conv2D(32, (-1,-1))', "Conv2D kernel_size must be positive integers", "conv2d-negative-kernel"),
+        ('MaxPooling2D(pool_size=(0,0))', "pool_size must be positive", "maxpool-zero-size"),
+    ],
+    ids=[
+        "dense-invalid-units-type", 
+        "conv2d-negative-filters", 
+        "lstm-zero-units", 
+        "dropout-high-rate",
+        "batchnorm-invalid-momentum", 
+        "conv2d-negative-kernel", 
+        "maxpool-zero-size"
     ]
 )
 
