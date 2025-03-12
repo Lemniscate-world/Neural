@@ -632,35 +632,33 @@ class ModelTransformer(lark.Transformer):
     def basic_layer(self, items):
         """
         Parses a basic layer from the given items and returns its information.
-
-        Args:
-            items (list): A list of nodes representing the layer type, parameters, and sublayers.
-
-        Returns:
-            dict: A dictionary containing the layer type, parameters, and sublayers.
-
-        Raises:
-            ValidationError: If the layer type is unsupported.
         """
         layer_type_node = items[0]
         layer_type = layer_type_node.children[0].value.upper()
         params_node = items[1] if len(items) > 1 else None
-        params = self._extract_value(params_node) if params_node else None
-        sublayers_node = items[2] if len(items) > 2 else None
-        sublayers = self._extract_value(sublayers_node) if sublayers_node else []
-        
+        device_spec_node = items[2] if len(items) > 2 else None  # device_spec is third item
+        sublayers_node = items[3] if len(items) > 3 else None    # sublayers are fourth
+
+        raw_params = self._extract_value(params_node) if params_node else {}
+        device = self._extract_value(device_spec_node) if device_spec_node else None
+
         method_name = self.layer_type_map.get(layer_type)
         if method_name and hasattr(self, method_name):
             try:
-                layer_info = getattr(self, method_name)([params])
+                # Process raw_params through the layer-specific method to get a dict
+                layer_info = getattr(self, method_name)([raw_params])
+                # Add device to the processed parameters
+                if device is not None:
+                    layer_info['params']['device'] = device
+                # Handle sublayers
+                sublayers = self._extract_value(sublayers_node) if sublayers_node else []
                 layer_info['sublayers'] = sublayers
                 return layer_info
             except DSLValidationError as e:
-                raise e  # Re-raise DSLValidationError directly
+                raise e
         else:
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
-            return {'type': layer_type, 'params': params, 'sublayers': sublayers}
-        
+            return {'type': layer_type, 'params': raw_params, 'sublayers': []}
 
     def device_spec(self, items):
         """Process device specification."""
