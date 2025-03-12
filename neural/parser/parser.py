@@ -661,9 +661,10 @@ class ModelTransformer(lark.Transformer):
             return {'type': layer_type, 'params': raw_params, 'sublayers': []}
 
     def device_spec(self, items):
-        """Process device specification."""
+        """Process device specification correctly."""
+        if len(items) > 1 and isinstance(items[1], Token) and items[1].type == "STRING":
+            return items[1].value.strip('"')
         return self._extract_value(items[0])
-
     def params(self, items):
         return [self._extract_value(item) for item in items]
     
