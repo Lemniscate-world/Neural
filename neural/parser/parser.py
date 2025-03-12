@@ -360,15 +360,16 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         concatenate: "Concatenate(" named_params ")"
         dot: "Dot" "(" named_params ")"
 
-        spatial_dropout1d: "SpatialDropout1D(" named_params ")"
-        spatial_dropout2d: "SpatialDropout2D(" named_params ")"
-        spatial_dropout3d: "SpatialDropout3D(" named_params ")"
-        activity_regularization: "ActivityRegularization(" named_params ")"
+        spatial_dropout1d: "SpatialDropout1D" "(" named_params ")"
+        spatial_dropout2d: "SpatialDropout2D" "(" named_params ")"
+        spatial_dropout3d: "SpatialDropout3D" "(" named_params ")"
+        activity_regularization: "ActivityRegularization" "(" named_params ")"
 
         // Activation Layers
         activation: activation_with_params | activation_without_params
-        activation_with_params: ACTIVATION "(" STRING "," named_params ")"
-        activation_without_params: ACTIVATION "(" STRING ")"
+        activation_with_params: ACTIVATION "(" function "," named_params ")"
+        activation_without_params: ACTIVATION "(" function ")"
+        function: STRING
 
         // Training & Configurations
         training_config: "train" "{" training_params  "}"
@@ -509,6 +510,7 @@ class ModelTransformer(lark.Transformer):
             'LAYERNORMALIZATION': 'layer_norm',
             'INSTANCENORMALIZATION': 'instance_norm',
             'GROUPNORMALIZATION': 'group_norm',
+            'ACTIVATION': 'activation',
         }
         self.hpo_params = []
 
@@ -1673,11 +1675,6 @@ class ModelTransformer(lark.Transformer):
 
     ### Advanced Layers ###
 
-    def attention(self, items):
-        params = self._extract_value(items[0]) if items else None
-        sub_layers = self._extract_value(items[1]) if len(items) > 1 and items[1].data == 'layer_block' else []
-        return {'type': 'Attention', 'params': params, 'sublayers': sub_layers}
-    
     def activation(self, items):
         """Process activation layer with or without parameters."""
         if not items:
@@ -1686,31 +1683,46 @@ class ModelTransformer(lark.Transformer):
         if len(items) == 1:
             # Case: Activation without params
             act_type = self._extract_value(items[0])
-            return {'type': 'Activation', 'params': {'activation': act_type}}
+            return {'type': 'Activation', 'params': {'function': act_type}, 'sublayers': []}
         else:
             # Case: Activation with params
             act_type = self._extract_value(items[0])
-            params = self._extract_value(items[1]) if len(items) > 1 else {}
-            if isinstance(params, dict):
-                params['activation'] = act_type
-            else:
-                params = {'activation': act_type}
-            return {'type': 'Activation', 'params': params}
+            raw_params = self._extract_value(items[1]) if len(items) > 1 else {}
+            params = {'function': act_type}
+            
+            # Handle additional parameters
+            if isinstance(raw_params, dict):
+                params.update(raw_params)
+            elif isinstance(raw_params, list):
+                for item in raw_params:
+                    if isinstance(item, dict):
+                        params.update(item)
+
+            return {'type': 'Activation', 'params': params, 'sublayers': []}
 
     def activation_with_params(self, items):
         """Process activation layer with parameters."""
         act_name = self._extract_value(items[0])
-        params = self._extract_value(items[1]) if len(items) > 1 else {}
-        if isinstance(params, dict):
-            params['activation'] = act_name
-        else:
-            params = {'activation': act_name}
-        return {'type': 'Activation', 'params': params}
+        raw_params = self._extract_value(items[1]) if len(items) > 1 else {}
+        params = {'function': act_name}
+        
+        if isinstance(raw_params, dict):
+            params.update(raw_params)
+        elif isinstance(raw_params, list):
+            for item in raw_params:
+                if isinstance(item, dict):
+                    params.update(item)
+        
+        return {'type': 'Activation', 'params': params, 'sublayers': []}
 
     def activation_without_params(self, items):
         """Process activation layer without parameters."""
-        act_name = self._extract_value(items[0])
-        return {'type': 'Activation', 'params': {'activation': act_name}}
+        act_type = self._extract_value(items[0])
+        return {'type': 'Activation', 'params': {'function': act_type}, 'sublayers': []}
+
+    def function(self, items):
+        return self._extract_value(items[0])
+
     
 
     def residual(self, items):
