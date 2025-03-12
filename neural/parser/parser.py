@@ -99,6 +99,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ACTIVATION: "activation"i
 
 
+
         // Layer type tokens (case-insensitive)
         LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i
 
@@ -113,6 +114,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         FALSE.2: "false"i
         NONE.2: "none"i
         BOOL: TRUE | FALSE
+        AT: "@" 
 
         // Layer name patterns
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
@@ -411,7 +413,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         define: "define" NAME "{" ( layer_or_repeated)*  "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
-        basic_layer: layer_type "(" [param_style1] ")" [layer_block]
+        basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
         layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
@@ -420,6 +422,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         tuple_: "(" number "," number ")"  
         number: NUMBER  
         named_params: named_param ("," named_param)*
+        device_spec: AT STRING
         ?advanced_layer: (attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic)
         attention: "Attention" "(" [param_style1] ")" [layer_block]
         transformer: TRANSFORMER "(" [param_style1] ")" [layer_block]
@@ -658,6 +661,11 @@ class ModelTransformer(lark.Transformer):
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
             return {'type': layer_type, 'params': params, 'sublayers': sublayers}
         
+
+    def device_spec(self, items):
+        """Process device specification."""
+        return self._extract_value(items[0])
+
     def params(self, items):
         return [self._extract_value(item) for item in items]
     
