@@ -1862,8 +1862,10 @@ class ModelTransformer(lark.Transformer):
                     self.raise_validation_error(f"Embedding {key} must be a positive integer, got {dim}", items[0])
         return {'type': 'Embedding', 'params': params}
 
+    ### Lambda Layers ###
+
     def lambda_(self, items):
-        return {'type': 'Lambda', 'params': {'function': self._extract_value(items[0])}}
+        return {'type': 'Lambda', 'params': {'function': self._extract_value(items[0])}, 'sublayers': []}
 
     def add(self, items):
         return {'type': 'Add', 'params': self._extract_value(items[0])}
