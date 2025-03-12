@@ -364,6 +364,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         spatial_dropout3d: "SpatialDropout3D(" named_params ")"
         activity_regularization: "ActivityRegularization(" named_params ")"
 
+        // Activation Layers
         activation: activation_with_params | activation_without_params
         activation_with_params: "Activation" "(" STRING "," named_params ")"
         activation_without_params: "Activation" "(" STRING ")"
@@ -1675,6 +1676,41 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0]) if items else None
         sub_layers = self._extract_value(items[1]) if len(items) > 1 and items[1].data == 'layer_block' else []
         return {'type': 'Attention', 'params': params, 'sublayers': sub_layers}
+    
+    def activation(self, items):
+        """Process activation layer with or without parameters."""
+        if not items:
+            return None
+
+        if len(items) == 1:
+            # Case: Activation without params
+            act_type = self._extract_value(items[0])
+            return {'type': 'Activation', 'params': {'activation': act_type}}
+        else:
+            # Case: Activation with params
+            act_type = self._extract_value(items[0])
+            params = self._extract_value(items[1]) if len(items) > 1 else {}
+            if isinstance(params, dict):
+                params['activation'] = act_type
+            else:
+                params = {'activation': act_type}
+            return {'type': 'Activation', 'params': params}
+
+    def activation_with_params(self, items):
+        """Process activation layer with parameters."""
+        act_name = self._extract_value(items[0])
+        params = self._extract_value(items[1]) if len(items) > 1 else {}
+        if isinstance(params, dict):
+            params['activation'] = act_name
+        else:
+            params = {'activation': act_name}
+        return {'type': 'Activation', 'params': params}
+
+    def activation_without_params(self, items):
+        """Process activation layer without parameters."""
+        act_name = self._extract_value(items[0])
+        return {'type': 'Activation', 'params': {'activation': act_name}}
+    
 
     def residual(self, items):
         params = self._extract_value(items[0]) if items and items[0].data == 'named_params' else {}
