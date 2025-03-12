@@ -443,8 +443,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
     return lark.Lark(
         grammar,
         start=start_rule,
-        parser='earley',  # Changed from 'lalr' to 'earley'
-        ambiguity='explicit',  # Enable ambiguity reporting
+        parser='lalr',
         lexer='contextual',
         debug=True,
         cache=True,

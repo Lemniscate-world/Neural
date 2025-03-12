@@ -731,27 +731,22 @@ def test_rule_precedence():
             pytest.fail(f"Failed to parse {test_id}: {str(e)}")
 
 def test_grammar_ambiguity():
-    """Test that grammar doesn't have ambiguous rules."""
-    parser = create_parser()
-    test_cases = [
-        ('params_order1', 'Dense(10, "relu")'),
-        ('params_order2', 'Dense(units=10, activation="relu")'),
-        ('mixed_params', 'Conv2D(32, kernel_size=(3,3))'),
-        ('nested_params', 'Transformer(num_heads=8) { Dense(10) }')
-    ]
+        """Test that grammar doesn't have ambiguous rules."""
+        parser = create_parser()
+        test_cases = [
+            ('params_order1', 'Dense(10, "relu")'),
+            ('params_order2', 'Dense(units=10, activation="relu")'),
+            ('mixed_params', 'Conv2D(32, kernel_size=(3,3))'),
+            ('nested_params', 'Transformer(num_heads=8) { Dense(10) }')
+        ]
+        
+        for test_id, test_input in test_cases:
+            try:
+                results = list(parser.parse_interactive(f"network TestNet {{ input: (1,1) layers: {test_input} }}"))
+                assert len(results) == 1, f"Ambiguous parsing for {test_id}"
+            except Exception as e:
+                pytest.fail(f"Failed to parse {test_id}: {str(e)}")
 
-    for test_id, test_input in test_cases:
-        try:
-            # Parse the input
-            tree = parser.parse(f"network TestNet {{ input: (1,1) layers: {test_input} }}")
-            # Check if the parse tree has ambiguity
-            if hasattr(tree, 'data') and tree.data == '_ambig':
-                pytest.fail(f"Ambiguous grammar for {test_id}: {test_input}")
-        except lark.exceptions.UnexpectedCharacters as e:
-            pytest.fail(f"Unexpected character error in {test_id}: {str(e)}")
-        except lark.exceptions.UnexpectedToken as e:
-            pytest.fail(f"Unexpected token error in {test_id}: {str(e)}")
-            
 def test_error_recovery():
         """Test parser's error recovery capabilities."""
         parser = create_parser()
