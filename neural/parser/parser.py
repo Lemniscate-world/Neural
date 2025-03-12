@@ -1682,8 +1682,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'ResidualConnection', 'params': params, 'sublayers': sub_layers}
 
     def inception(self, items):
-        params = self._extract_value(items[0]) if items else None
-        return {'type': 'Inception', 'params': params}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'Inception', 'params': params, 'sublayers': []}
 
     def graph(self, items):
         return items[0]
