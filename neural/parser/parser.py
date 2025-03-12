@@ -116,7 +116,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Layer name patterns
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /(?!Activation|GroupNormalization|InstanceNormalization|LayerNormalization|GaussianNoise|TransformerEncoder|TransformerDecoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)(?<!Layer)[A-Z][a-zA-Z0-9]*/
+        MACRO_NAME: /^(?!.*Layer$)(?!Activation|GroupNormalization|InstanceNormalization|LayerNormalization|GaussianNoise|TransformerEncoder|TransformerDecoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)[A-Z][a-zA-Z0-9]*/
 
         // Comments and whitespace
         COMMENT: /#[^\n]*/
@@ -571,7 +571,28 @@ class ModelTransformer(lark.Transformer):
 
     @pysnooper.snoop()
     def macro_ref(self, items):
+        """Process a macro reference."""
         macro_name = items[0].value
+        
+        # Check if this is actually a custom layer
+        if macro_name.endswith('Layer'):
+            params = {}
+            if len(items) > 1:
+                param_values = self._extract_value(items[1])
+                if isinstance(param_values, list):
+                    for param in param_values:
+                        if isinstance(param, dict):
+                            params.update(param)
+                elif isinstance(param_values, dict):
+                    params = param_values
+                    
+            return {
+                'type': macro_name,
+                'params': params,
+                'sublayers': []
+            }
+            
+        # Handle actual macros
         if macro_name not in self.macros:
             self.raise_validation_error(f"Undefined macro '{macro_name}'", items[0])
 
@@ -580,17 +601,14 @@ class ModelTransformer(lark.Transformer):
 
         macro_def = self.macros[macro_name]['original']
         if isinstance(macro_def, list):
-            # If macro defines multiple layers, return them with updated params and sub-layers
             for layer in macro_def:
-                layer['params'].update(params)
-                if sub_layers:
-                    layer.setdefault('sublayers', []).extend(sub_layers)
+                if isinstance(layer, dict):
+                    layer['params'].update(params)
             return macro_def
         else:
-            # Single layer macro
             macro_def['params'].update(params)
             if sub_layers:
-                macro_def.setdefault('sublayers', []).extend(sub_layers)
+                macro_def['sublayers'] = sub_layers
             return macro_def
         
     def layer_block(self, items):
@@ -1739,9 +1757,30 @@ class ModelTransformer(lark.Transformer):
     def regularization_layer(self, items):
         return {'type': items[0].data.capitalize(), 'params': self._extract_value(items[0].children[0])}
 
-    def custom_layer(self, items):
-        params = self._extract_value(items[0])
-        return {'type': 'Capsule', 'params': params}
+
+
+    def custom(self, items):
+        """Process a custom layer definition."""
+        if isinstance(items[0], Token) and items[0].type == 'CUSTOM_LAYER':
+            layer_type = items[0].value
+        else:
+            layer_type = items[0]
+            
+        params = {}
+        if len(items) > 1:
+            param_values = self._extract_value(items[1])
+            if isinstance(param_values, list):
+                for param in param_values:
+                    if isinstance(param, dict):
+                        params.update(param)
+            elif isinstance(param_values, dict):
+                params = param_values
+                
+        return {
+            'type': layer_type,
+            'params': params,
+            'sublayers': []
+        }
 
     def capsule(self, items):
         params = self._extract_value(items[0]) if items else None
@@ -1892,12 +1931,6 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'L1L2', 'params': self._extract_value(items[0])}
 
     
-    def custom(self, items):
-        layer_type = items[0].value
-        params = self._extract_value(items[1]) if items[1].data == 'param_style1' else {}
-        sub_layers = self._extract_value(items[2]) if len(items) > 2 and items[2].data == 'layer_block' else []
-        return {'type': layer_type, 'params': params, 'sublayers': sub_layers}
-
     def named_layer(self, items):
         return {'type': items[0].value, 'params': self._extract_value(items[1])}
 
