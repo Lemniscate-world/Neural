@@ -2050,8 +2050,9 @@ class ModelTransformer(lark.Transformer):
 
     def _detect_framework(self, model):
         for layer in model['layers']:
-            if 'torch' in layer.get('params', {}).values():
+            params = layer.get('params') or {}  # Handle None case
+            if 'torch' in params.values():
                 return 'pytorch'
-            if 'keras' in layer.get('params', {}).values():
+            if 'keras' in params.values():
                 return 'tensorflow'
         return 'tensorflow'
