@@ -555,6 +555,10 @@ class ModelTransformer(lark.Transformer):
             
         return layer_def
 
+    def special_layer(self, items):
+        """Process special_layer rule by returning the first child (custom, macro_ref, etc.)."""
+        return self._extract_value(items[0])
+
 
     def define(self, items):
         macro_name = items[0].value
