@@ -763,8 +763,8 @@ def test_error_recovery():
 
 @pytest.mark.parametrize("test_input,expected_error", [
     ('network Test { input: (1,1) layers: Dense(units=-10) }', 'units must be positive'),
-    ('network Test { input: (1,1) layers: Dropout(rate=1.5) }', 'rate must be between 0 and 1'),
-    ('network Test { input: (1,1) layers: Conv2D(filters=0) }', 'filters must be positive')
+    ('network Test { input: (1,1) layers: Dropout(rate=1.5) }', 'Dropout rate should be between 0 and 1'),
+    ('network Test { input: (1,1) layers: Conv2D(filters=0) }', 'Conv2D filters must be a positive integer'),
 ])
 def test_semantic_validation(test_input, expected_error):
     parser = create_parser()
@@ -883,17 +883,18 @@ def test_extended_layer_parsing(layer_parser, transformer, layer_string, expecte
                 assert result == expected, f"Failed for {test_id}: expected {expected}, got {result}"
 
 @pytest.mark.parametrize(
-            "layer_string, validation_error_msg, test_id",
-            [
-                ('Dense(units="invalid")', "units must be a number", "dense-invalid-units-type"),
-                ('Conv2D(filters=-5, kernel_size=(3,3))', "Conv2D filters must be a positive integer", "conv2d-negative-filters"),
-                ('LSTM(units=0, return_sequences=true)', "units must be positive", "lstm-zero-units"),
-                ('Dropout(rate=1.5)', "Dropout rate should be between 0 and 1", "dropout-high-rate"),
-                ('BatchNormalization(momentum=2.0)', "momentum must be between 0 and 1", "batchnorm-invalid-momentum"),
-                ('Conv2D(32, (-1,-1))', "Conv2D kernel_size should be positive integers", "conv2d-negative-kernel"),
-                ('MaxPooling2D(pool_size=(0,0))', "pool_size must be positive", "maxpool-zero-size"),
-            ]
-        )
+    "layer_string, validation_error_msg, test_id",
+    [
+        ('Dense(units="invalid")', "Dense units must be a number"),
+        ('Conv2D(filters=-5, kernel_size=(3,3))', "Conv2D filters must be a positive integer"),
+        ('LSTM(units=0, return_sequences=true)', "LSTM units must be positive"),
+        ('Dropout(rate=1.5)', "Dropout rate should be between 0 and 1"),
+        ('BatchNormalization(momentum=2.0)', "BatchNormalization momentum must be between 0 and 1"),
+        ('Conv2D(32, (-1,-1))', "Conv2D kernel_size must be positive integers"),
+        ('MaxPooling2D(pool_size=(0,0))', "pool_size must be positive"),
+    ]
+)
+
 def test_layer_validation_errors(layer_parser, transformer, layer_string, validation_error_msg, test_id):
         """Test validation error messages for invalid layer configurations."""
         with pytest.raises(VisitError) as exc_info:
