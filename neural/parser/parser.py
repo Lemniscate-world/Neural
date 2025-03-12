@@ -1795,7 +1795,7 @@ class ModelTransformer(lark.Transformer):
 
     def graph_attention(self, items):
         params = self._extract_value(items[0])
-        return {'type': 'GraphAttention', 'params': params}
+        return {'type': 'GraphAttention', 'params': params, 'sublayers': []}  # Fixed sublayers
 
     def dynamic(self, items):
         params = self._extract_value(items[0]) if items else None
