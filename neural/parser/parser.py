@@ -740,9 +740,40 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Dropout', 'params': params}
     
     def output(self, items):
-        params = self._extract_value(items[0])
-        if isinstance(params, dict) and 'units' in params and 'hpo' in params['units']:
-            self._track_hpo('Output', 'units', params['units'], items[0])  # Track HPO
+        params = {}
+        if items and items[0] is not None:
+            param_node = items[0]
+            param_values = self._extract_value(param_node)
+            
+            ordered_params = []
+            named_params = {}
+            if isinstance(param_values, list):
+                for val in param_values:
+                    if isinstance(val, dict):
+                        named_params.update(val)
+                    else:
+                        ordered_params.append(val)
+            elif isinstance(param_values, dict):
+                named_params = param_values
+            
+            # Map positional parameters to named
+            if ordered_params:
+                if len(ordered_params) >= 1:
+                    params['units'] = ordered_params[0]
+                if len(ordered_params) >= 2:
+                    params['activation'] = ordered_params[1]
+                if len(ordered_params) > 2:
+                    self.raise_validation_error("Output layer accepts at most two positional arguments (units, activation)", items[0])
+            
+            params.update(named_params)
+        
+        if 'units' not in params:
+            self.raise_validation_error("Output layer requires 'units' parameter", items[0])
+        
+        # Track HPO if present
+        if 'units' in params and isinstance(params['units'], dict) and 'hpo' in params['units']:
+            self._track_hpo('Output', 'units', params['units'], items[0])
+        
         return {'type': 'Output', 'params': params}
 
     def regularization(self, items):
