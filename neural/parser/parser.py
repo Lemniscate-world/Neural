@@ -389,8 +389,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" STRING
         
+        // Customized Shapes
         CUSTOM_SHAPE: "CustomShape"
-        self_defined_shape: CUSTOM_SHAPE named_layer
+        self_defined_shape: CUSTOM_SHAPE "(" named_layer ")"
 
         math_expr: term (("+"|"-") term)*
         term: factor (("*"|"/") factor)*
