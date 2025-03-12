@@ -1978,13 +1978,20 @@ class ModelTransformer(lark.Transformer):
 
     
     def named_layer(self, items):
-        return {'type': items[0].value, 'params': self._extract_value(items[1])}
+        layer_name = self._extract_value(items[0])
+        dimensions = self._extract_value(items[1])
+        return {
+            'type': layer_name,
+            'params': dimensions
+        }
 
     def self_defined_shape(self, items):
-        layer_name = self._extract_value(items[0])
-        custom_dims = self._extract_value(items[1])
-        return {"type": "CustomShape", "layer": layer_name, "custom_dims": custom_dims}
-
+        layer_info = self._extract_value(items[1])  # items[1] is the named_layer result
+        return {
+            "type": "CustomShape",
+            "layer": layer_info['type'],
+            "custom_dims": layer_info['params']
+        }
 
     ## HPO ##
 
