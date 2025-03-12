@@ -2061,10 +2061,17 @@ class ModelTransformer(lark.Transformer):
             model['shape_info'] = []
             model['warnings'] = warnings  # Ensure warnings are always included
             return model
-        except (lark.LarkError, DSLValidationError, VisitError) as e:
+        except VisitError as e:
+            if isinstance(e.orig_exc, DSLValidationError):
+                log_by_severity(Severity.ERROR, f"Error parsing network: {str(e.orig_exc)}")
+                raise e.orig_exc from e
+            else:
+                log_by_severity(Severity.ERROR, f"Error parsing network: {str(e)}")
+                raise
+        except (lark.LarkError, DSLValidationError) as e:
             log_by_severity(Severity.ERROR, f"Error parsing network: {str(e)}")
             raise
-
+        
     def _detect_framework(self, model):
         for layer in model['layers']:
             params = layer.get('params') or {}  # Handle None case
