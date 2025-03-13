@@ -105,10 +105,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         CONCATENATE: "concatenate"i
         DOT: "dot"i
         TIMEDISTRIBUTED: "timedistributed"i
+        RESIDUALCONNECTION: "residualconnection"i
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i | "add"i | "subtract"i | "multiply"i | "average"i | "maximum"i | "concatenate"i | "dot"i | "timedistributed"i
-
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i | "add"i | "subtract"i | "multiply"i | "average"i | "maximum"i | "concatenate"i | "dot"i | "timedistributed"i | "residualconnection"i
 
         // Basic tokens
         NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
@@ -124,7 +124,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Layer name patterns
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /^(?!.*Layer$)(?!Dot|Average|Maximum|Multiply|Add|Concatenate|substract|TimeDistributed|Activation|GroupNormalization|InstanceNormalization|LayerNormalization|GaussianNoise|TransformerEncoder|TransformerDecoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)[A-Z][a-zA-Z0-9]*/
+        MACRO_NAME: /^(?!.*Layer$)(?!ResidualConnection|Dot|Average|Maximum|Multiply|Add|Concatenate|substract|TimeDistributed|Activation|GroupNormalization|InstanceNormalization|LayerNormalization|GaussianNoise|TransformerEncoder|TransformerDecoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)[A-Z][a-zA-Z0-9]*/
 
         // Comments and whitespace
         COMMENT: /#[^\n]*/
@@ -350,17 +350,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         lstm_cell_layer: "LSTMCell" "(" named_params ")"
         gru_cell_layer: "GRUCell" "(" named_params ")"
 
-        residual: "ResidualConnection" "(" [named_params] ")" [layer_block]
-        inception: "Inception" "(" [named_params] ")"
-        capsule: "CapsuleLayer" "(" [named_params] ")"
-        squeeze_excitation: "SqueezeExcitation" "(" [named_params] ")"
-        graph: graph_conv | graph_attention
-        graph_conv: "GraphConv" "(" [named_params] ")"
-        graph_attention: "GraphAttention" "(" [named_params] ")"
-        embedding: "Embedding" "(" [named_params] ")"
-        quantum: "QuantumLayer" "(" [named_params] ")"
-        dynamic: "DynamicLayer" "(" [named_params] ")"
-
         // Lambda layers
         merge: add | substract | multiply | average | maximum | concatenate | dot
         add: ADD "("  param_style1 ")"
@@ -423,7 +412,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
-        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
@@ -437,13 +426,21 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         transformer: TRANSFORMER "(" [param_style1] ")" [layer_block]
                     | TRANSFORMER_ENCODER "(" [param_style1] ")" [layer_block]
                     | TRANSFORMER_DECODER "(" [param_style1] ")" [layer_block]
+        residual: RESIDUALCONNECTION "(" [param_style1] ")" [layer_block]
+        inception: "Inception" "(" [named_params] ")"
+        capsule: "CapsuleLayer" "(" [named_params] ")"
+        squeeze_excitation: "SqueezeExcitation" "(" [named_params] ")"
+        graph: graph_conv | graph_attention
+        graph_conv: "GraphConv" "(" [named_params] ")"
+        graph_attention: "GraphAttention" "(" [named_params] ")"
+        embedding: "Embedding" "(" [named_params] ")"
+        quantum: "QuantumLayer" "(" [named_params] ")"
+        dynamic: "DynamicLayer" "(" [named_params] ")"
 
 
         special_layer: custom | macro_ref | wrapper | lambda_ | self_defined_shape
-
         ?custom_or_macro: custom | macro_ref
         custom: CUSTOM_LAYER "(" param_style1 ")" [layer_block]
-
         layer_block: "{" (layer_or_repeated)* "}"
 
         
@@ -526,6 +523,8 @@ class ModelTransformer(lark.Transformer):
             'CONCATENATE': 'concatenate',
             'DOT': 'dot',
             'TIMEDISTRIBUTED': 'timedistributed',
+            'RESIDUALCONNECTION': 'residual',
+
 
 
         }
