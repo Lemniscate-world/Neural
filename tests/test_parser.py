@@ -98,7 +98,7 @@ def transformer():
         ),
 
         # Merge and Noise Layers
-        ('Add()', {'type': 'Add', 'params': {}, 'sublayers': []}, "add"),
+        ('Add()', {'type': 'Add', 'params': None, 'sublayers': []}, "add"),
         ('Concatenate(axis=1)', {'type': 'Concatenate', 'params': {'axis': 1}, 'sublayers': []}, "concatenate"),
         ('GaussianNoise(stddev=0.1)', {'type': 'GaussianNoise', 'params': {'stddev': 0.1}, 'sublayers': []}, "gaussian-noise"),
 
