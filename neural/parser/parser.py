@@ -362,13 +362,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Lambda layers
         merge: add | substract | multiply | average | maximum | concatenate | dot
-        add: ADD "(" named_params ")"
-        substract: SUBSTRACT "(" named_params ")"
-        multiply: MULTIPLY "(" named_params ")"
-        average: AVERAGE "(" named_params ")"
-        maximum: MAXIMUM "(" named_params ")"
-        concatenate: CONCATENATE "(" named_params ")"
-        dot: DOT "(" named_params ")"
+        add: ADD "("  param_style1 ")"
+        substract: SUBSTRACT "(" param_style1 ")"
+        multiply: MULTIPLY "(" param_style1 ")"
+        average: AVERAGE "(" param_style1 ")"
+        maximum: MAXIMUM "(" param_style1 ")"
+        concatenate: CONCATENATE "(" param_style1 ")"
+        dot: DOT "(" param_style1 ")"
 
         spatial_dropout1d: "SpatialDropout1D" "(" named_params ")"
         spatial_dropout2d: "SpatialDropout2D" "(" named_params ")"
