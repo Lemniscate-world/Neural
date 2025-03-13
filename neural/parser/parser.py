@@ -1922,6 +1922,9 @@ class ModelTransformer(lark.Transformer):
 
     ### Lambda Layers ###
 
+    def merge(self, items):
+        return self._extract_value(items[0])
+
     def lambda_(self, items):
         return {'type': 'Lambda', 'params': {'function': self._extract_value(items[0])}, 'sublayers': []}
 
@@ -1945,6 +1948,7 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'Maximum', 'params': params, 'sublayers': []}
 
+    @pysnooper.snoop()
     def concatenate(self, items):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'Concatenate', 'params': params, 'sublayers': []}
