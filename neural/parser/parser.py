@@ -1925,33 +1925,32 @@ class ModelTransformer(lark.Transformer):
     def lambda_(self, items):
         return {'type': 'Lambda', 'params': {'function': self._extract_value(items[0])}, 'sublayers': []}
 
-    @pysnooper.snoop()
     def add(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'Add', 'params': params, 'sublayers': []}
 
     def substract(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'Subtract', 'params': params, 'sublayers': []}
 
     def multiply(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'Multiply', 'params': params, 'sublayers': []}
 
     def average(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'Average', 'params': params, 'sublayers': []}
     
     def maximum(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'Maximum', 'params': params, 'sublayers': []}
 
     def concatenate(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'Concatenate', 'params': params, 'sublayers': []}
 
     def dot(self, items):
-        params = self._extract_value(items[0]) if items else {}
+        params = self._extract_value(items[0]) if items else None
         return {'type': 'Dot', 'params': params, 'sublayers': []}
 
     ## Statistical Noises ##
