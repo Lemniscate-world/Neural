@@ -97,11 +97,19 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         INSTANCENORMALIZATION: "instancenormalization"i
         GROUPNORMALIZATION: "groupnormalization"i
         ACTIVATION: "activation"i
+        ADD: "add"i
+        SUBSTRACT: "subtract"i
+        MULTIPLY: "multiply"i
+        AVERAGE: "average"i
+        MAXIMUM: "maximum"i
+        CONCATENATE: "concatenate"i
+        DOT: "dot"i
+
 
 
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i | "add"i | "subtract"i | "multiply"i | "average"i | "maximum"i | "concatenate"i | "dot"i
 
 
         // Basic tokens
@@ -118,7 +126,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Layer name patterns
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
-        MACRO_NAME: /^(?!.*Layer$)(?!Activation|GroupNormalization|InstanceNormalization|LayerNormalization|GaussianNoise|TransformerEncoder|TransformerDecoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)[A-Z][a-zA-Z0-9]*/
+        MACRO_NAME: /^(?!.*Layer$)(?!Dot|Average|Multiply|Add|concatenate|substract|Activation|GroupNormalization|InstanceNormalization|LayerNormalization|GaussianNoise|TransformerEncoder|TransformerDecoder|BatchNormalization|Dropout|Flatten|Output|Conv2DTranspose|LSTM|GRU|SimpleRNN|LSTMCell|GRUCell|Dense|Conv1D|Conv2D|Conv3D|MaxPooling1D|MaxPooling2D|MaxPooling3D)[A-Z][a-zA-Z0-9]*/
 
         // Comments and whitespace
         COMMENT: /#[^\n]*/
@@ -354,14 +362,15 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         quantum: "QuantumLayer" "(" [named_params] ")"
         dynamic: "DynamicLayer" "(" [named_params] ")"
 
-        merge: add | subtract | multiply | average | maximum | concatenate | dot
-        add: "Add" "(" named_params ")"
-        subtract: "Subtract" "(" named_params ")"
-        multiply: "Multiply" "(" named_params ")"
-        average: "Average" "(" named_params ")"
-        maximum: "Maximum" "(" named_params ")"
-        concatenate: "Concatenate(" named_params ")"
-        dot: "Dot" "(" named_params ")"
+        // Lambda layers
+        merge: add | substract | multiply | average | maximum | concatenate | dot
+        add: ADD "(" named_params ")"
+        substract: SUBSTRACT "(" named_params ")"
+        multiply: MULTIPLY "(" named_params ")"
+        average: AVERAGE "(" named_params ")"
+        maximum: MAXIMUM "(" named_params ")"
+        concatenate: CONCATENATE "(" named_params ")"
+        dot: DOT "(" named_params ")"
 
         spatial_dropout1d: "SpatialDropout1D" "(" named_params ")"
         spatial_dropout2d: "SpatialDropout2D" "(" named_params ")"
@@ -415,7 +424,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
-        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
@@ -510,6 +519,14 @@ class ModelTransformer(lark.Transformer):
             'INSTANCENORMALIZATION': 'instance_norm',
             'GROUPNORMALIZATION': 'group_norm',
             'ACTIVATION': 'activation',
+            'ADD': 'add',
+            'SUBSTRACT': 'substract',
+            'MULTIPLY': 'multiply',
+            'AVERAGE': 'average',
+            'MAXIMUM': 'maximum',
+            'CONCATENATE': 'concatenate',
+            'DOT': 'dot'
+
         }
         self.hpo_params = []
 
@@ -1908,26 +1925,34 @@ class ModelTransformer(lark.Transformer):
     def lambda_(self, items):
         return {'type': 'Lambda', 'params': {'function': self._extract_value(items[0])}, 'sublayers': []}
 
+    @pysnooper.snoop()
     def add(self, items):
-        return {'type': 'Add', 'params': self._extract_value(items[0])}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'Add', 'params': params, 'sublayers': []}
 
-    def subtract(self, items):
-        return {'type': 'Subtract', 'params': self._extract_value(items[0])}
+    def substract(self, items):
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'Subtract', 'params': params, 'sublayers': []}
 
     def multiply(self, items):
-        return {'type': 'Multiply', 'params': self._extract_value(items[0])}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'Multiply', 'params': params, 'sublayers': []}
 
     def average(self, items):
-        return {'type': 'Average', 'params': self._extract_value(items[0])}
-
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'Average', 'params': params, 'sublayers': []}
+    
     def maximum(self, items):
-        return {'type': 'Maximum', 'params': self._extract_value(items[0])}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'Maximum', 'params': params, 'sublayers': []}
 
     def concatenate(self, items):
-        return {'type': 'Concatenate', 'params': self._extract_value(items[0])}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'Concatenate', 'params': params, 'sublayers': []}
 
     def dot(self, items):
-        return {'type': 'Dot', 'params': self._extract_value(items[0])}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'Dot', 'params': params, 'sublayers': []}
 
     ## Statistical Noises ##
 
