@@ -151,6 +151,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         number1: INT
         explicit_tuple: "(" value ("," value)+ ")"
 
+        // Research Parsing
         research: "research" NAME? "{" [research_params] "}"
         research_params: (metrics | references)*
         metrics: "metrics" "{" [accuracy_param] [metrics_loss_param] [precision_param] [recall_param] "}"
@@ -1070,25 +1071,7 @@ class ModelTransformer(lark.Transformer):
     def shape(self, items):
         return tuple(self._extract_value(item) for item in items)
 
-    def wrapper(self, items):
-        wrapper_type = items[0]  # e.g., "TimeDistributed"
-        inner_layer = self._extract_value(items[1])  # The wrapped layer
-        param_idx = 2
-        params = {}
-        sub_layers = []
-
-        # Extract additional named parameters if present
-        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'named_params':
-            params = self._extract_value(items[param_idx])
-            param_idx += 1
-
-        # Extract sub-layers if present
-        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'layer_block':
-            sub_layers = self._extract_value(items[param_idx])
-
-        inner_layer['params'].update(params)
-        return {'type': f"{wrapper_type}({inner_layer['type']})", 'params': inner_layer['params'], 'sublayers': sub_layers}
-
+    
     def pooling(self, items):
         return items[0]
 
@@ -1964,21 +1947,24 @@ class ModelTransformer(lark.Transformer):
 
     @pysnooper.snoop()
     def wrapper(self, items):
-        raw_params = self._extract_value(items[0]) if items else None
-        if isinstance(raw_params, list):
-            params = {}
-            for item in raw_params:
-                if isinstance(item, dict):
-                    params.update(item)
-                elif isinstance(item, list):
-                    for sub_item in item:
-                        if isinstance(sub_item, dict):
-                            params.update(sub_item)
-                else:
-                    self.raise_validation_error("Invalid parameters for Wrapper", items[0])
-        else:
-            params = raw_params
-        return {'type': 'Wrapper', 'params': params}
+        wrapper_type = items[0]  # e.g., "TimeDistributed"
+        inner_layer = self._extract_value(items[1])  # The wrapped layer
+        param_idx = 2
+        params = {}
+        sub_layers = []
+
+        # Extract additional named parameters if present
+        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'named_params':
+            params = self._extract_value(items[param_idx])
+            param_idx += 1
+
+        # Extract sub-layers if present
+        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'layer_block':
+            sub_layers = self._extract_value(items[param_idx])
+
+        inner_layer['params'].update(params)
+        return {'type': f"{wrapper_type}({inner_layer['type']})", 'params': inner_layer['params'], 'sublayers': sub_layers}
+
 
     ## Statistical Noises ##
 
