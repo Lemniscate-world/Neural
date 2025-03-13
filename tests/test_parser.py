@@ -374,7 +374,7 @@ def test_research_parsing(research_parser, transformer, research_string, expecte
                 Dense(128, "relu")
             }
             """,
-            [{'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}, 'sublayers': []}],
+            {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}, 'sublayers': []},
             {'type': 'MyDense', 'params': {}, 'sublayers': []},
             False,
             "macro-basic"

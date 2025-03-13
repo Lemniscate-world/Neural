@@ -625,17 +625,17 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[1]) if len(items) > 1 and items[1].data == 'param_style1' else {}
         sub_layers = self._extract_value(items[2]) if len(items) > 2 and items[2].data == 'layer_block' else []
 
-        macro_def = self.macros[macro_name]['original']
-        if isinstance(macro_def, list):
-            for layer in macro_def:
-                if isinstance(layer, dict):
-                    layer['params'].update(params)
-            return macro_def
-        else:
-            macro_def['params'].update(params)
-            if sub_layers:
-                macro_def['sublayers'] = sub_layers
-            return macro_def
+        #macro_def = self.macros[macro_name]['original']
+        #if isinstance(macro_def, list):
+            #for layer in macro_def:
+                #if isinstance(layer, dict):
+                    #layer['params'].update(params)
+            #return macro_def
+        #else:
+            #macro_def['params'].update(params)
+            #if sub_layers:
+                #macro_def['sublayers'] = sub_layers
+        return {'type':macro_name, 'params':params, 'sub_layers': sub_layers}
         
     def layer_block(self, items):
         """Process a block of nested layers."""
