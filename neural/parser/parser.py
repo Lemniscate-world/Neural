@@ -265,7 +265,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         lambda_: "Lambda" "(" STRING ")"
-        wrapper: TIMEDISTRIBUTED "(" layer ["," named_params] ")" [layer_block]
+        wrapper: TIMEDISTRIBUTED "(" layer ["," param_style1] ")" [layer_block]
 
         dropout: "Dropout" "(" dropout_params ")"
         dropout_params: FLOAT | named_params
@@ -1941,19 +1941,30 @@ class ModelTransformer(lark.Transformer):
 
     ## Wrappers ##
 
-    def timedistributed(self, items):
-        return {'type': 'TimeDistributed', 'params': self._extract_value(items[0])}
+    def timedistributed(self, items): 
+        raw_params = self._extract_value(items[0]) if items else None
+        if isinstance(raw_params, list):
+            params = {}
+            for item in raw_params:
+                if isinstance(item, dict):
+                    params.update(item)
+                else:
+                    self.raise_validation_error("Invalid parameters for TimeDistributed", items[0])
+        else:
+            params = raw_params 
+        return {'type': 'TimeDistributed', 'params': params}
 
     @pysnooper.snoop()
     def wrapper(self, items):
         wrapper_type = items[0]  # e.g., "TimeDistributed"
+
         inner_layer = self._extract_value(items[1])  # The wrapped layer
-        param_idx = 2
+        param_idx = 3
         params = {}
         sub_layers = []
 
         # Extract additional named parameters if present
-        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'named_params':
+        if len(items) > param_idx and isinstance(items[param_idx], dict) and items[param_idx].data == 'named_params':
             params = self._extract_value(items[param_idx])
             param_idx += 1
 
@@ -1961,8 +1972,15 @@ class ModelTransformer(lark.Transformer):
         if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'layer_block':
             sub_layers = self._extract_value(items[param_idx])
 
-        inner_layer['params'].update(params)
-        return {'type': f"{wrapper_type}({inner_layer['type']})", 'params': inner_layer['params'], 'sublayers': sub_layers}
+        if isinstance(items, list):
+            for item in items:
+                if isinstance(item, dict):
+                    params.update(item)
+                elif isinstance(item, list):
+                    for sub_param in item:
+                        params.update(sub_param)
+
+        return {'type': f"{wrapper_type}({inner_layer['type']})", 'params': params, 'sublayers': sub_layers}
 
 
     ## Statistical Noises ##
