@@ -706,8 +706,17 @@ def test_token_patterns(rule_name, valid_inputs):
             if rule_name == 'STRING':
                 # Test STRING token in a valid context (as activation function)
                 result = parser.parse(f'network TestNet {{ input: (1,1) layers: Dense(10, {input_str}) }}')
+            elif rule_name == 'CUSTOM_LAYER':
+                # Test CUSTOM_LAYER token in a valid context (as custom layer name)
+                result = parser.parse(f'network TestNet {{ input: (1,1) layers: {input_str}() }}')
+            elif rule_name == 'NUMBER':
+                # Test NUMBER token in a valid context (as numeric value)
+                result = parser.parse(f'network TestNet {{ input: (1,1) layers: Dense({input_str}) }}')
+            elif rule_name == 'NAME':
+                # Test NAME token in a valid context (as variable name)
+                result = parser.parse(f'network TestNet {{ input: (1,1) layers: Dense(10, "{input_str}") }}')
             else:
-                result = parser.parse(f"network TestNet {{ input: (1,1) layers: {input_str} }}")
+                result = parser.parse(f'network {input_str} {{ input: (1,1) layers: Dense(10) }}')
             assert result is not None
         except Exception as e:
             pytest.fail(f"Failed to parse {rule_name} with input {input_str}: {str(e)}")
