@@ -1901,7 +1901,7 @@ class ModelTransformer(lark.Transformer):
                 dim = params[key]
                 if not isinstance(dim, int) or dim <= 0:
                     self.raise_validation_error(f"Embedding {key} must be a positive integer, got {dim}", items[0])
-        return {'type': 'Embedding', 'params': params}
+        return {'type': 'Embedding', 'params': params, 'sublayers': []}
 
     ### Lambda Layers ###
 
