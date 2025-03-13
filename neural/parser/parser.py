@@ -524,7 +524,7 @@ class ModelTransformer(lark.Transformer):
             'MAXIMUM': 'maximum',
             'CONCATENATE': 'concatenate',
             'DOT': 'dot',
-            'TIMEDISTRIBUTED': 'timedistributed'
+            'TIMEDISTRIBUTED': 'timedistributed',
 
 
         }
@@ -1955,12 +1955,26 @@ class ModelTransformer(lark.Transformer):
 
     ## Wrappers ##
 
-    def time_distributed(self, items):
+    def timedistributed(self, items):
         return {'type': 'TimeDistributed', 'params': self._extract_value(items[0])}
 
     @pysnooper.snoop()
     def wrapper(self, items):
-        return {'type': 'Wrapper', 'params': self._extract_value(items[0])}
+        raw_params = self._extract_value(items[0]) if items else None
+        if isinstance(raw_params, list):
+            params = {}
+            for item in raw_params:
+                if isinstance(item, dict):
+                    params.update(item)
+                elif isinstance(item, list):
+                    for sub_item in item:
+                        if isinstance(sub_item, dict):
+                            params.update(sub_item)
+                else:
+                    self.raise_validation_error("Invalid parameters for Wrapper", items[0])
+        else:
+            params = raw_params
+        return {'type': 'Wrapper', 'params': params}
 
     ## Statistical Noises ##
 
