@@ -635,7 +635,7 @@ class ModelTransformer(lark.Transformer):
             #macro_def['params'].update(params)
             #if sub_layers:
                 #macro_def['sublayers'] = sub_layers
-        return {'type':macro_name, 'params':params, 'sub_layers': sub_layers}
+        return {'type':macro_name, 'params':params, 'sublayers': sub_layers}
         
     def layer_block(self, items):
         """Process a block of nested layers."""
