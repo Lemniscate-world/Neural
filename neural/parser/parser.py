@@ -614,41 +614,32 @@ class ModelTransformer(lark.Transformer):
 
 
     def define(self, items):
-        """Process macro definition.
-        
-        Args:
-            items: List containing macro name and layer_or_repeated items
-                    
-        Returns:
-            List of layer definitions contained in the macro
-        """
+        """Process macro definition."""
         if len(items) < 1:
             self.raise_validation_error("Macro definition requires a name")
-                
+        
         macro_name = items[0].value
         layers = []
         
-        # Process each layer_or_repeated item in items[1:]
         for item in items[1:]:
             layer = self._extract_value(item)
-            # Handle layer_or_repeated which could be a tuple (layer, count)
             if isinstance(layer, tuple) and len(layer) == 2 and isinstance(layer[1], int):
                 layer_def, count = layer
                 layers.extend([layer_def] * count)
             else:
                 layers.append(layer)
         
-        # Validate the layers list
         if not layers:
             self.raise_validation_error(f"Empty macro definition for {macro_name}", items[0])
         
-        # Store macro definition
+        # Store the macro definition with its layers
         self.macros[macro_name] = {
             'original': layers,
-            'macro': {'type': macro_name, 'params': {}, 'sublayers': []}
+            'macro': {'type': macro_name, 'params': {}, 'sublayers': layers}
         }
-
-        return layers
+        
+        # Return the macro structure instead of the layers list
+        return {'type': macro_name, 'params': {}, 'sublayers': layers}
         
     @pysnooper.snoop()
     def macro_ref(self, items):
