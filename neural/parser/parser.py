@@ -52,20 +52,23 @@ class DSLValidationError(Exception):
 # Custom error handler for Lark parsing
 def custom_error_handler(error):
     if isinstance(error, KeyError):
-        msg = f"Unexpected end of input (KeyError). The parser did not expect '$END'."
+        msg = "Unexpected end of input (KeyError). The parser did not expect '$END'."
         severity = Severity.ERROR
     elif isinstance(error, lark.UnexpectedCharacters):
         msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected character '{error.char}'.\n" \
               f"Expected one of: {', '.join(sorted(error.allowed))}"
-        severity = Severity.ERROR  # Syntax errors are typically severe
-    elif isinstance(error, lark.UnexpectedToken):
-        msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected token '{error}'.\n" \
-              f"Expected one of: {', '.join(sorted(error.expected))}"
         severity = Severity.ERROR
-    elif isinstance(error, lark.UnexpectedToken) and '$END' in error.expected:
-        msg = f"Unexpected end of input. Did you forget to close a block or define a complete structure?"
-        log_by_severity(Severity.ERROR, msg)
-        raise DSLValidationError(msg, Severity.ERROR, error.line, error.column)
+    elif isinstance(error, lark.UnexpectedToken):
+        # Check for end-of-input scenarios more robustly
+        if str(error.token) in ['', '$END'] or 'RBRACE' in error.expected:
+            msg = "Unexpected end of input - Check for missing closing braces"
+            severity = Severity.ERROR
+            log_by_severity(severity, msg)
+            raise DSLValidationError(msg, severity, error.line, error.column)
+        else:
+            msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected token '{error.token}'.\n" \
+                  f"Expected one of: {', '.join(sorted(error.expected))}"
+            severity = Severity.ERROR
     else:
         msg = str(error)
         severity = Severity.ERROR
@@ -73,7 +76,7 @@ def custom_error_handler(error):
     log_by_severity(severity, msg)
     if severity.value >= Severity.ERROR.value:
         raise DSLValidationError(msg, severity, error.line, error.column)
-    return {"warning": msg, "line": error.line, "column": error.column}  # Return for warnings
+    return {"warning": msg, "line": error.line, "column": error.column}
 
 def create_parser(start_rule: str = 'network') -> lark.Lark:
     grammar = r"""
@@ -481,25 +484,12 @@ def safe_parse(parser, text):
             "details": f"Unexpected {e.token}, expected one of: {e.accepts}"
         })
         
-        # For incomplete blocks/missing closures, try to provide helpful message
-        if isinstance(e, lark.UnexpectedEOF):
-            log_by_severity(Severity.ERROR, "Unexpected end of input - Check for missing closing braces")
-            warnings.append({
-                "message": "Unexpected end of input",
-                "details": "Check for missing closing braces or incomplete blocks"
-            })
-            
-        raise DSLValidationError(f"Parser error: {str(e)}", Severity.ERROR)
+        # Use custom_error_handler to process the error
+        custom_error_handler(e)  # This raises DSLValidationError
         
     except DSLValidationError as e:
-        # Handle validation errors
-        log_by_severity(Severity.ERROR, f"Validation error: {str(e)}")
-        warnings.append({
-            "message": str(e),
-            "details": "Validation failed"
-        })
+        # Re-raise DSLValidationError as-is
         raise
-        
     except Exception as e:
         # Handle other unexpected errors
         log_by_severity(Severity.ERROR, f"Unexpected error while parsing: {str(e)}")
