@@ -1597,12 +1597,22 @@ class ModelTransformer(lark.Transformer):
                     execution_config = item
         
         # Determine output layer and shape
+        output_layer = None
+        output_shape = None
         if layers_config:
-            output_layer = next((layer for layer in reversed(layers_config) if layer['type'] == 'Output'), None)
-            output_shape = output_layer.get('params', {}).get('units') if output_layer else None
-        else:
-            output_layer = None
-            output_shape = None
+            # Find the last Output layer or use the last layer
+            output_layers = [layer for layer in layers_config if layer['type'] == 'Output']
+            if output_layers:
+                output_layer = output_layers[-1]
+            else:
+                output_layer = layers_config[-1]
+            
+            # Extract output shape based on layer type
+            if output_layer['type'] == 'Output':
+                output_shape = output_layer.get('params', {}).get('units')
+            elif output_layer['type'] == 'Dense':
+                output_shape = output_layer.get('params', {}).get('units')
+            # Add other layer types here as needed
         
         return {
             'type': 'model',
