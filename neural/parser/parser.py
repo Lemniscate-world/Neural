@@ -420,7 +420,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
-        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION | GLOBALAVERAGEPOOLING2D
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
@@ -555,6 +555,7 @@ class ModelTransformer(lark.Transformer):
             'DOT': 'dot',
             'TIMEDISTRIBUTED': 'timedistributed',
             'RESIDUALCONNECTION': 'residual',
+            'GLOBALAVERAGEPOOLING2D': 'global_average_pooling2d',
 
 
 
@@ -1097,6 +1098,8 @@ class ModelTransformer(lark.Transformer):
 
     def shape(self, items):
         return tuple(self._extract_value(item) for item in items)
+
+    ## Pooling Layers ##
 
     
     def pooling(self, items):
