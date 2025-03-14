@@ -254,7 +254,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
                     {'type': 'Dense', 'params': {'units': {'hpo': {'type': 'categorical', 'values': [128, 256]}}}, 'sublayers': []},
                     {'type': 'Dropout', 'params': {'rate': {'hpo': {'type': 'range', 'start': 0.3, 'end': 0.7, 'step': 0.1}}}, 'sublayers': []}
                 ],
-                'output_layer': None,
+                'output_layer': {'type': 'Dropout', 'params': {'rate': {'hpo': {'type': 'range', 'start': 0.3, 'end': 0.7, 'step': 0.1}}}, 'sublayers': []},
                 'output_shape': None,
                 'loss': 'mse',
                 'optimizer': {'type': 'Adam', 'params': {'learning_rate': {'hpo': {'type': 'log_range', 'low': 0.0001, 'high': 0.01}}}},
