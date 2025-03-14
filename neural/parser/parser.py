@@ -891,10 +891,26 @@ class ModelTransformer(lark.Transformer):
         if 'activation' in params:
             activation = params['activation']
             if isinstance(activation, dict):  # HPO case
-                pass
-            elif not isinstance(activation, str):
-                self.raise_validation_error(f"Dense activation must be a string or HPO, got {activation}", items[0])
-        
+                pass  # No validation for HPO
+            else:
+                if not isinstance(activation, str):
+                    self.raise_validation_error(
+                        f"Dense activation must be a string or HPO, got {activation}", 
+                        items[0]
+                    )
+                else:
+                    # Validate activation function
+                    valid_activations = {
+                        'relu', 'sigmoid', 'tanh', 'softmax', 'softplus',
+                        'softsign', 'selu', 'elu', 'exponential', 'linear'
+                    }
+                    if activation.lower() not in valid_activations:
+                        self.raise_validation_error(
+                            f"Invalid activation function {activation}. "
+                            f"Allowed: {', '.join(valid_activations)}",
+                            items[0]
+                        )
+
         return {"type": "Dense", "params": params, 'sublayers': []}  # Explicitly add sublayers
         
     def conv(self, items):
@@ -1573,38 +1589,42 @@ class ModelTransformer(lark.Transformer):
     def network(self, items):
         name = str(items[0].value)
         input_layer_config = self._extract_value(items[1])
-        layers_config = self._extract_value(items[2])  # Already handles nested layers via layers method
-        loss_config = self._extract_value(items[3])
-        optimizer_config = self._extract_value(items[4])
+        layers_config = self._extract_value(items[2])
         
+        # Initialize optional components with defaults
+        loss_config = None
+        optimizer_config = None
         training_config = None
         execution_config = {'params': {'device': 'auto'}}
         
-        for item in items[5:]:
-            if isinstance(item, dict):
-                if item.get('type') == 'training_config':
-                    training_config = item.get('params')
-                elif item.get('type') == 'execution_config':
-                    execution_config = item
+        # Track current index starting after mandatory items
+        index = 3
+        components = ['loss', 'optimizer', 'training_config', 'execution_config']
         
+        for component in components:
+            if index < len(items):
+                value = self._extract_value(items[index])
+                if component == 'loss':
+                    loss_config = value
+                elif component == 'optimizer':
+                    optimizer_config = value
+                elif component == 'training_config':
+                    training_config = value.get('params') if isinstance(value, dict) else value
+                elif component == 'execution_config':
+                    execution_config = value.get('params', execution_config)
+                index += 1
+
         # Determine output layer and shape
         output_layer = None
         output_shape = None
         if layers_config:
-            # Find the last Output layer or use the last layer
             output_layers = [layer for layer in layers_config if layer['type'] == 'Output']
-            if output_layers:
-                output_layer = output_layers[-1]
-            else:
-                output_layer = layers_config[-1]
-            
-            # Extract output shape based on layer type
+            output_layer = output_layers[-1] if output_layers else layers_config[-1]
             if output_layer['type'] == 'Output':
                 output_shape = output_layer.get('params', {}).get('units')
             elif output_layer['type'] == 'Dense':
                 output_shape = output_layer.get('params', {}).get('units')
-            # Add other layer types here as needed
-        
+
         return {
             'type': 'model',
             'name': name,
@@ -1615,7 +1635,7 @@ class ModelTransformer(lark.Transformer):
             'loss': loss_config,
             'optimizer': optimizer_config,
             'training_config': training_config,
-            'execution_config': execution_config.get('params', {'device': 'auto'}),
+            'execution_config': execution_config,
             'framework': 'tensorflow',
             'shape_info': [],
             'warnings': []
