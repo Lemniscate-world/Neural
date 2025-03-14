@@ -51,7 +51,10 @@ class DSLValidationError(Exception):
 
 # Custom error handler for Lark parsing
 def custom_error_handler(error):
-    if isinstance(error, lark.UnexpectedCharacters):
+    if isinstance(error, KeyError):
+        msg = f"Unexpected end of input (KeyError). The parser did not expect '$END'."
+        severity = Severity.ERROR
+    elif isinstance(error, lark.UnexpectedCharacters):
         msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected character '{error.char}'.\n" \
               f"Expected one of: {', '.join(sorted(error.allowed))}"
         severity = Severity.ERROR  # Syntax errors are typically severe

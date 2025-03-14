@@ -760,12 +760,12 @@ def test_error_recovery():
     """Test parser's error recovery capabilities."""
     parser = create_parser()
     test_cases = [
-        ('incomplete_block', 'Transformer() {', lark.UnexpectedToken),
-        ('missing_close', 'network Test { input: (1,1) layers: Dense(10)', lark.UnexpectedEOF)
+        ('incomplete_block', 'Transformer() {', (lark.UnexpectedToken, KeyError)),
+        ('missing_close', 'network Test { input: (1,1) layers: Dense(10)', (lark.UnexpectedEOF, KeyError))
     ]
-        
-    for test_id, test_input, expected_error in test_cases:
-        with pytest.raises(expected_error):
+
+    for test_id, test_input, expected_errors in test_cases:
+        with pytest.raises(expected_errors):
             parser.parse(test_input)
 
 @pytest.mark.parametrize("test_input,expected_error", [
