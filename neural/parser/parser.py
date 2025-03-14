@@ -1781,8 +1781,24 @@ class ModelTransformer(lark.Transformer):
     
 
     def residual(self, items):
-        params = self._extract_value(items[0]) if items and items[0].data == 'named_params' else {}
-        sub_layers = self._extract_value(items[1]) if len(items) > 1 and items[1].data == 'layer_block' else []
+        params = {}
+        sub_layers = []
+        
+        for item in items:
+            if isinstance(item, Tree):
+                # Check if the item is param_style1 (parameters)
+                if item.data == 'param_style1':
+                    param_values = self._extract_value(item)
+                    if isinstance(param_values, list):
+                        for p in param_values:
+                            if isinstance(p, dict):
+                                params.update(p)
+                    elif isinstance(param_values, dict):
+                        params.update(param_values)
+                # Check if the item is a layer_block (sublayers)
+                elif item.data == 'layer_block':
+                    sub_layers = self._extract_value(item)
+        
         return {'type': 'ResidualConnection', 'params': params, 'sublayers': sub_layers}
 
     def inception(self, items):
