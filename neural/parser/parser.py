@@ -1770,64 +1770,47 @@ class ModelTransformer(lark.Transformer):
         params = {}
         function_name = None
 
-        # Extract parameters from param_style1 (items[1])
-        raw_params = self._extract_value(items[1]) if len(items) > 1 else None
+        # Extract parameters from items[0] (param_style1 result)
+        raw_params = self._extract_value(items[0]) if items and items[0] is not None else None
 
         if raw_params is None:
             self.raise_validation_error("Activation layer requires a function name", items[0])
 
-        # Process the raw_params to extract function name and additional parameters
+        # Process raw_params
         if isinstance(raw_params, list):
-            # Handle positional and named parameters
+            ordered_params = [p for p in raw_params if not isinstance(p, dict)]
+            named_params = {}
             for param in raw_params:
                 if isinstance(param, dict):
-                    params.update(param)
-                else:
-                    # First positional parameter is the function name
-                    if function_name is None:
-                        function_name = param
+                    named_params.update(param)
+            if ordered_params:
+                function_name = ordered_params[0]  # First positional is function
+                if len(ordered_params) > 1:
+                    if function_name == 'leaky_relu':
+                        params['alpha'] = ordered_params[1]
                     else:
-                        # Handle additional positional parameters (e.g., alpha for leaky_relu)
-                        if function_name == 'leaky_relu':
-                            params['alpha'] = param
-                        else:
-                            self.raise_validation_error(
-                                f"Unexpected positional parameter {param} for activation {function_name}",
-                                items[1]
-                            )
+                        self.raise_validation_error(
+                            f"Unexpected extra positional parameter {ordered_params[1]} for activation {function_name}",
+                            items[0]
+                        )
+            params.update(named_params)
         elif isinstance(raw_params, dict):
-            # Named parameters; must include 'function'
             function_name = raw_params.get('function')
             if not function_name:
-                self.raise_validation_error("Activation layer requires 'function' parameter", items[1])
+                self.raise_validation_error("Activation layer requires 'function' parameter", items[0])
             params = raw_params.copy()
         else:
-            # Assume it's the function name as a string
-            function_name = raw_params
+            function_name = raw_params  # Single string as function name
 
         if not function_name:
-            self.raise_validation_error("Activation layer requires a function name", items[1])
+            self.raise_validation_error("Activation layer requires a function name", items[0])
 
         params['function'] = function_name
 
-        # Handle device_spec if present
-        if len(items) > 2 and items[2] is not None:
-            device = self._extract_value(items[2])
-            params['device'] = device
+        return {'type': 'Activation', 'params': params, 'sublayers': []}
 
-        # Handle sublayers (though Activation shouldn't have them)
-        sublayers = []
-        if len(items) > 3 and items[3] is not None:
-            sublayers = self._extract_value(items[3])
-            if sublayers:
-                self.raise_validation_error("Activation layer does not support sublayers", items[3])
-
-        return {'type': 'Activation', 'params': params, 'sublayers': sublayers}
-    
     def named_alpha(self, items):
         return self._extract_value(items[0])
-
-    #########
 
     def attention(self, items):
         params = self._extract_value(items[0]) if items else None
@@ -2004,9 +1987,11 @@ class ModelTransformer(lark.Transformer):
                 for param in raw_params:
                     if isinstance(param, dict):
                         params.update(param)
-                    elif isinstance(param, list):  # Handle nested list from named param
-                        if len(param) == 1:  # Assume it’s a value from a named param
+                    elif isinstance(param, list) and param:  # Handle nested list like [[1]]
+                        if isinstance(param[0], int):  # Assume single int is axis
                             params['axis'] = param[0]
+                        elif isinstance(param[0], dict):  # Handle [{'axis': 1}]
+                            params.update(param[0])
                     elif isinstance(param, int):  # Handle positional axis
                         params['axis'] = param
             elif isinstance(raw_params, dict):
@@ -2024,7 +2009,7 @@ class ModelTransformer(lark.Transformer):
                 )
 
         return {'type': 'Concatenate', 'params': params, 'sublayers': []}
-    
+        
     def dot(self, items):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'Dot', 'params': params, 'sublayers': []}
