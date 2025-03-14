@@ -1967,9 +1967,35 @@ class ModelTransformer(lark.Transformer):
 
     @pysnooper.snoop()
     def concatenate(self, items):
-        params = self._extract_value(items[0]) if items else None
-        return {'type': 'Concatenate', 'params': params, 'sublayers': []}
+        raw_params = self._extract_value(items[0]) if items and items[0] is not None else None
+        params = {}
 
+        if raw_params:
+            if isinstance(raw_params, list):
+                for param in raw_params:
+                    if isinstance(param, dict):
+                        params.update(param)
+                    elif isinstance(param, list):  # Handle nested list from named param
+                        if len(param) == 1:  # Assume it’s a value from a named param
+                            params['axis'] = param[0]
+                    elif isinstance(param, int):  # Handle positional axis
+                        params['axis'] = param
+            elif isinstance(raw_params, dict):
+                params = raw_params
+            elif isinstance(raw_params, int):  # Single integer as axis
+                params['axis'] = raw_params
+
+        # Validation
+        if 'axis' in params:
+            axis = params['axis']
+            if not isinstance(axis, int):
+                self.raise_validation_error(
+                    f"Concatenate axis must be an integer, got {axis}",
+                    items[0] if items else None
+                )
+
+        return {'type': 'Concatenate', 'params': params, 'sublayers': []}
+    
     def dot(self, items):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'Dot', 'params': params, 'sublayers': []}
