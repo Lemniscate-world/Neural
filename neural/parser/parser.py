@@ -447,7 +447,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         special_layer: custom | macro_ref | wrapper | lambda_ | self_defined_shape
         ?custom_or_macro: custom | macro_ref
-        custom: CUSTOM_LAYER "(" param_style1 ")" [layer_block]
+        custom: CUSTOM_LAYER "(" [param_style1] ")" [layer_block]
         layer_block: "{" (layer_or_repeated)* "}"
 
         
