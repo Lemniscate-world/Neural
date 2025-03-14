@@ -1220,7 +1220,8 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'GlobalAveragePooling1D', 'params': self._extract_value(items[0])}
 
     def global_average_pooling2d(self, items):
-        return {'type': 'GlobalAveragePooling2D', 'params': self._extract_value(items[0])}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'GlobalAveragePooling2D', 'params': params or {}, 'sublayers': []}
 
     def global_average_pooling3d(self, items):
         return {'type': 'GlobalAveragePooling3D', 'params': self._extract_value(items[0])}
