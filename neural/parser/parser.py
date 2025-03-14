@@ -1553,6 +1553,8 @@ class ModelTransformer(lark.Transformer):
     def metrics_loss_param(self, items):
         return {'loss': self._extract_value(items[0])}
 
+    ## Network ##
+
     def network(self, items):
         name = str(items[0].value)
         input_layer_config = self._extract_value(items[1])
@@ -1573,9 +1575,7 @@ class ModelTransformer(lark.Transformer):
         # Determine output layer and shape
         if layers_config:
             output_layer = next((layer for layer in reversed(layers_config) if layer['type'] == 'Output'), None)
-            if not output_layer:
-                output_layer = layers_config[-1]  # Last layer is output if no explicit Output
-            output_shape = output_layer.get('params', {}).get('units') if 'units' in output_layer.get('params', {}) else None
+            output_shape = output_layer.get('params', {}).get('units') if output_layer else None
         else:
             output_layer = None
             output_shape = None
@@ -1591,10 +1591,12 @@ class ModelTransformer(lark.Transformer):
             'optimizer': optimizer_config,
             'training_config': training_config,
             'execution_config': execution_config.get('params', {'device': 'auto'}),
-            'framework': 'tensorflow',  # Added as per test expectation
+            'framework': 'tensorflow',
             'shape_info': [],
             'warnings': []
         }
+
+    #########
 
     def search_method_param(self, items):
         value = self._extract_value(items[0])  # Extract "bayesian" from STRING token
