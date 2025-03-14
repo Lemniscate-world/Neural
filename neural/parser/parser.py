@@ -678,36 +678,33 @@ class ModelTransformer(lark.Transformer):
         return sub_layers
 
     def basic_layer(self, items):
-        """
-        Parses a basic layer from the given items and returns its information.
-        """
         layer_type_node = items[0]
         layer_type = layer_type_node.children[0].value.upper()
         params_node = items[1] if len(items) > 1 else None
-        device_spec_node = items[2] if len(items) > 2 else None  # device_spec is third item
-        sublayers_node = items[3] if len(items) > 3 else None    # sublayers are fourth
+        device_spec_node = items[2] if len(items) > 2 else None
+        sublayers_node = items[3] if len(items) > 3 else None
 
         raw_params = self._extract_value(params_node) if params_node else None
         device = self._extract_value(device_spec_node) if device_spec_node else None
+        sublayers = self._extract_value(sublayers_node) if sublayers_node else []
 
         method_name = self.layer_type_map.get(layer_type)
         if method_name and hasattr(self, method_name):
             try:
-                # Process raw_params through the layer-specific method to get a dict
-                layer_info = getattr(self, method_name)([raw_params])
-                # Add device to the processed parameters
+                # Pass both params and sublayers to the method
+                layer_info = getattr(self, method_name)([raw_params, sublayers])
+                # Ensure 'sublayers' is always present, even if the method doesn't set it
+                if 'sublayers' not in layer_info:
+                    layer_info['sublayers'] = sublayers if sublayers else []
                 if device is not None:
                     layer_info['params']['device'] = device
-                # Handle sublayers
-                sublayers = self._extract_value(sublayers_node) if sublayers_node else []
-                layer_info['sublayers'] = sublayers
                 return layer_info
             except DSLValidationError as e:
                 raise e
         else:
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
-            return {'type': layer_type, 'params': raw_params, 'sublayers': []}
-
+            return {'type': layer_type, 'params': raw_params, 'sublayers': sublayers}
+    
     def device_spec(self, items):
         """Process device specification correctly."""
         if len(items) > 1 and isinstance(items[1], Token) and items[1].type == "STRING":
@@ -943,7 +940,7 @@ class ModelTransformer(lark.Transformer):
                     self.raise_validation_error(f"Conv2D kernel_size should be positive integers, got {ks}", items[0], Severity.ERROR)
             elif not isinstance(ks, int) or ks <= 0:
                 self.raise_validation_error(f"Conv2D kernel_size must be a positive integer, got {ks}", items[0], Severity.ERROR)
-        return {'type': 'Conv2D', 'params': params}
+        return {'type': 'Conv2D', 'params': params}  # 'sublayers' added by basic_layer
 
     def conv3d(self, items):
         params = self._extract_value(items[0])
@@ -1249,7 +1246,6 @@ class ModelTransformer(lark.Transformer):
 
     @pysnooper.snoop()
     def batch_norm(self, items):
-        """Process BatchNormalization layer with or without parameters."""
         raw_params = self._extract_value(items[0]) if items and items[0] is not None else None
         params = None  # Default to None for empty parameters
         
@@ -1271,7 +1267,6 @@ class ModelTransformer(lark.Transformer):
                             f"BatchNormalization axis must be an integer, got {axis}", 
                             items[0]
                         )
-
                 if 'momentum' in params:
                     momentum = params['momentum']
                     if not isinstance(momentum, (int, float)) or not 0 <= momentum <= 1:
@@ -1280,7 +1275,7 @@ class ModelTransformer(lark.Transformer):
                             items[0]
                         )
 
-        return {'type': 'BatchNormalization', 'params': params}
+        return {'type': 'BatchNormalization', 'params': params}  # 'sublayers' added by basic_layer
     
     def named_momentum(self, items):
         return {'momentum': self._extract_value(items[0])}
@@ -1811,26 +1806,20 @@ class ModelTransformer(lark.Transformer):
     
 
     def residual(self, items):
-        params = {}
-        sub_layers = []
+        raw_params = items[0] if items else None
+        sub_layers = items[1] if len(items) > 1 else []
         
-        for item in items:
-            if isinstance(item, Tree):
-                # Check if the item is param_style1 (parameters)
-                if item.data == 'param_style1':
-                    param_values = self._extract_value(item)
-                    if isinstance(param_values, list):
-                        for p in param_values:
-                            if isinstance(p, dict):
-                                params.update(p)
-                    elif isinstance(param_values, dict):
-                        params.update(param_values)
-                # Check if the item is a layer_block (sublayers)
-                elif item.data == 'layer_block':
-                    sub_layers = self._extract_value(item)
+        params = {}
+        if raw_params:
+            if isinstance(raw_params, list):
+                for p in raw_params:
+                    if isinstance(p, dict):
+                        params.update(p)
+            elif isinstance(raw_params, dict):
+                params.update(raw_params)
         
         return {'type': 'ResidualConnection', 'params': params, 'sublayers': sub_layers}
-
+    
     def inception(self, items):
         params = self._extract_value(items[0]) if items else {}
         return {'type': 'Inception', 'params': params, 'sublayers': []}
