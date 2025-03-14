@@ -62,8 +62,9 @@ def custom_error_handler(error):
         msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected token '{error}'.\n" \
               f"Expected one of: {', '.join(sorted(error.expected))}"
         severity = Severity.ERROR
-    elif isinstance(error, lark.UnexpectedToken) and error.token.type == '$END':
-        msg = f"Unexpected end of input. Did you forget to close a block?"
+    elif isinstance(error, lark.UnexpectedToken) and '$END' in error.expected:
+        msg = f"Unexpected end of input. Did you forget to close a block or define a complete structure?"
+        log_by_severity(Severity.ERROR, msg)
         raise DSLValidationError(msg, Severity.ERROR, error.line, error.column)
     else:
         msg = str(error)
@@ -467,22 +468,45 @@ def safe_parse(parser, text):
         tree = parser.parse(text)
         return {"result": tree, "warnings": warnings}
     except (lark.UnexpectedCharacters, lark.UnexpectedToken) as e:
-        # Handle Lark syntax errors
-        result = custom_error_handler(e)
-        if isinstance(result, dict):  # Warning case
-            warnings.append(result)
-            return {"result": None, "warnings": warnings}
-        else:
-            # If custom_error_handler raised an exception, propagate it
-            raise result from e
+        # Log details about syntax error
+        log_by_severity(Severity.ERROR, f"Syntax error at line {e.line}, column {e.column}")
+        log_by_severity(Severity.ERROR, f"Unexpected {e.token} - Expected: {e.accepts}")
+        
+        # Add warning
+        warnings.append({
+            "message": f"Syntax error at line {e.line}, column {e.column}",
+            "line": e.line,
+            "column": e.column,
+            "details": f"Unexpected {e.token}, expected one of: {e.accepts}"
+        })
+        
+        # For incomplete blocks/missing closures, try to provide helpful message
+        if isinstance(e, lark.UnexpectedEOF):
+            log_by_severity(Severity.ERROR, "Unexpected end of input - Check for missing closing braces")
+            warnings.append({
+                "message": "Unexpected end of input",
+                "details": "Check for missing closing braces or incomplete blocks"
+            })
+            
+        raise DSLValidationError(f"Parser error: {str(e)}", Severity.ERROR)
+        
     except DSLValidationError as e:
-        # Catch and re-raise any DSLValidationError from custom_error_handler
-        raise e
+        # Handle validation errors
+        log_by_severity(Severity.ERROR, f"Validation error: {str(e)}")
+        warnings.append({
+            "message": str(e),
+            "details": "Validation failed"
+        })
+        raise
+        
     except Exception as e:
-        if isinstance(e, DSLValidationError):
-            raise e
-        else:
-            raise DSLValidationError(f"Parsing failed: {str(e)}") from e
+        # Handle other unexpected errors
+        log_by_severity(Severity.ERROR, f"Unexpected error while parsing: {str(e)}")
+        warnings.append({
+            "message": f"Unexpected error: {str(e)}",
+            "details": "Parser encountered an unexpected error"
+        })
+        raise DSLValidationError(f"Parser error: {str(e)}", Severity.ERROR)
 
 network_parser = create_parser('network')
 layer_parser = create_parser('layer')
