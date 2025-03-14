@@ -615,12 +615,19 @@ class ModelTransformer(lark.Transformer):
 
     def define(self, items):
         macro_name = items[0].value
-        layers = self._extract_value(items[1])  # Expecting a list from layer_block
+        layer_block_tree = items[1]  # Should be a Tree with data='layer_block'
+        
+        # Explicitly process the layer_block
+        if isinstance(layer_block_tree, Tree) and layer_block_tree.data == 'layer_block':
+            layers = self.layer_block(layer_block_tree.children)
+        else:
+            layers = self._extract_value(layer_block_tree)
+        
+        logger.debug(f"Macro '{macro_name}' layers: {layers}")
         
         if not layers:
             self.raise_validation_error(f"Macro '{macro_name}' must define at least one layer", items[0])
         
-        # Ensure layers is always a list
         if not isinstance(layers, list):
             layers = [layers]
         
@@ -628,7 +635,7 @@ class ModelTransformer(lark.Transformer):
             'original': layers,
             'macro': {'type': 'Macro', 'params': macro_name}
         }
-        return layers  # Return the full list of layers
+        return layers
     
     @pysnooper.snoop()
     def macro_ref(self, items):
