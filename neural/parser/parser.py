@@ -614,29 +614,42 @@ class ModelTransformer(lark.Transformer):
 
 
     def define(self, items):
+        """Process macro definition.
+        
+        Args:
+            items: List containing macro name and layer_or_repeated items
+                    
+        Returns:
+            List of layer definitions contained in the macro
+        """
+        if len(items) < 1:
+            self.raise_validation_error("Macro definition requires a name")
+                
         macro_name = items[0].value
-        layer_block_tree = items[1]  # Should be a Tree with data='layer_block'
+        layers = []
         
-        # Explicitly process the layer_block
-        if isinstance(layer_block_tree, Tree) and layer_block_tree.data == 'layer_block':
-            layers = self.layer_block(layer_block_tree.children)
-        else:
-            layers = self._extract_value(layer_block_tree)
+        # Process each layer_or_repeated item in items[1:]
+        for item in items[1:]:
+            layer = self._extract_value(item)
+            # Handle layer_or_repeated which could be a tuple (layer, count)
+            if isinstance(layer, tuple) and len(layer) == 2 and isinstance(layer[1], int):
+                layer_def, count = layer
+                layers.extend([layer_def] * count)
+            else:
+                layers.append(layer)
         
-        logger.debug(f"Macro '{macro_name}' layers: {layers}")
-        
+        # Validate the layers list
         if not layers:
-            self.raise_validation_error(f"Macro '{macro_name}' must define at least one layer", items[0])
+            self.raise_validation_error(f"Empty macro definition for {macro_name}", items[0])
         
-        if not isinstance(layers, list):
-            layers = [layers]
-        
+        # Store macro definition
         self.macros[macro_name] = {
             'original': layers,
-            'macro': {'type': 'Macro', 'params': macro_name}
+            'macro': {'type': macro_name, 'params': {}, 'sublayers': []}
         }
+
         return layers
-    
+        
     @pysnooper.snoop()
     def macro_ref(self, items):
         """Process a macro reference."""
