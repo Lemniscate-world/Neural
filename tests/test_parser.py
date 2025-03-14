@@ -787,7 +787,7 @@ def test_error_recovery():
     [
         # Invalid activation in Dense layer
         (
-            "network Test { input: (None, 100) layers: Dense(HPO(choice(64, 128)), activation='invalid_act' }",
+            "network Test { input: (None, 100) layers: Dense(HPO(choice(64, 128)), activation='invalid_act') }",
             "Invalid activation function 'invalid_act'",
         ),
         # Missing units in LSTM
