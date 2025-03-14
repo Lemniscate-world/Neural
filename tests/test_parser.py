@@ -375,7 +375,7 @@ def test_research_parsing(research_parser, transformer, research_string, expecte
                 Dense(128, "relu")
             }
             """,
-            {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}, 'sublayers': []},
+            {'type': 'MyDense', 'params': {}, 'sublayers': [{'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}, 'sublayers': []}]},
             {'type': 'MyDense', 'params': {}, 'sublayers': []},
             False,
             "macro-basic"
@@ -782,14 +782,32 @@ def test_error_recovery():
         # Verify warnings include syntax errors
         assert any("Syntax error" in warn['message'] for warn in exc_info.value.warnings), "Missing syntax error warning"
 
+@pytest.mark.parametrize(
+    "test_input, expected_error",
+    [
+        # Invalid activation in Dense layer
+        (
+            "network Test { input: (None, 100) layers: Dense(HPO(choice(64, 128)), activation='invalid_act' }",
+            "Invalid activation function 'invalid_act'",
+        ),
+        # Missing units in LSTM
+        (
+            "network Test { input: (32, 64) layers: LSTM(return_sequences=True) }",
+            "LSTM requires 'units' parameter",
+        ),
+        # Invalid dropout rate
+        (
+            "network Test { input: (100,) layers: Dropout(1.5) }",
+            "Dropout rate should be between 0 and 1",
+        ),
+    ],
+)
 def test_semantic_validation(test_input, expected_error):
-    parser = create_parser()
     transformer = ModelTransformer()
-    with pytest.raises(VisitError) as exc_info:
-        tree = parser.parse(test_input)
-        transformer.transform(tree)
-    assert isinstance(exc_info.value.__context__, DSLValidationError)
-    assert expected_error in str(exc_info.value.__context__)
+    with pytest.raises(DSLValidationError) as exc_info:
+        transformer.parse_network(test_input)
+    assert expected_error in str(exc_info.value)
+    assert exc_info.value.severity == Severity.ERROR
 
 def test_grammar_completeness():
         """Test that grammar covers all required language features."""
