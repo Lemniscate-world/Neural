@@ -9,7 +9,8 @@ from lark.exceptions import VisitError
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from neural.parser.parser import ModelTransformer, create_parser, DSLValidationError, Severity
+from neural.parser.parser import ModelTransformer, create_parser, DSLValidationError, Severity, safe_parse
+
 
 # Fixtures
 @pytest.fixture
@@ -760,19 +761,30 @@ def test_error_recovery():
     """Test parser's error recovery capabilities."""
     parser = create_parser()
     test_cases = [
-        ('incomplete_block', 'Transformer() {', (lark.UnexpectedToken, KeyError)),
-        ('missing_close', 'network Test { input: (1,1) layers: Dense(10)', (lark.UnexpectedEOF, KeyError))
+        (
+            'incomplete_block',
+            'Transformer() {',
+            'Unexpected end of input - Check for missing closing braces'
+        ),
+        (
+            'missing_close',
+            'network Test { input: (1,1) layers: Dense(10)',
+            'Unexpected end of input - Check for missing closing braces'
+        )
     ]
 
-    for test_id, test_input, expected_errors in test_cases:
-        with pytest.raises(expected_errors):
-            parser.parse(test_input)
+    for test_id, test_input, expected_msg in test_cases:
+        with pytest.raises(DSLValidationError) as exc_info:
+            safe_parse(parser, test_input)
+        assert expected_msg in str(exc_info.value)
 
-@pytest.mark.parametrize("test_input,expected_error", [
-    ('network Test { input: (1,1) layers: Dense(units=-10) }', 'units must be positive'),
-    ('network Test { input: (1,1) layers: Dropout(rate=1.5) }', 'Dropout rate should be between 0 and 1'),
-    ('network Test { input: (1,1) layers: Conv2D(filters=0) }', 'Conv2D filters must be a positive integer'),
-])
+        # Additional assertions to verify warning details
+        try:
+            safe_parse(parser, test_input)
+        except DSLValidationError as e:
+            assert len(e.warnings) > 0
+            assert any(warning['message'].startswith('Syntax error') for warning in e.warnings)
+
 def test_semantic_validation(test_input, expected_error):
     parser = create_parser()
     transformer = ModelTransformer()
