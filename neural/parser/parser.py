@@ -62,6 +62,9 @@ def custom_error_handler(error):
         msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected token '{error}'.\n" \
               f"Expected one of: {', '.join(sorted(error.expected))}"
         severity = Severity.ERROR
+    elif isinstance(error, lark.UnexpectedToken) and error.token.type == '$END':
+        msg = f"Unexpected end of input. Did you forget to close a block?"
+        raise DSLValidationError(msg, Severity.ERROR, error.line, error.column)
     else:
         msg = str(error)
         severity = Severity.ERROR
