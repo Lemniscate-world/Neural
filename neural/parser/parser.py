@@ -620,12 +620,16 @@ class ModelTransformer(lark.Transformer):
         if not layers:
             self.raise_validation_error(f"Macro '{macro_name}' must define at least one layer", items[0])
         
+        # Ensure layers is always a list
+        if not isinstance(layers, list):
+            layers = [layers]
+        
         self.macros[macro_name] = {
-            'original': layers if isinstance(layers, list) else [layers],
+            'original': layers,
             'macro': {'type': 'Macro', 'params': macro_name}
         }
-        return layers  # Return the layers for potential immediate use
-
+        return layers  # Return the full list of layers
+    
     @pysnooper.snoop()
     def macro_ref(self, items):
         """Process a macro reference."""
