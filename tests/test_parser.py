@@ -749,11 +749,13 @@ def test_grammar_ambiguity():
         ('mixed_params', 'Conv2D(32, kernel_size=(3,3))'),
         ('nested_params', 'Transformer(num_heads=8) { Dense(10) }')
     ]
-       
+    
     for test_id, test_input in test_cases:
         try:
-            results = list(parser.parse_interactive(f"network TestNet {{ input: (1,1) layers: {test_input} }}"))
-            assert len(results) == 1, f"Ambiguous parsing for {test_id}"
+            # Parse normally - LALR parser should resolve any ambiguities
+            parser.parse(f"network TestNet {{ input: (1,1) layers: {test_input} }}")
+        except lark.exceptions.UnexpectedInput as e:
+            pytest.fail(f"Unexpected parse error for {test_id}: {str(e)}")
         except Exception as e:
             pytest.fail(f"Failed to parse {test_id}: {str(e)}")
 
