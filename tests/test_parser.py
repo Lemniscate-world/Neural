@@ -741,21 +741,21 @@ def test_rule_precedence():
             pytest.fail(f"Failed to parse {test_id}: {str(e)}")
 
 def test_grammar_ambiguity():
-        """Test that grammar doesn't have ambiguous rules."""
-        parser = create_parser()
-        test_cases = [
-            ('params_order1', 'Dense(10, "relu")'),
-            ('params_order2', 'Dense(units=10, activation="relu")'),
-            ('mixed_params', 'Conv2D(32, kernel_size=(3,3))'),
-            ('nested_params', 'Transformer(num_heads=8) { Dense(10) }')
-        ]
-        
-        for test_id, test_input in test_cases:
-            try:
-                results = list(parser.parse_interactive(f"network TestNet {{ input: (1,1) layers: {test_input} }}"))
-                assert len(results) == 1, f"Ambiguous parsing for {test_id}"
-            except Exception as e:
-                pytest.fail(f"Failed to parse {test_id}: {str(e)}")
+    """Test that grammar doesn't have ambiguous rules."""
+    parser = create_parser()
+    test_cases = [
+        ('params_order1', 'Dense(10, "relu")'),
+        ('params_order2', 'Dense(units=10, activation="relu")'),
+        ('mixed_params', 'Conv2D(32, kernel_size=(3,3))'),
+        ('nested_params', 'Transformer(num_heads=8) { Dense(10) }')
+    ]
+       
+    for test_id, test_input in test_cases:
+        try:
+            results = list(parser.parse_interactive(f"network TestNet {{ input: (1,1) layers: {test_input} }}"))
+            assert len(results) == 1, f"Ambiguous parsing for {test_id}"
+        except Exception as e:
+            pytest.fail(f"Failed to parse {test_id}: {str(e)}")
 
 def test_error_recovery():
     """Test parser's error recovery capabilities."""
@@ -763,7 +763,7 @@ def test_error_recovery():
     test_cases = [
         (
             'incomplete_block',
-            'Transformer() {',
+            'network Test { layers: Transformer() {',
             'Unexpected end of input - Check for missing closing braces'
         ),
         (
@@ -776,14 +776,9 @@ def test_error_recovery():
     for test_id, test_input, expected_msg in test_cases:
         with pytest.raises(DSLValidationError) as exc_info:
             safe_parse(parser, test_input)
-        assert expected_msg in str(exc_info.value)
-
-        # Additional assertions to verify warning details
-        try:
-            safe_parse(parser, test_input)
-        except DSLValidationError as e:
-            assert len(e.warnings) > 0
-            assert any(warning['message'].startswith('Syntax error') for warning in e.warnings)
+        assert expected_msg in str(exc_info.value), f"Test case {test_id} failed"
+        # Verify warnings include syntax errors
+        assert any("Syntax error" in warn['message'] for warn in exc_info.value.warnings), "Missing syntax error warning"
 
 def test_semantic_validation(test_input, expected_error):
     parser = create_parser()
