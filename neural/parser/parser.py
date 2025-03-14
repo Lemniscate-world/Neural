@@ -304,27 +304,27 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         max_pooling3d: MAXPOOLING3D "(" named_params ")"
         pool_size: "pool_size" "=" value
         average_pooling: average_pooling1d | average_pooling2d | average_pooling3d
-        average_pooling1d: "AveragePooling1D(" named_params ")"
-        average_pooling2d: "AveragePooling2D(" named_params ")"
-        average_pooling3d: "AveragePooling3D(" named_params ")"
+        average_pooling1d: "AveragePooling1D" "(" named_params ")"
+        average_pooling2d: "AveragePooling2D" "(" named_params ")"
+        average_pooling3d: "AveragePooling3D" "(" named_params ")"
         global_pooling: global_max_pooling | global_average_pooling
         global_max_pooling: global_max_pooling1d | global_max_pooling2d | global_max_pooling3d
-        global_max_pooling1d: "GlobalMaxPooling1D(" named_params ")"
-        global_max_pooling2d: "GlobalMaxPooling2D(" named_params ")"
-        global_max_pooling3d: "GlobalMaxPooling3D(" named_params ")"
+        global_max_pooling1d: "GlobalMaxPooling1D" "(" named_params ")"
+        global_max_pooling2d: "GlobalMaxPooling2D" "(" named_params ")"
+        global_max_pooling3d: "GlobalMaxPooling3D" "(" named_params ")"
         global_average_pooling: global_average_pooling1d | global_average_pooling2d | global_average_pooling3d
-        global_average_pooling1d: "GlobalAveragePooling1D(" named_params ")"
-        global_average_pooling2d: "GlobalAveragePooling2D(" named_params ")"
-        global_average_pooling3d: "GlobalAveragePooling3D(" named_params ")"
+        global_average_pooling1d: "GlobalAveragePooling1D" "(" named_params ")"
+        global_average_pooling2d: "GlobalAveragePooling2D" "(" named_params ")"
+        global_average_pooling3d: "GlobalAveragePooling3D" "(" named_params ")"
         adaptive_pooling: adaptive_max_pooling | adaptive_average_pooling
         adaptive_max_pooling: adaptive_max_pooling1d | adaptive_max_pooling2d | adaptive_max_pooling3d
-        adaptive_max_pooling1d: "AdaptiveMaxPooling1D(" named_params ")"
-        adaptive_max_pooling2d: "AdaptiveMaxPooling2D(" named_params ")"
-        adaptive_max_pooling3d: "AdaptiveMaxPooling3D(" named_params ")"
+        adaptive_max_pooling1d: "AdaptiveMaxPooling1D" "(" named_params ")"
+        adaptive_max_pooling2d: "AdaptiveMaxPooling2D" "(" named_params ")"
+        adaptive_max_pooling3d: "AdaptiveMaxPooling3D" "(" named_params ")"
         adaptive_average_pooling: adaptive_average_pooling1d | adaptive_average_pooling2d | adaptive_average_pooling3d
-        adaptive_average_pooling1d: "AdaptiveAveragePooling1D(" named_params ")"
-        adaptive_average_pooling2d: "AdaptiveAveragePooling2D(" named_params ")"
-        adaptive_average_pooling3d: "AdaptiveAveragePooling3D(" named_params ")"
+        adaptive_average_pooling1d: "AdaptiveAveragePooling1D" "(" named_params ")"
+        adaptive_average_pooling2d: "AdaptiveAveragePooling2D" "(" named_params ")"
+        adaptive_average_pooling3d: "AdaptiveAveragePooling3D" "(" named_params ")"
 
         ?norm_layer: batch_norm | layer_norm | instance_norm | group_norm
         batch_norm: BATCHNORMALIZATION "(" [named_params] ")"
