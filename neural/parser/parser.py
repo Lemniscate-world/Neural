@@ -1767,34 +1767,63 @@ class ModelTransformer(lark.Transformer):
 
     def activation(self, items):
         """Process activation layer with or without parameters."""
-        if not items:
-            return None
+        params = {}
+        function_name = None
 
-        if len(items) == 1:
-            # Case: Activation without params
-            act_type = self._extract_value(items[0])
-            if isinstance(act_type, dict):
-                return {'type': 'Activation', 'params': act_type, 'sublayers': []}
-            elif isinstance(act_type, list):
-                return {'type': 'Activation', 'params': {'function': act_type[0], 'alpha': act_type[1]}, 'sublayers': []}
-            else:
-                return {'type': 'Activation', 'params': {'function': act_type}, 'sublayers': []}
+        # Extract parameters from param_style1 (items[1])
+        raw_params = self._extract_value(items[1]) if len(items) > 1 else None
+
+        if raw_params is None:
+            self.raise_validation_error("Activation layer requires a function name", items[0])
+
+        # Process the raw_params to extract function name and additional parameters
+        if isinstance(raw_params, list):
+            # Handle positional and named parameters
+            for param in raw_params:
+                if isinstance(param, dict):
+                    params.update(param)
+                else:
+                    # First positional parameter is the function name
+                    if function_name is None:
+                        function_name = param
+                    else:
+                        # Handle additional positional parameters (e.g., alpha for leaky_relu)
+                        if function_name == 'leaky_relu':
+                            params['alpha'] = param
+                        else:
+                            self.raise_validation_error(
+                                f"Unexpected positional parameter {param} for activation {function_name}",
+                                items[1]
+                            )
+        elif isinstance(raw_params, dict):
+            # Named parameters; must include 'function'
+            function_name = raw_params.get('function')
+            if not function_name:
+                self.raise_validation_error("Activation layer requires 'function' parameter", items[1])
+            params = raw_params.copy()
         else:
-            # Case: Activation with params
-            act_type = self._extract_value(items[0])
-            raw_params = self._extract_value(items[1]) if len(items) > 1 else {}
-            params = {'function': act_type}
-            
-            # Handle additional parameters
-            if isinstance(raw_params, dict):
-                params.update(raw_params)
-            elif isinstance(raw_params, list):
-                for item in raw_params:
-                    if isinstance(item, dict):
-                        params.update(item)
+            # Assume it's the function name as a string
+            function_name = raw_params
 
-            return {'type': 'Activation', 'params': params, 'sublayers': []}
+        if not function_name:
+            self.raise_validation_error("Activation layer requires a function name", items[1])
 
+        params['function'] = function_name
+
+        # Handle device_spec if present
+        if len(items) > 2 and items[2] is not None:
+            device = self._extract_value(items[2])
+            params['device'] = device
+
+        # Handle sublayers (though Activation shouldn't have them)
+        sublayers = []
+        if len(items) > 3 and items[3] is not None:
+            sublayers = self._extract_value(items[3])
+            if sublayers:
+                self.raise_validation_error("Activation layer does not support sublayers", items[3])
+
+        return {'type': 'Activation', 'params': params, 'sublayers': sublayers}
+    
     def named_alpha(self, items):
         return self._extract_value(items[0])
 
