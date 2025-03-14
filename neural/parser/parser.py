@@ -1,4 +1,3 @@
-from fastapi import params
 import lark
 import pysnooper
 from lark import Tree, Transformer, Token
@@ -1054,8 +1053,9 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'training_config', 'params': params}
 
     def execution_config(self, items):
-        params = self._extract_value(items[0]) if items else {}
-        return {'type': 'execution_config', 'params': params}
+        """Process execution_config block."""
+        params = self._extract_value(items[0]) if items else {'device': 'auto'}
+        return params  # Return flat dict directly, no 'type' or 'params' wrappe
 
     def training_params(self, items):
         params = {}
@@ -1585,7 +1585,7 @@ class ModelTransformer(lark.Transformer):
         loss_config = None
         optimizer_config = None
         training_config = None
-        execution_config = {'params': {'device': 'auto'}}
+        execution_config = {'device': 'auto'}  # Flat default
         
         # Track current index starting after mandatory items
         index = 3
@@ -1599,9 +1599,9 @@ class ModelTransformer(lark.Transformer):
                 elif component == 'optimizer':
                     optimizer_config = value
                 elif component == 'training_config':
-                    training_config = value.get('params') if isinstance(value, dict) else value
+                    training_config = value.get('params') if isinstance(value, dict) and 'params' in value else value
                 elif component == 'execution_config':
-                    execution_config = value.get('params', execution_config)
+                    execution_config = value  # Directly assign the flat dict
                 index += 1
 
         # Determine output layer and shape
@@ -1625,7 +1625,7 @@ class ModelTransformer(lark.Transformer):
             'loss': loss_config,
             'optimizer': optimizer_config,
             'training_config': training_config,
-            'execution_config': execution_config,
+            'execution_config': execution_config,  # Flat dict
             'framework': 'tensorflow',
             'shape_info': [],
             'warnings': []
@@ -2078,31 +2078,27 @@ class ModelTransformer(lark.Transformer):
     @pysnooper.snoop()
     def wrapper(self, items):
         wrapper_type = items[0]  # e.g., "TimeDistributed"
-
         inner_layer = self._extract_value(items[1])  # The wrapped layer
-        param_idx = 3
-        params = {}
+        params = inner_layer.get('params', {})  # Start with inner layer's params
         sub_layers = []
 
-        # Extract additional named parameters if present
-        if len(items) > param_idx and isinstance(items[param_idx], dict) and items[param_idx].data == 'named_params':
-            params = self._extract_value(items[param_idx])
-            param_idx += 1
-
-        # Extract sub-layers if present
-        if len(items) > param_idx and isinstance(items[param_idx], Tree) and items[param_idx].data == 'layer_block':
-            sub_layers = self._extract_value(items[param_idx])
-
-        if isinstance(items, list):
-            for item in items:
-                if isinstance(item, dict):
-                    params.update(item)
-                elif isinstance(item, list):
-                    for sub_param in item:
+        # Handle additional parameters or sublayers
+        for i in range(2, len(items)):
+            item = items[i]
+            if isinstance(item, Tree) and item.data == 'layer_block':
+                sub_layers = self._extract_value(item)
+            elif isinstance(item, list):  # Named params from param_style1
+                for sub_param in item:
+                    if isinstance(sub_param, dict):
                         params.update(sub_param)
+            elif isinstance(item, dict):
+                params.update(item)
 
-        return {'type': f"{wrapper_type}({inner_layer['type']})", 'params': params, 'sublayers': sub_layers}
-
+        return {
+            'type': f"{wrapper_type}({inner_layer['type']})",
+            'params': params,
+            'sublayers': sub_layers
+        }
 
     ## Statistical Noises ##
 
