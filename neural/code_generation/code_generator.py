@@ -450,19 +450,13 @@ def generate_pytorch_layer(layer_type, params, input_shape=None):
 def generate_optimized_dsl(config, best_params):
     transformer = ModelTransformer()
     model_dict, hpo_params = transformer.parse_network_with_hpo(config)
-    
     lines = config.strip().split('\n')
     for i, line in enumerate(lines):
         for hpo in hpo_params:
-            if hpo['layer_type'] == 'Dense' and hpo['param_name'] == 'units':
-                if 'Dense(HPO(choice(128, 256)))' in line:
-                    lines[i] = line.replace('Dense(HPO(choice(128, 256)))', f"Dense({best_params['dense_units']})")
-            elif hpo['layer_type'] == 'Dropout' and hpo['param_name'] == 'rate':
-                if 'Dropout(HPO(range(0.3, 0.7, step=0.1)))' in line:
-                    lines[i] = line.replace('Dropout(HPO(range(0.3, 0.7, step=0.1)))', f"Dropout({best_params['dropout_rate']})")
-            elif hpo['param_name'] == 'learning_rate':
-                if 'optimizer: "Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))"' in line:
-                    lines[i] = line.replace('Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))', f"Adam(learning_rate={best_params['learning_rate']})")
+            param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"
+            if param_key in best_params and 'HPO(' in line:
+                hpo_str = str(hpo['node'].children[0])  # Original HPO expression
+                lines[i] = line.replace(f"HPO({hpo_str})", str(best_params[param_key]))
     return '\n'.join(lines)
 
 # Example usage

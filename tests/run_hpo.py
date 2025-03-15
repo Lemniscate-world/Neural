@@ -1,5 +1,5 @@
-from neural.automatic_hyperparameter_optimization.AHPO import optimize_and_return
-from neural.code_generation import generate_optimized_dsl
+from neural.automatic_hyperparameter_optimization.hpo import optimize_and_return
+from neural.code_generation.code_generator import generate_optimized_dsl
 
 config = """
 network HPOExample {
