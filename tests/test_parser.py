@@ -443,7 +443,7 @@ def test_macro_parsing(define_parser, layer_parser, transformer, config, expecte
     [
         (
             'TimeDistributed(Dense(128, "relu"), dropout=0.5)',
-            {'type': 'TimeDistributed(Dense)', 'params': {'units': 128, 'activation': 'relu', 'dropout': 0.5}, 'sublayers': []},
+            {'type': 'TimeDistributed(Dense)', 'params': {'units': 128, 'activation': 'relu'}, 'sublayers': [{'type': 'Dropout', 'params': {'rate': 0.5}, 'sublayers': []}]},
             "timedistributed-dense"
         ),
         (
