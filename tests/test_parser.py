@@ -523,7 +523,7 @@ def test_lambda_parsing(layer_parser, transformer, lambda_string, expected, test
 )
 def test_custom_shape_parsing(layer_parser, transformer, custom_shape_string, expected, test_id):
     if expected is None:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError)):
+        with pytest.raises(VisitError) as exc_info:
             tree = layer_parser.parse(custom_shape_string)
             transformer.transform(tree)
     else:
