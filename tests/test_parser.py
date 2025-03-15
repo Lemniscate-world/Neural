@@ -391,6 +391,7 @@ def test_research_parsing(research_parser, transformer, research_string, expecte
                 }
             }
             """,
+            {'type': 'ResBlock', 'params': {}, 'sublayers': 
             [
                 {'type': 'Conv2D', 'params': {'filters': 64, 'kernel_size': (3, 3)}, 'sublayers': []},
                 {'type': 'BatchNormalization', 'params': None, 'sublayers': []},
@@ -401,7 +402,8 @@ def test_research_parsing(research_parser, transformer, research_string, expecte
                         {'type': 'Dropout', 'params': {'rate': 0.3}, 'sublayers': []}
                     ]
                 }
-            ],
+            ]
+            },
             {'type': 'ResBlock', 'params': {}, 'sublayers': []},
             False,
             "macro-nested"
@@ -782,7 +784,7 @@ def test_error_recovery():
             safe_parse(parser, test_input)
         assert expected_msg in str(exc_info.value), f"Test case {test_id} failed"
 
-        
+
 @pytest.mark.parametrize(
     "test_input, expected_error",
     [

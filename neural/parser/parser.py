@@ -545,9 +545,6 @@ class ModelTransformer(lark.Transformer):
             'TIMEDISTRIBUTED': 'timedistributed',
             'RESIDUALCONNECTION': 'residual',
             'GLOBALAVERAGEPOOLING2D': 'global_average_pooling2d',
-
-
-
         }
         self.hpo_params = []
 
@@ -601,7 +598,7 @@ class ModelTransformer(lark.Transformer):
         """Process special_layer rule by returning the first child (custom, macro_ref, etc.)."""
         return self._extract_value(items[0])
 
-
+    @pysnooper.snoop()
     def define(self, items):
         """Process macro definition."""
         if len(items) < 1:
@@ -660,16 +657,7 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[1]) if len(items) > 1 and items[1].data == 'param_style1' else {}
         sub_layers = self._extract_value(items[2]) if len(items) > 2 and items[2].data == 'layer_block' else []
 
-        #macro_def = self.macros[macro_name]['original']
-        #if isinstance(macro_def, list):
-            #for layer in macro_def:
-                #if isinstance(layer, dict):
-                    #layer['params'].update(params)
-            #return macro_def
-        #else:
-            #macro_def['params'].update(params)
-            #if sub_layers:
-                #macro_def['sublayers'] = sub_layers
+
         return {'type':macro_name, 'params':params, 'sublayers': sub_layers}
         
     def layer_block(self, items):
