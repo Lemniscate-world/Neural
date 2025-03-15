@@ -30,7 +30,7 @@ class DynamicModel(nn.Module):
         input_shape = model_dict['input']['shape']
         self.needs_flatten = len(input_shape) > 2
         in_channels = input_shape[-1] if len(input_shape) > 2 else 1
-        in_features = prod(input_shape) if not self.needs_flatten else None
+        in_features = prod(input_shape)  # Always compute product, forward handles flattening
 
         for layer in model_dict['layers']:
             params = layer['params'].copy()
@@ -42,7 +42,7 @@ class DynamicModel(nn.Module):
                 w_out = (input_shape[2] - kernel_size + 1)
                 input_shape = (h_out, w_out, filters)
                 in_channels = filters
-                in_features = None
+                in_features = None  # Reset for subsequent layers if needed
             elif layer['type'] == 'Flatten':
                 self.layers.append(nn.Flatten())
                 in_features = prod(input_shape)
@@ -52,6 +52,9 @@ class DynamicModel(nn.Module):
                     hpo = next(h for h in hpo_params if h['layer_type'] == 'Dense' and h['param_name'] == 'units')
                     units = trial.suggest_categorical('dense_units', hpo['hpo']['values'])
                     params['units'] = units
+                # Ensure in_features is not None
+                if in_features is None:
+                    raise ValueError("Input features must be defined for Dense layer.")
                 self.layers.append(nn.Linear(in_features, params['units']))
                 if params.get('activation') == 'relu':
                     self.layers.append(nn.ReLU())
