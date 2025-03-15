@@ -655,28 +655,28 @@ def test_validation_rules(network_parser, transformer, network_string, expected_
     assert expected_error_msg in str(exc_info.value), f"Error message mismatch for {test_id}"
    
 def test_grammar_token_definitions():
-        """Test that grammar token definitions are correct and complete."""
-        parser = create_parser()
-        lexer_conf = parser.parser.lexer_conf
-        
-        # Test all expected token patterns
-        token_patterns = {
-            'TRANSFORMER': r'transformer',
-            'LSTM': r'lstm',
-            'GRU': r'gru',
-            'DENSE': r'dense',
-            'CONV2D': r'conv2d',
-            'NAME': r'[a-zA-Z_][a-zA-Z0-9_]*',
-            'NUMBER': r'[+-]?([0-9]*[.])?[0-9]+',
-            'STRING': r'\"[^"]+\"|\'[^\']+\'',
-            'CUSTOM_LAYER': r'[A-Z][a-zA-Z0-9]*Layer'
-        }
-        
-        for token_name, pattern in token_patterns.items():
-            matching_token = next((t for t in lexer_conf.terminals if t.name == token_name), None)
-            assert matching_token is not None, f"Token {token_name} not found in grammar"
-            assert str(matching_token.pattern) == pattern, f"Unexpected pattern for {token_name}"
+    """Test that grammar token definitions are correct and complete."""
+    parser = create_parser()
+    lexer_conf = parser.parser.lexer_conf
 
+    # Test all expected token patterns (case-insensitive tokens include (?i:...))
+    token_patterns = {
+        'TRANSFORMER': r'(?i:transformer)',
+        'LSTM': r'(?i:lstm)',
+        'GRU': r'(?i:gru)',
+        'DENSE': r'(?i:dense)',
+        'CONV2D': r'(?i:conv2d)',
+        'NAME': r'[a-zA-Z_][a-zA-Z0-9_]*',
+        'NUMBER': r'[+-]?([0-9]*[.])?[0-9]+',
+        'STRING': r'\"[^"]+\"|\'[^\']+\'',
+        'CUSTOM_LAYER': r'[A-Z][a-zA-Z0-9]*Layer'
+    }
+
+    for token_name, pattern in token_patterns.items():
+        matching_token = next((t for t in lexer_conf.terminals if t.name == token_name), None)
+        assert matching_token is not None, f"Token {token_name} not found in grammar"
+        assert str(matching_token.pattern) == pattern, f"Unexpected pattern for {token_name}"
+        
 def test_rule_dependencies():
         """Test that grammar rules have correct dependencies."""
         parser = create_parser()
