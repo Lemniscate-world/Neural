@@ -2154,6 +2154,13 @@ class ModelTransformer(lark.Transformer):
 
     def self_defined_shape(self, items):
         layer_info = self._extract_value(items[1])  # items[1] is the named_layer result
+        
+        #Error handling for negative dims
+        if any(dim < 0 for dim in layer_info['params']):
+            self.raise_validation_error(f"Invalid dimensions for {layer_info['type']}: {layer_info['params']}", items[1])
+        
+
+
         return {
             "type": "CustomShape",
             "layer": layer_info['type'],
