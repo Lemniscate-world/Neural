@@ -989,46 +989,43 @@ class ModelTransformer(lark.Transformer):
     def optimizer(self, items):
         params = {}
         opt_type = None
-        
-        # Extract the value from the first item
         opt_value = self._extract_value(items[0])
-        
+
         if isinstance(opt_value, str):
-            # Check if it contains parameters (e.g., "Adam(learning_rate=HPO(...))")
             if '(' in opt_value and ')' in opt_value:
-                # Split into type and params string
                 opt_type = opt_value[:opt_value.index('(')].strip()
                 param_str = opt_value[opt_value.index('(')+1:opt_value.rindex(')')].strip()
-                
-                # Parse the parameter string (e.g., "learning_rate=HPO(log_range(1e-4, 1e-2))")
-                param_parts = param_str.split('=', 1)
-                if len(param_parts) == 2:
-                    param_name = param_parts[0].strip()  # e.g., "learning_rate"
-                    param_value = param_parts[1].strip()  # e.g., "HPO(log_range(1e-4, 1e-2))"
-                    
-                    # Check if it’s an HPO expression
-                    if param_value.startswith('HPO(') and param_value.endswith(')'):
-                        hpo_str = param_value[4:-1]  # Extract "log_range(1e-4, 1e-2)"
-                        hpo_config = self._parse_hpo(hpo_str, items[0])
-                        params[param_name] = hpo_config
-                    else:
-                        # Handle scalar values if needed (e.g., "learning_rate=0.001")
-                        try:
-                            params[param_name] = float(param_value)
-                        except ValueError:
-                            params[param_name] = param_value
+                # Split parameters by comma and process each key-value pair
+                for param in param_str.split(','):
+                    param = param.strip()
+                    if '=' in param:
+                        param_name, param_value = param.split('=', 1)
+                        param_name = param_name.strip()
+                        param_value = param_value.strip()
+                        if param_value.startswith('HPO(') and param_value.endswith(')'):
+                            hpo_str = param_value[4:-1]
+                            hpo_config = self._parse_hpo(hpo_str, items[0])
+                            params[param_name] = hpo_config
+                        else:
+                            # Handle non-HPO values
+                            try:
+                                params[param_name] = float(param_value)
+                            except ValueError:
+                                params[param_name] = param_value
             else:
-                # Simple optimizer with no params (e.g., "adam")
-                opt_type = opt_value.lower() if opt_value.lower() in ['adam', 'sgd', 'rmsprop'] else opt_value
-        
+                opt_type = opt_value.lower()
         elif isinstance(opt_value, dict):
-            # Handle case where optimizer params are already parsed as a dict
             params = opt_value
-            opt_type = params.pop('type', None) or 'Adam'  # Default to Adam if no type specified
-        
+            opt_type = params.pop('type', 'Adam')
+
         if not opt_type:
             self.raise_validation_error("Optimizer type must be specified", items[0], Severity.ERROR)
-        
+
+        # Track HPO parameters
+        for param_name, param_value in params.items():
+            if isinstance(param_value, dict) and 'hpo' in param_value:
+                self._track_hpo('optimizer', param_name, param_value, items[0])
+
         return {'type': opt_type, 'params': params}
 
     def schedule(self, items):
