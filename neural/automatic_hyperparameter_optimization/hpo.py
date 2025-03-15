@@ -24,7 +24,7 @@ class DynamicModel(nn.Module):
     def __init__(self, model_dict, trial, hpo_params):
         super().__init__()
         self.layers = nn.ModuleList()
-        input_shape = model:\n_dict['input']['shape']
+        input_shape = model_dict['input']['shape']
         self.needs_flatten = len(input_shape) > 2
         in_channels = input_shape[-1] if len(input_shape) > 2 else 1
         in_features = prod(input_shape) if not self.needs_flatten else None

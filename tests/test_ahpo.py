@@ -20,8 +20,7 @@ class MockTrial:
     def suggest_int(self, name, low, high):
         return low
 
-# Mock Data Loader
-def mock_data_loader(input_shape, batch_size, train=True):
+def mock_data_loader(dataset_name, input_shape, batch_size, train=True):
     class MockDataset:
         def __init__(self):
             self.data = torch.randn(100, *input_shape)
@@ -124,7 +123,6 @@ def test_hpo_integration_full_pipeline():
     assert set(best_params.keys()) == {'batch_size', 'dense_units', 'dropout_rate', 'learning_rate'}
     optimized = generate_optimized_dsl(config, best_params)
     assert 'HPO' not in optimized
-    # Verify optimized config can be parsed and run
     model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(optimized)
     assert not hpo_params  # No HPO remains
     model = DynamicModel(model_dict, MockTrial(), hpo_params)
