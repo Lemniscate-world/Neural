@@ -857,7 +857,7 @@ class ModelTransformer(lark.Transformer):
         
         units = params['units']
         if isinstance(units, dict) and 'hpo' in units:
-            pass  # HPO handled elsewhere
+            self._track_hpo('Dense', 'units', units, items[0])
         else:
             if not isinstance(units, (int, float)):
                 self.raise_validation_error(f"Dense units must be a number, got {units}", items[0])
