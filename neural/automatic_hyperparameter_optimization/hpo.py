@@ -97,12 +97,12 @@ def objective(trial, config, dataset_name='MNIST'):
     val_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, False)
     
     optimizer_config = model_dict['optimizer']
-    if 'hpo' in optimizer_config['params']['learning_rate']:
-        # Use a default value if no HPO entry is found (safety check)
+    if 'hpo' in optimizer_config['params'].get('learning_rate', {}):
         try:
-            hpo = next(h for h in hpo_params if h['param_name'] == 'learning_rate' and h.get('layer_type') == 'optimizer')
+            hpo = next(h for h in hpo_params if h['param_name'] == 'learning_rate' and h['layer_type'] == 'optimizer')
+            lr = trial.suggest_float("learning_rate", hpo['hpo']['low'], hpo['hpo']['high'], log=True)
         except StopIteration:
-            raise ValueError("HPO configuration for 'learning_rate' not found in optimizer parameters.")
+            raise ValueError("HPO configuration for 'learning_rate' not found.")
         lr = trial.suggest_float("learning_rate", hpo['hpo']['low'], hpo['hpo']['high'], log=True)
     else:
         lr = optimizer_config['params'].get('learning_rate', 0.001)
