@@ -6,7 +6,6 @@ from torchvision.datasets import MNIST, CIFAR10
 from torchvision.transforms import ToTensor
 from neural.parser.parser import ModelTransformer, create_parser
 
-
 def get_data(dataset_name, input_shape, batch_size, train=True):
     datasets = {'MNIST': MNIST, 'CIFAR10': CIFAR10}  
     dataset = datasets.get(dataset_name, MNIST)
@@ -15,28 +14,35 @@ def get_data(dataset_name, input_shape, batch_size, train=True):
         batch_size=batch_size, shuffle=train
     )
 
-# Dynamic Model from Parsed DSL
+def prod(iterable):
+    result = 1
+    for x in iterable:
+        result *= x
+    return result
+
 class DynamicModel(nn.Module):
-    """ Constructs a PyTorch model from model_dict, sampling HPO values 
-    (e.g., dense_units, dropout_rate) using Optuna’s trial."""
     def __init__(self, model_dict, trial, hpo_params):
         super().__init__()
         self.layers = nn.ModuleList()
-        self.input_shape = model_dict['input']['shape']
-        self.flat_size = prod(self.input_shape)  # Dynamic flattening
-        in_features = self.flat_size
-        
+        input_shape = model:\n_dict['input']['shape']
+        self.needs_flatten = len(input_shape) > 2
+        in_channels = input_shape[-1] if len(input_shape) > 2 else 1
+        in_features = prod(input_shape) if not self.needs_flatten else None
+
         for layer in model_dict['layers']:
             params = layer['params'].copy()
             if layer['type'] == 'Conv2D':
-                filters = params['filters'] if 'filters' in params else trial.suggest_int('conv_filters', 16, 64)
+                filters = params.get('filters', trial.suggest_int('conv_filters', 16, 64))
                 kernel_size = params.get('kernel_size', 3)
                 self.layers.append(nn.Conv2d(in_channels, filters, kernel_size))
+                h_out = (input_shape[1] - kernel_size + 1)  # Assuming stride=1, padding=0
+                w_out = (input_shape[2] - kernel_size + 1)
+                input_shape = (h_out, w_out, filters)
                 in_channels = filters
-                self.needs_flatten = True
+                in_features = None
             elif layer['type'] == 'Flatten':
                 self.layers.append(nn.Flatten())
-                in_features = in_channels * input_shape[1] * input_shape[2]  # Post-conv
+                in_features = prod(input_shape)
                 self.needs_flatten = False
             elif layer['type'] == 'Dense':
                 if 'hpo' in params['units']:
@@ -64,12 +70,14 @@ class DynamicModel(nn.Module):
                 in_features = params['units']
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)  # Flatten (batch, 28, 28, 1) -> (batch, 784)
+        if self.needs_flatten:
+            x = x.view(x.size(0), *self.input_shape[-3:])  # Preserve channels
+        else:
+            x = x.view(x.size(0), -1)
         for layer in self.layers:
             x = layer(x)
         return x
 
-# Training Loop
 def train_model(model, optimizer, train_loader, val_loader, device='cpu', epochs=1):
     val_loss, correct, total = 0.0, 0, 0
     with torch.no_grad():
@@ -82,9 +90,7 @@ def train_model(model, optimizer, train_loader, val_loader, device='cpu', epochs
             total += target.size(0)
     return val_loss / len(val_loader), correct / total
 
-# HPO Objective
-def objective(trial, config):
-    """ Parses config, builds model, trains it, and returns validation loss for Optuna to minimize."""
+def objective(trial, config, dataset_name='MNIST'):
     model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
     train_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, True)
@@ -101,9 +107,7 @@ def objective(trial, config):
     optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
     
     val_loss, val_acc = train_model(model, optimizer, train_loader, val_loader)
-    return val_loss, -val_acc
-
-# Run Optimization
+    return val_loss, -val_acc  # Negate accuracy for minimization
 
 def optimize_and_return(config, n_trials=10, dataset_name='MNIST'):
     study = optuna.create_study(directions=["minimize", "minimize"])
