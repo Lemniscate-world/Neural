@@ -459,6 +459,3 @@ def generate_optimized_dsl(config, best_params):
                 lines[i] = line.replace(f"HPO({hpo_str})", str(best_params[param_key]))
     return '\n'.join(lines)
 
-# Example usage
-optimized_config = generate_optimized_dsl(config, best_params)
-print(f"Optimized DSL:\n{optimized_config}")
