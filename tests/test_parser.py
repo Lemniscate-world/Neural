@@ -1,5 +1,6 @@
 import os
 import sys
+from cycler import V
 import pytest
 import lark
 from lark import Lark, exceptions
@@ -463,7 +464,7 @@ def test_macro_parsing(define_parser, layer_parser, transformer, config, expecte
 )
 def test_wrapper_parsing(layer_parser, transformer, wrapper_string, expected, test_id):
     if expected is None:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError)):
+        with pytest.raises(VisitError) as exc_info:
             tree = layer_parser.parse(wrapper_string)
             transformer.transform(tree)
     else:
@@ -594,7 +595,7 @@ def test_comment_parsing(layer_parser, transformer, comment_string, expected, te
 )
 def test_severity_level_parsing(layer_parser, transformer, layer_string, expected_result, expected_warnings, raises_error, test_id):
     if raises_error:
-        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, VisitError)):
+        with pytest.raises(VisitError) as exc_info:
             tree = layer_parser.parse(layer_string)
             transformer.transform(tree)
     else:
