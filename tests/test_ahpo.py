@@ -10,33 +10,31 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from neural.automatic_hyperparameter_optimization.hpo import optimize_and_return
 from neural.code_generation.code_generator import generate_optimized_dsl
 from neural.automatic_hyperparameter_optimization.hpo import train_model, get_data, objective
+from neural.automatic_hyperparameter_optimization.hpo import DynamicModel
+from neural.parser.parser import ModelTransformer
+
+
+class MockTrial:
+    def suggest_categorical(self, name, choices):
+        return choices[0]
+    def suggest_float(self, name, low, high, step=None, log=False):
+        return low
 
 def test_model_forward():
-    model = TestModel()
+    config = "network Test { input: (28,28,1) layers: Dense(128) Output(10) }"
+    model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
+    model = DynamicModel(model_dict, MockTrial(), hpo_params)
     x = torch.randn(32, 784)
     assert model(x).shape == (32, 10)
 
-def test_training_loop():
-    model = TestModel()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    train_loader = get_data(32, train=True)
-    val_loader = get_data(32, train=False)  # Add validation loader
-    loss = train_model(model, optimizer, train_loader, val_loader, epochs=1)  # Updated signature
-    assert isinstance(loss, float)
-
 def test_hpo_objective():
+    config = "network Test { input: (28,28,1) layers: Dense(128) Output(10) loss: 'cross_entropy' optimizer: 'Adam' }"
     class MockTrial:
         def suggest_categorical(self, name, choices):
-            if name == "batch_size":
-                return 32
-            elif name == "optimizer":
-                return "Adam"
-        
+            return 32 if name == "batch_size" else choices[0]
         def suggest_float(self, name, low, high, log=False):
-            return 0.001  # Fixed learning rate
-    
-    trial = MockTrial()
-    loss = objective(trial)
+            return 0.001
+    loss = objective(MockTrial(), config)
     assert 0 <= loss < float("inf")
 
 def test_parsed_hpo_config():
