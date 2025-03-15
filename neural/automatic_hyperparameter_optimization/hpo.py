@@ -98,7 +98,11 @@ def objective(trial, config, dataset_name='MNIST'):
     
     optimizer_config = model_dict['optimizer']
     if 'hpo' in optimizer_config['params']['learning_rate']:
-        hpo = next(h for h in hpo_params if h['param_name'] == 'learning_rate')
+        # Use a default value if no HPO entry is found (safety check)
+        try:
+            hpo = next(h for h in hpo_params if h['param_name'] == 'learning_rate' and h.get('layer_type') == 'optimizer')
+        except StopIteration:
+            raise ValueError("HPO configuration for 'learning_rate' not found in optimizer parameters.")
         lr = trial.suggest_float("learning_rate", hpo['hpo']['low'], hpo['hpo']['high'], log=True)
     else:
         lr = optimizer_config['params'].get('learning_rate', 0.001)
@@ -107,7 +111,7 @@ def objective(trial, config, dataset_name='MNIST'):
     optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
     
     val_loss, val_acc = train_model(model, optimizer, train_loader, val_loader)
-    return val_loss, -val_acc  # Negate accuracy for minimization
+    return val_loss, -val_acc
 
 def optimize_and_return(config, n_trials=10, dataset_name='MNIST'):
     study = optuna.create_study(directions=["minimize", "minimize"])
