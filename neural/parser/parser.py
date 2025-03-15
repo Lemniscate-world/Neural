@@ -1893,8 +1893,6 @@ class ModelTransformer(lark.Transformer):
     def regularization_layer(self, items):
         return {'type': items[0].data.capitalize(), 'params': self._extract_value(items[0].children[0])}
 
-
-
     def custom(self, items):
         """Process a custom layer definition."""
         if isinstance(items[0], Token) and items[0].type == 'CUSTOM_LAYER':
@@ -2050,6 +2048,7 @@ class ModelTransformer(lark.Transformer):
 
     ## Wrappers ##
 
+    @pysnooper.snoop()
     def timedistributed(self, items): 
         raw_params = self._extract_value(items[0]) if items else None
         if isinstance(raw_params, list):
@@ -2078,7 +2077,7 @@ class ModelTransformer(lark.Transformer):
             elif isinstance(item, list):  # Named params from param_style1
                 for sub_param in item:
                     if isinstance(sub_param, dict):
-                        params.update(sub_param)
+                        sub_layers = [sub_param]
             elif isinstance(item, dict):
                 params.update(item)
 
