@@ -66,7 +66,8 @@ class DynamicModel(nn.Module):
                     params['rate'] = rate
                 self.layers.append(nn.Dropout(params['rate']))
             elif layer['type'] == 'Output':
-                if 'hpo' in params['units']:
+                # Check if 'units' is a dictionary with HPO configuration
+                if isinstance(params.get('units'), dict) and 'hpo' in params['units']:
                     hpo = next(h for h in hpo_params if h['layer_type'] == 'Output' and h['param_name'] == 'units')
                     units = trial.suggest_categorical('output_units', hpo['hpo']['values'])
                     params['units'] = units
