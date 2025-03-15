@@ -1,4 +1,5 @@
 import optuna
+import pysnooper
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -6,6 +7,7 @@ from torchvision.datasets import MNIST, CIFAR10
 from torchvision.transforms import ToTensor
 from neural.parser.parser import ModelTransformer, create_parser
 
+@pysnooper.snoop()
 def get_data(dataset_name, input_shape, batch_size, train=True):
     datasets = {'MNIST': MNIST, 'CIFAR10': CIFAR10}  
     dataset = datasets.get(dataset_name, MNIST)
@@ -20,6 +22,7 @@ def prod(iterable):
         result *= x
     return result
 
+@pysnooper.snoop()
 class DynamicModel(nn.Module):
     def __init__(self, model_dict, trial, hpo_params):
         super().__init__()
@@ -78,6 +81,7 @@ class DynamicModel(nn.Module):
             x = layer(x)
         return x
 
+@pysnooper.snoop()
 def train_model(model, optimizer, train_loader, val_loader, device='cpu', epochs=1):
     val_loss, correct, total = 0.0, 0, 0
     with torch.no_grad():
@@ -90,6 +94,7 @@ def train_model(model, optimizer, train_loader, val_loader, device='cpu', epochs
             total += target.size(0)
     return val_loss / len(val_loader), correct / total
 
+@pysnooper.snoop()
 def objective(trial, config, dataset_name='MNIST'):
     model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
@@ -113,6 +118,7 @@ def objective(trial, config, dataset_name='MNIST'):
     val_loss, val_acc = train_model(model, optimizer, train_loader, val_loader)
     return val_loss, -val_acc
 
+@pysnooper.snoop()
 def optimize_and_return(config, n_trials=10, dataset_name='MNIST'):
     study = optuna.create_study(directions=["minimize", "minimize"])
     study.optimize(lambda trial: objective(trial, config, dataset_name), n_trials=n_trials)
