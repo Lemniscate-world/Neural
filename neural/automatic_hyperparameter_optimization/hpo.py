@@ -109,18 +109,3 @@ def optimize_and_return(config, n_trials=10, dataset_name='MNIST'):
     study = optuna.create_study(directions=["minimize", "minimize"])
     study.optimize(lambda trial: objective(trial, config, dataset_name), n_trials=n_trials)
     return study.best_trials[0].params
-
-# Test Config
-config = """
-network HPOExample {
-    input: (28,28,1)
-    layers:
-        Dense(HPO(choice(128, 256)))
-        Dropout(HPO(range(0.3, 0.7, step=0.1)))
-        Output(10, "softmax")
-    loss: "cross_entropy"
-    optimizer: "Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))"
-}
-"""
-best_params = optimize_and_return(config, n_trials=5)
-print(f"Best params: {best_params}")
