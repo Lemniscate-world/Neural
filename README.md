@@ -15,7 +15,9 @@ Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
 [![CodeQL Advanced](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml/badge.svg)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml)
 [![Tests](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pytest-to-issues.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/Lemniscate-SHA-256/Neural)](https://codecov.io/gh/Lemniscate-SHA-256/Neural)
-
+![Dev.to blog](https://img.shields.io/badge/dev.to-0A0A0A?style=for-the-badge&logo=dev.to&logoColor=white)
+![Medium](https://img.shields.io/badge/Medium-12100E?style=for-the-badge&logo=medium&logoColor=white)
+![PyPi](https://img.shields.io/badge/pypi-%23ececec.svg?style=for-the-badge&logo=pypi&logoColor=1f73b7)
 
 ![design-01jmphv5f1-1740433387](https://github.com/user-attachments/assets/ecbcce19-73df-4696-ace2-69e32d02709f)
 
