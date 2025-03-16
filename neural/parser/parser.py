@@ -502,6 +502,24 @@ network_parser = create_parser('network')
 layer_parser = create_parser('layer')
 research_parser = create_parser('research')
 
+def split_params(s):
+    parts = []
+    current = []
+    depth = 0
+    for c in s:
+        if c == '(':
+            depth += 1
+        elif c == ')':
+            depth -= 1
+        if c == ',' and depth == 0:
+            parts.append(''.join(current).strip())
+            current = []
+        else:
+            current.append(c)
+    if current:
+        parts.append(''.join(current).strip())
+    return parts
+
 class ModelTransformer(lark.Transformer):
     def __init__(self):
         super().__init__()
@@ -999,13 +1017,14 @@ class ModelTransformer(lark.Transformer):
                 opt_type = opt_value[:opt_value.index('(')].strip()
                 if not params:
                     param_str = opt_value[opt_value.index('(')+1:opt_value.rindex(')')].strip()
-                    for param in param_str.split(','):
+                    # Use split_params instead of splitting by comma
+                    for param in split_params(param_str):
                         param = param.strip()
                         if '=' in param:
                             param_name, param_value = param.split('=', 1)
                             param_name = param_name.strip()
                             param_value = param_value.strip()
-                            if 'HPO(' in param_value:  # Relaxed check to catch HPO anywhere
+                            if 'HPO(' in param_value:
                                 hpo_start = param_value.index('HPO(')
                                 hpo_end = param_value.rindex(')') + 1
                                 hpo_str = param_value[hpo_start+4:hpo_end-1]
