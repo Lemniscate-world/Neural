@@ -193,6 +193,24 @@ HPO(log_range(1e-4, 1e-2))      # Log-scale range for learning rates
 - Learning rate must be positive
 - Step size must be provided for range type
 
+### HPO Parameters Updates
+- **Supported in Optimizers**: `learning_rate` now fully tracked with `HPO(log_range(1e-4, 1e-2))` (#434).
+
+### Examples
+#### Multi-Framework HPO
+```yaml
+network HPOExample {
+  input: (28, 28, 1)
+  layers:
+    Dense(HPO(choice(128, 256)))
+    Output(10, "softmax")
+  optimizer: Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))
+  train {
+    epochs: 10
+    search_method: "random"
+  }
+}
+
 ---
 
 ## Training Configuration
@@ -270,5 +288,6 @@ network NewStyle {
 }
 ```
 
-[Report Issues](https://github.com/neural-dsl/issues)
+
+[Report Issues](https://github.com/Lemniscate-SHA-256/Neural/issues)
 

@@ -1,11 +1,14 @@
 import optuna
 import pysnooper
 import torch
+import tensorflow as tf
 import torch.nn as nn
 import torch.optim as optim
 from torchvision.datasets import MNIST, CIFAR10
 from torchvision.transforms import ToTensor
 from neural.parser.parser import ModelTransformer, create_parser
+
+## Data Loader Method ##
 
 @pysnooper.snoop()
 def get_data(dataset_name, input_shape, batch_size, train=True):
@@ -22,8 +25,10 @@ def prod(iterable):
         result *= x
     return result
 
+## Dynamic Model Class ##
+
 @pysnooper.snoop()
-class DynamicModel(nn.Module):
+class DynamicPTModel(nn.Module):
     def __init__(self, model_dict, trial, hpo_params):
         super().__init__()
         self.layers = nn.ModuleList()
@@ -84,47 +89,107 @@ class DynamicModel(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return x
-
+    
+class DynamicTFModel(tf.keras.Model):
+    def __init__(self, model_dict, trial, hpo_params):
+        super().__init__()
+        self.layers_list = []
+        for layer in model_dict['layers']:
+            if layer['type'] == 'Dense':
+                units = trial.suggest_categorical('dense_units', hpo_params[...]['values'])
+                self.layers_list.append(tf.keras.layers.Dense(units))
+    def call(self, inputs):
+        x = inputs
+        for layer in self.layers_list:
+            x = layer(x)
+        return x
+## Method to train model ##
 @pysnooper.snoop()
-def train_model(model, optimizer, train_loader, val_loader, device='cpu', epochs=1):
-    val_loss, correct, total = 0.0, 0, 0
-    with torch.no_grad():
-        for data, target in val_loader:
-            data, target = data.to(device), target.to(device)
-            output = model(data)
-            val_loss += nn.CrossEntropyLoss()(output, target).item()
-            pred = output.argmax(dim=1)
-            correct += pred.eq(target).sum().item()
-            total += target.size(0)
-    return val_loss / len(val_loader), correct / total
+def train_model(model, optimizer, train_loader, val_loader, backend='pytorch'):
+    if backend == 'pytorch':
+        val_loss, correct, total = 0.0, 0, 0
+        with torch.no_grad():
+            for data, target in val_loader:
+                data, target = data.to(device), target.to(device)
+                output = model(data)
+                val_loss += nn.CrossEntropyLoss()(output, target).item()
+                pred = output.argmax(dim=1)
+                correct += pred.eq(target).sum().item()
+                total += target.size(0)
+            return val_loss / len(val_loader), correct / total
+    elif backend == 'tensorflow':
+        loss_fn = tf.keras.losses.SparseCategoricalCrossentropy()
+        val_loss = 0.0
+        correct = 0
+        total = 0
+        for data, target in val_loader:  # Convert PyTorch tensors to TF
+            data = tf.convert_to_tensor(data.numpy())
+            target = tf.convert_to_tensor(target.numpy())
+            with tf.GradientTape() as tape:
+                output = model(data, training=False)
+                val_loss += loss_fn(target, output).numpy()
+            pred = tf.argmax(output, axis=1)
+            correct += tf.reduce_sum(tf.cast(pred == target, tf.int32)).numpy()
+            total += target.shape[0]
+        return val_loss / len(val_loader), correct / total
 
-def objective(trial, config, dataset_name='MNIST'):
-    model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
-    batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
-    train_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, True)
-    val_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, False)
-    
-    optimizer_config = model_dict['optimizer']
-    learning_rate_param = optimizer_config['params'].get('learning_rate', 0.001)
 
-    if isinstance(learning_rate_param, dict) and 'hpo' in learning_rate_param:
-        hpo = learning_rate_param['hpo']
-        if hpo['type'] == 'log_range':
-            lr = trial.suggest_float("learning_rate", hpo['low'], hpo['high'], log=True)
-    elif isinstance(learning_rate_param, str) and 'HPO(log_range' in learning_rate_param:
-        try:
-            hpo = next(h for h in hpo_params if h['layer_type'] == 'optimizer' and h['param_name'] == 'learning_rate')
-            lr = trial.suggest_float("learning_rate", hpo['hpo']['low'], hpo['hpo']['high'], log=True)
-        except StopIteration:
-            raise ValueError("HPO for learning_rate not found in hpo_params; parsing failed.")
-    else:
-        lr = float(learning_rate_param)
-    
-    model = DynamicModel(model_dict, trial, hpo_params)
-    optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
-    
-    val_loss, val_acc = train_model(model, optimizer, train_loader, val_loader)
-    return val_loss, -val_acc
+
+## Method to optimize hyperparameters, Objective function for Optuna ##
+def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
+    if backend == 'pytorch':
+        model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
+        batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
+        train_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, True)
+        val_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, False)
+        optimizer_config = model_dict['optimizer']
+        learning_rate_param = optimizer_config['params'].get('learning_rate', 0.001)
+
+        if isinstance(learning_rate_param, dict) and 'hpo' in learning_rate_param:
+            hpo = learning_rate_param['hpo']
+            if hpo['type'] == 'log_range':
+                lr = trial.suggest_float("learning_rate", hpo['low'], hpo['high'], log=True)
+        elif isinstance(learning_rate_param, str) and 'HPO(log_range' in learning_rate_param:
+            try:
+                hpo = next(h for h in hpo_params if h['layer_type'] == 'optimizer' and h['param_name'] == 'learning_rate')
+                lr = trial.suggest_float("learning_rate", hpo['hpo']['low'], hpo['hpo']['high'], log=True)
+            except StopIteration:
+                raise ValueError("HPO for learning_rate not found in hpo_params; parsing failed.")
+        else:
+            lr = float(learning_rate_param)
+        
+        model = DynamicModel(model_dict, trial, hpo_params)
+        optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
+        
+        val_loss, val_acc = train_model(model, optimizer, train_loader, val_loader)
+        return val_loss, -val_acc
+    elif backend == 'tensorflow':
+        model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
+        batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
+        train_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, True)
+        val_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, False)
+        optimizer_config = model_dict['optimizer']
+        learning_rate_param = optimizer_config['params'].get('learning_rate', 0.001)
+
+        if isinstance(learning_rate_param, dict) and 'hpo' in learning_rate_param:
+            hpo = learning_rate_param['hpo']
+            if hpo['type'] == 'log_range':
+                lr = trial.suggest_float("learning_rate", hpo['low'], hpo['high'], log=True)
+        elif isinstance(learning_rate_param, str) and 'HPO(log_range' in learning_rate_param:
+            try:
+                hpo = next(h for h in hpo_params if h['layer_type'] == 'optimizer' and h['param_name'] == 'learning_rate')
+                lr = trial.suggest_float("learning_rate", hpo['hpo']['low'], hpo['hpo']['high'], log=True)
+            except StopIteration:
+                raise ValueError("HPO for learning_rate not found in hpo_params; parsing failed.")
+        else:
+            lr = float(learning_rate_param)
+
+        model = DynamicModel(model_dict, trial, hpo_params)
+        optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
+
+        val_loss, val_acc = train_model(model, optimizer, train_loader, val_loader, backend='tensorflow')
+        return val_loss, -val_acc
+
 
 @pysnooper.snoop()
 def optimize_and_return(config, n_trials=10, dataset_name='MNIST'):

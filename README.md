@@ -28,6 +28,7 @@ Neural is a domain-specific language (DSL) designed for defining, training, debu
 
 - **YAML-like Syntax**: Define models intuitively without framework boilerplate.
 - **Shape Propagation**: Catch dimension mismatches *before* runtime.
+- **Multi-Framework HPO**: Optimize hyperparameters for both PyTorch and TensorFlow with a single DSL config (#434).
 - **Multi-Backend Export**: Generate code for **TensorFlow**, **PyTorch**, or **ONNX**.
 - **Training Orchestration**: Configure optimizers, schedulers, and metrics in one place.
 - **Visual Debugging**: Render interactive 3D architecture diagrams.
@@ -55,7 +56,6 @@ NeuralDbg provides **real-time execution tracing, profiling, and debugging**, al
 
 ## 📦 Installation
 
-
 # Clone the repository
 git clone https://github.com/yourusername/neural.git
 cd neural
@@ -75,7 +75,7 @@ pip install -r requirements.txt
 pip install neural-dsl
 ```
 
-see v0.1.1 for bug fixes
+see v0.2.3 for bug fixes
 
 **Prerequisites**: Python 3.8+, pip
 
