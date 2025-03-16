@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.3] - 16-03-2025
+
+### Added
+- **Multi-Framework HPO**: Extended `DynamicModel` for TensorFlow (`DynamicTFModel`) alongside PyTorch (#434).
+- **Layer Support**: Added `LayerNormalization`, `InstanceNormalization`, `GroupNormalization`, `SqueezeExcitation`, `Attention` to parser (#105, #106, #107, #118, #307).
+- **Macro & Custom Layer Enhancements**: Improved macro parsing, added device specification support (#136, #327, #328).
+
+### Fixed
+- **HPO Integration**: Corrected optimizer HPO parsing, fixed `in_features` calculation for 3D inputs (#434).
+- **Layer Validation**: Enhanced `MaxPooling2D`, `BatchNormalization`, `Dropout`, `Conv2D` validation (#179, #363, #367, #368).
+- **Parser Bugs**: Fixed `Concatenate`, `Activation`, `Lambda`, `Embedding` parameter handling (#140, #329, etc.).
+- **Test Failures**: Resolved issues listed in your document (e.g., #136, #105, #179).
+
+### Improved
+- **Train Model**: Unified PyTorch/TensorFlow evaluation in `train_model` (#434).
+- **Error Handling**: Better `VisitError` wrapping, detailed messages with line/column (#159).
+
+---
+
 ## [0.2.2] - 05-03-2025
 
 ### Fixed

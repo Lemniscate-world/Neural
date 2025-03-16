@@ -38,6 +38,27 @@ class Severity(Enum):
 
 # Custom exception for DSL validation errors
 class DSLValidationError(Exception):
+    """Exception raised for validation errors in DSL parsing.
+
+    This exception is used to report syntax, semantic, or other validation errors
+    encountered during DSL (Domain Specific Language) parsing operations.
+
+    Attributes:
+        severity (Severity): The severity level of the validation error
+        line (int, optional): The line number where the error occurred
+        column (int, optional): The column number where the error occurred
+        message (str): The raw error message
+
+    Args:
+        message (str): The error description message
+        severity (Severity, optional): The severity level. Defaults to Severity.ERROR
+        line (int, optional): The line number of the error. Defaults to None
+        column (int, optional): The column number of the error. Defaults to None
+
+    Example:
+        >>> raise DSLValidationError("Invalid syntax", line=10, column=5)
+        ERROR at line 10, column 5: Invalid syntax
+    """
     def __init__(self, message, severity=Severity.ERROR, line=None, column=None):
         self.severity = severity
         self.line = line
@@ -521,6 +542,42 @@ def split_params(s):
     return parts
 
 class ModelTransformer(lark.Transformer):
+    """ModelTransformer is a Lark transformer class that processes parsed neural network DSL into a model configuration.
+    This transformer converts the parsed abstract syntax tree from the neural network DSL into a structured model configuration
+    dictionary that can be used to build neural networks. It handles various layer types, training configurations, and 
+    hyperparameter optimization settings.
+    Key Features:
+    - Transforms layer definitions into structured dictionaries
+    - Validates layer parameters and configurations
+    - Supports macro definitions and reuse
+    - Handles hyperparameter optimization expressions
+    - Processes training and execution configurations
+    - Supports multiple deep learning frameworks
+    Attributes:
+        variables (dict): Storage for variable definitions
+        macros (dict): Storage for macro definitions
+        current_macro (str): Name of macro currently being processed
+        layer_type_map (dict): Mapping between DSL layer names and internal representations
+        hpo_params (list): Tracks hyperparameter optimization configurations
+    Methods follow the Lark transformer pattern where method names correspond to grammar rules. Key methods include:
+    - network(): Processes complete network definitions
+    - basic_layer(): Handles standard layer definitions 
+    - define(): Processes macro definitions
+    - dropout(), dense(), conv2d() etc: Process specific layer types
+    - training_config(): Handles training configuration
+    - execution_config(): Processes execution settings
+    - _extract_value(): Helper to extract values from tokens
+    - _track_hpo(): Tracks hyperparameter optimization settings
+    - parse_network(): Main entry point for parsing network definitions
+    Example:
+        transformer = ModelTransformer()
+        model = transformer.parse_network("network Example { ... }")
+    Raises:
+        DSLValidationError: When validation of the network definition fails
+    Notes:
+        - The transformer assumes input has been parsed using the neural network DSL grammar
+        - Layer type strings are case-insensitive in the DSL but normalized internally
+        - Error handling includes both hard errors (exceptions) and warnings
     def __init__(self):
         super().__init__()
         self.variables = {}
@@ -565,20 +622,6 @@ class ModelTransformer(lark.Transformer):
             'GLOBALAVERAGEPOOLING2D': 'global_average_pooling2d',
         }
         self.hpo_params = []
-
-    def _track_hpo(self, layer_type, param_name, hpo_data, node):
-        self.hpo_params.append({
-            'layer_type': layer_type,
-            'param_name': param_name,
-            'hpo': hpo_data['hpo'],
-            'node': node  # Optional: for debugging
-        })
-
-    def parse_network_with_hpo(self, config):
-        tree = create_parser('network').parse(config)
-        model = self.transform(tree)
-        return model, self.hpo_params
-
 
     def raise_validation_error(self, msg, item=None, severity=Severity.ERROR):
         if item and hasattr(item, 'meta'):
@@ -2183,6 +2226,19 @@ class ModelTransformer(lark.Transformer):
         }
 
     ## HPO ##
+
+    def _track_hpo(self, layer_type, param_name, hpo_data, node):
+        self.hpo_params.append({
+            'layer_type': layer_type,
+            'param_name': param_name,
+            'hpo': hpo_data['hpo'],
+            'node': node  # Optional: for debugging
+        })
+
+    def parse_network_with_hpo(self, config):
+        tree = create_parser('network').parse(config)
+        model = self.transform(tree)
+        return model, self.hpo_params
 
     def _parse_hpo(self, hpo_str, item):
         """Helper method to parse HPO expressions like 'log_range(1e-4, 1e-2)'."""
