@@ -9,7 +9,7 @@ Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-green.svg)](https://www.python.org/)
-[![Discord](https://img.shields.io/badge/Chat-Discord-7289DA)](https://discord.gg/645a6Yd5)
+[![Discord](https://img.shields.io/badge/Chat-Discord-7289DA)](https://discord.gg/KFku4KvS)
 [![Pylint](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pylint.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pylint.yml)
 [![Python package](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/python-package.yml)
 [![CodeQL Advanced](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml/badge.svg)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml)
@@ -243,5 +243,5 @@ pre-commit install  # Auto-format code on commit
 
 ## 📬 Community
 
-- [Discord Server](https://discord.gg/645a6Yd5): Chat with developers
+- [Discord Server](https://discord.gg/KFku4KvS): Chat with developers
 - [Twitter @NLang4438](https://x.com/NLang4438): Updates & announcements
