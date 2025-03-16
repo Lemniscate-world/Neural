@@ -989,13 +989,16 @@ class ModelTransformer(lark.Transformer):
     def optimizer(self, items):
         params = {}
         opt_type = None
-        opt_value = self._extract_value(items[0])
+        opt_node = items[0]  # The STRING or NAME token/subtree
+
+        # Extract the optimizer value
+        opt_value = self._extract_value(opt_node)
 
         if isinstance(opt_value, str):
             if '(' in opt_value and ')' in opt_value:
                 opt_type = opt_value[:opt_value.index('(')].strip()
                 param_str = opt_value[opt_value.index('(')+1:opt_value.rindex(')')].strip()
-                # Split parameters by comma and process each key-value pair
+                # Parse parameters more robustly
                 for param in param_str.split(','):
                     param = param.strip()
                     if '=' in param:
@@ -1004,27 +1007,34 @@ class ModelTransformer(lark.Transformer):
                         param_value = param_value.strip()
                         if param_value.startswith('HPO(') and param_value.endswith(')'):
                             hpo_str = param_value[4:-1]
-                            hpo_config = self._parse_hpo(hpo_str, items[0])
+                            hpo_config = self._parse_hpo(hpo_str, opt_node)
                             params[param_name] = hpo_config
                         else:
-                            # Handle non-HPO values
                             try:
                                 params[param_name] = float(param_value)
                             except ValueError:
                                 params[param_name] = param_value
             else:
                 opt_type = opt_value.lower()
-        elif isinstance(opt_value, dict):
-            params = opt_value
-            opt_type = params.pop('type', 'Adam')
+        else:
+            # Handle case where optimizer is already parsed as a subtree (e.g., with named_params)
+            if len(items) > 1:  # Has parameters
+                param_values = self._extract_value(items[1])  # named_params result
+                if isinstance(param_values, dict):
+                    params = param_values
+                elif isinstance(param_values, list):
+                    for p in param_values:
+                        if isinstance(p, dict):
+                            params.update(p)
+            opt_type = opt_value if isinstance(opt_value, str) else 'Adam'
 
         if not opt_type:
-            self.raise_validation_error("Optimizer type must be specified", items[0], Severity.ERROR)
+            self.raise_validation_error("Optimizer type must be specified", opt_node, Severity.ERROR)
 
         # Track HPO parameters
         for param_name, param_value in params.items():
             if isinstance(param_value, dict) and 'hpo' in param_value:
-                self._track_hpo('optimizer', param_name, param_value, items[0])
+                self._track_hpo('optimizer', param_name, param_value, opt_node)
 
         return {'type': opt_type, 'params': params}
 
