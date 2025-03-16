@@ -98,7 +98,6 @@ def train_model(model, optimizer, train_loader, val_loader, device='cpu', epochs
             total += target.size(0)
     return val_loss / len(val_loader), correct / total
 
-@pysnooper.snoop()
 def objective(trial, config, dataset_name='MNIST'):
     model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
@@ -108,21 +107,18 @@ def objective(trial, config, dataset_name='MNIST'):
     optimizer_config = model_dict['optimizer']
     learning_rate_param = optimizer_config['params'].get('learning_rate', 0.001)
 
-    # Handle HPO for learning_rate
-    if isinstance(learning_rate_param, str) and 'HPO(log_range' in learning_rate_param:
-        # Extract low and high values from the string (assuming format "HPO(log_range(low, high))")
-        import re
-        match = re.search(r"log_range\(([\d.e-]+),\s*([\d.e-]+)\)", learning_rate_param)
-        if match:
-            low, high = float(match.group(1)), float(match.group(2))
-            lr = trial.suggest_float("learning_rate", low, high, log=True)
-        else:
-            raise ValueError("Invalid HPO format for learning_rate")
-    elif isinstance(learning_rate_param, dict) and 'hpo' in learning_rate_param:
-        hpo = next(h for h in hpo_params if h['param_name'] == 'learning_rate' and h['layer_type'] == 'optimizer')
-        lr = trial.suggest_float("learning_rate", hpo['hpo']['low'], hpo['hpo']['high'], log=True)
+    if isinstance(learning_rate_param, dict) and 'hpo' in learning_rate_param:
+        hpo = learning_rate_param['hpo']
+        if hpo['type'] == 'log_range':
+            lr = trial.suggest_float("learning_rate", hpo['low'], hpo['high'], log=True)
+    elif isinstance(learning_rate_param, str) and 'HPO(log_range' in learning_rate_param:
+        try:
+            hpo = next(h for h in hpo_params if h['layer_type'] == 'optimizer' and h['param_name'] == 'learning_rate')
+            lr = trial.suggest_float("learning_rate", hpo['hpo']['low'], hpo['hpo']['high'], log=True)
+        except StopIteration:
+            raise ValueError("HPO for learning_rate not found in hpo_params; parsing failed.")
     else:
-        lr = float(learning_rate_param)  # Default to float if no HPO
+        lr = float(learning_rate_param)
     
     model = DynamicModel(model_dict, trial, hpo_params)
     optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
