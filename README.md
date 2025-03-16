@@ -9,11 +9,11 @@ Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-green.svg)](https://www.python.org/)
-[![Discord](https://img.shields.io/badge/Chat-Discord-7289DA)](https://discord.gg/your-invite-link)
+[![Discord](https://img.shields.io/badge/Chat-Discord-7289DA)](https://discord.gg/645a6Yd5)
 [![Pylint](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pylint.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pylint.yml)
 [![Python package](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/python-package.yml)
 [![CodeQL Advanced](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml/badge.svg)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/codeql.yml)
-[![Tests](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pytest.yml)
+[![Tests](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/Lemniscate-SHA-256/Neural/actions/workflows/pytest-to-issues.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/Lemniscate-SHA-256/Neural)](https://codecov.io/gh/Lemniscate-SHA-256/Neural)
 
 
