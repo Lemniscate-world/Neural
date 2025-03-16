@@ -986,55 +986,44 @@ class ModelTransformer(lark.Transformer):
     def loss(self, items):
         return items[0].value.strip('"')
 
+    @pysnooper.snoop()
     def optimizer(self, items):
-        params = {}
-        opt_type = None
-        opt_node = items[0]  # The STRING or NAME token/subtree
-
-        # Extract the optimizer value
+        opt_node = items[0]
         opt_value = self._extract_value(opt_node)
+        params = {}
+        if len(items) > 1:
+            params = self._extract_value(items[1]) or {}
 
         if isinstance(opt_value, str):
             if '(' in opt_value and ')' in opt_value:
                 opt_type = opt_value[:opt_value.index('(')].strip()
-                param_str = opt_value[opt_value.index('(')+1:opt_value.rindex(')')].strip()
-                # Parse parameters more robustly
-                for param in param_str.split(','):
-                    param = param.strip()
-                    if '=' in param:
-                        param_name, param_value = param.split('=', 1)
-                        param_name = param_name.strip()
-                        param_value = param_value.strip()
-                        if param_value.startswith('HPO(') and param_value.endswith(')'):
-                            hpo_str = param_value[4:-1]
-                            hpo_config = self._parse_hpo(hpo_str, opt_node)
-                            params[param_name] = hpo_config
-                        else:
-                            try:
-                                params[param_name] = float(param_value)
-                            except ValueError:
-                                params[param_name] = param_value
+                if not params:
+                    param_str = opt_value[opt_value.index('(')+1:opt_value.rindex(')')].strip()
+                    for param in param_str.split(','):
+                        param = param.strip()
+                        if '=' in param:
+                            param_name, param_value = param.split('=', 1)
+                            param_name = param_name.strip()
+                            param_value = param_value.strip()
+                            if 'HPO(' in param_value:  # Relaxed check to catch HPO anywhere
+                                hpo_start = param_value.index('HPO(')
+                                hpo_end = param_value.rindex(')') + 1
+                                hpo_str = param_value[hpo_start+4:hpo_end-1]
+                                hpo_config = self._parse_hpo(hpo_str, opt_node)
+                                params[param_name] = hpo_config
+                                self._track_hpo('optimizer', param_name, hpo_config, opt_node)
+                            else:
+                                try:
+                                    params[param_name] = float(param_value)
+                                except ValueError:
+                                    params[param_name] = param_value
             else:
                 opt_type = opt_value.lower()
         else:
-            # Handle case where optimizer is already parsed as a subtree (e.g., with named_params)
-            if len(items) > 1:  # Has parameters
-                param_values = self._extract_value(items[1])  # named_params result
-                if isinstance(param_values, dict):
-                    params = param_values
-                elif isinstance(param_values, list):
-                    for p in param_values:
-                        if isinstance(p, dict):
-                            params.update(p)
-            opt_type = opt_value if isinstance(opt_value, str) else 'Adam'
+            self.raise_validation_error("Optimizer must be a string", opt_node)
 
         if not opt_type:
             self.raise_validation_error("Optimizer type must be specified", opt_node, Severity.ERROR)
-
-        # Track HPO parameters
-        for param_name, param_value in params.items():
-            if isinstance(param_value, dict) and 'hpo' in param_value:
-                self._track_hpo('optimizer', param_name, param_value, opt_node)
 
         return {'type': opt_type, 'params': params}
 
