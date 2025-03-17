@@ -128,6 +128,16 @@ def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', e
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
         criterion = nn.CrossEntropyLoss()
+        for _ in range(epochs):
+            model.train()
+            for data, target in train_loader:
+                data, target = data.to(device), target.to(device)
+                optimizer.zero_grad()
+                output = model(data)
+                loss = criterion(output, target)
+                loss.backward()
+                optimizer.step()
+        model.eval()
         val_loss, correct, total = 0.0, 0, 0
         with torch.no_grad():
             for data, target in val_loader:
