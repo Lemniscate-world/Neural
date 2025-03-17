@@ -6,6 +6,7 @@ import tensorflow as tf
 from torchvision.datasets import MNIST, CIFAR10
 from torchvision.transforms import ToTensor
 from neural.parser.parser import ModelTransformer
+import keras
 
 # Data Loader
 def get_data(dataset_name, input_shape, batch_size, train=True):
@@ -48,27 +49,20 @@ class DynamicPTModel(nn.Module):
                 in_features = prod(input_shape)
                 self.needs_flatten = False
             elif layer['type'] == 'Dense':
-                if 'hpo' in params['units']:
-                    hpo = next(h for h in hpo_params if h['layer_type'] == 'Dense' and h['param_name'] == 'units')
-                    units = trial.suggest_categorical('dense_units', hpo['hpo']['values'])
-                    params['units'] = units
-                if in_features is None:
-                    raise ValueError("Input features must be defined for Dense layer.")
-                self.layers.append(nn.Linear(in_features, params['units']))
-                if params.get('activation') == 'relu':
-                    self.layers.append(nn.ReLU())
-                in_features = params['units']
+                units = params['units']
+                if isinstance(units, dict) and 'hpo' in units:  # HPO case
+                    hpo_config = units['hpo']
+                    if hpo_config['type'] in ('choice', 'categorical'):
+                        units = trial.suggest_categorical('dense_units', hpo_config['values'])
+                    elif hpo_config['type'] == 'range':
+                        units = trial.suggest_int('dense_units', hpo_config['start'], hpo_config['end'])
+                # units is now an int, either from HPO or directly from params
+                self.layers.append(nn.Linear(in_features, units))
+                in_features = units
             elif layer['type'] == 'Dropout':
-                if 'hpo' in params['rate']:
-                    hpo = next(h for h in hpo_params if h['layer_type'] == 'Dropout' and h['param_name'] == 'rate')
-                    rate = trial.suggest_float('dropout_rate', hpo['hpo']['start'], hpo['hpo']['end'], step=hpo['hpo']['step'])
-                    params['rate'] = rate
-                self.layers.append(nn.Dropout(params['rate']))
+                rate = params.get('rate', trial.suggest_float('dropout_rate', 0.1, 0.7))
+                self.layers.append(nn.Dropout(rate))
             elif layer['type'] == 'Output':
-                if isinstance(params.get('units'), dict) and 'hpo' in params['units']:
-                    hpo = next(h for h in hpo_params if h['layer_type'] == 'Output' and h['param_name'] == 'units')
-                    units = trial.suggest_categorical('output_units', hpo['hpo']['values'])
-                    params['units'] = units
                 self.layers.append(nn.Linear(in_features, params['units']))
                 if params.get('activation') == 'softmax':
                     self.layers.append(nn.Softmax(dim=1))
