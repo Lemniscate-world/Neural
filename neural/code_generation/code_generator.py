@@ -8,6 +8,7 @@ from onnx import helper, TensorProto
 import numpy as np
 import warnings
 import pysnooper
+import logging
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -455,18 +456,20 @@ def generate_optimized_dsl(config, best_params):
     model_dict, hpo_params = transformer.parse_network_with_hpo(config)
     lines = config.strip().split('\n')
     
-    # Process each HPO replacement independently
+    logger.info(f"Initial lines: {lines}")
+    logger.info(f"best_params: {best_params}")
+    logger.info(f"hpo_params: {hpo_params}")
+    
     for hpo in hpo_params:
-        # Adjust param_key based on layer_type
         if hpo['layer_type'].lower() == 'optimizer':
-            param_key = hpo['param_name']  # Use 'learning_rate' directly
+            param_key = hpo['param_name']
         else:
-            param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"  # e.g., 'dense_units', 'dropout_rate'
+            param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"
         
         if param_key not in best_params:
-            continue  # Skip if param_key isn't in best_params
+            logger.warning(f"param_key {param_key} not in best_params, skipping")
+            continue
         
-        # Construct the HPO string to replace
         hpo_type = hpo['hpo']['type']
         if hpo_type in ('choice', 'categorical'):
             hpo_str = f"choice({','.join(map(str, hpo['hpo']['values']))})"
@@ -477,11 +480,16 @@ def generate_optimized_dsl(config, best_params):
         else:
             raise ValueError(f"Unknown HPO type: {hpo_type}")
         
-        # Replace in the specific line containing this HPO
+        logger.info(f"Processing hpo: {hpo}, param_key: {param_key}, hpo_str: {hpo_str}")
         for i, line in enumerate(lines):
             if f"HPO({hpo_str})" in line:
-                lines[i] = line.replace(f"HPO({hpo_str})", str(best_params[param_key]))
-                break  # Move to next HPO after replacement
+                old_line = lines[i]
+                new_line = line.replace(f"HPO({hpo_str})", str(best_params[param_key]))
+                lines[i] = new_line
+                logger.info(f"Replaced line {i}: '{old_line}' -> '{new_line}'")
+                break
+            else:
+                logger.debug(f"Line {i} '{line}' does not contain 'HPO({hpo_str})'")
     
+    logger.info(f"Final lines: {lines}")
     return '\n'.join(lines)
-
