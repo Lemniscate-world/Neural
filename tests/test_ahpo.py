@@ -7,8 +7,8 @@ from unittest.mock import patch, MagicMock
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from neural.automatic_hyperparameter_optimization.hpo import optimize_and_return, create_dynamic_model  # Updated import
-from neural.automatic_hyperparameter_optimization.hpo import train_model, get_data, objective
+from neural.hpo.hpo import optimize_and_return, create_dynamic_model  # Updated import
+from neural.hpo.hpo import train_model, get_data, objective
 from neural.parser.parser import ModelTransformer, DSLValidationError
 from neural.code_generation.code_generator import generate_optimized_dsl
 
