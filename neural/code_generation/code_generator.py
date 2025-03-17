@@ -474,7 +474,7 @@ def generate_optimized_dsl(config, best_params):
         if hpo_type in ('choice', 'categorical'):
             # Use original values if available
             values = hpo['hpo'].get('original_values', hpo['hpo']['values'])
-            hpo_str = f"choice({','.join(map(str, values))})"
+            hpo_str = f"choice({', '.join(map(str, values))})"
         elif hpo_type == 'range':
             # Use original parts for string formatting
             original_parts = hpo['hpo'].get('original_parts', [
