@@ -472,11 +472,24 @@ def generate_optimized_dsl(config, best_params):
         
         hpo_type = hpo['hpo']['type']
         if hpo_type in ('choice', 'categorical'):
-            hpo_str = f"choice({','.join(map(str, hpo['hpo']['values']))})"
+            # Use original values if available
+            values = hpo['hpo'].get('original_values', hpo['hpo']['values'])
+            hpo_str = f"choice({','.join(map(str, values))})"
         elif hpo_type == 'range':
-            hpo_str = f"range({hpo['hpo']['start']}, {hpo['hpo']['end']}, step={hpo['hpo']['step']})"
+            # Use original parts for string formatting
+            original_parts = hpo['hpo'].get('original_parts', [
+                str(hpo['hpo']['start']), 
+                str(hpo['hpo']['end'])
+            ])
+            if 'step' in hpo['hpo']:
+                hpo_str = f"range({', '.join(original_parts)}, step={hpo['hpo']['step']})"
+            else:
+                hpo_str = f"range({', '.join(original_parts)})"
         elif hpo_type == 'log_range':
-            hpo_str = f"log_range({hpo['hpo']['low']}, {hpo['hpo']['high']})"
+            # Use original low/high strings
+            low = hpo['hpo'].get('original_low', str(hpo['hpo']['low']))
+            high = hpo['hpo'].get('original_high', str(hpo['hpo']['high']))
+            hpo_str = f"log_range({low}, {high})"
         else:
             raise ValueError(f"Unknown HPO type: {hpo_type}")
         

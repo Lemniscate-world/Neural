@@ -2195,20 +2195,46 @@ class ModelTransformer(lark.Transformer):
         tree = create_parser('network').parse(config)
         model = self.transform(tree)
         return model, self.hpo_params
+    
+    def _parse_hpo_value(self, value):
+        """Parse a single HPO value while retaining original string if numeric."""
+        try:
+            return float(value) if '.' in value or 'e' in value.lower() else int(value)
+        except ValueError:
+            return value  # Return as string if not a number
 
     def _parse_hpo(self, hpo_str, item):
-        """Helper method to parse HPO expressions like 'log_range(1e-4, 1e-2)'."""
+        """Parse HPO expressions and retain original string values."""
+        original_str = hpo_str  # Store the original string
         if hpo_str.startswith('choice('):
-            values = [int(v.strip()) for v in hpo_str[7:-1].split(',')]
-            return {'hpo': {'type': 'categorical', 'values': values}}
+            values = [v.strip() for v in hpo_str[7:-1].split(',')]  # Keep as strings
+            return {
+                'hpo': {
+                    'type': 'categorical',
+                    'values': [self._parse_hpo_value(v) for v in values],
+                    'original_values': values  # Store original strings
+                }
+            }
         elif hpo_str.startswith('range('):
-            parts = [float(v.strip()) for v in hpo_str[6:-1].split(',')]
-            if len(parts) == 3:
-                return {'hpo': {'type': 'range', 'start': parts[0], 'end': parts[1], 'step': parts[2]}}
+            parts = [v.strip() for v in hpo_str[6:-1].split(',')]
+            parsed = [self._parse_hpo_value(p) for p in parts]
+            hpo_data = {'type': 'range', 'start': parsed[0], 'end': parsed[1]}
+            if len(parts) >= 3:
+                hpo_data['step'] = parsed[2]
+            hpo_data['original_parts'] = parts  # Store original strings
+            return {'hpo': hpo_data}
         elif hpo_str.startswith('log_range('):
-            parts = [float(v.strip()) for v in hpo_str[10:-1].split(',')]
-            if len(parts) == 2:
-                return {'hpo': {'type': 'log_range', 'low': parts[0], 'high': parts[1]}}
+            parts = [v.strip() for v in hpo_str[10:-1].split(',')]
+            parsed = [self._parse_hpo_value(p) for p in parts]
+            return {
+                'hpo': {
+                    'type': 'log_range',
+                    'low': parsed[0],
+                    'high': parsed[1],
+                    'original_low': parts[0],  # Store original strings
+                    'original_high': parts[1]
+                }
+            }
         self.raise_validation_error(f"Invalid HPO expression: {hpo_str}", item, Severity.ERROR)
         return {}
 
