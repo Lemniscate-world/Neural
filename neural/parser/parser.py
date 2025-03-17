@@ -542,42 +542,6 @@ def split_params(s):
     return parts
 
 class ModelTransformer(lark.Transformer):
-    """ModelTransformer is a Lark transformer class that processes parsed neural network DSL into a model configuration.
-    This transformer converts the parsed abstract syntax tree from the neural network DSL into a structured model configuration
-    dictionary that can be used to build neural networks. It handles various layer types, training configurations, and 
-    hyperparameter optimization settings.
-    Key Features:
-    - Transforms layer definitions into structured dictionaries
-    - Validates layer parameters and configurations
-    - Supports macro definitions and reuse
-    - Handles hyperparameter optimization expressions
-    - Processes training and execution configurations
-    - Supports multiple deep learning frameworks
-    Attributes:
-        variables (dict): Storage for variable definitions
-        macros (dict): Storage for macro definitions
-        current_macro (str): Name of macro currently being processed
-        layer_type_map (dict): Mapping between DSL layer names and internal representations
-        hpo_params (list): Tracks hyperparameter optimization configurations
-    Methods follow the Lark transformer pattern where method names correspond to grammar rules. Key methods include:
-    - network(): Processes complete network definitions
-    - basic_layer(): Handles standard layer definitions 
-    - define(): Processes macro definitions
-    - dropout(), dense(), conv2d() etc: Process specific layer types
-    - training_config(): Handles training configuration
-    - execution_config(): Processes execution settings
-    - _extract_value(): Helper to extract values from tokens
-    - _track_hpo(): Tracks hyperparameter optimization settings
-    - parse_network(): Main entry point for parsing network definitions
-    Example:
-        transformer = ModelTransformer()
-        model = transformer.parse_network("network Example { ... }")
-    Raises:
-        DSLValidationError: When validation of the network definition fails
-    Notes:
-        - The transformer assumes input has been parsed using the neural network DSL grammar
-        - Layer type strings are case-insensitive in the DSL but normalized internally
-        - Error handling includes both hard errors (exceptions) and warnings
     def __init__(self):
         super().__init__()
         self.variables = {}
@@ -637,15 +601,7 @@ class ModelTransformer(lark.Transformer):
         return {"warning": msg, "line": line, "column": col}  # Return for warnings
 
     def _extract_layer_def(self, layer_item):
-        """
-        Helper method to extract layer definition from an item.
-        
-        Args:
-            layer_item: The layer item to process
-        
-        Returns:
-            dict: The processed layer definition
-        """
+
         if layer_item is None:
             return None
             

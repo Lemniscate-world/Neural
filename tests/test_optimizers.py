@@ -1,4 +1,4 @@
-from neural.automatic_hyperparameter_optimization import hpo 
+from neural.hpo import hpo 
 from neural.parser import parser
 
 
