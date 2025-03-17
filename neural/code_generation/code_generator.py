@@ -454,19 +454,34 @@ def generate_optimized_dsl(config, best_params):
     transformer = ModelTransformer()
     model_dict, hpo_params = transformer.parse_network_with_hpo(config)
     lines = config.strip().split('\n')
-    for i, line in enumerate(lines):
-        for hpo in hpo_params:
-            param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"
-            if param_key in best_params and 'HPO(' in line:
-                hpo_type = hpo['hpo']['type']
-                if hpo_type in ('choice', 'categorical'):
-                    hpo_str = f"choice({','.join(map(str, hpo['hpo']['values']))})"
-                elif hpo_type == 'range':
-                    hpo_str = f"range({hpo['hpo']['start']}, {hpo['hpo']['end']}, step={hpo['hpo']['step']})"
-                elif hpo_type == 'log_range':
-                    hpo_str = f"log_range({hpo['hpo']['low']}, {hpo['hpo']['high']})"
-                else:
-                    raise ValueError(f"Unknown HPO type: {hpo_type}")
+    
+    # Process each HPO replacement independently
+    for hpo in hpo_params:
+        # Adjust param_key based on layer_type
+        if hpo['layer_type'].lower() == 'optimizer':
+            param_key = hpo['param_name']  # Use 'learning_rate' directly
+        else:
+            param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"  # e.g., 'dense_units', 'dropout_rate'
+        
+        if param_key not in best_params:
+            continue  # Skip if param_key isn't in best_params
+        
+        # Construct the HPO string to replace
+        hpo_type = hpo['hpo']['type']
+        if hpo_type in ('choice', 'categorical'):
+            hpo_str = f"choice({','.join(map(str, hpo['hpo']['values']))})"
+        elif hpo_type == 'range':
+            hpo_str = f"range({hpo['hpo']['start']}, {hpo['hpo']['end']}, step={hpo['hpo']['step']})"
+        elif hpo_type == 'log_range':
+            hpo_str = f"log_range({hpo['hpo']['low']}, {hpo['hpo']['high']})"
+        else:
+            raise ValueError(f"Unknown HPO type: {hpo_type}")
+        
+        # Replace in the specific line containing this HPO
+        for i, line in enumerate(lines):
+            if f"HPO({hpo_str})" in line:
                 lines[i] = line.replace(f"HPO({hpo_str})", str(best_params[param_key]))
+                break  # Move to next HPO after replacement
+    
     return '\n'.join(lines)
 
