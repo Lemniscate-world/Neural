@@ -7,6 +7,7 @@ import onnx
 from onnx import helper, TensorProto
 import numpy as np
 import warnings
+import pysnooper
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -448,7 +449,7 @@ def generate_pytorch_layer(layer_type, params, input_shape=None):
         return None
     
 ## Optimized Code Generation ##
-
+@pysnooper.snoop()
 def generate_optimized_dsl(config, best_params):
     transformer = ModelTransformer()
     model_dict, hpo_params = transformer.parse_network_with_hpo(config)
@@ -457,9 +458,8 @@ def generate_optimized_dsl(config, best_params):
         for hpo in hpo_params:
             param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"
             if param_key in best_params and 'HPO(' in line:
-                # Reconstruct HPO string from hpo['hpo']
                 hpo_type = hpo['hpo']['type']
-                if hpo_type == 'choice' or hpo_type == 'categorical':
+                if hpo_type in ('choice', 'categorical'):
                     hpo_str = f"choice({','.join(map(str, hpo['hpo']['values']))})"
                 elif hpo_type == 'range':
                     hpo_str = f"range({hpo['hpo']['start']}, {hpo['hpo']['end']}, step={hpo['hpo']['step']})"
@@ -467,7 +467,6 @@ def generate_optimized_dsl(config, best_params):
                     hpo_str = f"log_range({hpo['hpo']['low']}, {hpo['hpo']['high']})"
                 else:
                     raise ValueError(f"Unknown HPO type: {hpo_type}")
-                # Replace the full HPO expression
                 lines[i] = line.replace(f"HPO({hpo_str})", str(best_params[param_key]))
     return '\n'.join(lines)
 
