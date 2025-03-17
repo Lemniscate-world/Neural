@@ -109,7 +109,7 @@ def test_parser_invalid_config():
 @patch('neural.automatic_hyperparameter_optimization.hpo.get_data', mock_data_loader)
 def test_hpo_integration_full_pipeline():
     config = """
-    network HPOExample {
+    network Example {
         input: (28,28,1)
         layers:
             Dense(HPO(choice(128, 256)))
