@@ -71,8 +71,15 @@ class ShapePropagator:
         """Processes a layer and logs shape changes for nntrace."""
         layer_type = layer["type"]
         params = layer.get("params", {})
-        kernel_size = tuple(params.get("kernel_size", [3, 3]) if isinstance(params.get("kernel_size"), list) else (3, 3))
-        params["kernel_size"] = kernel_size  # Ensure tuple in params
+
+        # Only set kernel_size for layers that need it
+        if layer_type in ['Conv2D', 'MaxPooling2D']:  # Add other layers as needed
+            kernel_size = params.get("kernel_size", 3)
+            if isinstance(kernel_size, int):
+                kernel_size = (kernel_size, kernel_size)
+            elif isinstance(kernel_size, list):
+                kernel_size = tuple(kernel_size)
+            params["kernel_size"] = kernel_size  # Ensure tuple in params
 
         if layer['type'] == 'TransformerEncoder':
             if framework == 'tensorflow':
@@ -178,22 +185,17 @@ class ShapePropagator:
         return output_shape
 
     def _standardize_params(self, params, layer_type, framework):
-        # Convert framework-specific parameters to canonical form
+        # Ensure params is a dict, even if None is passed
+        if params is None:
+            params = {}
         standardized = {}
         aliases = self.param_aliases.get(layer_type, {})
-        
         for k, v in params.items():
             if framework == 'pytorch' and k in aliases.values():
                 standardized[aliases[k]] = v
             else:
                 standardized[k] = v
-                
-        # Add framework-specific defaults
-        if framework == 'pytorch':
-            standardized.setdefault('data_format', 'channels_first')
-        else:
-            standardized.setdefault('data_format', 'channels_last')
-            
+        standardized.setdefault('data_format', 'channels_first' if framework == 'pytorch' else 'channels_last')
         return standardized
 
 ####################################################################
@@ -201,54 +203,33 @@ class ShapePropagator:
 ####################################################################
 
     def _handle_conv2d(self, input_shape, params):
-        """Calculates the output shape for a Conv2D layer.
-
-        This method computes the output shape based on the input shape,
-        kernel size, stride, padding, and data format.
-
-        Args:
-            input_shape (tuple): Input tensor shape.
-            params (dict): Layer parameters.
-
-        Returns:
-            tuple: Output tensor shape.
-        """    
-        data_format = params['data_format']
+        data_format = params['data_format']  # 'channels_first' for PyTorch
         if data_format == 'channels_first':
-            spatial_dims = input_shape[2:]  # (height, width)
-        else:  # channels_last
-            spatial_dims = input_shape[1:3]  # (height, width)
+            spatial_dims = input_shape[2:]  # Should be (28, 28)
+        else:
+            spatial_dims = input_shape[1:3]
 
-        # Handle kernel_size as tuple or integer
         kernel = params['kernel_size']
         if isinstance(kernel, int):
-            kernel = (kernel,) * len(spatial_dims)
-        elif isinstance(kernel, tuple):
-            if len(kernel) != len(spatial_dims):
-                raise ValueError("Kernel size must match spatial dimensions")
-
-        kernel_size = tuple(params.get("kernel_size", [3, 3]) if isinstance(params.get("kernel_size"), list) else (3, 3))
+            kernel = (kernel, kernel)
+        elif not isinstance(kernel, tuple):
+            raise ValueError(f"Invalid kernel_size type: {type(kernel)}")
 
         stride = params.get('stride', 1)
-        padding = self._calculate_padding(params, input_shape[1] if data_format=='channels_last' else input_shape[2])
+        padding = self._calculate_padding(params, input_shape[2] if data_format == 'channels_first' else input_shape[1])
 
-        # Ensure padding is a tuple matching spatial dimensions
         if isinstance(padding, int):
-            padding = (padding,) * len(kernel)
+            padding = (padding,) * len(spatial_dims)
         elif isinstance(padding, (list, tuple)):
-            if len(padding) != len(kernel):
-                raise ValueError(f"Padding length {len(padding)} != kernel dimensions {len(kernel)}")
             padding = tuple(padding)
-        else:
-            raise TypeError(f"Invalid padding type: {type(padding)}")
 
-        # Calculate output shape per spatial dimension
         output_spatial = [
             (dim + 2*pad - k) // stride + 1
             for dim, k, pad in zip(spatial_dims, kernel, padding)
         ]
+        if any(dim <= 0 for dim in output_spatial):
+            raise ValueError(f"Invalid Conv2D output dimensions: {output_spatial}")
 
-        # Reconstruct full shape
         if data_format == 'channels_first':
             return (input_shape[0], params['filters'], *output_spatial)
         else:
