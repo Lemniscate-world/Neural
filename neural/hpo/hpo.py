@@ -48,28 +48,28 @@ class DynamicPTModel(nn.Module):
                 in_features = prod(input_shape)
                 self.needs_flatten = False
             elif layer['type'] == 'Dense':
-                if 'hpo' in params['units']:
+                units = params['units']
+                if isinstance(units, dict) and 'hpo' in units:  # HPO case
                     hpo = next(h for h in hpo_params if h['layer_type'] == 'Dense' and h['param_name'] == 'units')
                     units = trial.suggest_categorical('dense_units', hpo['hpo']['values'])
-                    params['units'] = units
                 if in_features is None:
                     raise ValueError("Input features must be defined for Dense layer.")
-                self.layers.append(nn.Linear(in_features, params['units']))
+                self.layers.append(nn.Linear(in_features, units))
                 if params.get('activation') == 'relu':
                     self.layers.append(nn.ReLU())
-                in_features = params['units']
+                in_features = units
             elif layer['type'] == 'Dropout':
-                if 'hpo' in params['rate']:
+                rate = params['rate']
+                if isinstance(rate, dict) and 'hpo' in rate:  # HPO case
                     hpo = next(h for h in hpo_params if h['layer_type'] == 'Dropout' and h['param_name'] == 'rate')
                     rate = trial.suggest_float('dropout_rate', hpo['hpo']['start'], hpo['hpo']['end'], step=hpo['hpo']['step'])
-                    params['rate'] = rate
-                self.layers.append(nn.Dropout(params['rate']))
+                self.layers.append(nn.Dropout(rate))
             elif layer['type'] == 'Output':
-                if isinstance(params.get('units'), dict) and 'hpo' in params['units']:
+                units = params['units']
+                if isinstance(units, dict) and 'hpo' in units:  # HPO case
                     hpo = next(h for h in hpo_params if h['layer_type'] == 'Output' and h['param_name'] == 'units')
                     units = trial.suggest_categorical('output_units', hpo['hpo']['values'])
-                    params['units'] = units
-                self.layers.append(nn.Linear(in_features, params['units']))
+                self.layers.append(nn.Linear(in_features, units))
                 if params.get('activation') == 'softmax':
                     self.layers.append(nn.Softmax(dim=1))
 
