@@ -7,6 +7,7 @@ from torchvision.datasets import MNIST, CIFAR10
 from torchvision.transforms import ToTensor
 from neural.parser.parser import ModelTransformer
 import keras
+from neural.shape_propagation.shape_propagator import ShapePropagator
 
 # Data Loader
 def get_data(dataset_name, input_shape, batch_size, train=True):
@@ -36,55 +37,41 @@ class DynamicPTModel(nn.Module):
     def __init__(self, model_dict, trial, hpo_params):
         super().__init__()
         self.layers = nn.ModuleList()
-        input_shape = model_dict['input']['shape']
-        self.needs_flatten = len(input_shape) > 2
-        in_channels = input_shape[-1] if len(input_shape) > 2 else 1
-        in_features = prod(input_shape)
+        self.shape_propagator = ShapePropagator(debug=True)  # Enable debug for tracing
+        input_shape = (None, *model_dict['input']['shape'])  # (None, 1, 28, 28)
+        current_shape = input_shape
+        in_channels = input_shape[1]  # 1 (channels_first)
 
         for layer in model_dict['layers']:
-            params = layer['params'].copy()
+            params = layer['params'] if layer['params'] is not None else {}
+            params = params.copy()
+            # Propagate shape
+            current_shape = self.shape_propagator.propagate(current_shape, layer, framework='pytorch')
+            
             if layer['type'] == 'Conv2D':
                 filters = params.get('filters', trial.suggest_int('conv_filters', 16, 64))
                 kernel_size = params.get('kernel_size', 3)
                 self.layers.append(nn.Conv2d(in_channels, filters, kernel_size))
-                h_out = (input_shape[1] - kernel_size + 1)
-                w_out = (input_shape[2] - kernel_size + 1)
-                input_shape = (h_out, w_out, filters)
                 in_channels = filters
-                in_features = None
             elif layer['type'] == 'Flatten':
                 self.layers.append(nn.Flatten())
-                in_features = prod(input_shape)
-                self.needs_flatten = False
+                in_features = prod(current_shape[1:])  # 10816
             elif layer['type'] == 'Dense':
-                units = params['units']
-                if isinstance(units, dict) and 'hpo' in units:  # HPO case
-                    hpo = next(h for h in hpo_params if h['layer_type'] == 'Dense' and h['param_name'] == 'units')
-                    units = trial.suggest_categorical('dense_units', hpo['hpo']['values'])
-                if in_features is None:
-                    raise ValueError("Input features must be defined for Dense layer.")
+                units = params.get('units', trial.suggest_int('dense_units', 64, 256))
+                if in_features <= 0:
+                    raise ValueError(f"Invalid in_features for Dense: {in_features}")
                 self.layers.append(nn.Linear(in_features, units))
-                if params.get('activation') == 'relu':
-                    self.layers.append(nn.ReLU())
                 in_features = units
-            elif layer['type'] == 'Dropout':
-                rate = params['rate']
-                if isinstance(rate, dict) and 'hpo' in rate:  # HPO case
-                    hpo = next(h for h in hpo_params if h['layer_type'] == 'Dropout' and h['param_name'] == 'rate')
-                    rate = trial.suggest_float('dropout_rate', hpo['hpo']['start'], hpo['hpo']['end'], step=hpo['hpo']['step'])
-                self.layers.append(nn.Dropout(rate))
             elif layer['type'] == 'Output':
-                units = params['units']
-                if isinstance(units, dict) and 'hpo' in units:  # HPO case
-                    hpo = next(h for h in hpo_params if h['layer_type'] == 'Output' and h['param_name'] == 'units')
-                    units = trial.suggest_categorical('output_units', hpo['hpo']['values'])
+                units = params.get('units', 10)
+                if in_features <= 0:
+                    raise ValueError(f"Invalid in_features for Output: {in_features}")
                 self.layers.append(nn.Linear(in_features, units))
-                if params.get('activation') == 'softmax':
-                    self.layers.append(nn.Softmax(dim=1))
+                in_features = units
+            else:
+                raise ValueError(f"Unsupported layer type: {layer['type']}")
 
     def forward(self, x):
-        if self.needs_flatten:
-            x = x.view(x.size(0), -1)
         for layer in self.layers:
             x = layer(x)
         return x
