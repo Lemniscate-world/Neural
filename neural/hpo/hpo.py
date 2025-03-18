@@ -6,6 +6,7 @@ import tensorflow as tf
 from torchvision.datasets import MNIST, CIFAR10
 from torchvision.transforms import ToTensor
 from neural.parser.parser import ModelTransformer
+import keras
 
 # Data Loader
 def get_data(dataset_name, input_shape, batch_size, train=True):
@@ -21,6 +22,14 @@ def prod(iterable):
     for x in iterable:
         result *= x
     return result
+
+# Factory Function
+def create_dynamic_model(model_dict, trial, hpo_params, backend='pytorch'):
+    if backend == 'pytorch':
+        return DynamicPTModel(model_dict, trial, hpo_params)
+    elif backend == 'tensorflow':
+        return DynamicTFModel(model_dict, trial, hpo_params)
+    raise ValueError(f"Unsupported backend: {backend}")
 
 # Dynamic Models
 class DynamicPTModel(nn.Module):
@@ -114,14 +123,6 @@ class DynamicTFModel(tf.keras.Model):
             x = layer(x)
         return x
 
-# Factory Function
-def create_dynamic_model(model_dict, trial, hpo_params, backend='pytorch'):
-    if backend == 'pytorch':
-        return DynamicPTModel(model_dict, trial, hpo_params)
-    elif backend == 'tensorflow':
-        return DynamicTFModel(model_dict, trial, hpo_params)
-    raise ValueError(f"Unsupported backend: {backend}")
-
 # Training Method
 def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', epochs=1):
     if backend == 'pytorch':
@@ -192,4 +193,5 @@ def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
 def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pytorch'):
     study = optuna.create_study(directions=["minimize", "minimize"])
     study.optimize(lambda trial: objective(trial, config, dataset_name, backend), n_trials=n_trials)
+    print("Model optimized with best parameters:", study.best_trials[0].params)
     return study.best_trials[0].params
