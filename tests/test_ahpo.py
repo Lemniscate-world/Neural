@@ -43,10 +43,12 @@ def test_model_forward_flat_input():
 def test_model_forward_conv2d():
     config = "network Test { input: (28,28,1) layers: Conv2D(filters=16, kernel_size=3) Flatten() Dense(128) Output(10) }"
     model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
-    model = create_dynamic_model(model_dict, MockTrial(), hpo_params, backend='pytorch')  # Updated
-    x = torch.randn(32, *model_dict['input']['shape'])
+    model = create_dynamic_model(model_dict, MockTrial(), hpo_params, backend='pytorch')
+    # Generate input in NHWC, then permute to NCHW
+    x = torch.randn(32, *model_dict['input']['shape'])  # [32, 28, 28, 1]
+    x = x.permute(0, 3, 1, 2)  # [32, 1, 28, 28]
     output = model(x)
-    assert output.shape == (32, 10), f"Expected (32, 10), got {output.shape}"
+    assert output.shape == torch.Size([32, 10]), f"Expected output shape [32, 10], got {output.shape}"
 
 # 2. Enhanced Training Loop Tests
 @patch('neural.automatic_hyperparameter_optimization.hpo.get_data', mock_data_loader)
