@@ -10,13 +10,17 @@ import keras
 from neural.shape_propagation.shape_propagator import ShapePropagator
 
 # Data Loader
-def get_data(dataset_name, input_shape, batch_size, train=True):
+def get_data(dataset_name, input_shape, batch_size, train=True, backend='pytorch'):
     datasets = {'MNIST': MNIST, 'CIFAR10': CIFAR10}
-    dataset = datasets.get(dataset_name, MNIST)
-    return torch.utils.data.DataLoader(
-        dataset(root='./data', train=train, transform=ToTensor(), download=True),
-        batch_size=batch_size, shuffle=train
-    )
+    dataset = datasets.get(dataset_name, MNIST)(root='./data', train=train, transform=ToTensor(), download=True)
+    if backend == 'pytorch':
+        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=train)
+    elif backend == 'tensorflow':
+        data = dataset.data.numpy() / 255.0  # Normalize
+        targets = dataset.targets.numpy()
+        if len(data.shape) == 3:  # Add channel dimension
+            data = data[..., None]  # [N, H, W] → [N, H, W, 1]
+        return tf.data.Dataset.from_tensor_slices((data, targets)).batch(batch_size)
 
 def prod(iterable):
     result = 1
