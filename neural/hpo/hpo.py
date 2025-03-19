@@ -41,15 +41,16 @@ class DynamicPTModel(nn.Module):
     def __init__(self, model_dict, trial, hpo_params):
         super().__init__()
         self.layers = nn.ModuleList()
-        self.shape_propagator = ShapePropagator(debug=True)  # Enable debug for tracing
-        input_shape = (None, *model_dict['input']['shape'])  # (None, 1, 28, 28)
+        self.shape_propagator = ShapePropagator(debug=True)
+        # Convert (28, 28, 1) to (None, 1, 28, 28) for channels_first
+        input_shape_raw = model_dict['input']['shape']  # (28, 28, 1)
+        input_shape = (None, input_shape_raw[-1], *input_shape_raw[:-1])  # (None, 1, 28, 28)
         current_shape = input_shape
-        in_channels = input_shape[1]  # 1 (channels_first)
+        in_channels = input_shape[1]  # 1
 
         for layer in model_dict['layers']:
             params = layer['params'] if layer['params'] is not None else {}
             params = params.copy()
-            # Propagate shape
             current_shape = self.shape_propagator.propagate(current_shape, layer, framework='pytorch')
             
             if layer['type'] == 'Conv2D':
@@ -59,7 +60,7 @@ class DynamicPTModel(nn.Module):
                 in_channels = filters
             elif layer['type'] == 'Flatten':
                 self.layers.append(nn.Flatten())
-                in_features = prod(current_shape[1:])  # 10816
+                in_features = prod(current_shape[1:])
             elif layer['type'] == 'Dense':
                 units = params.get('units', trial.suggest_int('dense_units', 64, 256))
                 if in_features <= 0:
