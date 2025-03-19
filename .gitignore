@@ -1,4 +1,5 @@
 dist/
+lemniscate/
 build/
 *.pyc
 .env
