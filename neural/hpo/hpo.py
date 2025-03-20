@@ -42,11 +42,11 @@ class DynamicPTModel(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList()
         self.shape_propagator = ShapePropagator(debug=True)
-        # Convert (28, 28, 1) to (None, 1, 28, 28) for channels_first
         input_shape_raw = model_dict['input']['shape']  # (28, 28, 1)
         input_shape = (None, input_shape_raw[-1], *input_shape_raw[:-1])  # (None, 1, 28, 28)
         current_shape = input_shape
         in_channels = input_shape[1]  # 1
+        in_features = None  # Initialize outside loop
 
         for layer in model_dict['layers']:
             params = layer['params'] if layer['params'] is not None else {}
@@ -60,15 +60,21 @@ class DynamicPTModel(nn.Module):
                 in_channels = filters
             elif layer['type'] == 'Flatten':
                 self.layers.append(nn.Flatten())
-                in_features = prod(current_shape[1:])
+                in_features = prod(current_shape[1:])  # e.g., 1 * 28 * 28 = 784
             elif layer['type'] == 'Dense':
                 units = params.get('units', trial.suggest_int('dense_units', 64, 256))
+                if in_features is None:  # First Dense layer, flatten input
+                    in_features = prod(current_shape[1:])  # e.g., 784
+                    self.layers.append(nn.Flatten())
                 if in_features <= 0:
                     raise ValueError(f"Invalid in_features for Dense: {in_features}")
                 self.layers.append(nn.Linear(in_features, units))
                 in_features = units
             elif layer['type'] == 'Output':
                 units = params.get('units', 10)
+                if in_features is None:  # Direct Output, flatten input
+                    in_features = prod(current_shape[1:])
+                    self.layers.append(nn.Flatten())
                 if in_features <= 0:
                     raise ValueError(f"Invalid in_features for Output: {in_features}")
                 self.layers.append(nn.Linear(in_features, units))
