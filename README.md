@@ -245,6 +245,10 @@ pre-commit install  # Auto-format code on commit
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Lemniscate-SHA-256/Neural&type=Timeline)](https://www.star-history.com/#Lemniscate-SHA-256/Neural&Timeline)
 
+## Support
+Please give us a star ⭐️ to increase our chances of getting into GitHub trends - the more attention we get, the higher our chances of actually making a difference.
+Please share this project with your friends! Every share helps us reach more developers and grow our community. The more developers we reach, the more likely we are to build something truly revolutionary together. 🚀
+
 ## 📬 Community
 
 - [Discord Server](https://discord.gg/KFku4KvS): Chat with developers
