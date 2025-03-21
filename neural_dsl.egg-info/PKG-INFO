@@ -46,8 +46,8 @@ Requires-Dist: flask-httpauth
   ![Design sans titre (2)](https://github.com/user-attachments/assets/8738c025-7081-47da-b825-9cc5e038a86c)
 
 
-
-Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
+  ⚠️ WARNING: Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
+  This project is under active development and not yet production-ready!
 
 # Neural: A Neural Network Programming Language
 
@@ -266,6 +266,7 @@ Explore common use cases in `examples/` with step-by-step guides in `docs/exampl
 - [Sentiment Analysis Guide](docs/examples/sentiment_guide.md)
 - [Transformer for NLP Guide](docs/examples/transformer_guide.md)
 
+## 🕸Architecture Graphs
 
 ---
 
@@ -284,6 +285,14 @@ cd neural
 pip install -r requirements-dev.txt  # Includes linter, formatter, etc.
 pre-commit install  # Auto-format code on commit
 ```
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Lemniscate-SHA-256/Neural&type=Timeline)](https://www.star-history.com/#Lemniscate-SHA-256/Neural&Timeline)
+
+## Support
+Please give us a star ⭐️ to increase our chances of getting into GitHub trends - the more attention we get, the higher our chances of actually making a difference.
+Please share this project with your friends! Every share helps us reach more developers and grow our community. The more developers we reach, the more likely we are to build something truly revolutionary together. 🚀
 
 ## 📬 Community
 
