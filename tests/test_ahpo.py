@@ -1,14 +1,13 @@
 import pytest
 import torch
-import torch.nn as nn
 import os
 import sys
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from neural.hpo.hpo import optimize_and_return, create_dynamic_model  # Updated import
-from neural.hpo.hpo import train_model, get_data, objective
+from neural.hpo.hpo import train_model, objective
 from neural.parser.parser import ModelTransformer, DSLValidationError
 from neural.code_generation.code_generator import generate_optimized_dsl
 
@@ -65,12 +64,15 @@ def test_training_loop_convergence():
     assert isinstance(loss[0], float) and 0 <= loss[0] < 10, f"Loss not reasonable: {loss[0]}"
     assert 0 <= loss[1] <= 1, f"Accuracy not in range: {loss[1]}"
 
+@patch('neural.automatic_hyperparameter_optimization.hpo.get_data', mock_data_loader)
 def test_training_loop_invalid_optimizer():
     config = "network Test { input: (28,28,1) layers: Dense(128) Output(10) }"
     model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
     model = create_dynamic_model(model_dict, MockTrial(), hpo_params, backend='pytorch')  # Updated
+    train_loader = mock_data_loader('mock_dataset', model_dict['input']['shape'], batch_size=32, train=True)
+    val_loader = mock_data_loader('mock_dataset', model_dict['input']['shape'], batch_size=32, train=False)
     with pytest.raises(AttributeError):
-        train_model(model, "invalid_optimizer", None, None, backend='pytorch')
+        train_model(model, "invalid_optimizer", train_loader, val_loader, backend='pytorch', execution_config=model_dict['execution_config'])
 
 # 3. Enhanced HPO Objective Tests
 @patch('neural.automatic_hyperparameter_optimization.hpo.get_data', mock_data_loader)
