@@ -8,6 +8,7 @@ from torchvision.transforms import ToTensor
 from neural.parser.parser import ModelTransformer
 import keras
 from neural.shape_propagation.shape_propagator import ShapePropagator
+from neural.execution_optimization.execution import get_device
 
 # Data Loader
 def get_data(dataset_name, input_shape, batch_size, train=True, backend='pytorch'):
@@ -131,9 +132,9 @@ class DynamicTFModel(tf.keras.Model):
         return x
 
 # Training Method
-def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', epochs=1):
+def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', epochs=1, execution_config=None):
     if backend == 'pytorch':
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = get_device(execution_config.get("device", "auto") if execution_config else "auto")
         model.to(device)
         criterion = nn.CrossEntropyLoss()
         for _ in range(epochs):
