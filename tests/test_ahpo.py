@@ -56,9 +56,12 @@ def test_model_forward_conv2d():
 def test_training_loop_convergence():
     config = "network Test { input: (28,28,1) layers: Dense(128) Output(10) }"
     model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
-    model = create_dynamic_model(model_dict, MockTrial(), hpo_params, backend='pytorch')  # Updated
+    model = create_dynamic_model(model_dict, MockTrial(), hpo_params, backend='pytorch')
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    loss = train_model(model, optimizer, None, None, backend='pytorch')  # Mocked loaders
+    # Use mocked get_data instead of None
+    train_loader = mock_data_loader('mock_dataset', model_dict['input']['shape'], batch_size=32, train=True)
+    val_loader = mock_data_loader('mock_dataset', model_dict['input']['shape'], batch_size=32, train=False)
+    loss = train_model(model, optimizer, train_loader, val_loader, backend='pytorch')
     assert isinstance(loss[0], float) and 0 <= loss[0] < 10, f"Loss not reasonable: {loss[0]}"
     assert 0 <= loss[1] <= 1, f"Accuracy not in range: {loss[1]}"
 
