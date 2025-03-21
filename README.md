@@ -2,8 +2,8 @@
   ![Design sans titre (2)](https://github.com/user-attachments/assets/8738c025-7081-47da-b825-9cc5e038a86c)
 
 
-
-Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
+  ⚠️ WARNING: Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
+  This project is under active development and not yet production-ready!
 
 # Neural: A Neural Network Programming Language
 
