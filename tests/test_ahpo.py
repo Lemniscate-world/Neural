@@ -61,7 +61,7 @@ def test_training_loop_convergence():
     # Use mocked get_data instead of None
     train_loader = mock_data_loader('mock_dataset', model_dict['input']['shape'], batch_size=32, train=True)
     val_loader = mock_data_loader('mock_dataset', model_dict['input']['shape'], batch_size=32, train=False)
-    loss = train_model(model, optimizer, train_loader, val_loader, backend='pytorch')
+    loss = train_model(model, optimizer, train_loader, val_loader, backend='pytorch', execution_config=model_dict['execution_config'])
     assert isinstance(loss[0], float) and 0 <= loss[0] < 10, f"Loss not reasonable: {loss[0]}"
     assert 0 <= loss[1] <= 1, f"Accuracy not in range: {loss[1]}"
 
