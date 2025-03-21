@@ -241,6 +241,10 @@ pip install -r requirements-dev.txt  # Includes linter, formatter, etc.
 pre-commit install  # Auto-format code on commit
 ```
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Lemniscate-SHA-256/Neural&type=Timeline)](https://www.star-history.com/#Lemniscate-SHA-256/Neural&Timeline)
+
 ## 📬 Community
 
 - [Discord Server](https://discord.gg/KFku4KvS): Chat with developers
