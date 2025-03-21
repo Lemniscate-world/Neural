@@ -46,12 +46,23 @@ class DynamicPTModel(nn.Module):
         input_shape = (None, input_shape_raw[-1], *input_shape_raw[:-1])  # (None, 1, 28, 28)
         current_shape = input_shape
         in_channels = input_shape[1]  # 1
-        in_features = None  # Initialize outside loop
+        in_features = None
 
+        print(f"Initial shape: {current_shape}")
         for layer in model_dict['layers']:
             params = layer['params'] if layer['params'] is not None else {}
             params = params.copy()
+            print(f"Before propagate: {layer['type']}, current_shape={current_shape}")
+            
+            # Compute in_features from current (input) shape before propagation
+            if layer['type'] in ['Dense', 'Output'] and in_features is None:
+                in_features = prod(current_shape[1:])  # Use input shape
+                self.layers.append(nn.Flatten())
+                print(f"{layer['type']} (implicit Flatten): in_features={in_features}")
+            
+            # Propagate shape after setting in_features
             current_shape = self.shape_propagator.propagate(current_shape, layer, framework='pytorch')
+            print(f"After propagate: {layer['type']}, current_shape={current_shape}")
             
             if layer['type'] == 'Conv2D':
                 filters = params.get('filters', trial.suggest_int('conv_filters', 16, 64))
@@ -60,33 +71,31 @@ class DynamicPTModel(nn.Module):
                 in_channels = filters
             elif layer['type'] == 'Flatten':
                 self.layers.append(nn.Flatten())
-                in_features = prod(current_shape[1:])  # e.g., 1 * 28 * 28 = 784
+                in_features = prod(current_shape[1:])
+                print(f"Flatten: in_features={in_features}")
             elif layer['type'] == 'Dense':
-                units = params.get('units', trial.suggest_int('dense_units', 64, 256))
-                if in_features is None:  # First Dense layer, flatten input
-                    in_features = prod(current_shape[1:])  # e.g., 784
-                    self.layers.append(nn.Flatten())
+                units = params['units'] if 'units' in params else trial.suggest_int('dense_units', 64, 256)
                 if in_features <= 0:
                     raise ValueError(f"Invalid in_features for Dense: {in_features}")
+                print(f"Dense: in_features={in_features}, units={units}")
                 self.layers.append(nn.Linear(in_features, units))
                 in_features = units
             elif layer['type'] == 'Output':
-                units = params.get('units', 10)
-                if in_features is None:  # Direct Output, flatten input
-                    in_features = prod(current_shape[1:])
-                    self.layers.append(nn.Flatten())
+                units = params['units'] if 'units' in params else 10
                 if in_features <= 0:
                     raise ValueError(f"Invalid in_features for Output: {in_features}")
+                print(f"Output: in_features={in_features}, units={units}")
                 self.layers.append(nn.Linear(in_features, units))
                 in_features = units
             else:
                 raise ValueError(f"Unsupported layer type: {layer['type']}")
+        print("Final layers:", self.layers)
 
     def forward(self, x):
         for layer in self.layers:
             x = layer(x)
         return x
-
+    
 class DynamicTFModel(tf.keras.Model):
     def __init__(self, model_dict, trial, hpo_params):
         super().__init__()
@@ -138,6 +147,7 @@ def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', e
                 optimizer.step()
         model.eval()
         val_loss, correct, total = 0.0, 0, 0
+        preds, targets = [], []
         with torch.no_grad():
             for data, target in val_loader:
                 data, target = data.to(device), target.to(device)
@@ -146,19 +156,12 @@ def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', e
                 pred = output.argmax(dim=1)
                 correct += pred.eq(target).sum().item()
                 total += target.size(0)
-        return val_loss / len(val_loader), correct / total
-    elif backend == 'tensorflow':
-        loss_fn = tf.keras.losses.SparseCategoricalCrossentropy()
-        val_loss, correct, total = 0.0, 0, 0
-        for data, target in val_loader:
-            data = tf.convert_to_tensor(data.numpy())
-            target = tf.convert_to_tensor(target.numpy())
-            output = model(data, training=False)
-            val_loss += loss_fn(target, output).numpy()
-            pred = tf.argmax(output, axis=1)
-            correct += tf.reduce_sum(tf.cast(pred == target, tf.int32)).numpy()
-            total += target.shape[0]
-        return val_loss / len(val_loader), correct / total
+                preds.extend(pred.cpu().numpy())
+                targets.extend(target.cpu().numpy())
+        from sklearn.metrics import precision_score, recall_score
+        precision = precision_score(targets, preds, average='macro')
+        recall = recall_score(targets, preds, average='macro')
+        return val_loss / len(val_loader), correct / total, precision, recall
 
 # HPO Objective
 def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
