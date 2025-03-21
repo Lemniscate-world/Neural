@@ -30,6 +30,7 @@ Neural is a domain-specific language (DSL) designed for defining, training, debu
 
 - **YAML-like Syntax**: Define models intuitively without framework boilerplate.
 - **Shape Propagation**: Catch dimension mismatches *before* runtime.
+  - ✅ Interactive shape flow diagrams included.
 - **Multi-Framework HPO**: Optimize hyperparameters for both PyTorch and TensorFlow with a single DSL config (#434).
 - **Multi-Backend Export**: Generate code for **TensorFlow**, **PyTorch**, or **ONNX**.
 - **Training Orchestration**: Configure optimizers, schedulers, and metrics in one place.
