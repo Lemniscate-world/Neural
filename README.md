@@ -21,7 +21,20 @@
 
 ![design-01jmphv5f1-1740433387](https://github.com/user-attachments/assets/ecbcce19-73df-4696-ace2-69e32d02709f)
 
+## 🎯 Pain Points Solved
 
+Neural addresses deep learning challenges across **Criticality** (how essential) and **Impact Scope** (how transformative):
+
+| Criticality / Impact | Low Impact                  | Medium Impact                       | High Impact                         |
+|----------------------|-----------------------------|-------------------------------------|-------------------------------------|
+| **High**             |                             |                                     | - **Shape Mismatches**: Pre-runtime validation stops runtime errors.<br>- **Debugging Complexity**: Real-time tracing & anomaly detection. |
+| **Medium**           |                             | - **Steep Learning Curve**: No-code GUI eases onboarding. | - **Framework Switching**: One-flag backend swaps.<br>- **HPO Inconsistency**: Unified tuning across frameworks. |
+| **Low**              | - **Boilerplate**: Clean DSL syntax saves time. | - **Model Insight**: FLOPs & diagrams.<br>- **Config Fragmentation**: Centralized setup. |                                     |
+
+### Why It Matters
+- **Core Value**: Fix critical blockers like shape errors and debugging woes with game-changing tools.  
+- **Strategic Edge**: Streamline framework switches and HPO for big wins.  
+- **User-Friendly**: Lower barriers and enhance workflows with practical features.
 
 Neural is a domain-specific language (DSL) designed for defining, training, debugging, and deploying neural networks. With **declarative syntax**, **cross-framework support**, and **built-in execution tracing (NeuralDbg)**, it simplifies deep learning development.
 
