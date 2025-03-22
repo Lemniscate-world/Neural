@@ -188,12 +188,11 @@ def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
     elif backend == 'tensorflow':
         optimizer = tf.keras.optimizers.get({'class_name': optimizer_config['type'], 'config': {'learning_rate': lr}})
 
-    val_loss, val_acc = train_model(model, optimizer, train_loader, val_loader, backend)
-    return val_loss, -val_acc  # Negative accuracy for minimization
+    val_loss, val_acc, precision, recall = train_model(model, optimizer, train_loader, val_loader, backend)
+    return val_loss, -val_acc, precision, recall  # Negative accuracy for minimization
 
 # Optimize and Return
 def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pytorch'):
-    study = optuna.create_study(directions=["minimize", "minimize"])
+    study = optuna.create_study(directions=["minimize", "minimize", "maximize", "maximize"])
     study.optimize(lambda trial: objective(trial, config, dataset_name, backend), n_trials=n_trials)
-    print("Model optimized with best parameters:", study.best_trials[0].params)
     return study.best_trials[0].params
