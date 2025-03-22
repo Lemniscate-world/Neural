@@ -715,22 +715,17 @@ class ModelTransformer(lark.Transformer):
         else:
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
             return {'type': layer_type, 'params': raw_params, 'sublayers': sublayers}
-        
     def device_spec(self, items):
         """Process device specification correctly."""
         if len(items) > 1 and isinstance(items[1], Token) and items[1].type == "STRING":
             return items[1].value.strip('"')
         return self._extract_value(items[0])
-    
     def params(self, items):
         return [self._extract_value(item) for item in items]
-    
     def param(self, items):
         return self._extract_value(items[0])
-
     def advanced_layer(self, items):
         return self._extract_value(items[0])
-    
     def layers(self, items):
         expanded_layers = []
         for item in items:
@@ -1012,8 +1007,9 @@ class ModelTransformer(lark.Transformer):
             params = self._extract_value(items[1]) or {}
 
         if isinstance(opt_value, str):
-            if '(' in opt_value and ')' in opt_value:
-                opt_type = opt_value[:opt_value.index('(')].strip()
+            stripped_value = opt_value.strip("'\"")
+            if '(' in stripped_value and ')' in stripped_value:
+                opt_type = stripped_value.lower()
                 if not params:
                     param_str = opt_value[opt_value.index('(')+1:opt_value.rindex(')')].strip()
                     # Use split_params instead of splitting by comma
@@ -1036,7 +1032,7 @@ class ModelTransformer(lark.Transformer):
                                 except ValueError:
                                     params[param_name] = param_value
             else:
-                opt_type = opt_value.lower()
+                opt_type = stripped_value.capitalize()
         else:
             self.raise_validation_error("Optimizer must be a string", opt_node)
 
