@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.2.4] - 23-03-2025
+
+### Added
+- **Unified Model Creation**: Added `create_dynamic_model` factory function in `hpo.py` for PyTorch/TensorFlow backends (#434).
+- **Training Loops in HPO**: Integrated training loops into `hpo.py` for full pipeline testing (#434).
+- **Execution Optimization**: Added `execution_optimization` to `train_model` via `execution.py` with `get_device(preferred_device="auto")` for flexible device selection (#428).
+- **TensorFlow Data Loader**: Added support for TensorFlow-compatible data loaders in `DynamicPTModel` (#427).
+- **Precision Score**: Enhanced `train_model` in `hpo.py` to report precision alongside loss and accuracy (#428).
+
+### Fixed
+- **Test Failure: test_hpo_integration_full_pipeline (#434)**:
+  - Updated `test_ahpo.py` to use `create_dynamic_model` and correct class names.
+  - Fixed HPO logic in `objective` to respect the `backend` parameter.
+  - Corrected HPO string parsing: `hpo_str` now reconstructs from `hpo['hpo']` instead of assuming `hpo['node']` is a Tree.
+  - Fixed `generate_optimized_dsl` in `code_generator.py` for accurate HPO replacement.
+  - Resolved key mismatch: Use `hpo['param_name']` (e.g., `'learning_rate'`) for optimizers, prefixed keys (e.g., `'dense_units'`) for layers.
+  - Targeted HPO replacement: Iterate `hpo_params`, replace exact lines, and use `break` to prevent overwrites.
+  - Skipped missing keys in `best_params` gracefully.
+  - Parser update: `_parse_hpo` captures original string representations (e.g., `'1e-4'`).
+  - Code generator uses original strings for exact config matches.
+  - Renamed `HPOExample` network to `Example` for test consistency.
+  - Refactored `DynamicPTModel` HPO handling for `Dense`, `Dropout`, and `Output` layers.
+
+- **Test Failure: test_model_forward_conv2d (#427)**:
+  - Updated `DynamicPTModel.__init__` to convert `input_shape_raw` to channels-first `(None, 1, 28, 28)` for PyTorch.
+  - Adjusted test input tensor to match PyTorch’s `channels_first` format via permutation.
+
+- **Test Failure: test_model_forward_flat_input**:
+  - Fixed `in_features` calculation in `DynamicPTModel.__init__` for non-flattened inputs.
+  - Computed `in_features` from input shape before `ShapePropagator.propagate` overwrites `current_shape`.
+  - Avoided overriding `params['units']` with `trial.suggest_int`.
+
+- **Test Failure: test_training_loop_convergence (#428)**:
+  - Updated test to use `mock_data_loader` instead of passing `None` loaders.
+  - Ensured `get_data` is called in the test with mocked loaders.
+
+- **Test Failure: test_training_loop_invalid_optimizer (#429)**:
+  - Added `MockDataset` and `MockDataLoader` to fix invalid optimizer test case.
+
+### Improved
+- **ShapePropagator**: Ensured `in_features` computation precedes shape propagation to avoid incorrect shape usage.
+- **Train Model**: Unified PyTorch/TensorFlow training with device optimization and precision metrics (#428).
+
+### Known Issues
+- HPO replacement logic may still miss edge cases with complex configs.
+- Limited validation for TensorFlow data loader compatibility.
+
+---
+
 ## [0.2.3] - 16-03-2025
 
 ### Added
