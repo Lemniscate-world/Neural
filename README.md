@@ -91,7 +91,7 @@ pip install -r requirements.txt
 pip install neural-dsl
 ```
 
-see v0.2.3 for bug fixes
+see v0.2.4 for bug fixes
 
 **Prerequisites**: Python 3.8+, pip
 
