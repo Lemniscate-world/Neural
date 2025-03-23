@@ -268,7 +268,7 @@ pre-commit install  # Auto-format code on commit
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Lemniscate-SHA-256/Neural&type=Timeline)](https://www.star-history.com/#Lemniscate-SHA-256/Neural&Timeline)
+[![Star History Chart](https://api.star-history.com/svg?repos=Lemniscate-world/Neural&type=Timeline)](https://www.star-history.com/#Lemniscate-world/Neural&Timeline)
 
 ## Support
 Please give us a star ⭐️ to increase our chances of getting into GitHub trends - the more attention we get, the higher our chances of actually making a difference.
