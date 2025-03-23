@@ -1,5 +1,5 @@
 
-  ![Design sans titre (2)](https://github.com/user-attachments/assets/8738c025-7081-47da-b825-9cc5e038a86c)
+  ![N](https://github.com/user-attachments/assets/f92005cc-7b1c-4020-aec6-0e6922c36b1b)
 
 
   ⚠️ WARNING: Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
@@ -278,3 +278,7 @@ Please share this project with your friends! Every share helps us reach more dev
 
 - [Discord Server](https://discord.gg/KFku4KvS): Chat with developers
 - [Twitter @NLang4438](https://x.com/NLang4438): Updates & announcements
+
+![N (1)](https://github.com/user-attachments/assets/9edd42b3-dd23-4f4a-baad-422e690d687c)
+
+
