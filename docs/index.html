@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural DSL - A Neural Network Language</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+        header { text-align: center; padding: 20px; background: #1f73b7; color: white; }
+        h1 { margin: 0; }
+        section { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #ececec; }
+        footer { text-align: center; padding: 10px; color: #666; }
+        a { color: #1f73b7; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Neural DSL</h1>
+        <p>A Domain-Specific Language for Neural Networks</p>
+    </header>
+
+    <section>
+        <h2>⚠️ Work in Progress</h2>
+        <p>Neural is under active development—not production-ready yet. Bugs exist, feedback welcome!</p>
+    </section>
+
+    <section>
+        <h2>🚀 What is Neural?</h2>
+        <p>Neural simplifies deep learning with a declarative syntax, cross-framework support, and built-in debugging via <strong>NeuralDbg</strong>. Define, train, and deploy neural networks with ease.</p>
+        <p><a href="https://github.com/Lemniscate-SHA-256/Neural">Explore on GitHub</a> | <a href="https://discord.gg/KFku4KvS">Join our Discord</a></p>
+    </section>
+
+    <section>
+        <h2>🎯 Pain Points Solved</h2>
+        <p>Neural tackles key challenges in deep learning:</p>
+        <table>
+            <tr>
+                <th>Criticality / Impact</th>
+                <th>Low Impact</th>
+                <th>Medium Impact</th>
+                <th>High Impact</th>
+            </tr>
+            <tr>
+                <td><strong>High</strong></td>
+                <td>-</td>
+                <td>-</td>
+                <td>
+                    - <strong>Shape Mismatches</strong>: Pre-runtime validation.<br>
+                    - <strong>Debugging Complexity</strong>: Real-time tracing.
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Medium</strong></td>
+                <td>-</td>
+                <td>- <strong>Steep Learning Curve</strong>: No-code GUI.</td>
+                <td>
+                    - <strong>Framework Switching</strong>: One-flag swaps.<br>
+                    - <strong>HPO Inconsistency</strong>: Unified tuning.
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Low</strong></td>
+                <td>- <strong>Boilerplate</strong>: Clean syntax.</td>
+                <td>
+                    - <strong>Model Insight</strong>: FLOPs & diagrams.<br>
+                    - <strong>Config Fragmentation</strong>: Centralized setup.
+                </td>
+                <td>-</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>🛠️ Get Started</h2>
+        <pre>
+git clone https://github.com/Lemniscate-SHA-256/Neural.git
+cd neural
+pip install -r requirements.txt
+neural run examples/mnist.neural --backend pytorch
+        </pre>
+        <p>Debug with: <code>neural debug examples/mnist.neural</code></p>
+    </section>
+
+    <footer>
+        <p>⭐ <a href="https://github.com/Lemniscate-SHA-256/Neural">Star us on GitHub</a> | Follow <a href="https://x.com/NLang4438">@NLang4438</a> | <a href="mailto:your-email@example.com">Contact</a></p>
+    </footer>
+</body>
+</html>
