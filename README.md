@@ -38,6 +38,11 @@ Neural addresses deep learning challenges across **Criticality** (how essential)
 
 Neural is a domain-specific language (DSL) designed for defining, training, debugging, and deploying neural networks. With **declarative syntax**, **cross-framework support**, and **built-in execution tracing (NeuralDbg)**, it simplifies deep learning development.
 
+## Feedback 
+
+Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.typeform.com/to/xcibBdKD#name=xxxxx&email=xxxxx&phone_number=xxxxx&user_id=xxxxx&product_id=xxxxx&auth_code=xxxxx).
+
+
 
 ## 🚀 Features
 
