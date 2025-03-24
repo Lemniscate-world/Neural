@@ -19,6 +19,8 @@
 ![Medium](https://img.shields.io/badge/Medium-12100E?style=for-the-badge&logo=medium&logoColor=white)
 ![PyPi](https://img.shields.io/badge/pypi-%23ececec.svg?style=for-the-badge&logo=pypi&logoColor=1f73b7)
 
+<a href="https://www.producthunt.com/posts/neural-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-neural&#0045;2" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=945073&theme=dark&t=1742808173867" alt="Neural - DSL&#0032;for&#0032;defining&#0044;&#0032;training&#0044;&#0032;debugging&#0032;neural&#0032;networks&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
 ![design-01jmphv5f1-1740433387](https://github.com/user-attachments/assets/ecbcce19-73df-4696-ace2-69e32d02709f)
 
 ## 🎯 Pain Points Solved
