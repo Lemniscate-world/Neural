@@ -1575,32 +1575,40 @@ class ModelTransformer(lark.Transformer):
     ## Network ##
 
     def network(self, items):
+        logger.debug(f"Network items: {[str(item) for item in items]}")
         name = str(items[0].value)
         input_layer_config = self._extract_value(items[1])
         layers_config = self._extract_value(items[2])
         
-        # Initialize optional components with defaults
         loss_config = None
         optimizer_config = None
         training_config = None
-        execution_config = {'device': 'auto'}  # Flat default
+        execution_config = {'device': 'auto'}
         
-        # Track current index starting after mandatory items
-        index = 3
-        components = ['loss', 'optimizer', 'training_config', 'execution_config']
-        
-        for component in components:
-            if index < len(items):
-                value = self._extract_value(items[index])
-                if component == 'loss':
+        for i, item in enumerate(items[3:], start=3):
+            logger.debug(f"Item at index {i}: type={type(item)}, data={getattr(item, 'data', 'N/A')}, value={str(item)}")
+            if isinstance(item, Tree):
+                value = self._extract_value(item)
+                logger.debug(f"Processing item {item.data}: {value}")
+                if item.data == 'loss':
                     loss_config = value
-                elif component == 'optimizer':
+                elif item.data == 'optimizer':
                     optimizer_config = value
-                elif component == 'training_config':
+                elif item.data == 'training_config':
                     training_config = value.get('params') if isinstance(value, dict) and 'params' in value else value
-                elif component == 'execution_config':
-                    execution_config = value  # Directly assign the flat dict
-                index += 1
+                elif item.data == 'execution_config':
+                    execution_config = value
+                else:
+                    logger.warning(f"Unrecognized tree data: {item.data}")
+            elif isinstance(item, dict):
+                # Handle pre-processed dicts (e.g., from optimizer method)
+                logger.debug(f"Processing dict item at index {i}: {item}")
+                if 'type' in item and 'params' in item:  # Assume it's an optimizer dict
+                    optimizer_config = item
+                else:
+                    logger.warning(f"Unrecognized dict format at index {i}: {item}")
+            else:
+                logger.warning(f"Item at index {i} is not a Tree or dict: {type(item)} - {str(item)}")
 
         # Determine output layer and shape
         output_layer = None
@@ -1612,6 +1620,9 @@ class ModelTransformer(lark.Transformer):
                 output_shape = output_layer.get('params', {}).get('units')
             elif output_layer['type'] == 'Dense':
                 output_shape = output_layer.get('params', {}).get('units')
+
+        if optimizer_config is None:
+            logger.warning("Optimizer config is None after parsing")
 
         return {
             'type': 'model',

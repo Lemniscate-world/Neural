@@ -43,7 +43,7 @@ Requires-Dist: flask-cors
 Requires-Dist: flask-httpauth
 
 
-  ![Design sans titre (2)](https://github.com/user-attachments/assets/8738c025-7081-47da-b825-9cc5e038a86c)
+  ![N](https://github.com/user-attachments/assets/f92005cc-7b1c-4020-aec6-0e6922c36b1b)
 
 
   ⚠️ WARNING: Neural-dsl is a WIP DSL and debugger—bugs exist, feedback welcome!
@@ -63,11 +63,31 @@ Requires-Dist: flask-httpauth
 ![Medium](https://img.shields.io/badge/Medium-12100E?style=for-the-badge&logo=medium&logoColor=white)
 ![PyPi](https://img.shields.io/badge/pypi-%23ececec.svg?style=for-the-badge&logo=pypi&logoColor=1f73b7)
 
+<a href="https://www.producthunt.com/posts/neural-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-neural&#0045;2" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=945073&theme=dark&t=1742808173867" alt="Neural - DSL&#0032;for&#0032;defining&#0044;&#0032;training&#0044;&#0032;debugging&#0032;neural&#0032;networks&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
 ![design-01jmphv5f1-1740433387](https://github.com/user-attachments/assets/ecbcce19-73df-4696-ace2-69e32d02709f)
 
+## 🎯 Pain Points Solved
 
+Neural addresses deep learning challenges across **Criticality** (how essential) and **Impact Scope** (how transformative):
+
+| Criticality / Impact | Low Impact                  | Medium Impact                       | High Impact                         |
+|----------------------|-----------------------------|-------------------------------------|-------------------------------------|
+| **High**             |                             |                                     | - **Shape Mismatches**: Pre-runtime validation stops runtime errors.<br>- **Debugging Complexity**: Real-time tracing & anomaly detection. |
+| **Medium**           |                             | - **Steep Learning Curve**: No-code GUI eases onboarding. | - **Framework Switching**: One-flag backend swaps.<br>- **HPO Inconsistency**: Unified tuning across frameworks. |
+| **Low**              | - **Boilerplate**: Clean DSL syntax saves time. | - **Model Insight**: FLOPs & diagrams.<br>- **Config Fragmentation**: Centralized setup. |                                     |
+
+### Why It Matters
+- **Core Value**: Fix critical blockers like shape errors and debugging woes with game-changing tools.  
+- **Strategic Edge**: Streamline framework switches and HPO for big wins.  
+- **User-Friendly**: Lower barriers and enhance workflows with practical features.
 
 Neural is a domain-specific language (DSL) designed for defining, training, debugging, and deploying neural networks. With **declarative syntax**, **cross-framework support**, and **built-in execution tracing (NeuralDbg)**, it simplifies deep learning development.
+
+## Feedback 
+
+Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.typeform.com/to/xcibBdKD#name=xxxxx&email=xxxxx&phone_number=xxxxx&user_id=xxxxx&product_id=xxxxx&auth_code=xxxxx).
+
 
 
 ## 🚀 Features
@@ -122,7 +142,7 @@ pip install -r requirements.txt
 pip install neural-dsl
 ```
 
-see v0.2.3 for bug fixes
+see v0.2.4 for bug fixes
 
 **Prerequisites**: Python 3.8+, pip
 
@@ -294,7 +314,7 @@ pre-commit install  # Auto-format code on commit
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Lemniscate-SHA-256/Neural&type=Timeline)](https://www.star-history.com/#Lemniscate-SHA-256/Neural&Timeline)
+[![Star History Chart](https://api.star-history.com/svg?repos=Lemniscate-world/Neural&type=Timeline)](https://www.star-history.com/#Lemniscate-world/Neural&Timeline)
 
 ## Support
 Please give us a star ⭐️ to increase our chances of getting into GitHub trends - the more attention we get, the higher our chances of actually making a difference.
@@ -304,6 +324,10 @@ Please share this project with your friends! Every share helps us reach more dev
 
 - [Discord Server](https://discord.gg/KFku4KvS): Chat with developers
 - [Twitter @NLang4438](https://x.com/NLang4438): Updates & announcements
+
+![N (1)](https://github.com/user-attachments/assets/9edd42b3-dd23-4f4a-baad-422e690d687c)
+
+
 
 
 **Note**: This is an early release (v0.1.0) with known bugs—see GitHub for updates!
