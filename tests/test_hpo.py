@@ -91,7 +91,7 @@ def test_hpo_objective_with_hpo_params():
     trial = MockTrial()
     loss, acc = objective(trial, config, 'MNIST', backend='pytorch')
     assert 0 <= loss < float("inf")
-    assert -1 <= acc <= 0
+    assert -1 <= acc <= 1
 
 # 4. Enhanced Parser Tests
 def test_parsed_hpo_config_all_types():

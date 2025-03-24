@@ -202,10 +202,7 @@ def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', e
                 total += target.size(0)
                 preds.extend(pred.cpu().numpy())
                 targets.extend(target.cpu().numpy())
-        from sklearn.metrics import precision_score, recall_score
-        precision = precision_score(targets, preds, average='macro')
-        recall = recall_score(targets, preds, average='macro')
-        return val_loss / len(val_loader), correct / total, precision, recall
+        return val_loss / len(val_loader), correct / total
 
 
 
