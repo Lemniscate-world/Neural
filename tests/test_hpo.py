@@ -3,6 +3,7 @@ import torch
 import os
 import sys
 from unittest.mock import patch
+from lark.exceptions import VisitError
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -114,8 +115,10 @@ def test_parsed_hpo_config_all_types():
 
 def test_parser_invalid_config():
     config = "network Test { input: (28,28,1) layers: Dense(-1) }"
-    with pytest.raises(DSLValidationError, match="must be positive"):
+    with pytest.raises(VisitError) as exc_info:
         ModelTransformer().parse_network_with_hpo(config)
+    assert isinstance(exc_info.value.__cause__, DSLValidationError)
+    assert "must be positive" in str(exc_info.value.__cause__)
 
 # 5. Enhanced HPO Integration Tests
 @patch('neural.automatic_hyperparameter_optimization.hpo.get_data', mock_data_loader)
