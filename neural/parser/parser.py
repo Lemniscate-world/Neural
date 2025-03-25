@@ -283,7 +283,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         network: "network" NAME "{" input_layer layers [loss] [optimizer] [training_config] [execution_config] "}"
         input_layer: "input" ":" shape ("," shape)*
-        layers: "layers" ":" ( layer_or_repeated)*
+        layers: "layers" ":" layer_or_repeated ("," layer_or_repeated)*
         loss: "loss" ":" (NAME | STRING) ["(" named_params ")"]
         optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
         layer_or_repeated: layer ["*" INT] 
@@ -308,7 +308,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         l2: "L2(" named_params ")"
         l1_l2: "L1L2(" named_params ")"
 
-        output: OUTPUT "(" named_params ")"
+        output: OUTPUT "(" param_style1 ")"
 
         conv: conv1d | conv2d | conv3d | conv_transpose | depthwise_conv2d | separable_conv2d
         conv1d: CONV1D "(" param_style1 ")"
@@ -443,7 +443,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
         
         basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
-        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION | GLOBALAVERAGEPOOLING2D
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION | GLOBALAVERAGEPOOLING2D | OUTPUT
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value

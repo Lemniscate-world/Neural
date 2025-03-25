@@ -77,7 +77,7 @@ def test_training_loop_invalid_optimizer():
 # 3. Enhanced HPO Objective Tests
 @patch('neural.automatic_hyperparameter_optimization.hpo.get_data', mock_data_loader)
 def test_hpo_objective_multi_objective():
-    config = "network Test { input: (28,28,1) layers: Dense(128) Output(10) loss: 'cross_entropy' optimizer: 'Adam' }"
+    config = "network Test { input: (28,28,1) layers: Dense(128), Output(10) loss: 'cross_entropy' optimizer: 'Adam' }"
     trial = MockTrial()
     loss, acc, precision, recall = objective(trial, config, 'MNIST', backend='pytorch')
     assert isinstance(loss, float)
@@ -87,7 +87,7 @@ def test_hpo_objective_multi_objective():
 
 @patch('neural.automatic_hyperparameter_optimization.hpo.get_data', mock_data_loader)
 def test_hpo_objective_with_hpo_params():
-    config = "network Test { input: (28,28,1) layers: Dense(HPO(choice(64, 128)), Output(10) optimizer: 'Adam(learning_rate=HPO(log_range(1e-4, 1e-2))' }"
+    config = "network Test { input: (28,28,1) layers: Dense(HPO(choice(64, 128))), Output(10) optimizer: 'Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))' }"
     trial = MockTrial()
     loss, acc, precision, recall = objective(trial, config, 'MNIST', backend='pytorch')
     assert isinstance(loss, float)
