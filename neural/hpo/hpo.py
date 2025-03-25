@@ -289,5 +289,39 @@ def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
 # Optimize and Return
 def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pytorch'):
     study = optuna.create_study(directions=["minimize", "minimize", "maximize", "maximize"])
-    study.optimize(lambda trial: objective(trial, config, dataset_name, backend), n_trials=n_trials)
-    return study.best_trials[0].params
+    
+    def objective_wrapper(trial):
+        # Parse the config once per trial
+        model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
+        
+        # Suggest batch_size
+        batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
+        train_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, True, backend)
+        val_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, False, backend)
+        
+        # Create model and resolve all HPO parameters in one place
+        model = create_dynamic_model(model_dict, trial, hpo_params, backend)
+        
+        # Get optimizer configuration from resolved model_dict
+        optimizer_config = model.model_dict['optimizer']
+        lr = optimizer_config['params']['learning_rate']  # Already resolved by create_dynamic_model
+        
+        if backend == 'pytorch':
+            optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
+        
+        # Train and evaluate
+        loss, acc, precision, recall = train_model(model, optimizer, train_loader, val_loader, backend=backend)
+        return loss, acc, precision, recall
+
+    study.optimize(objective_wrapper, n_trials=n_trials)
+    
+    # Normalize the best parameters
+    best_params = study.best_trials[0].params
+    normalized_params = {
+        'batch_size': best_params['batch_size'],
+        'dense_units': best_params['Dense_units'],  # From Dense layer
+        'dropout_rate': best_params['Dropout_rate'],  # From Dropout layer
+        'learning_rate': best_params['opt_learning_rate']  # From optimizer
+    }
+    
+    return normalized_params

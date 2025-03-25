@@ -1001,7 +1001,7 @@ class ModelTransformer(lark.Transformer):
     @pysnooper.snoop()
     def optimizer(self, items):
         opt_node = items[0]
-        opt_value = self._extract_value(opt_node)
+        opt_value = self._extract_value(opt_node)  # "Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))"
         params = {}
         if len(items) > 1:
             params = self._extract_value(items[1]) or {}
@@ -1009,10 +1009,13 @@ class ModelTransformer(lark.Transformer):
         if isinstance(opt_value, str):
             stripped_value = opt_value.strip("'\"")
             if '(' in stripped_value and ')' in stripped_value:
-                opt_type = stripped_value.lower()
-                if not params:
-                    param_str = opt_value[opt_value.index('(')+1:opt_value.rindex(')')].strip()
-                    # Use split_params instead of splitting by comma
+                # Extract optimizer name before '('
+                opt_type = stripped_value[:stripped_value.index('(')].strip()
+                # Capitalize the optimizer name (e.g., "Adam" not "adam")
+                opt_type = opt_type.capitalize()
+                # Extract parameters inside parentheses
+                param_str = stripped_value[stripped_value.index('(')+1:stripped_value.rindex(')')].strip()
+                if param_str and not params:  # Only parse if params not provided separately
                     for param in split_params(param_str):
                         param = param.strip()
                         if '=' in param:
@@ -1032,12 +1035,21 @@ class ModelTransformer(lark.Transformer):
                                 except ValueError:
                                     params[param_name] = param_value
             else:
-                opt_type = stripped_value.capitalize()
+                opt_type = stripped_value.capitalize()  # No parentheses, just the name
         else:
             self.raise_validation_error("Optimizer must be a string", opt_node)
 
         if not opt_type:
             self.raise_validation_error("Optimizer type must be specified", opt_node, Severity.ERROR)
+
+        # Validate optimizer name against common PyTorch/TensorFlow optimizers
+        valid_optimizers = {'Adam', 'SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adamax', 'Nadam'}
+        if opt_type not in valid_optimizers:
+            self.raise_validation_error(
+                f"Invalid optimizer '{opt_type}'. Supported optimizers: {', '.join(valid_optimizers)}",
+                opt_node,
+                Severity.ERROR
+            )
 
         return {'type': opt_type, 'params': params}
 
