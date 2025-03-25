@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import tensorflow as tf
+import numpy as np
+from sklearn.metrics import precision_score, recall_score
 from torchvision.datasets import MNIST, CIFAR10
 from torchvision.transforms import ToTensor
 from neural.parser.parser import ModelTransformer
@@ -50,7 +52,7 @@ def resolve_hpo_params(model_dict, trial, hpo_params):
     
     logger.debug(f"Original layers: {resolved_dict['layers']}")
     for i, layer in enumerate(resolved_dict['layers']):
-        if 'params' in layer and 'units' in layer['params'] and isinstance(layer['params']['units'], dict) and 'hpo' in layer['params']['units']:
+        if 'params' in layer and layer['params'] is not None and 'units' in layer['params'] and isinstance(layer['params']['units'], dict) and 'hpo' in layer['params']['units']:
             hpo = layer['params']['units']['hpo']
             key = f"{layer['type']}_units_{i}"
             if hpo['type'] == 'categorical':
@@ -174,6 +176,7 @@ class DynamicTFModel(tf.keras.Model):
             x = layer(x)
         return x
 
+
 # Training Method
 def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', epochs=1, execution_config=None):
     if backend == 'pytorch':
@@ -202,9 +205,15 @@ def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', e
                 total += target.size(0)
                 preds.extend(pred.cpu().numpy())
                 targets.extend(target.cpu().numpy())
-        return val_loss / len(val_loader), correct / total
-
-
+        
+        # Compute precision and recall
+        preds_np = np.array(preds)
+        targets_np = np.array(targets)
+        precision = precision_score(targets_np, preds_np, average='macro')
+        recall = recall_score(targets_np, preds_np, average='macro')
+        
+        return val_loss / len(val_loader), correct / total, precision, recall
+    
 
 # HPO Objective
 def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
@@ -231,8 +240,8 @@ def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
         optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
     
     # Pass optimizer correctly
-    loss, acc = train_model(model, optimizer, train_loader, val_loader, backend=backend)
-    return loss, acc
+    loss, acc, precision, recall = train_model(model, optimizer, train_loader, val_loader, backend=backend)
+    return loss, acc, precision, recall
 
 
 
