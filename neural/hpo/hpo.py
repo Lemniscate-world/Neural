@@ -11,6 +11,7 @@ from neural.parser.parser import ModelTransformer
 import keras
 from neural.shape_propagation.shape_propagator import ShapePropagator
 from neural.execution_optimization.execution import get_device
+import copy
 
 # Data Loader
 def get_data(dataset_name, input_shape, batch_size, train=True, backend='pytorch'):
@@ -33,14 +34,50 @@ def prod(iterable):
 
 # Factory Function
 def create_dynamic_model(model_dict, trial, hpo_params, backend='pytorch'):
-    print("Pre-resolve model_dict:", model_dict)
-    resolved_model_dict = resolve_hpo_params(model_dict, trial, hpo_params)
-    print("Post-resolve model_dict:", resolved_model_dict)
+    resolved_model_dict = copy.deepcopy(model_dict)
+    print(f"Pre-resolve model_dict: {resolved_model_dict}")
+
+    # Resolve HPO parameters in layers
+    for layer in resolved_model_dict['layers']:
+        if 'params' in layer and layer['params']:
+            for param_name, param_value in layer['params'].items():
+                if isinstance(param_value, dict) and 'hpo' in param_value:
+                    hpo = param_value['hpo']
+                    if hpo['type'] == 'categorical':
+                        layer['params'][param_name] = trial.suggest_categorical(f"{layer['type']}_{param_name}", hpo['values'])
+                    elif hpo['type'] == 'range':
+                        layer['params'][param_name] = trial.suggest_float(
+                            f"{layer['type']}_{param_name}", 
+                            hpo['start'], 
+                            hpo['end'], 
+                            step=hpo.get('step', None)
+                        )
+                    elif hpo['type'] == 'log_range':
+                        layer['params'][param_name] = trial.suggest_float(
+                            f"{layer['type']}_{param_name}", 
+                            hpo['low'], 
+                            hpo['high'], 
+                            log=True
+                        )
+
+    # Resolve HPO parameters in optimizer
+    if 'optimizer' in resolved_model_dict and resolved_model_dict['optimizer']:
+        for param_name, param_value in resolved_model_dict['optimizer']['params'].items():
+            if isinstance(param_value, dict) and 'hpo' in param_value:
+                hpo = param_value['hpo']
+                if hpo['type'] == 'log_range':
+                    resolved_model_dict['optimizer']['params'][param_name] = trial.suggest_float(
+                        f"opt_{param_name}", 
+                        hpo['low'], 
+                        hpo['high'], 
+                        log=True
+                    )
+
+    print(f"Post-resolve model_dict: {resolved_model_dict}")
     if backend == 'pytorch':
         return DynamicPTModel(resolved_model_dict, trial, hpo_params)
-    elif backend == 'tensorflow':
-        return DynamicTFModel(resolved_model_dict, trial, hpo_params)
-    raise ValueError(f"Unsupported backend: {backend}")
+    else:
+        raise ValueError(f"Unsupported backend: {backend}")
     
 
 def resolve_hpo_params(model_dict, trial, hpo_params):
@@ -99,17 +136,17 @@ class DynamicPTModel(nn.Module):
             params = layer['params'] if layer['params'] is not None else {}
             params = params.copy()
             print(f"Before propagate: {layer['type']}, current_shape={current_shape}")
-            
+
             # Compute in_features from current (input) shape before propagation
             if layer['type'] in ['Dense', 'Output'] and in_features is None:
                 in_features = prod(current_shape[1:])  # Use input shape
                 self.layers.append(nn.Flatten())
                 print(f"{layer['type']} (implicit Flatten): in_features={in_features}")
-            
+
             # Propagate shape after setting in_features
             current_shape = self.shape_propagator.propagate(current_shape, layer, framework='pytorch')
             print(f"After propagate: {layer['type']}, current_shape={current_shape}")
-            
+
             if layer['type'] == 'Conv2D':
                 filters = params.get('filters', trial.suggest_int('conv_filters', 16, 64))
                 kernel_size = params.get('kernel_size', 3)
@@ -126,6 +163,10 @@ class DynamicPTModel(nn.Module):
                 print(f"Dense: in_features={in_features}, units={units}")
                 self.layers.append(nn.Linear(in_features, units))
                 in_features = units
+            elif layer['type'] == 'Dropout':
+                rate = params['rate'] if 'rate' in params else trial.suggest_float('dropout_rate', 0.3, 0.7, step=0.1)
+                print(f"Dropout: rate={rate}")
+                self.layers.append(nn.Dropout(p=rate))
             elif layer['type'] == 'Output':
                 units = params['units'] if 'units' in params else 10
                 if in_features <= 0:
