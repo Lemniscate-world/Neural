@@ -34,11 +34,12 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 # Loss function
 loss_fn = nn.CrossEntropyLoss()
 # Optimizer
-optimizer = optim.Adam(model.parameters(), lr=0.004518206413675764)
+optimizer = optim.Adam(model.parameters(), lr=0.007690820964132956)
 
 # Mixed precision training setup
 scaler = torch.amp.GradScaler('cuda' if torch.cuda.is_available() else 'cpu')
 for epoch in range(10):
+    running_loss = 0.0
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -48,3 +49,18 @@ for epoch in range(10):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
+        running_loss += loss.item()  # Accumulate loss
+    print(f'Epoch {epoch+1}/{10} - Loss: {running_loss / len(train_loader):.4f}')
+
+# Evaluate model
+model.eval()
+correct = 0
+total = 0
+with torch.no_grad():
+    for data, target in train_loader:
+        data, target = data.to(device), target.to(device)
+        outputs = model(data)
+        _, predicted = torch.max(outputs.data, 1)
+        total += target.size(0)
+        correct += (predicted == target).sum().item()
+print(f'Accuracy: {100 * correct / total:.2f}%')

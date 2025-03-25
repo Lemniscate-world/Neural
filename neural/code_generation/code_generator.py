@@ -212,6 +212,7 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
             code += "\n# Mixed precision training setup\n"
             code += "scaler = torch.amp.GradScaler('cuda' if torch.cuda.is_available() else 'cpu')\n"
             code += f"for epoch in range({tc.get('epochs', 10)}):\n"
+            code += f"{indent}running_loss = 0.0\n"  # Add loss tracking
             code += f"{indent}for batch_idx, (data, target) in enumerate(train_loader):\n"
             code += f"{indent}{indent}data, target = data.to(device), target.to(device)\n"
             code += f"{indent}{indent}optimizer.zero_grad()\n"
@@ -221,8 +222,23 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
             code += f"{indent}{indent}scaler.scale(loss).backward()\n"
             code += f"{indent}{indent}scaler.step(optimizer)\n"
             code += f"{indent}{indent}scaler.update()\n"
+            code += f"{indent}{indent}running_loss += loss.item()  # Accumulate loss\n"
+            code += f"{indent}print(f'Epoch {{epoch+1}}/{{{tc.get('epochs', 10)}}} - Loss: {{running_loss / len(train_loader):.4f}}')\n"  # Print average loss
+            code += "\n# Evaluate model\n"
+            code += "model.eval()\n"
+            code += "correct = 0\n"
+            code += "total = 0\n"
+            code += "with torch.no_grad():\n"
+            code += f"{indent}for data, target in train_loader:\n"
+            code += f"{indent}{indent}data, target = data.to(device), target.to(device)\n"
+            code += f"{indent}{indent}outputs = model(data)\n"
+            code += f"{indent}{indent}_, predicted = torch.max(outputs.data, 1)\n"
+            code += f"{indent}{indent}total += target.size(0)\n"
+            code += f"{indent}{indent}correct += (predicted == target).sum().item()\n"
+            code += "print(f'Accuracy: {100 * correct / total:.2f}%')\n"
             if 'save_path' in tc:
                 code += f"{indent}{indent}torch.save(model.state_dict(), '{tc['save_path']}')\n"
+            
 
         return code
 
