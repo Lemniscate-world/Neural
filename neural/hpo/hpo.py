@@ -302,9 +302,14 @@ def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pyto
         # Create model and resolve all HPO parameters in one place
         model = create_dynamic_model(model_dict, trial, hpo_params, backend)
         
-        # Get optimizer configuration from resolved model_dict
+        # Get optimizer configuration from resolved model_dict, default if None
         optimizer_config = model.model_dict['optimizer']
-        lr = optimizer_config['params']['learning_rate']  # Already resolved by create_dynamic_model
+        if optimizer_config is None:
+            optimizer_config = {'type': 'Adam', 'params': {'learning_rate': 0.001}}
+        elif 'params' not in optimizer_config or not optimizer_config['params']:
+            optimizer_config['params'] = {'learning_rate': 0.001}
+        
+        lr = optimizer_config['params']['learning_rate']  # Already resolved by create_dynamic_model or default
         
         if backend == 'pytorch':
             optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
@@ -319,9 +324,15 @@ def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pyto
     best_params = study.best_trials[0].params
     normalized_params = {
         'batch_size': best_params['batch_size'],
-        'dense_units': best_params['Dense_units'],  # From Dense layer
-        'dropout_rate': best_params['Dropout_rate'],  # From Dropout layer
-        'learning_rate': best_params['opt_learning_rate']  # From optimizer
+        # Include other params if they were optimized, otherwise omit or set defaults
     }
+    if 'dense_units' in best_params:
+        normalized_params['dense_units'] = best_params['dense_units']
+    if 'dropout_rate' in best_params:
+        normalized_params['dropout_rate'] = best_params['dropout_rate']
+    if 'opt_learning_rate' in best_params:
+        normalized_params['learning_rate'] = best_params['opt_learning_rate']
+    else:
+        normalized_params['learning_rate'] = 0.001  # Default from above
     
     return normalized_params

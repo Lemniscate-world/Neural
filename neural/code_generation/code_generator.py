@@ -460,7 +460,10 @@ def generate_optimized_dsl(config, best_params):
     logger.info(f"best_params: {best_params}")
     logger.info(f"hpo_params: {hpo_params}")
     
-    # Validate best_params against hpo_params
+    # Define known parameter keys that are acceptable even if not in hpo_params
+    known_params = {'batch_size', 'learning_rate'}  # Add other common params as needed
+    
+    # Validate best_params against hpo_params, excluding known params
     valid_param_keys = set()
     for hpo in hpo_params:
         if hpo['layer_type'].lower() == 'optimizer':
@@ -468,7 +471,8 @@ def generate_optimized_dsl(config, best_params):
         else:
             valid_param_keys.add(f"{hpo['layer_type'].lower()}_{hpo['param_name']}")
     
-    invalid_keys = set(best_params.keys()) - valid_param_keys
+    # Only raise KeyError for parameters that are neither in hpo_params nor known
+    invalid_keys = set(best_params.keys()) - valid_param_keys - known_params
     if invalid_keys:
         raise KeyError(f"Unknown parameters in best_params: {invalid_keys}")
     
