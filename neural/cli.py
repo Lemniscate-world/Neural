@@ -7,7 +7,6 @@ import logging
 from typing import Optional
 import hashlib
 import shutil
-import json
 from pathlib import Path
 from lark import exceptions
 
@@ -18,6 +17,8 @@ from neural.parser.parser import create_parser, ModelTransformer, DSLValidationE
 from neural.code_generation.code_generator import generate_code
 from neural.shape_propagation.shape_propagator import ShapePropagator
 from neural.dashboard.tensor_flow import create_animated_network
+from neural.hpo.hpo import optimize_and_return
+from neural.code_generation.code_generator import generate_optimized_dsl
 
 # Configure logging with richer output
 logging.basicConfig(
@@ -26,6 +27,9 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
+
+# Supported datasets (extend as implemented)
+SUPPORTED_DATASETS = {"MNIST", "CIFAR10", "CIFAR100", "ImageNet"}
 
 # Global CLI context for shared options
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -40,12 +44,14 @@ def cli(verbose: bool):
 @cli.command()
 @click.argument('file', type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option('--backend', '-b', default='tensorflow', help='Target backend', type=click.Choice(['tensorflow', 'pytorch', 'onnx'], case_sensitive=False))
+@click.option('--dataset', default='MNIST', help='Dataset name (e.g., MNIST, CIFAR10)')
 @click.option('--output', '-o', default=None, help='Output file path (defaults to <file>_<backend>.py)')
 @click.option('--dry-run', is_flag=True, help='Preview generated code without writing to file')
-def compile(file: str, backend: str, output: Optional[str], dry_run: bool):
+@click.option('--hpo', is_flag=True, help='Enable hyperparameter optimization')
+def compile(file: str, backend: str, dataset: str, output: Optional[str], dry_run: bool, hpo: bool):
     """Compile a .neural or .nr file into an executable Python script.
 
-    Example: neural compile my_model.neural --backend pytorch --output model.py
+    Example: neural compile my_model.neural --backend pytorch --output model.py --hpo
     """
     ext = os.path.splitext(file)[1].lower()
     start_rule = 'network' if ext in ['.neural', '.nr'] else 'research' if ext == '.rnr' else None
@@ -64,6 +70,14 @@ def compile(file: str, backend: str, output: Optional[str], dry_run: bool):
     except (exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError) as e:
         logger.error(f"Parsing/transforming {file} failed: {e}")
         sys.exit(1)
+
+    if hpo:
+        logger.debug("Running HPO for %s", file)
+        if dataset not in SUPPORTED_DATASETS:
+            logger.warning("Dataset '%s' may not be supported. Supported: %s", dataset, SUPPORTED_DATASETS)
+        best_params = optimize_and_return(content, n_trials=3, dataset_name=dataset, backend=backend)
+        logger.info("Best parameters: %s", best_params)
+        content = generate_optimized_dsl(content, best_params)
 
     try:
         code = generate_code(model_data, backend)
@@ -84,23 +98,63 @@ def compile(file: str, backend: str, output: Optional[str], dry_run: bool):
 @cli.command()
 @click.argument('file', type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option('--backend', '-b', default='tensorflow', help='Backend to run', type=click.Choice(['tensorflow', 'pytorch'], case_sensitive=False))
-def run(file: str, backend: str):
-    """Run a compiled neural model.
+@click.option('--dataset', default='MNIST', help='Dataset name (e.g., MNIST, CIFAR10)')
+@click.option('--hpo', is_flag=True, help='Enable HPO for .neural files')
+def run(file: str, backend: str, dataset: str, hpo: bool):
+    """Run a compiled neural model or optimize and run a .neural file with HPO.
 
-    Example: neural run my_model_pytorch.py --backend pytorch
+    Example: neural run mnist_hpo.neural --backend pytorch --hpo
     """
     ext = os.path.splitext(file)[1].lower()
-    if ext != '.py':
-        logger.error(f"Expected a .py file, got {ext}. Use 'compile' first.")
-        sys.exit(1)
+    if ext == '.py':
+        logger.info(f"Running {file} with {backend} backend")
+        try:
+            subprocess.run([sys.executable, file], check=True)
+            logger.info("Execution completed successfully")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Execution failed with exit code {e.returncode}")
+            sys.exit(e.returncode)
+    elif ext in ['.neural', '.nr'] and hpo:
+        logger.info(f"Optimizing and running {file} with {backend} backend")
+        start_rule = 'network' if ext in ['.neural', '.nr'] else None
+        if not start_rule:
+            logger.error(f"Unsupported file type for HPO: {ext}")
+            sys.exit(1)
 
-    logger.info(f"Running {file} with {backend} backend")
-    try:
-        subprocess.run([sys.executable, file], check=True)
-        logger.info("Execution completed successfully")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Execution failed with exit code {e.returncode}")
-        sys.exit(e.returncode)
+        with open(file, 'r') as f:
+            content = f.read()
+
+        if dataset not in SUPPORTED_DATASETS:
+            logger.warning("Dataset '%s' may not be supported. Supported: %s", dataset, SUPPORTED_DATASETS)
+
+        # Optimize and generate code
+        best_params = optimize_and_return(content, n_trials=3, dataset_name=dataset, backend=backend)
+        logger.info("Best parameters found: %s", best_params)
+        optimized_config = generate_optimized_dsl(content, best_params)
+        
+        output_file = f"{os.path.splitext(file)[0]}_optimized_{backend}.py"
+        parser_instance = create_parser(start_rule=start_rule)
+        try:
+            tree = parser_instance.parse(optimized_config)
+            model_data = ModelTransformer().transform(tree)
+            code = generate_code(model_data, backend)
+            with open(output_file, 'w') as f:
+                f.write(code)
+            logger.info(f"Compiled optimized {file} to {output_file}")
+        except Exception as e:
+            logger.error(f"Optimization or code generation failed: {e}")
+            sys.exit(1)
+
+        # Run the compiled file
+        try:
+            subprocess.run([sys.executable, output_file], check=True)
+            logger.info("Execution completed successfully")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Execution failed with exit code {e.returncode}")
+            sys.exit(e.returncode)
+    else:
+        logger.error(f"Expected a .py file, got {ext}. Use 'compile' first or add --hpo for .neural files.")
+        sys.exit(1)
 
 # Visualize command
 @cli.command()
@@ -196,10 +250,17 @@ def clean():
 @cli.command()
 def version():
     """Show the version of Neural CLI and dependencies."""
-    click.echo("Neural CLI v0.1.0")
+    import lark
+    click.echo("Neural CLI v0.1.0")  # Update with your actual version
     click.echo(f"Python: {sys.version.split()[0]}")
     click.echo(f"Click: {click.__version__}")
     click.echo(f"Lark: {lark.__version__}")
+    for pkg in ('torch', 'tensorflow', 'optuna'):
+        try:
+            ver = __import__(pkg).__version__
+            click.echo(f"{pkg.capitalize()}: {ver}")
+        except ImportError:
+            click.echo(f"{pkg.capitalize()}: Not installed")
 
 # Debug command
 @cli.command()
@@ -209,7 +270,8 @@ def version():
 @click.option('--anomalies', is_flag=True, help='Detect training anomalies')
 @click.option('--step', is_flag=True, help='Enable step debugging mode')
 @click.option('--backend', '-b', default='tensorflow', help='Backend for runtime', type=click.Choice(['tensorflow', 'pytorch'], case_sensitive=False))
-def debug(file: str, gradients: bool, dead_neurons: bool, anomalies: bool, step: bool, backend: str):
+@click.option('--dataset', default='MNIST', help='Dataset name (e.g., MNIST, CIFAR10)')
+def debug(file: str, gradients: bool, dead_neurons: bool, anomalies: bool, step: bool, backend: str, dataset: str):
     """Debug a neural network model with NeuralDbg.
 
     Example: neural debug my_model.neural --gradients --step --backend pytorch
@@ -220,6 +282,9 @@ def debug(file: str, gradients: bool, dead_neurons: bool, anomalies: bool, step:
     if not start_rule:
         logger.error(f"Unsupported file type: {ext}")
         sys.exit(1)
+
+    if dataset not in SUPPORTED_DATASETS:
+        logger.warning("Dataset '%s' may not be supported. Supported: %s", dataset, SUPPORTED_DATASETS)
 
     parser_instance = create_parser(start_rule=start_rule)
     with open(file, 'r') as f:
@@ -271,18 +336,32 @@ def debug(file: str, gradients: bool, dead_neurons: bool, anomalies: bool, step:
 
 # No-code command
 @cli.command(name='no-code')
-def no_code():
+@click.option('--port', default=8051, help='Web interface port', type=int)
+def no_code(port: int):
     """Launch the no-code interface for building models.
 
-    Example: neural no-code
+    Example: neural no-code --port 8051
     """
     from neural.dashboard.dashboard import app  # Assuming a dashboard module exists
-    logger.info("Launching no-code interface at http://localhost:8051")
+    logger.info("Launching no-code interface at http://localhost:%s", port)
     try:
-        app.run_server(debug=False, host="localhost", port=8051)
+        app.run_server(debug=False, host="localhost", port=port)
     except Exception as e:
         logger.error(f"Failed to launch no-code interface: {e}")
         sys.exit(1)
+
+# Remove standalone HPO command (integrated into run/compile)
+# If you want to keep it separate, uncomment and adjust:
+# @cli.command()
+# @click.argument('file')
+# @click.option('--n-trials', default=20)
+# @click.option('--dataset', default='MNIST')
+# def hpo(file, n_trials, dataset):
+#     """Run hyperparameter optimization"""
+#     with open(file) as f:
+#         config = f.read()
+#     best_params = optimize_and_return(config, n_trials, dataset)
+#     click.echo(f"Best parameters: {best_params}")
 
 if __name__ == '__main__':
     cli()

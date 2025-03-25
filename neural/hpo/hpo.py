@@ -324,15 +324,14 @@ def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pyto
     best_params = study.best_trials[0].params
     normalized_params = {
         'batch_size': best_params['batch_size'],
-        # Include other params if they were optimized, otherwise omit or set defaults
     }
-    if 'dense_units' in best_params:
-        normalized_params['dense_units'] = best_params['dense_units']
-    if 'dropout_rate' in best_params:
-        normalized_params['dropout_rate'] = best_params['dropout_rate']
+    if 'Dense_units' in best_params:
+        normalized_params['dense_units'] = best_params['Dense_units']
+    if 'Dropout_rate' in best_params:
+        normalized_params['dropout_rate'] = best_params['Dropout_rate']
     if 'opt_learning_rate' in best_params:
         normalized_params['learning_rate'] = best_params['opt_learning_rate']
     else:
-        normalized_params['learning_rate'] = 0.001  # Default from above
+        normalized_params['learning_rate'] = 0.001  # Default from optimizer_config
     
     return normalized_params

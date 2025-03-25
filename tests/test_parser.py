@@ -171,7 +171,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
                 'output_layer': {'type': 'Output', 'params': {'units': 10, 'activation': 'softmax'}, 'sublayers': []},
                 'output_shape': 10,
                 'loss': 'categorical_crossentropy',
-                'optimizer': {'type': 'adam', 'params': {}},
+                'optimizer': {'type': 'Adam', 'params': {}},
                 'training_config': {'epochs': 10, 'batch_size': 32},
                 'execution_config': {'device': 'auto'},
                 'framework': 'tensorflow',
@@ -277,7 +277,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
                 layers:
                     Dense(5) @ "npu"
                 loss: "mse"
-                optimizer: "sgd"
+                optimizer: "Sgd"
             }
             """,
             None,
@@ -289,7 +289,7 @@ def test_layer_parsing(layer_parser, transformer, layer_string, expected, test_i
             network MissingLayers {
                 input: (10,)
                 loss: "mse"
-                optimizer: "sgd"
+                optimizer: "Sgd"
             }
             """,
             None,
