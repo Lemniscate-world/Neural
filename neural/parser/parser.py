@@ -145,7 +145,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
         STRING: /"[^"]*"/ | /'[^']*'/
         INT: /[+-]?[0-9]+/
-        FLOAT: /[+-]?[0-9]*\.[0-9]+/ 
+        FLOAT: /[+-]?[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?/ | /[+-]?[0-9]+[eE][+-]?[0-9]+/
         NUMBER: INT | FLOAT 
         TRUE.2: "true"i
         FALSE.2: "false"i
@@ -1601,44 +1601,39 @@ class ModelTransformer(lark.Transformer):
         training_config = None
         execution_config = {'device': 'auto'}
         
-        for i, item in enumerate(items[3:], start=3):
-            logger.debug(f"Item at index {i}: type={type(item)}, data={getattr(item, 'data', 'N/A')}, value={str(item)}")
+        remaining_items = items[3:]
+        for i, item in enumerate(remaining_items, start=3):
+            logger.debug(f"Item {i}: type={type(item)}, data={getattr(item, 'data', 'N/A')}, value={str(item)}")
+            value = self._extract_value(item)
+            
             if isinstance(item, Tree):
-                value = self._extract_value(item)
-                logger.debug(f"Processing item {item.data}: {value}")
                 if item.data == 'loss':
                     loss_config = value
                 elif item.data == 'optimizer':
                     optimizer_config = value
                 elif item.data == 'training_config':
-                    training_config = value.get('params') if isinstance(value, dict) and 'params' in value else value
+                    training_config = value.get('params', value) if isinstance(value, dict) else value
                 elif item.data == 'execution_config':
                     execution_config = value
                 else:
                     logger.warning(f"Unrecognized tree data: {item.data}")
-            elif isinstance(item, dict):
-                # Handle pre-processed dicts (e.g., from optimizer method)
-                logger.debug(f"Processing dict item at index {i}: {item}")
-                if 'type' in item and 'params' in item:  # Assume it's an optimizer dict
+            elif isinstance(value, str) and i == 3:  # Check if this is the loss value
+                loss_config = value  # Directly assign string value for loss
+            elif isinstance(item, dict) and 'type' in item and 'params' in item:
+                if item.get('type') in {'Adam', 'SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adamax', 'Nadam'}:
                     optimizer_config = item
-                else:
-                    logger.warning(f"Unrecognized dict format at index {i}: {item}")
+                elif item.get('type') == 'training_config':
+                    training_config = item['params']
             else:
-                logger.warning(f"Item at index {i} is not a Tree or dict: {type(item)} - {str(item)}")
+                logger.warning(f"Skipping unhandled item at index {i}: {str(item)}")
 
-        # Determine output layer and shape
-        output_layer = None
+        output_layer = layers_config[-1] if layers_config else None
         output_shape = None
-        if layers_config:
-            output_layers = [layer for layer in layers_config if layer['type'] == 'Output']
-            output_layer = output_layers[-1] if output_layers else layers_config[-1]
+        if output_layer:
             if output_layer['type'] == 'Output':
                 output_shape = output_layer.get('params', {}).get('units')
             elif output_layer['type'] == 'Dense':
                 output_shape = output_layer.get('params', {}).get('units')
-
-        if optimizer_config is None:
-            logger.warning("Optimizer config is None after parsing")
 
         return {
             'type': 'model',
@@ -1650,7 +1645,7 @@ class ModelTransformer(lark.Transformer):
             'loss': loss_config,
             'optimizer': optimizer_config,
             'training_config': training_config,
-            'execution_config': execution_config,  # Flat dict
+            'execution_config': execution_config,
             'framework': 'tensorflow',
             'shape_info': [],
             'warnings': []

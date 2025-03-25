@@ -460,23 +460,21 @@ def generate_optimized_dsl(config, best_params):
     logger.info(f"best_params: {best_params}")
     logger.info(f"hpo_params: {hpo_params}")
     
-    # Define known parameter keys that are acceptable even if not in hpo_params
     known_params = {'batch_size', 'learning_rate'}  # Add other common params as needed
     
-    # Validate best_params against hpo_params, excluding known params
+    # Collect valid parameter keys from hpo_params
     valid_param_keys = set()
     for hpo in hpo_params:
         if hpo['layer_type'].lower() == 'optimizer':
-            valid_param_keys.add(hpo['param_name'])
+            valid_param_keys.add(hpo['param_name'])  # e.g., 'learning_rate'
         else:
-            valid_param_keys.add(f"{hpo['layer_type'].lower()}_{hpo['param_name']}")
+            valid_param_keys.add(f"{hpo['layer_type'].lower()}_{hpo['param_name']}")  # e.g., 'dense_units', 'dropout_rate'
     
-    # Only raise KeyError for parameters that are neither in hpo_params nor known
     invalid_keys = set(best_params.keys()) - valid_param_keys - known_params
     if invalid_keys:
-        raise KeyError(f"Unknown parameters in best_params: {invalid_keys}")
+        logger.warning(f"Unknown parameters in best_params: {invalid_keys}")
     
-    # Process HPO replacements
+    # Replace HPO specs with best_params values
     for hpo in hpo_params:
         if hpo['layer_type'].lower() == 'optimizer':
             param_key = hpo['param_name']
@@ -484,7 +482,7 @@ def generate_optimized_dsl(config, best_params):
             param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"
         
         if param_key not in best_params:
-            logger.warning(f"param_key {param_key} not in best_params, skipping")
+            logger.warning(f"Parameter {param_key} not found in best_params, skipping")
             continue
         
         hpo_type = hpo['hpo']['type']
@@ -492,20 +490,19 @@ def generate_optimized_dsl(config, best_params):
             values = hpo['hpo'].get('original_values', hpo['hpo']['values'])
             hpo_str = f"choice({', '.join(map(str, values))})"
         elif hpo_type == 'range':
-            original_parts = hpo['hpo'].get('original_parts', [
-                str(hpo['hpo']['start']), 
-                str(hpo['hpo']['end'])
-            ])
+            original_parts = hpo['hpo'].get('original_parts', [str(hpo['hpo']['start']), str(hpo['hpo']['end'])])
             if 'step' in hpo['hpo']:
                 hpo_str = f"range({', '.join(original_parts)}, step={hpo['hpo']['step']})"
             else:
                 hpo_str = f"range({', '.join(original_parts)})"
         elif hpo_type == 'log_range':
+            # Use original string values from the config if available, fallback to numeric
             low = hpo['hpo'].get('original_low', str(hpo['hpo']['low']))
             high = hpo['hpo'].get('original_high', str(hpo['hpo']['high']))
-            hpo_str = f"log_range({low}, {high})"
+            hpo_str = f"log_range({low}, {high})"  # Matches original '1e-4, 1e-2'
         else:
-            raise ValueError(f"Unknown HPO type: {hpo_type}")
+            logger.warning(f"Unsupported HPO type: {hpo_type}")
+            continue
         
         logger.info(f"Processing hpo: {hpo}, param_key: {param_key}, hpo_str: {hpo_str}")
         for i, line in enumerate(lines):
