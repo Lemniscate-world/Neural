@@ -283,7 +283,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         network: "network" NAME "{" input_layer layers [loss] [optimizer] [training_config] [execution_config] "}"
         input_layer: "input" ":" shape ("," shape)*
-        layers: "layers" ":" layer_or_repeated ("," layer_or_repeated)*
+        layers: "layers" ":" layer_or_repeated+
         loss: "loss" ":" (NAME | STRING) ["(" named_params ")"]
         optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
         layer_or_repeated: layer ["*" INT] 
