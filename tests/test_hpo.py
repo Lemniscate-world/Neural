@@ -87,11 +87,9 @@ def test_hpo_objective_multi_objective():
 
 @patch('neural.automatic_hyperparameter_optimization.hpo.get_data', mock_data_loader)
 def test_hpo_objective_with_hpo_params():
-    config = "network Test { input: (28,28,1) layers: Dense(HPO(choice(64, 128)) Output(10) optimizer: 'Adam(learning_rate=HPO(log_range(1e-4, 1e-2))' }"
+    config = "network Test { input: (28,28,1) layers: Dense(HPO(choice(64, 128)), Output(10) optimizer: 'Adam(learning_rate=HPO(log_range(1e-4, 1e-2))' }"
     trial = MockTrial()
-    # Capture all four metrics
     loss, acc, precision, recall = objective(trial, config, 'MNIST', backend='pytorch')
-    # Add assertions if needed
     assert isinstance(loss, float)
     assert 0 <= acc <= 1
     assert 0 <= precision <= 1
