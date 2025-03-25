@@ -460,6 +460,19 @@ def generate_optimized_dsl(config, best_params):
     logger.info(f"best_params: {best_params}")
     logger.info(f"hpo_params: {hpo_params}")
     
+    # Validate best_params against hpo_params
+    valid_param_keys = set()
+    for hpo in hpo_params:
+        if hpo['layer_type'].lower() == 'optimizer':
+            valid_param_keys.add(hpo['param_name'])
+        else:
+            valid_param_keys.add(f"{hpo['layer_type'].lower()}_{hpo['param_name']}")
+    
+    invalid_keys = set(best_params.keys()) - valid_param_keys
+    if invalid_keys:
+        raise KeyError(f"Unknown parameters in best_params: {invalid_keys}")
+    
+    # Process HPO replacements
     for hpo in hpo_params:
         if hpo['layer_type'].lower() == 'optimizer':
             param_key = hpo['param_name']
@@ -472,11 +485,9 @@ def generate_optimized_dsl(config, best_params):
         
         hpo_type = hpo['hpo']['type']
         if hpo_type in ('choice', 'categorical'):
-            # Use original values if available
             values = hpo['hpo'].get('original_values', hpo['hpo']['values'])
             hpo_str = f"choice({', '.join(map(str, values))})"
         elif hpo_type == 'range':
-            # Use original parts for string formatting
             original_parts = hpo['hpo'].get('original_parts', [
                 str(hpo['hpo']['start']), 
                 str(hpo['hpo']['end'])
@@ -486,7 +497,6 @@ def generate_optimized_dsl(config, best_params):
             else:
                 hpo_str = f"range({', '.join(original_parts)})"
         elif hpo_type == 'log_range':
-            # Use original low/high strings
             low = hpo['hpo'].get('original_low', str(hpo['hpo']['low']))
             high = hpo['hpo'].get('original_high', str(hpo['hpo']['high']))
             hpo_str = f"log_range({low}, {high})"
