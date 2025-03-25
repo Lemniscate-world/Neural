@@ -1002,7 +1002,7 @@ class ModelTransformer(lark.Transformer):
     def loss(self, items):
         return items[0].value.strip('"')
 
-    @pysnooper.snoop()
+
     def optimizer(self, items):
         opt_node = items[0]
         opt_value = self._extract_value(opt_node)  # "Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))"

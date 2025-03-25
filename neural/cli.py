@@ -101,10 +101,6 @@ def compile(file: str, backend: str, dataset: str, output: Optional[str], dry_ru
 @click.option('--dataset', default='MNIST', help='Dataset name (e.g., MNIST, CIFAR10)')
 @click.option('--hpo', is_flag=True, help='Enable HPO for .neural files')
 def run(file: str, backend: str, dataset: str, hpo: bool):
-    """Run a compiled neural model or optimize and run a .neural file with HPO.
-
-    Example: neural run mnist_hpo.neural --backend pytorch --hpo
-    """
     ext = os.path.splitext(file)[1].lower()
     if ext == '.py':
         logger.info(f"Running {file} with {backend} backend")
@@ -137,7 +133,7 @@ def run(file: str, backend: str, dataset: str, hpo: bool):
         try:
             tree = parser_instance.parse(optimized_config)
             model_data = ModelTransformer().transform(tree)
-            code = generate_code(model_data, backend)
+            code = generate_code(model_data, backend, best_params=best_params)
             with open(output_file, 'w') as f:
                 f.write(code)
             logger.info(f"Compiled optimized {file} to {output_file}")
