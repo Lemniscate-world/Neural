@@ -20,13 +20,14 @@ def to_number(x: str) -> Union[int, float]:
     except ValueError:
         return float(x)
 
-def generate_code(model_data: Dict[str, Any], backend: str) -> str:
+def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[str, Any] = None) -> str:
     if not isinstance(model_data, dict) or 'layers' not in model_data or 'input' not in model_data:
         raise ValueError("Invalid model_data format: must be a dict with 'layers' and 'input' keys")
 
     indent = "    "
     propagator = ShapePropagator(debug=False)
-    current_input_shape = model_data['input']['shape']
+    # Initial input shape includes batch dimension: (None, channels, height, width)
+    current_input_shape = (None,) + tuple(model_data['input']['shape'])  # e.g., (None, 1, 28, 28)
     
     # Process expanded layers before modifying model_data
     expanded_layers = []
@@ -86,7 +87,13 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
         if isinstance(optimizer_config, dict):
             for k, v in optimizer_config.get('params', {}).items():
                 opt_params.append(f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}")
-        loss_value = model_data['loss']['value'] if isinstance(model_data['loss'], dict) else model_data.get('loss', 'categorical_crossentropy')
+        loss_entry = model_data.get('loss', {'value': 'categorical_crossentropy'})
+        if loss_entry is None or not isinstance(loss_entry, (str, dict)):
+            loss_value = 'categorical_crossentropy'  # Fallback
+        elif isinstance(loss_entry, str):
+            loss_value = loss_entry
+        else:
+            loss_value = loss_entry.get('value', 'categorical_crossentropy')
         code += f"# Compile model with {optimizer_type} optimizer and {loss_value} loss\n"
         code += f"model.compile(loss='{loss_value}', optimizer={optimizer_type}({', '.join(opt_params)}))\n"
         
@@ -110,7 +117,9 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
     elif backend == "pytorch":
         optimizer_config = model_data.get('optimizer', {'type': 'Adam'})
         optimizer_type = optimizer_config['type'] if isinstance(optimizer_config, dict) else optimizer_config
-        code = "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\n"
+        code = "import torch\nimport torch.nn as nn\nimport torch.optim as optim\nimport torchvision.transforms as transforms\n"
+        code += "from torchvision import datasets\n"
+        code += "from torch.utils.data import DataLoader\n\n"
         code += "# Neural network model definition\n"
         code += "class NeuralNetworkModel(nn.Module):\n"
         code += f"{indent}def __init__(self):\n"
@@ -118,101 +127,102 @@ def generate_code(model_data: Dict[str, Any], backend: str) -> str:
 
         layers_code = []
         forward_code_body = []
-
-        layer_counts = {}  # Track layer counts for unique naming
-        current_channels = None  # Track channels globally for BatchNorm
+        layer_counts = {}
         
         for i, layer in enumerate(expanded_layers):
             layer_type = layer['type']
             params = layer.get('params', {}).copy()
             
-            if layer_type == "Residual":
-                sub_layers = []
-                for sub_layer in layer.get('sub_layers', []):
-                    sub_type = sub_layer['type']
-                    sub_params = sub_layer.get('params', {}).copy()
-                    # Propagate data_format from parent layer
-                    if 'data_format' in params:
-                        sub_params['data_format'] = params['data_format']
-                    # Track channels for BatchNorm
-                    if sub_type == "Conv2D":
-                        current_channels = sub_params.get("filters")
-                    elif sub_type == "BatchNormalization" and current_channels:
-                        sub_params["filters"] = current_channels
-                    sub_layer_code = generate_pytorch_layer(sub_type, sub_params, current_input_shape)
-                    if sub_layer_code:
-                        sub_layers.append(sub_layer_code)
-                
-                if sub_layers:
-                    layers_code.append(f"self.layer{i}_residual = nn.Sequential(")
-                    for sub_layer in sub_layers:
-                        layers_code.append(f"{indent}{sub_layer},")
-                    layers_code.append(")")
-                    forward_code_body.append(f"identity = x")
-                    forward_code_body.append(f"x = self.layer{i}_residual(x)")
-                    forward_code_body.append(f"x = x + identity")
-            else:
-                if layer_type not in layer_counts:
-                    layer_counts[layer_type] = 0
-                
-                # Generate layer name with counter
-                layer_name = f"layer{i}_{layer_type.lower()}_{layer_counts[layer_type]}"
-                layer_counts[layer_type] += 1
-                
-                if layer_type == "Conv2D":
-                    current_channels = params.get("filters")  # Update current channels
-                elif layer_type == "BatchNormalization" and current_channels:
-                    params["filters"] = current_channels
-                
-                layer_code = generate_pytorch_layer(layer_type, params, current_input_shape)
-                if layer_code:
-                    layers_code.append(f"self.{layer_name} = {layer_code}")
-                    forward_code_body.append(f"x = self.{layer_name}(x)")
+            if layer_type not in layer_counts:
+                layer_counts[layer_type] = 0
+            
+            layer_name = f"layer{i}_{layer_type.lower()}_{layer_counts[layer_type]}"
+            layer_counts[layer_type] += 1
+            
+            if layer_type == "Dense":
+                # If first layer or previous layer requires flattening
+                if i == 0 or expanded_layers[i-1]['type'] in ["Input", "Flatten"]:
+                    in_features = np.prod(current_input_shape[1:])  # Flatten all dims except batch: 1 * 28 * 28 = 784
+                else:
+                    in_features = current_input_shape[-1]  # Previous layer's output features
+                out_features = params.get("units", 64)
+                layer_code = f"nn.Linear(in_features={in_features}, out_features={out_features})"
+                layers_code.append(f"self.{layer_name} = {layer_code}")
+                forward_code_body.append(f"x = self.{layer_name}(x)")
+            elif layer_type == "Dropout":
+                rate = params.get("rate", 0.5)
+                layer_code = f"nn.Dropout(p={rate})"
+                layers_code.append(f"self.{layer_name} = {layer_code}")
+                forward_code_body.append(f"x = self.{layer_name}(x)")
+            elif layer_type == "Output":
+                in_features = current_input_shape[-1]
+                out_features = params.get("units", 10)
+                activation = params.get("activation", "softmax")
+                if activation == "softmax":
+                    layer_code = f"nn.Sequential(nn.Linear(in_features={in_features}, out_features={out_features}), nn.Softmax(dim=1))"
+                else:
+                    layer_code = f"nn.Linear(in_features={in_features}, out_features={out_features})"
+                layers_code.append(f"self.{layer_name} = {layer_code}")
+                forward_code_body.append(f"x = self.{layer_name}(x)")
 
             current_input_shape = propagator.propagate(current_input_shape, layer)
 
-        # Restore original layers
         model_data['layers'] = original_layers
 
-        # Generate class code
         for line in layers_code:
             code += f"{indent}{indent}{line}\n"
         code += f"\n{indent}# Forward pass\n"
         code += f"{indent}def forward(self, x):\n"
+        if expanded_layers and expanded_layers[0]['type'] == 'Dense':
+            code += f"{indent}{indent}x = x.view(x.size(0), -1)  # Flatten input\n"
         for line in forward_code_body:
             code += f"{indent}{indent}{line}\n"
         code += f"{indent}{indent}return x\n\n"
 
-        code += "# Model instantiation\nmodel = NeuralNetworkModel()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel.to(device)\n\n"
+        code += "# Model instantiation\n"
+        code += "model = NeuralNetworkModel()\n"
+        code += "device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\n"
+        code += "model.to(device)\n\n"
 
-        loss_value = model_data.get('loss', 'crossentropy') if isinstance(model_data.get('loss'), str) else model_data.get('loss', {'value': 'crossentropy'})['value']
+        code += "# MNIST dataset\n"
+        code += "transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])\n"
+        code += "train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)\n"
+        batch_size = best_params.get('batch_size', 64) if best_params else model_data.get('training_config', {}).get('batch_size', 64)
+        code += f"train_loader = DataLoader(train_dataset, batch_size={batch_size}, shuffle=True)\n\n"
+
+        loss_entry = model_data.get('loss', {'value': 'crossentropy'})
+        if loss_entry is None or not isinstance(loss_entry, (str, dict)):
+            loss_value = 'crossentropy'
+        elif isinstance(loss_entry, str):
+            loss_value = loss_entry
+        else:
+            loss_value = loss_entry.get('value', 'crossentropy')
         loss_fn = "nn.CrossEntropyLoss()" if "crossentropy" in loss_value.lower() else "nn.MSELoss()"
         code += f"# Loss function\nloss_fn = {loss_fn}\n"
         
         opt_params = []
         if isinstance(optimizer_config, dict):
             for k, v in optimizer_config.get('params', {'lr': 0.001}).items():
-                opt_params.append(f"{k}={repr(v)}")
+                param_name = 'lr' if k == 'learning_rate' else k
+                opt_params.append(f"{param_name}={repr(v)}")
         code += f"# Optimizer\noptimizer = optim.{optimizer_type}(model.parameters(), {', '.join(opt_params)})\n"
 
         if 'training_config' in model_data:
             tc = model_data['training_config']
             code += "\n# Mixed precision training setup\n"
-            code += "scaler = GradScaler()\n"
-            code += "for epoch in range(num_epochs):\n"
+            code += "scaler = torch.amp.GradScaler('cuda' if torch.cuda.is_available() else 'cpu')\n"
+            code += f"for epoch in range({tc.get('epochs', 10)}):\n"
             code += f"{indent}for batch_idx, (data, target) in enumerate(train_loader):\n"
             code += f"{indent}{indent}data, target = data.to(device), target.to(device)\n"
             code += f"{indent}{indent}optimizer.zero_grad()\n"
-            code += f"{indent}{indent}with torch.cuda.amp.autocast():\n"
+            code += f"{indent}{indent}with torch.amp.autocast('cuda' if torch.cuda.is_available() else 'cpu'):\n"
             code += f"{indent}{indent}{indent}output = model(data)\n"
-            code += f"{indent}{indent}{indent}loss = criterion(output, target)\n"
+            code += f"{indent}{indent}{indent}loss = loss_fn(output, target)\n"
             code += f"{indent}{indent}scaler.scale(loss).backward()\n"
             code += f"{indent}{indent}scaler.step(optimizer)\n"
             code += f"{indent}{indent}scaler.update()\n"
-            if 'training_config' in model_data and 'save_path' in model_data['training_config']:
-                code += f"torch.save(model.state_dict(), '{model_data['training_config']['save_path']}')\n"
-            
-            code += "# Note: Replace 'dataset' with your actual dataset\n"
+            if 'save_path' in tc:
+                code += f"{indent}{indent}torch.save(model.state_dict(), '{tc['save_path']}')\n"
 
         return code
 
@@ -450,7 +460,7 @@ def generate_pytorch_layer(layer_type, params, input_shape=None):
         return None
     
 ## Optimized Code Generation ##
-@pysnooper.snoop()
+
 def generate_optimized_dsl(config, best_params):
     transformer = ModelTransformer()
     model_dict, hpo_params = transformer.parse_network_with_hpo(config)
@@ -460,21 +470,22 @@ def generate_optimized_dsl(config, best_params):
     logger.info(f"best_params: {best_params}")
     logger.info(f"hpo_params: {hpo_params}")
     
-    known_params = {'batch_size', 'learning_rate'}  # Add other common params as needed
-    
-    # Collect valid parameter keys from hpo_params
+    known_params = {'batch_size', 'learning_rate'}  # Common params not tied to layers
     valid_param_keys = set()
+    
+    # Build valid parameter keys from hpo_params
     for hpo in hpo_params:
         if hpo['layer_type'].lower() == 'optimizer':
-            valid_param_keys.add(hpo['param_name'])  # e.g., 'learning_rate'
+            param_key = hpo['param_name']  # e.g., 'learning_rate'
         else:
-            valid_param_keys.add(f"{hpo['layer_type'].lower()}_{hpo['param_name']}")  # e.g., 'dense_units', 'dropout_rate'
+            param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"  # e.g., 'dense_units'
+        valid_param_keys.add(param_key)
     
     invalid_keys = set(best_params.keys()) - valid_param_keys - known_params
     if invalid_keys:
-        logger.warning(f"Unknown parameters in best_params: {invalid_keys}")
+        logger.warning(f"Invalid keys in best_params: {invalid_keys}")
     
-    # Replace HPO specs with best_params values
+    # Process each HPO parameter
     for hpo in hpo_params:
         if hpo['layer_type'].lower() == 'optimizer':
             param_key = hpo['param_name']
@@ -496,12 +507,11 @@ def generate_optimized_dsl(config, best_params):
             else:
                 hpo_str = f"range({', '.join(original_parts)})"
         elif hpo_type == 'log_range':
-            # Use original string values from the config if available, fallback to numeric
             low = hpo['hpo'].get('original_low', str(hpo['hpo']['low']))
             high = hpo['hpo'].get('original_high', str(hpo['hpo']['high']))
-            hpo_str = f"log_range({low}, {high})"  # Matches original '1e-4, 1e-2'
+            hpo_str = f"log_range({low}, {high})"
         else:
-            logger.warning(f"Unsupported HPO type: {hpo_type}")
+            logger.warning(f"Unknown HPO type: {hpo_type}, skipping")
             continue
         
         logger.info(f"Processing hpo: {hpo}, param_key: {param_key}, hpo_str: {hpo_str}")
@@ -514,6 +524,17 @@ def generate_optimized_dsl(config, best_params):
                 break
             else:
                 logger.debug(f"Line {i} '{line}' does not contain 'HPO({hpo_str})'")
+    
+    # Handle learning_rate explicitly to avoid confusion with batch_size
+    if 'learning_rate' in best_params:
+        for i, line in enumerate(lines):
+            if 'learning_rate=HPO(' in line:
+                hpo_str = 'log_range(1e-4, 1e-2)'  # Match DSL exactly
+                old_line = lines[i]
+                new_line = line.replace(f"HPO({hpo_str})", str(best_params['learning_rate']))
+                lines[i] = new_line
+                logger.info(f"Replaced line {i} (learning_rate): '{old_line}' -> '{new_line}'")
+                break
     
     logger.info(f"Final lines: {lines}")
     return '\n'.join(lines)
