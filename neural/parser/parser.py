@@ -2215,10 +2215,27 @@ class ModelTransformer(lark.Transformer):
         })
 
     def parse_network_with_hpo(self, config):
-        tree = create_parser('network').parse(config)
-        model = self.transform(tree)
-        return model, self.hpo_params
-    
+        try:
+            tree = create_parser('network').parse(config)
+            model = self.transform(tree)
+            return model, self.hpo_params
+        except VisitError as e:
+            # Check if the original exception is a DSLValidationError
+            if hasattr(e, 'orig_exc') and isinstance(e.orig_exc, DSLValidationError):
+                log_by_severity(Severity.ERROR, f"Error parsing network: {str(e.orig_exc)}")
+                # Re-raise the VisitError with DSLValidationError as the cause
+                raise e from e.orig_exc
+            else:
+                log_by_severity(Severity.ERROR, f"Unexpected transformation error: {str(e)}")
+                raise
+        except DSLValidationError as e:
+            # Handle direct DSLValidationError (unlikely here, but for completeness)
+            log_by_severity(Severity.ERROR, f"Direct parsing error: {str(e)}")
+            raise VisitError("Direct DSL validation error") from e
+        except Exception as e:
+            log_by_severity(Severity.ERROR, f"Unexpected error: {str(e)}")
+            raise
+
     def _parse_hpo_value(self, value):
         """Parse a single HPO value while retaining original string if numeric."""
         try:
