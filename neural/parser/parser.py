@@ -760,8 +760,7 @@ class ModelTransformer(lark.Transformer):
             for elem in param_style:
                 if isinstance(elem, dict):
                     if 'hpo' in elem:
-                        merged_params['rate'] = elem
-                        self._track_hpo('Dropout', 'rate', elem, items[0])  # Track HPO
+                        merged_params['rate'] = elem  # Assign HPO to 'rate' without tracking here
                     else:
                         merged_params.update(elem)
                 else:
@@ -772,7 +771,7 @@ class ModelTransformer(lark.Transformer):
             params = param_style.copy()
             if 'rate' in params:
                 if not isinstance(params['rate'], float) and 'hpo' in params['rate']:
-                    self._track_hpo('Dropout', 'rate', params['rate'], items[0])
+                    self._track_hpo('Dropout', 'rate', params['rate'], items[0])  # Single tracking point
                 else:  # Validate only if not HPO
                     rate = params['rate']
                     if not isinstance(rate, (int, float)):
@@ -788,7 +787,7 @@ class ModelTransformer(lark.Transformer):
         else:
             self.raise_validation_error("Invalid parameters for Dropout", items[0], Severity.ERROR)
         
-        return {'type': 'Dropout', 'params': params}
+        return {'type': 'Dropout', 'params': params, 'sublayers': []}  # Added sublayers for consistency
     
     def output(self, items):
         params = {}
@@ -801,7 +800,11 @@ class ModelTransformer(lark.Transformer):
             if isinstance(param_values, list):
                 for val in param_values:
                     if isinstance(val, dict):
-                        named_params.update(val)
+                        if 'hpo' in val and len(named_params) == 0 and len(ordered_params) == 0:
+                            # First positional HPO expression becomes 'units'
+                            named_params['units'] = val
+                        else:
+                            named_params.update(val)
                     else:
                         ordered_params.append(val)
             elif isinstance(param_values, dict):
@@ -825,7 +828,8 @@ class ModelTransformer(lark.Transformer):
         if 'units' in params and isinstance(params['units'], dict) and 'hpo' in params['units']:
             self._track_hpo('Output', 'units', params['units'], items[0])
         
-        return {'type': 'Output', 'params': params}
+        # Ensure sublayers is included
+        return {'type': 'Output', 'params': params, 'sublayers': []}
 
     def regularization(self, items):
         return {'type': items[0].data.capitalize(), 'params': self._extract_value(items[0].children[0])}

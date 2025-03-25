@@ -101,7 +101,7 @@ def test_parsed_hpo_config_all_types():
     network Test {
         input: (28,28,1)
         layers:
-            Dense(units=HPO(choice(32, 64)), activation="relu")
+            Dense(HPO(choice(32, 64)), activation="relu")
             Dropout(HPO(range(0.1, 0.5, step=0.1)))
             Output(HPO(log_range(10, 20)))
     }
