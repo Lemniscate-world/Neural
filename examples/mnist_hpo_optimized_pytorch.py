@@ -9,9 +9,9 @@ from torch.utils.data import DataLoader
 class NeuralNetworkModel(nn.Module):
     def __init__(self):
         super(NeuralNetworkModel, self).__init__()
-        self.layer0_dense_0 = nn.Linear(in_features=784, out_features=128)
-        self.layer1_dropout_0 = nn.Dropout(p=0.3)
-        self.layer2_output_0 = nn.Sequential(nn.Linear(in_features=128, out_features=10), nn.Softmax(dim=1))
+        self.layer0_dense_0 = nn.Linear(in_features=784, out_features=256)
+        self.layer1_dropout_0 = nn.Dropout(p=0.4)
+        self.layer2_output_0 = nn.Sequential(nn.Linear(in_features=256, out_features=10), nn.Softmax(dim=1))
 
     # Forward pass
     def forward(self, x):
@@ -34,7 +34,7 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 # Loss function
 loss_fn = nn.CrossEntropyLoss()
 # Optimizer
-optimizer = optim.Adam(model.parameters(), lr=0.007690820964132956)
+optimizer = optim.Adam(model.parameters(), lr=0.0008537452510501334)
 
 # Mixed precision training setup
 scaler = torch.amp.GradScaler('cuda' if torch.cuda.is_available() else 'cpu')
