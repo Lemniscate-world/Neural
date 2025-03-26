@@ -370,7 +370,7 @@ def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pyto
     # Normalize the best parameters
     best_params = study.best_trials[0].params
     normalized_params = {
-        'batch_size': best_params.get('batch_size', 32),  # Use resolved batch_size
+        'batch_size': best_params.get('batch_size', 32),  # Use consistent naming
     }
     if 'Dense_units' in best_params:
         normalized_params['dense_units'] = best_params['Dense_units']
