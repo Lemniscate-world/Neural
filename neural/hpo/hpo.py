@@ -152,6 +152,11 @@ class DynamicPTModel(nn.Module):
                 kernel_size = params.get('kernel_size', 3)
                 self.layers.append(nn.Conv2d(in_channels, filters, kernel_size))
                 in_channels = filters
+            elif layer['type'] == 'MaxPooling2D':
+                pool_size = params.get('pool_size', trial.suggest_int('maxpool2d_pool_size', 2, 3))
+                stride = params.get('stride', pool_size)
+                print(f"MaxPooling2D: pool_size={pool_size}, stride={stride}")
+                self.layers.append(nn.MaxPool2d(kernel_size=pool_size, stride=stride)
             elif layer['type'] == 'Flatten':
                 self.layers.append(nn.Flatten())
                 in_features = prod(current_shape[1:])
@@ -174,6 +179,32 @@ class DynamicPTModel(nn.Module):
                 print(f"Output: in_features={in_features}, units={units}")
                 self.layers.append(nn.Linear(in_features, units))
                 in_features = units
+            elif layer['type'] == 'LSTM':
+                input_size = current_shape[-1]
+                units = params.get('units', trial.suggest_int('lstm_units', 32, 256))
+                num_layers = params.get('num_layers', 1)
+                if isinstance(params.get('num_layers'), dict) and 'hpo' in params.get('num_layers'):
+                    num_layers = trial.suggest_int('lstm_num_layers', 1, 3)
+                print(f"LSTM: input_size={input_size}, units={units}, num_layers={num_layers}")
+                self.layers.append(nn.LSTM(input_size, units, num_layers=num_layers, batch_first=True))
+                in_features = units
+            elif layer['type'] == 'BatchNormalization':
+                momentum = params.get('momentum', trial.suggest_float('bn_momentum', 0.8, 0.99))
+                print(f"BatchNormalization: momentum={momentum}")
+                self.layers.append(nn.BatchNorm2d(in_channels))
+            elif layer['type'] == 'Transformer':
+                d_model = params.get('d_model', trial.suggest_int('transformer_d_model', 64, 512))
+                nhead = params.get('nhead', trial.suggest_int('transformer_nhead', 4, 8))
+                num_encoder_layers = params.get('num_encoder_layers', trial.suggest_int('transformer_encoder_layers', 1, 4))
+                num_decoder_layers = params.get('num_decoder_layers', trial.suggest_int('transformer_decoder_layers', 1, 4))
+                dim_feedforward = params.get('dim_feedforward', trial.suggest_int('transformer_ff_dim', 128, 1024))
+                print(f"Transformer: d_model={d_model}, nhead={nhead}, encoder_layers={num_encoder_layers}, decoder_layers={num_decoder_layers}, ff_dim={dim_feedforward}")
+                self.layers.append(nn.Transformer(d_model=d_model,
+                                                  nhead=nhead,
+                                                  num_encoder_layers=num_encoder_layers,
+                                                  num_decoder_layers=num_decoder_layers,
+                                                  dim_feedforward=dim_feedforward))
+                in_features = d_model
             else:
                 raise ValueError(f"Unsupported layer type: {layer['type']}")
         print("Final layers:", self.layers)
