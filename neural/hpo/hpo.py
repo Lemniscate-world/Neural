@@ -156,7 +156,7 @@ class DynamicPTModel(nn.Module):
                 pool_size = params.get('pool_size', trial.suggest_int('maxpool2d_pool_size', 2, 3))
                 stride = params.get('stride', pool_size)
                 print(f"MaxPooling2D: pool_size={pool_size}, stride={stride}")
-                self.layers.append(nn.MaxPool2d(kernel_size=pool_size, stride=stride)
+                self.layers.append(nn.MaxPool2d(kernel_size=pool_size, stride=stride))
             elif layer['type'] == 'Flatten':
                 self.layers.append(nn.Flatten())
                 in_features = prod(current_shape[1:])
