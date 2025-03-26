@@ -403,7 +403,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         device: "@" NAME
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" values_list
-        values_list: "[" value ("," value)* "]" | value ("," value)*
+        values_list: "[" (value | hpo_expr) ("," (value | hpo_expr))* "]" | (value | hpo_expr) ("," (value | hpo_expr))*
         
         optimizer_param: "optimizer:" named_optimizer
         named_optimizer: "named_optimizer(" learning_rate_param ")"
@@ -447,7 +447,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
-        ?value: STRING -> string_value | number | tuple_ | BOOL  
+        ?value: STRING -> string_value | number | tuple_ | BOOL 
         tuple_: "(" number "," number ")"  
         number: NUMBER  
         named_params: named_param ("," named_param)*
