@@ -1110,7 +1110,30 @@ class ModelTransformer(lark.Transformer):
         return {'epochs': self._extract_value(items[0])}
 
     def batch_size_param(self, items):
-        return {'batch_size': self._extract_value(items[0])}
+        value = self._extract_value(items[0])
+        if isinstance(value, dict) and 'hpo' in value:
+            # Track HPO for batch_size
+            self._track_hpo('training_config', 'batch_size', value, items[0])
+            return {'batch_size': value}
+        elif isinstance(value, list):
+            # Handle list case (e.g., [16, 32, 64]) as categorical if intended for HPO
+            if len(value) > 1 and all(isinstance(v, (int, float)) for v in value):
+                hpo_config = {
+                    'hpo': {
+                        'type': 'categorical',
+                        'values': value,
+                        'original_values': [str(v) for v in value]
+                    }
+                }
+                self._track_hpo('training_config', 'batch_size', hpo_config, items[0])
+                return {'batch_size': hpo_config}
+            return {'batch_size': value[0] if len(value) == 1 else value}
+        elif isinstance(value, (int, float)):
+            if value <= 0:
+                self.raise_validation_error(f"batch_size must be positive, got {value}", items[0])
+            return {'batch_size': int(value)}  # Ensure integer
+        else:
+            self.raise_validation_error(f"Invalid batch_size value: {value}", items[0])
 
     ###############
 

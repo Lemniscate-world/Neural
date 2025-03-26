@@ -104,6 +104,7 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
                 f"model.fit(\n    x_train, y_train,\n"
                 f"    epochs={tc.get('epochs', 10)},\n"
                 f"    batch_size={tc.get('batch_size', 32)},\n"
+                f"model.fit(\n    x_train, y_train,\n    epochs={tc.get('epochs', 10)},\n    batch_size={batch_size},\n"
                 f"    validation_split={tc.get('validation_split', 0.2)},\n"
                 f"    verbose=1\n)\n"
             )

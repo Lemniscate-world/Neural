@@ -294,8 +294,24 @@ def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pyto
         # Parse the config once per trial
         model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
         
-        # Suggest batch_size
-        batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
+        # Resolve batch_size from training_config or HPO
+        training_config = model_dict.get('training_config', {})
+        batch_size = training_config.get('batch_size', 32)  # Default if not specified
+        
+        if isinstance(batch_size, dict) and 'hpo' in batch_size:
+            hpo = batch_size['hpo']
+            if hpo['type'] == 'categorical':
+                batch_size = trial.suggest_categorical("batch_size", hpo['values'])
+            elif hpo['type'] == 'range':
+                batch_size = trial.suggest_int("batch_size", hpo['start'], hpo['end'], step=hpo.get('step', 1))
+            elif hpo['type'] == 'log_range':
+                batch_size = trial.suggest_int("batch_size", hpo['low'], hpo['high'], log=True)
+        elif isinstance(batch_size, list):
+            batch_size = trial.suggest_categorical("batch_size", batch_size)
+        
+        # Ensure batch_size is an integer
+        batch_size = int(batch_size)
+        
         train_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, True, backend)
         val_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, False, backend)
         
@@ -323,7 +339,7 @@ def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pyto
     # Normalize the best parameters
     best_params = study.best_trials[0].params
     normalized_params = {
-        'batch_size': best_params['batch_size'],
+        'batch_size': best_params.get('batch_size', 32),  # Use resolved batch_size
     }
     if 'Dense_units' in best_params:
         normalized_params['dense_units'] = best_params['Dense_units']
