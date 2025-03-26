@@ -715,6 +715,7 @@ class ModelTransformer(lark.Transformer):
         else:
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
             return {'type': layer_type, 'params': raw_params, 'sublayers': sublayers}
+        
     def device_spec(self, items):
         """Process device specification correctly."""
         if len(items) > 1 and isinstance(items[1], Token) and items[1].type == "STRING":
@@ -786,6 +787,10 @@ class ModelTransformer(lark.Transformer):
                 self.raise_validation_error(f"Dropout rate should be between 0 and 1, got {params['rate']}", items[0], Severity.ERROR)
         else:
             self.raise_validation_error("Invalid parameters for Dropout", items[0], Severity.ERROR)
+
+        for param_name, param_value in params.items():
+            if isinstance(param_value, dict) and 'hpo' in param_value:
+                self._track_hpo('Dropout', param_name, param_value, items[0])
         
         return {'type': 'Dropout', 'params': params, 'sublayers': []}  # Added sublayers for consistency
     
@@ -963,6 +968,11 @@ class ModelTransformer(lark.Transformer):
                     self.raise_validation_error(f"Conv2D kernel_size should be positive integers, got {ks}", items[0], Severity.ERROR)
             elif not isinstance(ks, int) or ks <= 0:
                 self.raise_validation_error(f"Conv2D kernel_size must be a positive integer, got {ks}", items[0], Severity.ERROR)
+        
+        for param_name, param_value in params.items():
+            if isinstance(param_value, dict) and 'hpo' in param_value:
+                self._track_hpo('Conv2D', param_name, param_value, items[0])
+            
         return {'type': 'Conv2D', 'params': params}  # 'sublayers' added by basic_layer
 
     def conv3d(self, items):
@@ -1226,6 +1236,10 @@ class ModelTransformer(lark.Transformer):
                 self.raise_validation_error("pool size must be positive", items[0])
         else:
             self.raise_validation_error("Missing required parameter 'pool_size'", items[0])
+
+        for param_name, param_value in params.items():
+            if isinstance(param_value, dict) and 'hpo' in param_value:
+                self._track_hpo('MaxPooling2D', param_name, param_value, items[0])
         
         return {'type': 'MaxPooling2D', 'params': params}
 
