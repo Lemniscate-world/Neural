@@ -211,7 +211,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_rate: "rate" "=" FLOAT
         named_dropout: "dropout" "=" FLOAT
         named_axis: "axis" "=" NUMBER
-        named_momentum: "momentum" "=" FLOAT
         named_epsilon: "epsilon" "=" FLOAT
         named_center: "center" "=" BOOL
         named_scale: "scale" "=" BOOL
@@ -278,14 +277,23 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         simple_float: FLOAT
         named_clipvalue: "clipvalue" "=" FLOAT
         named_clipnorm: "clipnorm" "=" FLOAT
-        ?named_param: ( named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_momentum | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value | NAME "=" hpo_expr | named_alpha)
+        ?named_param: ( learning_rate_param | momentum_param | named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value | NAME "=" hpo_expr | named_alpha)
 
 
-        network: "network" NAME "{" input_layer layers [loss] [optimizer] [training_config] [execution_config] "}"
+        network: "network" NAME "{" input_layer layers [loss] [optimizer_param] [training_config] [execution_config] "}"
         input_layer: "input" ":" shape ("," shape)*
         layers: "layers" ":" layer_or_repeated+
-        loss: "loss" ":" (NAME | STRING) ["(" named_params ")"]
-        optimizer: "optimizer:" (NAME | STRING) ["(" named_params ")"]
+        loss: "loss" ":" (NAME | STRING) ["(" param_style1 ")"]
+
+        // Optimizer
+        optimizer_param: "optimizer:" named_optimizer
+        named_optimizer: NAME "(" [param_style1] ("," [param_style1])* ")"
+        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr)
+        momentum_param: "momentum=" (FLOAT | hpo_expr)
+        search_method_param: "search_method:" STRING
+        validation_split_param: "validation_split:" FLOAT
+
+
         layer_or_repeated: layer ["*" INT] 
         ?layer: basic_layer | advanced_layer | special_layer
         config: training_config | execution_config
@@ -299,14 +307,14 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         wrapper: TIMEDISTRIBUTED "(" layer ["," param_style1] ")" [layer_block]
 
         dropout: "Dropout" "(" dropout_params ")"
-        dropout_params: FLOAT | named_params
-        flatten: "Flatten" "(" [named_params] ")"
+        dropout_params: FLOAT | param_style1
+        flatten: "Flatten" "(" [param_style1] ")"
 
 
         regularization: spatial_dropout1d | spatial_dropout2d | spatial_dropout3d | activity_regularization | l1 | l2 | l1_l2
-        l1: "L1(" named_params ")"
-        l2: "L2(" named_params ")"
-        l1_l2: "L1L2(" named_params ")"
+        l1: "L1(" param_style1 ")"
+        l2: "L2(" param_style1 ")"
+        l1_l2: "L1L2(" param_style1 ")"
 
         output: OUTPUT "(" param_style1 ")"
 
@@ -323,63 +331,63 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         pooling: max_pooling | average_pooling | global_pooling | adaptive_pooling
         max_pooling: max_pooling1d | max_pooling2d | max_pooling3d
-        max_pooling1d: MAXPOOLING1D "(" named_params ")"
+        max_pooling1d: MAXPOOLING1D "(" param_style1 ")"
         max_pooling2d: MAXPOOLING2D "(" param_style1 ")"
-        max_pooling3d: MAXPOOLING3D "(" named_params ")"
+        max_pooling3d: MAXPOOLING3D "(" param_style1 ")"
         pool_size: "pool_size" "=" value
         average_pooling: average_pooling1d | average_pooling2d | average_pooling3d
-        average_pooling1d: "AveragePooling1D" "(" named_params ")"
-        average_pooling2d: "AveragePooling2D" "(" named_params ")"
-        average_pooling3d: "AveragePooling3D" "(" named_params ")"
+        average_pooling1d: "AveragePooling1D" "(" param_style1 ")"
+        average_pooling2d: "AveragePooling2D" "(" param_style1 ")"
+        average_pooling3d: "AveragePooling3D" "(" param_style1 ")"
         global_pooling: global_max_pooling | global_average_pooling
         global_max_pooling: global_max_pooling1d | global_max_pooling2d | global_max_pooling3d
-        global_max_pooling1d: "GlobalMaxPooling1D" "(" named_params ")"
-        global_max_pooling2d: "GlobalMaxPooling2D" "(" named_params ")"
-        global_max_pooling3d: "GlobalMaxPooling3D" "(" named_params ")"
+        global_max_pooling1d: "GlobalMaxPooling1D" "(" param_style1 ")"
+        global_max_pooling2d: "GlobalMaxPooling2D" "(" param_style1 ")"
+        global_max_pooling3d: "GlobalMaxPooling3D" "(" param_style1 ")"
         global_average_pooling: global_average_pooling1d | global_average_pooling2d | global_average_pooling3d
-        global_average_pooling1d: "GlobalAveragePooling1D" "(" named_params ")"
-        global_average_pooling2d: "GlobalAveragePooling2D" "(" named_params ")"
-        global_average_pooling3d: "GlobalAveragePooling3D" "(" named_params ")"
+        global_average_pooling1d: "GlobalAveragePooling1D" "(" param_style1 ")"
+        global_average_pooling2d: "GlobalAveragePooling2D" "(" param_style1 ")"
+        global_average_pooling3d: "GlobalAveragePooling3D" "(" param_style1 ")"
         adaptive_pooling: adaptive_max_pooling | adaptive_average_pooling
         adaptive_max_pooling: adaptive_max_pooling1d | adaptive_max_pooling2d | adaptive_max_pooling3d
-        adaptive_max_pooling1d: "AdaptiveMaxPooling1D" "(" named_params ")"
-        adaptive_max_pooling2d: "AdaptiveMaxPooling2D" "(" named_params ")"
-        adaptive_max_pooling3d: "AdaptiveMaxPooling3D" "(" named_params ")"
+        adaptive_max_pooling1d: "AdaptiveMaxPooling1D" "(" param_style1 ")"
+        adaptive_max_pooling2d: "AdaptiveMaxPooling2D" "(" param_style1 ")"
+        adaptive_max_pooling3d: "AdaptiveMaxPooling3D" "(" param_style1 ")"
         adaptive_average_pooling: adaptive_average_pooling1d | adaptive_average_pooling2d | adaptive_average_pooling3d
-        adaptive_average_pooling1d: "AdaptiveAveragePooling1D" "(" named_params ")"
-        adaptive_average_pooling2d: "AdaptiveAveragePooling2D" "(" named_params ")"
-        adaptive_average_pooling3d: "AdaptiveAveragePooling3D" "(" named_params ")"
+        adaptive_average_pooling1d: "AdaptiveAveragePooling1D" "(" param_style1 ")"
+        adaptive_average_pooling2d: "AdaptiveAveragePooling2D" "(" param_style1 ")"
+        adaptive_average_pooling3d: "AdaptiveAveragePooling3D" "(" param_style1 ")"
 
         ?norm_layer: batch_norm | layer_norm | instance_norm | group_norm
-        batch_norm: BATCHNORMALIZATION "(" [named_params] ")"
-        layer_norm: LAYERNORMALIZATION "(" [named_params] ")"
-        instance_norm: INSTANCENORMALIZATION "(" [named_params] ")"
-        group_norm: GROUPNORMALIZATION "(" [named_params] ")"
+        batch_norm: BATCHNORMALIZATION "(" [param_style1] ")"
+        layer_norm: LAYERNORMALIZATION "(" [param_style1] ")"
+        instance_norm: INSTANCENORMALIZATION "(" [param_style1] ")"
+        group_norm: GROUPNORMALIZATION "(" [param_style1] ")"
 
         conv_rnn: conv_lstm | conv_gru
-        conv_lstm: "ConvLSTM2D(" named_params ")"
-        conv_gru: "ConvGRU2D(" named_params ")"
+        conv_lstm: "ConvLSTM2D(" param_style1 ")"
+        conv_gru: "ConvGRU2D(" param_style1 ")"
 
         rnn_cell: simple_rnn_cell | lstm_cell | gru_cell
-        simple_rnn_cell: "SimpleRNNCell" "(" named_params ")"
-        lstm_cell: LSTMCELL "(" named_params ")"
-        gru_cell: GRUCELL "(" named_params ")"
+        simple_rnn_cell: "SimpleRNNCell" "(" param_style1 ")"
+        lstm_cell: LSTMCELL "(" param_style1 ")"
+        gru_cell: GRUCELL "(" param_style1 ")"
 
         dropout_wrapper_layer: simple_rnn_dropout | gru_dropout | lstm_dropout
-        simple_rnn_dropout: SIMPLE_RNN_DROPOUT_WRAPPER "(" named_params ")"
-        gru_dropout: "GRUDropoutWrapper" "(" named_params ")"
-        lstm_dropout: "LSTMDropoutWrapper" "(" named_params ")"
+        simple_rnn_dropout: SIMPLE_RNN_DROPOUT_WRAPPER "(" param_style1 ")"
+        gru_dropout: "GRUDropoutWrapper" "(" param_style1 ")"
+        lstm_dropout: "LSTMDropoutWrapper" "(" param_style1 ")"
         bidirectional_rnn_layer: bidirectional_simple_rnn_layer | bidirectional_lstm_layer | bidirectional_gru_layer
-        bidirectional_simple_rnn_layer: "Bidirectional(SimpleRNN(" named_params "))"
-        bidirectional_lstm_layer: "Bidirectional(LSTM(" named_params "))"
-        bidirectional_gru_layer: "Bidirectional(GRU(" named_params "))"
+        bidirectional_simple_rnn_layer: "Bidirectional(SimpleRNN(" param_style1 "))"
+        bidirectional_lstm_layer: "Bidirectional(LSTM(" param_style1 "))"
+        bidirectional_gru_layer: "Bidirectional(GRU(" param_style1 "))"
         conv_rnn_layer: conv_lstm_layer | conv_gru_layer
-        conv_lstm_layer: "ConvLSTM2D" "(" named_params ")"
-        conv_gru_layer: "ConvGRU2D" "(" named_params ")"
+        conv_lstm_layer: "ConvLSTM2D" "(" param_style1 ")"
+        conv_gru_layer: "ConvGRU2D" "(" param_style1 ")"
         rnn_cell_layer: simple_rnn_cell_layer | lstm_cell_layer | gru_cell_layer
-        simple_rnn_cell_layer: "SimpleRNNCell" "(" named_params ")"
-        lstm_cell_layer: "LSTMCell" "(" named_params ")"
-        gru_cell_layer: "GRUCell" "(" named_params ")"
+        simple_rnn_cell_layer: "SimpleRNNCell" "(" param_style1 ")"
+        lstm_cell_layer: "LSTMCell" "(" param_style1 ")"
+        gru_cell_layer: "GRUCell" "(" param_style1 ")"
 
         // Lambda layers
         merge: add | substract | multiply | average | maximum | concatenate | dot
@@ -391,10 +399,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         concatenate: CONCATENATE "(" param_style1 ")"
         dot: DOT "(" param_style1 ")"
 
-        spatial_dropout1d: "SpatialDropout1D" "(" named_params ")"
-        spatial_dropout2d: "SpatialDropout2D" "(" named_params ")"
-        spatial_dropout3d: "SpatialDropout3D" "(" named_params ")"
-        activity_regularization: "ActivityRegularization" "(" named_params ")"
+        spatial_dropout1d: "SpatialDropout1D" "(" param_style1 ")"
+        spatial_dropout2d: "SpatialDropout2D" "(" param_style1 ")"
+        spatial_dropout3d: "SpatialDropout3D" "(" param_style1 ")"
+        activity_regularization: "ActivityRegularization" "(" param_style1 ")"
 
 
         // Training & Configurations
@@ -405,11 +413,6 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         batch_size_param: "batch_size:" values_list
         values_list: "[" (value | hpo_expr) ("," (value | hpo_expr))* "]" | (value | hpo_expr) ("," (value | hpo_expr))*
         
-        optimizer_param: "optimizer:" named_optimizer
-        named_optimizer: NAME "(" [named_params] ")"
-        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr)
-        search_method_param: "search_method:" STRING
-        validation_split_param: "validation_split:" FLOAT
 
         schedule: NAME "(" valparams ")"
         valparams: [value ("," value)*]
@@ -1012,35 +1015,56 @@ class ModelTransformer(lark.Transformer):
     def loss(self, items):
         return items[0].value.strip('"')
 
-
-    def optimizer(self, items):
+    @pysnooper.snoop()
+    def named_optimizer(self, items):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+        
+        logger.debug(f"named_optimizer called with items: {items}")
+        
         opt_node = items[0]
-        opt_value = self._extract_value(opt_node)  # "Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))"
+        opt_value = self._extract_value(opt_node)
+        logger.debug(f"opt_value: {opt_value}")
+        
         params = {}
         if len(items) > 1:
             params = self._extract_value(items[1]) or {}
+            logger.debug(f"params from items[1]: {params}")
 
         if isinstance(opt_value, str):
             stripped_value = opt_value.strip("'\"")
+            logger.debug(f"stripped_value: {stripped_value}")
+            
             if '(' in stripped_value and ')' in stripped_value:
                 # Extract optimizer name before '('
                 opt_type = stripped_value[:stripped_value.index('(')].strip()
-                # Capitalize the optimizer name (e.g., "Adam" not "adam")
-                opt_type = opt_type.capitalize()
+                logger.debug(f"opt_type: {opt_type}")
+                
                 # Extract parameters inside parentheses
                 param_str = stripped_value[stripped_value.index('(')+1:stripped_value.rindex(')')].strip()
+                logger.debug(f"param_str: {param_str}")
+                
                 if param_str and not params:  # Only parse if params not provided separately
                     for param in split_params(param_str):
                         param = param.strip()
+                        logger.debug(f"processing param: {param}")
+                        
                         if '=' in param:
                             param_name, param_value = param.split('=', 1)
                             param_name = param_name.strip()
                             param_value = param_value.strip()
+                            logger.debug(f"param_name: {param_name}, param_value: {param_value}")
+                            
                             if 'HPO(' in param_value:
                                 hpo_start = param_value.index('HPO(')
                                 hpo_end = param_value.rindex(')') + 1
                                 hpo_str = param_value[hpo_start+4:hpo_end-1]
+                                logger.debug(f"hpo_str: {hpo_str}")
+                                
                                 hpo_config = self._parse_hpo(hpo_str, opt_node)
+                                logger.debug(f"hpo_config: {hpo_config}")
+                                
                                 params[param_name] = hpo_config
                                 self._track_hpo('optimizer', param_name, hpo_config, opt_node)
                             else:
@@ -1049,23 +1073,34 @@ class ModelTransformer(lark.Transformer):
                                 except ValueError:
                                     params[param_name] = param_value
             else:
-                opt_type = stripped_value.capitalize()  # No parentheses, just the name
+                opt_type = stripped_value  # No parentheses, just the name
+                logger.debug(f"opt_type (no parentheses): {opt_type}")
         else:
+            logger.debug(f"opt_value is not a string: {type(opt_value)}")
             self.raise_validation_error("Optimizer must be a string", opt_node)
 
         if not opt_type:
+            logger.debug("opt_type is empty")
             self.raise_validation_error("Optimizer type must be specified", opt_node, Severity.ERROR)
 
-        # Validate optimizer name against common PyTorch/TensorFlow optimizers
+        # Validate optimizer name against common PyTorch/TensorFlow optimizers (case-insensitive)
         valid_optimizers = {'Adam', 'SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adamax', 'Nadam'}
-        if opt_type not in valid_optimizers:
+        
+        # Find the correct case version of the optimizer
+        opt_type_normalized = None
+        for valid_opt in valid_optimizers:
+            if valid_opt.lower() == opt_type.lower():
+                opt_type_normalized = valid_opt
+                break
+                
+        if not opt_type_normalized:
             self.raise_validation_error(
                 f"Invalid optimizer '{opt_type}'. Supported optimizers: {', '.join(valid_optimizers)}",
                 opt_node,
                 Severity.ERROR
             )
 
-        return {'type': opt_type, 'params': params}
+        return {'type': opt_type_normalized, 'params': params}
 
     def schedule(self, items):
         return {"type": items[0].value, "args": [self._extract_value(x) for x in items[1].children]}
@@ -1154,9 +1189,6 @@ class ModelTransformer(lark.Transformer):
 
     def optimizer_param(self, items):
         return {'optimizer': self._extract_value(items[0])}
-
-    def named_optimizer(self, items):
-        return {'named_optimizer': self._extract_value(items[0])}
 
     def learning_rate_param(self, items):
         return {'learning_rate': self._extract_value(items[0])}
