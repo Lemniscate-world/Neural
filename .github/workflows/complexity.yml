@@ -14,7 +14,7 @@ jobs:
       - name: Install radon
         run: pip install radon
       - name: Run complexity analysis
-        run: python /scripts/complexity.py
+        run: python scripts/complexity.py  # Fix the path by removing the leading slash
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
