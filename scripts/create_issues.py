@@ -3,7 +3,7 @@ import os
 from github import Github
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-REPO = "Lemniscate-SHA-256/Neural"
+REPO = "Lemniscate-world/Neural"
 
 def parse_pytest_results(xml_path):
     xml_path = os.path.join(os.environ.get("GITHUB_WORKSPACE", ""), "test-results.xml")
@@ -28,7 +28,7 @@ def parse_pytest_results(xml_path):
                         f"- **File:** `{classname}`\n"
                         f"- **Error:** {message}\n\n"
                         f"**Explanation:** This test failure needs investigation.\n\n"
-                        f"**Comments:** Any additional context? Assigning to @Lemniscate-SHA-256 for review.",
+                        f"**Comments:** Any additional context? Assigning to @Lemniscate-world for review.",
             })
     
     return issues
@@ -39,7 +39,10 @@ def create_github_issues(issues):
         raise ValueError("Missing GITHUB_TOKEN environment variable")
     
     g = Github(token)
-    repo = g.get_repo("Lemniscate-SHA-256/Neural")
+    
+    # Get repository from environment variables instead of hardcoding
+    repo_name = os.environ.get('GITHUB_REPOSITORY', 'Lemniscate-world/Neural')
+    repo = g.get_repo(repo_name)
     
     for issue in issues:
         # Check for existing issues with similar titles
@@ -55,7 +58,7 @@ def create_github_issues(issues):
                     title=issue["title"][:120],  # Truncate long titles
                     body=issue["body"],
                     labels=['bug', 'ci'],
-                    assignees=['Lemniscate-SHA-256']
+                    assignees=['Lemniscate-world']
                 )
                 print(f"Created issue: {issue['title']}")
             except Exception as e:

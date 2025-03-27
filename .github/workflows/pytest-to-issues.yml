@@ -61,13 +61,21 @@ jobs:
           echo "=== Environment ==="
           echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN != '' }}"
 
-      - name: Add NVIDIA repository
+      - name: Check for GPU
+        id: check-gpu
         run: |
+          if [ -c /dev/nvidia0 ]; then
+            echo "gpu=available" >> $GITHUB_OUTPUT
+          else
+            echo "gpu=unavailable" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Setup TensorRT (GPU only)
+        if: steps.check-gpu.outputs.gpu == 'available'
+        run: |
+          # Only attempt TensorRT setup if GPU is available
           distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
           curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
           curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
           sudo apt-get update
-        
-      - name: Install TensorRT
-        run: |
           sudo apt-get install -y tensorrt

@@ -1,7 +1,7 @@
 import pytest
 from lark import exceptions
 from neural.parser.parser import layer_parser, ModelTransformer
-from neural.exceptions import DSLValidationError, VisitError
+from lark.exceptions import VisitError
 
 class TestHPOParser:
     @pytest.fixture
