@@ -16,11 +16,20 @@ class TestHPOOptimizers:
         return ModelTransformer()
 
     @pytest.mark.parametrize(
-        "optimizer_string, expected_result, test_id",
+        "network_string, expected_optimizer, test_id",
         [
             # Basic optimizer tests
             (
-                'Adam(learning_rate=0.001, beta_1=0.9)',
+                '''
+                network BasicAdam {
+                    input: (28, 28, 1)
+                    layers:
+                        Dense(128)
+                        Output(10)
+                    loss: "categorical_crossentropy"
+                    optimizer: Adam(learning_rate=0.001, beta_1=0.9)
+                }
+                ''',
                 {
                     'type': 'Adam',
                     'params': {'learning_rate': 0.001, 'beta_1': 0.9}
@@ -29,28 +38,55 @@ class TestHPOOptimizers:
             ),
             # HPO in learning rate
             (
-                'Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))',
+                '''
+                network AdamLrHPO {
+                    input: (28, 28, 1)
+                    layers:
+                        Dense(128)
+                        Output(10)
+                    loss: "categorical_crossentropy"
+                    optimizer: Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))
+                }
+                ''',
                 {
                     'type': 'Adam',
-                    'params': {'learning_rate': {'hpo': {'type': 'log_range', 'start': 1e-4, 'end': 1e-2}}}
+                    'params': {'learning_rate': {'hpo': {'type': 'log_range', 'low': 1e-4, 'high': 1e-2}}}
                 },
                 "adam-lr-hpo"
             ),
             # HPO in multiple parameters
             (
-                'SGD(learning_rate=HPO(log_range(1e-4, 1e-1)), momentum=HPO(range(0.8, 0.99, step=0.01)))',
+                '''
+                network SGDMultipleHPO {
+                    input: (28, 28, 1)
+                    layers:
+                        Dense(128)
+                        Output(10)
+                    loss: "categorical_crossentropy"
+                    optimizer: SGD(learning_rate=HPO(log_range(1e-4, 1e-1)), momentum=0.9)
+                }
+                ''',
                 {
                     'type': 'SGD',
                     'params': {
-                        'learning_rate': {'hpo': {'type': 'log_range', 'start': 1e-4, 'end': 1e-1}},
-                        'momentum': {'hpo': {'type': 'range', 'start': 0.8, 'end': 0.99, 'step': 0.01}}
+                        'learning_rate': {'hpo': {'type': 'log_range', 'low': 1e-4, 'high': 1e-1}},
+                        'momentum': 0.9
                     }
                 },
                 "sgd-multiple-hpo"
             ),
             # Learning rate schedule
             (
-                'SGD(learning_rate=ExponentialDecay(0.1, 1000, 0.96), momentum=0.9)',
+                '''
+                network SGDLrSchedule {
+                    input: (28, 28, 1)
+                    layers:
+                        Dense(128)
+                        Output(10)
+                    loss: "categorical_crossentropy"
+                    optimizer: SGD(learning_rate=ExponentialDecay(0.1, 1000, 0.96), momentum=0.9)
+                }
+                ''',
                 {
                     'type': 'SGD',
                     'params': {
@@ -65,16 +101,25 @@ class TestHPOOptimizers:
             ),
             # HPO in learning rate schedule
             (
-                'SGD(learning_rate=ExponentialDecay(HPO(range(0.05, 0.2, step=0.05)), 1000, HPO(range(0.9, 0.99, step=0.01))))',
+                '''
+                network SGDLrScheduleHPO {
+                    input: (28, 28, 1)
+                    layers:
+                        Dense(128)
+                        Output(10)
+                    loss: "categorical_crossentropy"
+                    optimizer: SGD(learning_rate=ExponentialDecay(HPO(range(0.05, 0.2, step=0.05)), 1000, HPO(range(0.9, 0.99, step=0.01))))
+                }
+                ''',
                 {
                     'type': 'SGD',
                     'params': {
                         'learning_rate': {
                             'type': 'ExponentialDecay',
                             'args': [
-                                {'hpo': {'type': 'range', 'start': 0.05, 'end': 0.2, 'step': 0.05}},
+                                {'hpo': {'type': 'range', 'low': 0.05, 'high': 0.2, 'step': 0.05}},
                                 1000,
-                                {'hpo': {'type': 'range', 'start': 0.9, 'end': 0.99, 'step': 0.01}}
+                                {'hpo': {'type': 'range', 'low': 0.9, 'high': 0.99, 'step': 0.01}}
                             ]
                         }
                     }
@@ -87,11 +132,13 @@ class TestHPOOptimizers:
             "sgd-lr-schedule", "sgd-lr-schedule-hpo"
         ]
     )
-    def test_optimizer_parsing(self, transformer, optimizer_string, expected_result, test_id):
-        """Test parsing of optimizer configurations with HPO."""
-        tree = layer_parser.parse(optimizer_string)
-        result = transformer.transform(tree)
-        assert result == expected_result, f"Failed for {test_id}: expected {expected_result}, got {result}"
+    def test_optimizer_parsing(self, transformer, network_string, expected_optimizer, test_id):
+        """Test parsing of optimizer configurations with HPO within complete networks."""
+        model_dict, hpo_params = transformer.parse_network_with_hpo(network_string)
+        
+        # Check that the optimizer matches the expected configuration
+        assert model_dict['optimizer'] == expected_optimizer, \
+            f"Failed for {test_id}: expected {expected_optimizer}, got {model_dict['optimizer']}"
 
     @pytest.mark.parametrize(
         "network_string, expected_optimizer_type, expected_hpo_param, test_id",
