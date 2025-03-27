@@ -947,3 +947,241 @@ def test_layer_validation_errors(layer_parser, transformer, layer_string, valida
             tree = layer_parser.parse(layer_string)
             transformer.transform(tree)
         assert validation_error_msg in str(exc_info.value.__context__), f"Error message mismatch for {test_id}"
+
+# Additional Edge Case Tests
+@pytest.mark.parametrize(
+    "layer_string, expected, test_id",
+    [
+        # Empty parameter lists
+        ('Dense()', None, "dense-empty-params"),
+        ('Conv2D()', None, "conv2d-empty-params"),
+        
+        # Whitespace handling
+        ('Dense ( 128 ,  "relu" )', {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}, 'sublayers': []}, "dense-extra-whitespace"),
+        ('Conv2D(32,(3,3))', {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': (3, 3)}, 'sublayers': []}, "conv2d-no-whitespace"),
+        
+        # Case sensitivity
+        ('dense(64, "relu")', None, "dense-lowercase"),
+        ('DENSE(64, "relu")', {'type': 'Dense', 'params': {'units': 64, 'activation': 'relu'}, 'sublayers': []}, "dense-uppercase"),
+        
+        # Boolean parameters
+        ('LSTM(128, return_sequences=true)', {'type': 'LSTM', 'params': {'units': 128, 'return_sequences': True}, 'sublayers': []}, "lstm-boolean-true"),
+        ('LSTM(128, return_sequences=false)', {'type': 'LSTM', 'params': {'units': 128, 'return_sequences': False}, 'sublayers': []}, "lstm-boolean-false"),
+        
+        # Nested tuples and lists
+        ('Conv3D(32, ((3, 3), 3))', {'type': 'Conv3D', 'params': {'filters': 32, 'kernel_size': ((3, 3), 3)}, 'sublayers': []}, "conv3d-nested-tuple"),
+        ('CustomLayer(params=[1, 2, [3, 4]])', {'type': 'CustomLayer', 'params': {'params': [1, 2, [3, 4]]}, 'sublayers': []}, "custom-nested-list"),
+        
+        # Special characters in strings
+        ('Dense(64, activation="relu\\n")', None, "dense-newline-in-string"),
+        ('Dense(64, activation="re\\"lu")', None, "dense-quote-in-string"),
+        
+        # Mixed positional and named parameters
+        ('Conv2D(32, (3, 3), padding="same")', {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': (3, 3), 'padding': 'same'}, 'sublayers': []}, "conv2d-mixed-params"),
+        ('Dense(64, activation="relu", use_bias=true)', {'type': 'Dense', 'params': {'units': 64, 'activation': 'relu', 'use_bias': True}, 'sublayers': []}, "dense-mixed-params"),
+        
+        # Scientific notation
+        ('Dense(1e3)', {'type': 'Dense', 'params': {'units': 1000}, 'sublayers': []}, "dense-scientific-notation"),
+        ('Dropout(1e-2)', {'type': 'Dropout', 'params': {'rate': 0.01}, 'sublayers': []}, "dropout-scientific-notation"),
+        
+        # Extremely large values
+        ('Dense(1000000000)', {'type': 'Dense', 'params': {'units': 1000000000}, 'sublayers': []}, "dense-large-value"),
+        ('Conv2D(999999, (9999, 9999))', None, "conv2d-unreasonable-values"),
+        
+        # Multiple nested layers with comments
+        ('''Residual() {  # Outer comment
+            Conv2D(32, (3, 3))  # Inner comment 1
+            BatchNormalization()  # Inner comment 2
+        }''', 
+        {'type': 'Residual', 'params': None, 'sublayers': [
+            {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': (3, 3)}, 'sublayers': []},
+            {'type': 'BatchNormalization', 'params': None, 'sublayers': []}
+        ]}, "residual-with-comments"),
+        
+        # Complex HPO with multiple nested choices
+        ('Dense(HPO(choice(HPO(range(64, 256, 64)), HPO(choice(512, 1024)))))', 
+         {'type': 'Dense', 'params': {'units': {'hpo': {'type': 'categorical', 'values': [
+             {'hpo': {'type': 'range', 'min': 64, 'max': 256, 'step': 64}},
+             {'hpo': {'type': 'categorical', 'values': [512, 1024]}}
+         ]}}}, 'sublayers': []}, "dense-nested-hpo")
+    ],
+    ids=[
+        "dense-empty-params", "conv2d-empty-params", "dense-extra-whitespace", "conv2d-no-whitespace",
+        "dense-lowercase", "dense-uppercase", "lstm-boolean-true", "lstm-boolean-false",
+        "conv3d-nested-tuple", "custom-nested-list", "dense-newline-in-string", "dense-quote-in-string",
+        "conv2d-mixed-params", "dense-mixed-params", "dense-scientific-notation", "dropout-scientific-notation",
+        "dense-large-value", "conv2d-unreasonable-values", "residual-with-comments", "dense-nested-hpo"
+    ]
+)
+def test_edge_case_layer_parsing(layer_parser, transformer, layer_string, expected, test_id):
+    """Test parsing of edge cases and unusual syntax patterns."""
+    if expected is None:
+        with pytest.raises((exceptions.UnexpectedCharacters, exceptions.UnexpectedToken, DSLValidationError, VisitError)):
+            tree = layer_parser.parse(layer_string)
+            transformer.transform(tree)
+    else:
+        tree = layer_parser.parse(layer_string)
+        result = transformer.transform(tree)
+        assert result == expected, f"Failed for {test_id}: expected {expected}, got {result}"
+
+# Network Structure Validation Tests
+@pytest.mark.parametrize(
+    "network_string, expected_error_msg, test_id",
+    [
+        # Missing required sections
+        (
+            """
+            network MissingInput {
+                layers: Dense(10)
+                loss: "mse"
+                optimizer: "sgd"
+            }
+            """,
+            "Network must have an input section",
+            "missing-input-section"
+        ),
+        (
+            """
+            network MissingLayers {
+                input: (10,)
+                loss: "mse"
+                optimizer: "sgd"
+            }
+            """,
+            "Network must have a layers section",
+            "missing-layers-section"
+        ),
+        
+        # Duplicate sections
+        (
+            """
+            network DuplicateInput {
+                input: (10,)
+                input: (20,)
+                layers: Dense(10)
+                loss: "mse"
+                optimizer: "sgd"
+            }
+            """,
+            "Duplicate input section",
+            "duplicate-input-section"
+        ),
+        
+        # Invalid input shapes
+        (
+            """
+            network InvalidInputShape {
+                input: (0, -1)
+                layers: Dense(10)
+                loss: "mse"
+                optimizer: "sgd"
+            }
+            """,
+            "Input dimensions must be positive",
+            "negative-input-dimension"
+        ),
+        
+        # Empty layers section
+        (
+            """
+            network EmptyLayers {
+                input: (10,)
+                layers:
+                loss: "mse"
+                optimizer: "sgd"
+            }
+            """,
+            "Layers section cannot be empty",
+            "empty-layers-section"
+        ),
+        
+        # Invalid loss function
+        (
+            """
+            network InvalidLoss {
+                input: (10,)
+                layers: Dense(10)
+                loss: "invalid_loss"
+                optimizer: "sgd"
+            }
+            """,
+            "Invalid loss function",
+            "invalid-loss-function"
+        ),
+        
+        # Invalid optimizer
+        (
+            """
+            network InvalidOptimizer {
+                input: (10,)
+                layers: Dense(10)
+                loss: "mse"
+                optimizer: "invalid_optimizer"
+            }
+            """,
+            "Invalid optimizer",
+            "invalid-optimizer"
+        ),
+        
+        # Incompatible layer sequence
+        (
+            """
+            network IncompatibleLayers {
+                input: (28, 28, 1)
+                layers:
+                    Dense(128)  # Dense expects flattened input
+                    Conv2D(32, (3, 3))  # Conv2D after Dense doesn't make sense
+                loss: "mse"
+                optimizer: "sgd"
+            }
+            """,
+            "Conv2D cannot follow Dense",
+            "incompatible-layer-sequence"
+        ),
+        
+        # Mismatched input/output dimensions
+        (
+            """
+            network MismatchedDimensions {
+                input: (10,)
+                layers:
+                    Dense(5)
+                    Output(20)  # Output size doesn't match problem
+                loss: "categorical_crossentropy"  # Categorical loss with single output
+                optimizer: "sgd"
+            }
+            """,
+            "Output dimensions don't match loss function",
+            "mismatched-dimensions"
+        ),
+        
+        # Invalid training parameters
+        (
+            """
+            network InvalidTraining {
+                input: (10,)
+                layers: Dense(5)
+                loss: "mse"
+                optimizer: "sgd"
+                train {
+                    epochs: -10
+                    batch_size: 0
+                }
+            }
+            """,
+            "Training parameters must be positive",
+            "invalid-training-params"
+        )
+    ],
+    ids=[
+        "missing-input-section", "missing-layers-section", "duplicate-input-section",
+        "negative-input-dimension", "empty-layers-section", "invalid-loss-function",
+        "invalid-optimizer", "incompatible-layer-sequence", "mismatched-dimensions",
+        "invalid-training-params"
+    ]
+)
+def test_network_structure_validation(network_parser, transformer, network_string, expected_error_msg, test_id):
+    """Test validation of network structure and configuration."""
+    with pytest.raises(DSLValidationError) as exc_info:
+        transformer.parse_network(network_string)
+    assert expected_error_msg in str(exc_info.value), f"Error message mismatch for {test_id}"

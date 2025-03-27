@@ -10,6 +10,18 @@ import shutil
 from pathlib import Path
 from lark import exceptions
 
+def configure_logging(verbose=False):
+    """Configure logging levels based on verbosity"""
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        # Suppress debug messages from dependencies
+        logging.basicConfig(level=logging.INFO)
+        logging.getLogger('graphviz').setLevel(logging.WARNING)
+        logging.getLogger('matplotlib').setLevel(logging.WARNING)
+        logging.getLogger('tensorflow').setLevel(logging.WARNING)
+        logging.getLogger('jax').setLevel(logging.WARNING)
+
 # Add parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -36,8 +48,7 @@ SUPPORTED_DATASETS = {"MNIST", "CIFAR10", "CIFAR100", "ImageNet"}
 @click.option('--verbose', '-v', is_flag=True, help='Enable verbose logging')
 def cli(verbose: bool):
     """Neural CLI: A compiler-like interface for .neural and .nr files."""
-    if verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+    configure_logging(verbose)
     logger.debug("Verbose mode enabled")
 
 # Compile command

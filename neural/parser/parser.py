@@ -406,8 +406,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         values_list: "[" (value | hpo_expr) ("," (value | hpo_expr))* "]" | (value | hpo_expr) ("," (value | hpo_expr))*
         
         optimizer_param: "optimizer:" named_optimizer
-        named_optimizer: "named_optimizer(" learning_rate_param ")"
-        learning_rate_param: "learning_rate=" FLOAT
+        named_optimizer: NAME "(" [named_params] ")"
+        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr)
         search_method_param: "search_method:" STRING
         validation_split_param: "validation_split:" FLOAT
 
@@ -1627,6 +1627,7 @@ class ModelTransformer(lark.Transformer):
 
     ## Network ##
 
+    @pysnooper.snoop()
     def network(self, items):
         logger.debug(f"Network items: {[str(item) for item in items]}")
         name = str(items[0].value)
