@@ -8,7 +8,7 @@ from lark.exceptions import VisitError
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from neural.parser.parser import ModelTransformer, create_parser, DSLValidationError
-from neural.exceptions import VisitError
+
 
 class TestNetworkParsing:
     @pytest.fixture
