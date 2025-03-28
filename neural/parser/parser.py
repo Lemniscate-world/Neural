@@ -288,8 +288,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Optimizer
         optimizer_param: "optimizer:" named_optimizer
         named_optimizer: NAME "(" [param_style1] ("," [param_style1])* ")"
-        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr)
-        momentum_param: "momentum=" (FLOAT | hpo_expr)
+        learning_rate_param: "learning_rate=" param_style1
+        momentum_param: "momentum=" param_style1
         search_method_param: "search_method:" STRING
         validation_split_param: "validation_split:" FLOAT
 
@@ -1204,7 +1204,22 @@ class ModelTransformer(lark.Transformer):
         return {'optimizer': self._extract_value(items[0])}
 
     def learning_rate_param(self, items):
-        return {'learning_rate': self._extract_value(items[0])}
+        value = self._extract_value(items[0])
+        if isinstance(value, dict) and 'hpo' in value:
+            # Track HPO for learning_rate
+            self._track_hpo('optimizer', 'learning_rate', value, items[0])
+        elif isinstance(value, (int, float)) and value <= 0:
+            self.raise_validation_error(f"learning_rate must be positive, got {value}", items[0])
+        return {'learning_rate': value}
+
+    def momentum_param(self, items):
+        value = self._extract_value(items[0])
+        if isinstance(value, dict) and 'hpo' in value:
+            # Track HPO for momentum
+            self._track_hpo('optimizer', 'momentum', value, items[0])
+        elif isinstance(value, (int, float)) and not 0 <= value <= 1:
+            self.raise_validation_error(f"momentum should be between 0 and 1, got {value}", items[0])
+        return {'momentum': value}
 
     def shape(self, items):
         return tuple(self._extract_value(item) for item in items)
