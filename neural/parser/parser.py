@@ -1029,8 +1029,18 @@ class ModelTransformer(lark.Transformer):
         
         params = {}
         if len(items) > 1:
-            params = self._extract_value(items[1]) or {}
-            logger.debug(f"params from items[1]: {params}")
+            # If items[1] is a list of dictionaries, merge them into a single dictionary
+            param_items = self._extract_value(items[1]) or {}
+            logger.debug(f"param_items: {param_items}")
+            
+            if isinstance(param_items, list):
+                for param_dict in param_items:
+                    if isinstance(param_dict, dict):
+                        params.update(param_dict)
+            else:
+                params = param_items
+                
+            logger.debug(f"merged params: {params}")
 
         if isinstance(opt_value, str):
             stripped_value = opt_value.strip("'\"")
@@ -1094,13 +1104,16 @@ class ModelTransformer(lark.Transformer):
                 break
                 
         if not opt_type_normalized:
+            logger.debug(f"Invalid optimizer: {opt_type}")
             self.raise_validation_error(
                 f"Invalid optimizer '{opt_type}'. Supported optimizers: {', '.join(valid_optimizers)}",
                 opt_node,
                 Severity.ERROR
             )
 
-        return {'type': opt_type_normalized, 'params': params}
+        result = {'type': opt_type_normalized, 'params': params}
+        logger.debug(f"named_optimizer returning: {result}")
+        return result
 
     def schedule(self, items):
         return {"type": items[0].value, "args": [self._extract_value(x) for x in items[1].children]}
@@ -1661,26 +1674,34 @@ class ModelTransformer(lark.Transformer):
 
     @pysnooper.snoop()
     def network(self, items):
-        logger.debug(f"Network items: {[str(item) for item in items]}")
-        name = str(items[0].value)
-        input_layer_config = self._extract_value(items[1])
-        layers_config = self._extract_value(items[2])
+        """Process network rule."""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
         
+        logger.debug(f"Processing network with items: {items}")
+        
+        name = items[0].value
+        input_shapes = self._extract_value(items[1])
+        layers = self._extract_value(items[2])
+        
+        # Initialize configs
         loss_config = None
         optimizer_config = None
-        training_config = None
-        execution_config = {'device': 'auto'}
+        training_config = {}
+        execution_config = None
         
-        remaining_items = items[3:]
-        for i, item in enumerate(remaining_items, start=3):
-            logger.debug(f"Item {i}: type={type(item)}, data={getattr(item, 'data', 'N/A')}, value={str(item)}")
+        # Process remaining items (loss, optimizer, training_config, execution_config)
+        for i, item in enumerate(items[3:], 3):
             value = self._extract_value(item)
+            logger.debug(f"Processing item {i}: {item}, value: {value}")
             
             if isinstance(item, Tree):
                 if item.data == 'loss':
                     loss_config = value
-                elif item.data == 'optimizer':
-                    optimizer_config = value
+                elif item.data == 'optimizer_param':
+                    optimizer_config = value.get('optimizer')
+                    logger.debug(f"Found optimizer_param: {optimizer_config}")
                 elif item.data == 'training_config':
                     training_config = value.get('params', value) if isinstance(value, dict) else value
                 elif item.data == 'execution_config':
@@ -1689,37 +1710,40 @@ class ModelTransformer(lark.Transformer):
                     logger.warning(f"Unrecognized tree data: {item.data}")
             elif isinstance(value, str) and i == 3:  # Check if this is the loss value
                 loss_config = value  # Directly assign string value for loss
-            elif isinstance(item, dict) and 'type' in item and 'params' in item:
-                if item.get('type') in {'Adam', 'SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adamax', 'Nadam'}:
+            elif isinstance(item, dict):
+                if 'optimizer' in item:
+                    optimizer_config = item['optimizer']
+                    logger.debug(f"Found optimizer in dict: {optimizer_config}")
+                elif 'type' in item and item.get('type') in {'Adam', 'SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adamax', 'Nadam'}:
                     optimizer_config = item
-                elif item.get('type') == 'training_config':
-                    training_config = item['params']
+                    logger.debug(f"Found optimizer by type: {optimizer_config}")
+                elif 'type' in item and item.get('type') == 'training_config':
+                    training_config = item.get('params', {})
             else:
-                logger.warning(f"Skipping unhandled item at index {i}: {str(item)}")
-
-        output_layer = layers_config[-1] if layers_config else None
-        output_shape = None
-        if output_layer:
-            if output_layer['type'] == 'Output':
-                output_shape = output_layer.get('params', {}).get('units')
-            elif output_layer['type'] == 'Dense':
-                output_shape = output_layer.get('params', {}).get('units')
-
-        return {
-            'type': 'model',
+                logger.warning(f"Skipping unhandled item at index {i}: {item}")
+        
+        # Build the network configuration
+        network_config = {
             'name': name,
-            'input': input_layer_config,
-            'layers': layers_config,
-            'output_layer': output_layer,
-            'output_shape': output_shape,
-            'loss': loss_config,
-            'optimizer': optimizer_config,
-            'training_config': training_config,
-            'execution_config': execution_config,
-            'framework': 'tensorflow',
-            'shape_info': [],
-            'warnings': []
+            'input_shapes': input_shapes,
+            'layers': layers
         }
+        
+        if loss_config:
+            network_config['loss'] = loss_config
+            
+        if optimizer_config:
+            network_config['optimizer'] = optimizer_config
+            logger.debug(f"Adding optimizer to network_config: {optimizer_config}")
+            
+        if training_config:
+            network_config['training'] = training_config
+            
+        if execution_config:
+            network_config['execution'] = execution_config
+            
+        logger.debug(f"Final network_config: {network_config}")
+        return network_config
 
     #########
 
