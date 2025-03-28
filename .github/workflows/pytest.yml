@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for accurate coverage reporting
 
       - name: Set up Python
         uses: actions/setup-python@v3
@@ -35,15 +37,19 @@ jobs:
           python dashboard.py & sleep 5
 
       - name: Run Backend Tests (Pytest)
-        run: pytest --cov=neural --cov-report=xml
+        run: |
+          pytest --cov=neural --cov-report=xml --cov-report=term
 
       - name: Run UI Tests (Selenium)
         run: pytest tests/ui_tests.py --disable-warnings
 
       - name: Upload Coverage Report to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Send Alert on Failure
         if: failure()
