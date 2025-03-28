@@ -288,7 +288,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Optimizer
         optimizer_param: "optimizer:" named_optimizer
         named_optimizer: NAME "(" [param_style1] ("," [param_style1])* ")"
-        learning_rate_param: "learning_rate=" param_style1
+        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | schedule)
+        schedule: NAME "(" [param_style1] ("," [param_style1])* ")"
         momentum_param: "momentum=" param_style1
         search_method_param: "search_method:" STRING
         validation_split_param: "validation_split:" FLOAT
@@ -414,9 +415,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         values_list: "[" (value | hpo_expr) ("," (value | hpo_expr))* "]" | (value | hpo_expr) ("," (value | hpo_expr))*
         
 
-        schedule: NAME "(" valparams ")"
-        valparams: [value ("," value)*]
-
+        
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" STRING
         
