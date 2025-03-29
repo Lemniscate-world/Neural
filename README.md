@@ -57,7 +57,7 @@ Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.ty
 - **Visual Debugging**: Render interactive 3D architecture diagrams.
 - **Extensible**: Add custom layers/losses via Python plugins.
 - **NeuralDbg**: Built-in Neural Network Debugger and Visualizer.
-- **No-Code Interface**: Quick Prototyping for researchers and educational, accessible tool for beginners.
+- **No-Code Interface**: Quick Prototyping for researchers and ean ducational, accessible tool for beginners.
 
 ---
 
