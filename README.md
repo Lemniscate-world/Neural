@@ -56,6 +56,10 @@ Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.ty
 - **Training Orchestration**: Configure optimizers, schedulers, and metrics in one place.
 - **Visual Debugging**: Render interactive 3D architecture diagrams.
 - **Extensible**: Add custom layers/losses via Python plugins.
+- **NeuralDbg**: Built-in Neural Network Debugger and Visualizer.
+- **No-Code Interface**: Quick Prototyping for researchers and educational, accessible tool for beginners.
+
+---
 
 ### **NeuralDbg: Built-in Neural Network Debugger**
 NeuralDbg provides **real-time execution tracing, profiling, and debugging**, allowing you to visualize and analyze deep learning models in action.
