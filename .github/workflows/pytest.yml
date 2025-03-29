@@ -26,12 +26,6 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov selenium webdriver-manager
 
-      - name: Install Chrome & ChromeDriver
-        run: |
-          sudo apt update
-          sudo apt install -y google-chrome-stable
-          sudo apt install -y chromedriver
-
       - name: Start NeuralDbg Dashboard (Background)
         run: |
           python dashboard.py & sleep 5
