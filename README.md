@@ -243,7 +243,7 @@ Explore common use cases in `examples/` with step-by-step guides in `docs/exampl
 - [Sentiment Analysis Guide](docs/examples/sentiment_guide.md)
 - [Transformer for NLP Guide](docs/examples/transformer_guide.md)
 
-## 🕸Architecture Graphs (Zoom Alot For Some)
+## 🕸Architecture Graphs (Zoom A Lot For Some)
 
 ![classes](https://github.com/Lemniscate-SHA-256/Neural/blob/main/classes.png)
 ![packages](https://github.com/Lemniscate-SHA-256/Neural/blob/main/packages.png)
