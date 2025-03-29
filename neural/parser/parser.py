@@ -139,19 +139,19 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         GLOBALAVERAGEPOOLING2D: "globalaveragepooling2d"i
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i | "add"i | "subtract"i | "multiply"i | "average"i | "maximum"i | "concatenate"i | "dot"i | "timedistributed"i | "residualconnection"i | "globalaveragepooling2d"i 
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i | "add"i | "subtract"i | "multiply"i | "average"i | "maximum"i | "concatenate"i | "dot"i | "timedistributed"i | "residualconnection"i | "globalaveragepooling2d"i
 
         // Basic tokens
         NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
         STRING: /"[^"]*"/ | /'[^']*'/
         INT: /[+-]?[0-9]+/
         FLOAT: /[+-]?[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?/ | /[+-]?[0-9]+[eE][+-]?[0-9]+/
-        NUMBER: INT | FLOAT 
+        NUMBER: INT | FLOAT
         TRUE.2: "true"i
         FALSE.2: "false"i
         NONE.2: "none"i
         BOOL: TRUE | FALSE
-        AT: "@" 
+        AT: "@"
 
         // Layer name patterns
         CUSTOM_LAYER: /[A-Z][a-zA-Z0-9]*Layer/  // Matches layer names ending with "Layer"
@@ -167,7 +167,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         %ignore COMMENT
         %ignore WS
         %ignore _NL
-        
+
 
         // Grammar rules
         ?start: network | layer | research
@@ -176,9 +176,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         nr_file: network
         rnr_file: research
 
-        
+
         activation_param: "activation" "=" STRING
-        ordered_params: value ("," value)* 
+        ordered_params: value ("," value)*
         number1: INT
         explicit_tuple: "(" value ("," value)+ ")"
 
@@ -197,7 +197,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         named_return_sequences: "return_sequences" "=" bool_value
         named_units: "units" "=" value
         named_activation: "activation" "=" STRING | "activation" "=" hpo_expr
-        named_size: NAME ":" explicit_tuple  
+        named_size: NAME ":" explicit_tuple
         named_filters: "filters" "=" NUMBER
         named_strides: "strides" "=" value
         named_padding: "padding" "=" STRING | "padding" ":" STRING
@@ -288,14 +288,15 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Optimizer
         optimizer_param: "optimizer:" named_optimizer
         named_optimizer: NAME "(" [param_style1] ("," [param_style1])* ")"
-        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | schedule)
-        schedule: NAME "(" [param_style1] ("," [param_style1])* ")"
+        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | explicit_lr_schedule)
+        explicit_lr_schedule: "ExponentialDecay" "(" [lr_schedule_args] ")" | NAME "(" [lr_schedule_args] ")"
+        lr_schedule_args: param_style1 ("," param_style1)*
         momentum_param: "momentum=" param_style1
         search_method_param: "search_method:" STRING
         validation_split_param: "validation_split:" FLOAT
 
 
-        layer_or_repeated: layer ["*" INT] 
+        layer_or_repeated: layer ["*" INT]
         ?layer: basic_layer | advanced_layer | special_layer
         config: training_config | execution_config
 
@@ -413,12 +414,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" values_list
         values_list: "[" (value | hpo_expr) ("," (value | hpo_expr))* "]" | (value | hpo_expr) ("," (value | hpo_expr))*
-        
 
-        
         execution_config: "execution" "{" device_param "}"
         device_param: "device:" STRING
-        
+
         // Customized Shapes
         CUSTOM_SHAPE: "CustomShape"
         self_defined_shape: CUSTOM_SHAPE "(" named_layer ")"
@@ -430,28 +429,28 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         hpo_with_params: hpo_expr ("," named_params)*
         hpo: hpo_expr | layer_choice
-        
+
         // HPO for Hyperparameters
         hpo_expr: "HPO" "(" (hpo_choice | hpo_range | hpo_log_range )* ")"
-        hpo_choice: "choice" "(" value ("," value)* ")" 
+        hpo_choice: "choice" "(" value ("," value)* ")"
         hpo_range: "range" "(" number "," number ("," "step="number)? ")"
         hpo_log_range: "log_range" "(" number "," number ")"
-        
+
         // HPO for layer choice
         layer_choice: "HPO" "(" "choice" "(" layer ("," layer)* "))"
 
         // MACROS AND RELATED RULES
         define: "define" NAME "{" ( layer_or_repeated)*  "}"
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
-        
+
         basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
         layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION | GLOBALAVERAGEPOOLING2D | OUTPUT
         ?param_style1: params | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
-        ?value: STRING -> string_value | number | tuple_ | BOOL 
-        tuple_: "(" number "," number ")"  
-        number: NUMBER  
+        ?value: STRING -> string_value | number | tuple_ | BOOL
+        tuple_: "(" number "," number ")"
+        number: NUMBER
         named_params: named_param ("," named_param)*
         device_spec: AT STRING
         ?advanced_layer: (attention | transformer | residual | inception | capsule | squeeze_excitation | graph | embedding | quantum | dynamic)
@@ -476,7 +475,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         custom: CUSTOM_LAYER "(" [param_style1] ")" [layer_block]
         layer_block: "{" (layer_or_repeated)* "}"
 
-        
+
     """
     return lark.Lark(
         grammar,
@@ -497,7 +496,7 @@ def safe_parse(parser, text):
         # Log details about syntax error
         log_by_severity(Severity.ERROR, f"Syntax error at line {e.line}, column {e.column}")
         log_by_severity(Severity.ERROR, f"Unexpected {e.token} - Expected: {e.accepts}")
-        
+
         # Add warning
         warnings.append({
             "message": f"Syntax error at line {e.line}, column {e.column}",
@@ -505,10 +504,10 @@ def safe_parse(parser, text):
             "column": e.column,
             "details": f"Unexpected {e.token}, expected one of: {e.accepts}"
         })
-        
+
         # Use custom_error_handler to process the error
         custom_error_handler(e)  # This raises DSLValidationError
-        
+
     except DSLValidationError as e:
         # Re-raise DSLValidationError as-is
         raise
@@ -596,7 +595,7 @@ class ModelTransformer(lark.Transformer):
         else:
             line, col = None, None
             full_msg = f"{severity.name}: {msg}"
-        
+
         log_by_severity(severity, full_msg)
         if severity.value >= Severity.ERROR.value:
             raise DSLValidationError(msg, severity, line, col)
@@ -606,11 +605,11 @@ class ModelTransformer(lark.Transformer):
 
         if layer_item is None:
             return None
-            
+
         layer_def = self._extract_value(layer_item)
         if not isinstance(layer_def, dict):
             self.raise_validation_error(f"Invalid layer definition: {layer_def}", layer_item)
-            
+
         return layer_def
 
     def special_layer(self, items):
@@ -622,10 +621,10 @@ class ModelTransformer(lark.Transformer):
         """Process macro definition."""
         if len(items) < 1:
             self.raise_validation_error("Macro definition requires a name")
-        
+
         macro_name = items[0].value
         layers = []
-        
+
         for item in items[1:]:
             layer = self._extract_value(item)
             if isinstance(layer, tuple) and len(layer) == 2 and isinstance(layer[1], int):
@@ -633,24 +632,24 @@ class ModelTransformer(lark.Transformer):
                 layers.extend([layer_def] * count)
             else:
                 layers.append(layer)
-        
+
         if not layers:
             self.raise_validation_error(f"Empty macro definition for {macro_name}", items[0])
-        
+
         # Store the macro definition with its layers
         self.macros[macro_name] = {
             'original': layers,
             'macro': {'type': macro_name, 'params': {}, 'sublayers': layers}
         }
-        
+
         # Return the macro structure instead of the layers list
         return {'type': macro_name, 'params': {}, 'sublayers': layers}
-        
+
     @pysnooper.snoop()
     def macro_ref(self, items):
         """Process a macro reference."""
         macro_name = items[0].value
-        
+
         # Check if this is actually a custom layer
         if macro_name.endswith('Layer'):
             params = {}
@@ -662,13 +661,13 @@ class ModelTransformer(lark.Transformer):
                             params.update(param)
                 elif isinstance(param_values, dict):
                     params = param_values
-                    
+
             return {
                 'type': macro_name,
                 'params': params,
                 'sublayers': []
             }
-            
+
         # Handle actual macros
         if macro_name not in self.macros:
             self.raise_validation_error(f"Undefined macro '{macro_name}'", items[0])
@@ -678,7 +677,7 @@ class ModelTransformer(lark.Transformer):
 
 
         return {'type':macro_name, 'params':params, 'sublayers': sub_layers}
-        
+
     def layer_block(self, items):
         """Process a block of nested layers."""
         sub_layers = []
@@ -717,7 +716,7 @@ class ModelTransformer(lark.Transformer):
         else:
             self.raise_validation_error(f"Unsupported layer type: {layer_type}", layer_type_node)
             return {'type': layer_type, 'params': raw_params, 'sublayers': sublayers}
-        
+
     def device_spec(self, items):
         """Process device specification correctly."""
         if len(items) > 1 and isinstance(items[1], Token) and items[1].type == "STRING":
@@ -757,7 +756,7 @@ class ModelTransformer(lark.Transformer):
     def dropout(self, items):
         param_style = self._extract_value(items[0])
         params = {}
-        
+
         if isinstance(param_style, list):
             merged_params = {}
             for elem in param_style:
@@ -793,15 +792,15 @@ class ModelTransformer(lark.Transformer):
         for param_name, param_value in params.items():
             if isinstance(param_value, dict) and 'hpo' in param_value:
                 self._track_hpo('Dropout', param_name, param_value, items[0])
-        
+
         return {'type': 'Dropout', 'params': params, 'sublayers': []}  # Added sublayers for consistency
-    
+
     def output(self, items):
         params = {}
         if items and items[0] is not None:
             param_node = items[0]
             param_values = self._extract_value(param_node)
-            
+
             ordered_params = []
             named_params = {}
             if isinstance(param_values, list):
@@ -816,7 +815,7 @@ class ModelTransformer(lark.Transformer):
                         ordered_params.append(val)
             elif isinstance(param_values, dict):
                 named_params = param_values
-            
+
             # Map positional parameters to named
             if ordered_params:
                 if len(ordered_params) >= 1:
@@ -825,16 +824,16 @@ class ModelTransformer(lark.Transformer):
                     params['activation'] = ordered_params[1]
                 if len(ordered_params) > 2:
                     self.raise_validation_error("Output layer accepts at most two positional arguments (units, activation)", items[0])
-            
+
             params.update(named_params)
-        
+
         if 'units' not in params:
             self.raise_validation_error("Output layer requires 'units' parameter", items[0])
-        
+
         # Track HPO if present
         if 'units' in params and isinstance(params['units'], dict) and 'hpo' in params['units']:
             self._track_hpo('Output', 'units', params['units'], items[0])
-        
+
         # Ensure sublayers is included
         return {'type': 'Output', 'params': params, 'sublayers': []}
 
@@ -877,7 +876,7 @@ class ModelTransformer(lark.Transformer):
 
         if 'units' not in params:
             self.raise_validation_error("Dense layer requires 'units' parameter", items[0])
-        
+
         units = params['units']
         if isinstance(units, dict) and 'hpo' in units:
             self._track_hpo('Dense', 'units', units, items[0])
@@ -887,7 +886,7 @@ class ModelTransformer(lark.Transformer):
             if units <= 0:
                 self.raise_validation_error(f"Dense units must be positive, got {units}", items[0])
             params['units'] = int(units)  # Convert to int if applicable
-        
+
         if 'activation' in params:
             activation = params['activation']
             if isinstance(activation, dict):  # HPO case
@@ -895,7 +894,7 @@ class ModelTransformer(lark.Transformer):
             else:
                 if not isinstance(activation, str):
                     self.raise_validation_error(
-                        f"Dense activation must be a string or HPO, got {activation}", 
+                        f"Dense activation must be a string or HPO, got {activation}",
                         items[0]
                     )
                 else:
@@ -912,7 +911,7 @@ class ModelTransformer(lark.Transformer):
                         )
 
         return {"type": "Dense", "params": params, 'sublayers': []}  # Explicitly add sublayers
-        
+
     def conv(self, items):
         return items[0]
 
@@ -970,11 +969,11 @@ class ModelTransformer(lark.Transformer):
                     self.raise_validation_error(f"Conv2D kernel_size should be positive integers, got {ks}", items[0], Severity.ERROR)
             elif not isinstance(ks, int) or ks <= 0:
                 self.raise_validation_error(f"Conv2D kernel_size must be a positive integer, got {ks}", items[0], Severity.ERROR)
-        
+
         for param_name, param_value in params.items():
             if isinstance(param_value, dict) and 'hpo' in param_value:
                 self._track_hpo('Conv2D', param_name, param_value, items[0])
-            
+
         return {'type': 'Conv2D', 'params': params}  # 'sublayers' added by basic_layer
 
     def conv3d(self, items):
@@ -1019,61 +1018,61 @@ class ModelTransformer(lark.Transformer):
         import logging
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)
-        
+
         logger.debug(f"named_optimizer called with items: {items}")
-        
+
         opt_node = items[0]
         opt_value = self._extract_value(opt_node)
         logger.debug(f"opt_value: {opt_value}")
-        
+
         params = {}
         if len(items) > 1:
             # If items[1] is a list of dictionaries, merge them into a single dictionary
             param_items = self._extract_value(items[1]) or {}
             logger.debug(f"param_items: {param_items}")
-            
+
             if isinstance(param_items, list):
                 for param_dict in param_items:
                     if isinstance(param_dict, dict):
                         params.update(param_dict)
             else:
                 params = param_items
-                
+
             logger.debug(f"merged params: {params}")
 
         if isinstance(opt_value, str):
             stripped_value = opt_value.strip("'\"")
             logger.debug(f"stripped_value: {stripped_value}")
-            
+
             if '(' in stripped_value and ')' in stripped_value:
                 # Extract optimizer name before '('
                 opt_type = stripped_value[:stripped_value.index('(')].strip()
                 logger.debug(f"opt_type: {opt_type}")
-                
+
                 # Extract parameters inside parentheses
                 param_str = stripped_value[stripped_value.index('(')+1:stripped_value.rindex(')')].strip()
                 logger.debug(f"param_str: {param_str}")
-                
+
                 if param_str and not params:  # Only parse if params not provided separately
                     for param in split_params(param_str):
                         param = param.strip()
                         logger.debug(f"processing param: {param}")
-                        
+
                         if '=' in param:
                             param_name, param_value = param.split('=', 1)
                             param_name = param_name.strip()
                             param_value = param_value.strip()
                             logger.debug(f"param_name: {param_name}, param_value: {param_value}")
-                            
+
                             if 'HPO(' in param_value:
                                 hpo_start = param_value.index('HPO(')
                                 hpo_end = param_value.rindex(')') + 1
                                 hpo_str = param_value[hpo_start+4:hpo_end-1]
                                 logger.debug(f"hpo_str: {hpo_str}")
-                                
+
                                 hpo_config = self._parse_hpo(hpo_str, opt_node)
                                 logger.debug(f"hpo_config: {hpo_config}")
-                                
+
                                 params[param_name] = hpo_config
                                 self._track_hpo('optimizer', param_name, hpo_config, opt_node)
                             else:
@@ -1094,14 +1093,14 @@ class ModelTransformer(lark.Transformer):
 
         # Validate optimizer name against common PyTorch/TensorFlow optimizers (case-insensitive)
         valid_optimizers = {'Adam', 'SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adamax', 'Nadam'}
-        
+
         # Find the correct case version of the optimizer
         opt_type_normalized = None
         for valid_opt in valid_optimizers:
             if valid_opt.lower() == opt_type.lower():
                 opt_type_normalized = valid_opt
                 break
-                
+
         if not opt_type_normalized:
             logger.debug(f"Invalid optimizer: {opt_type}")
             self.raise_validation_error(
@@ -1116,7 +1115,7 @@ class ModelTransformer(lark.Transformer):
 
     def schedule(self, items):
         return {"type": items[0].value, "args": [self._extract_value(x) for x in items[1].children]}
-    
+
     ## Training And Configurations ##
 
     def training_config(self, items):
@@ -1139,13 +1138,13 @@ class ModelTransformer(lark.Transformer):
                     self.raise_validation_error(f"Expected dictionary from {item.data}, got {result}", item)
             elif isinstance(item, dict):
                 params.update(item)
-        
+
         # Ensure validation_split is between 0 and 1 (if applicable)
         if "validation_split" in params:
             val_split = params["validation_split"]
             if not (0 <= val_split <= 1):
                 self.raise_validation_error(f"validation_split must be between 0 and 1, got {val_split}")
-        
+
         return params
 
     def device_spec(self, items):
@@ -1154,7 +1153,7 @@ class ModelTransformer(lark.Transformer):
             device = items[1].value.strip('"')
         else:
             device = self._extract_value(items[0])
-        
+
         allowed_devices = ["cpu", "cuda", "tpu", "auto", "cuda:0", "cuda:1"]  # Example allowed devices
         if device.lower() not in [d.lower() for d in allowed_devices]:
             self.raise_validation_error(f"Invalid device '{device}'. Allowed devices are: {allowed_devices}", items[0], Severity.ERROR)
@@ -1204,11 +1203,85 @@ class ModelTransformer(lark.Transformer):
 
     def learning_rate_param(self, items):
         value = self._extract_value(items[0])
-        if isinstance(value, dict) and 'hpo' in value:
+
+        # Handle direct learning rate schedule
+        if isinstance(value, dict) and 'type' in value and 'args' in value:
+            # This is already a learning rate schedule object from the lr_schedule rule
+            pass
+        elif isinstance(value, dict) and 'hpo' in value:
             # Track HPO for learning_rate
             self._track_hpo('optimizer', 'learning_rate', value, items[0])
         elif isinstance(value, (int, float)) and value <= 0:
             self.raise_validation_error(f"learning_rate must be positive, got {value}", items[0])
+        # Handle string-based learning rate schedule for backward compatibility
+        elif isinstance(value, str) and '(' in value and ')' in value:
+            schedule_str = value.strip('"\'')
+            schedule_type = schedule_str[:schedule_str.index('(')]
+            args_str = schedule_str[schedule_str.index('(')+1:schedule_str.rindex(')')]
+
+            # Parse arguments
+            args = []
+            if args_str:
+                import re
+                # Handle nested parentheses for HPO expressions
+                def parse_args(args_str):
+                    result = []
+                    current = ''
+                    paren_level = 0
+
+                    for char in args_str:
+                        if char == ',' and paren_level == 0:
+                            result.append(current.strip())
+                            current = ''
+                        else:
+                            if char == '(':
+                                paren_level += 1
+                            elif char == ')':
+                                paren_level -= 1
+                            current += char
+
+                    if current:
+                        result.append(current.strip())
+                    return result
+
+                arg_list = parse_args(args_str)
+
+                for arg in arg_list:
+                    if arg.startswith('HPO('):
+                        # Extract HPO parameters
+                        hpo_match = re.search(r'HPO\(([^(]+)\(', arg)
+                        if hpo_match:
+                            hpo_type = hpo_match.group(1).strip()
+                            if hpo_type == 'range':
+                                params = re.search(r'range\(([^,]+),\s*([^,]+)(?:,\s*step=([^)]+))?\)', arg)
+                                if params:
+                                    low, high = float(params.group(1)), float(params.group(2))
+                                    step = float(params.group(3)) if params.group(3) else None
+                                    hpo_dict = {'type': 'range', 'low': low, 'high': high}
+                                    if step:
+                                        hpo_dict['step'] = step
+                                    args.append({'hpo': hpo_dict})
+                            elif hpo_type == 'log_range':
+                                params = re.search(r'log_range\(([^,]+),\s*([^)]+)\)', arg)
+                                if params:
+                                    low, high = float(params.group(1)), float(params.group(2))
+                                    args.append({'hpo': {'type': 'log_range', 'low': low, 'high': high}})
+                            elif hpo_type == 'choice':
+                                params = re.search(r'choice\(([^)]+)\)', arg)
+                                if params:
+                                    choices = [float(x.strip()) for x in params.group(1).split(',')]
+                                    args.append({'hpo': {'type': 'choice', 'values': choices}})
+                    else:
+                        try:
+                            args.append(float(arg))
+                        except ValueError:
+                            args.append(arg)
+
+            value = {
+                'type': schedule_type,
+                'args': args
+            }
+
         return {'learning_rate': value}
 
     def momentum_param(self, items):
@@ -1225,7 +1298,7 @@ class ModelTransformer(lark.Transformer):
 
     ## Pooling Layers ##
 
-    
+
     def pooling(self, items):
         return items[0]
 
@@ -1285,7 +1358,7 @@ class ModelTransformer(lark.Transformer):
                         self.raise_validation_error(f"MaxPooling2D {key.strip("_")} must be positive integers, got {val}", items[0])
                 elif not isinstance(val, int) or val <= 0:
                     self.raise_validation_error(f"MaxPooling2D {key.strip("_")} must be a positive integer, got {val}", items[0])
-        
+
         if 'pool_size' in params:
             pool_size = params['pool_size']
             if isinstance(pool_size, (list, tuple)):
@@ -1299,7 +1372,7 @@ class ModelTransformer(lark.Transformer):
         for param_name, param_value in params.items():
             if isinstance(param_value, dict) and 'hpo' in param_value:
                 self._track_hpo('MaxPooling2D', param_name, param_value, items[0])
-        
+
         return {'type': 'MaxPooling2D', 'params': params}
 
     def maxpooling3d(self, items):
@@ -1381,7 +1454,7 @@ class ModelTransformer(lark.Transformer):
     def batch_norm(self, items):
         raw_params = self._extract_value(items[0]) if items and items[0] is not None else None
         params = None  # Default to None for empty parameters
-        
+
         if raw_params:
             params = {}  # Initialize params dict only if we have parameters
             if isinstance(raw_params, list):
@@ -1397,19 +1470,19 @@ class ModelTransformer(lark.Transformer):
                     axis = params['axis']
                     if not isinstance(axis, int):
                         self.raise_validation_error(
-                            f"BatchNormalization axis must be an integer, got {axis}", 
+                            f"BatchNormalization axis must be an integer, got {axis}",
                             items[0]
                         )
                 if 'momentum' in params:
                     momentum = params['momentum']
                     if not isinstance(momentum, (int, float)) or not 0 <= momentum <= 1:
                         self.raise_validation_error(
-                            f"BatchNormalization momentum must be between 0 and 1, got {momentum}", 
+                            f"BatchNormalization momentum must be between 0 and 1, got {momentum}",
                             items[0]
                         )
 
         return {'type': 'BatchNormalization', 'params': params}  # 'sublayers' added by basic_layer
-    
+
     def named_momentum(self, items):
         return {'momentum': self._extract_value(items[0])}
 
@@ -1454,7 +1527,7 @@ class ModelTransformer(lark.Transformer):
 
         if 'units' not in params:
             self.raise_validation_error("LSTM requires 'units' parameter", items[0])
-        
+
         units = params['units']
         if isinstance(units, dict) and 'hpo' in units:
             pass  # HPO handled elsewhere
@@ -1464,7 +1537,7 @@ class ModelTransformer(lark.Transformer):
             if units <= 0:
                 self.raise_validation_error(f"LSTM units must be positive, got {units}", items[0])
             params['units'] = int(units)
-        
+
         return {'type': 'LSTM', 'params': params}
 
     def gru(self, items):
@@ -1484,7 +1557,7 @@ class ModelTransformer(lark.Transformer):
 
         if 'units' not in params:
             self.raise_validation_error("GRU requires 'units' parameter", items[0])
-        
+
         units = params['units']
         if isinstance(units, dict) and 'hpo' in units:
             pass
@@ -1494,9 +1567,9 @@ class ModelTransformer(lark.Transformer):
             if units <= 0:
                 self.raise_validation_error(f"GRU units must be positive, got {units}", items[0])
             params['units'] = int(units)
-        
+
         return {'type': 'GRU', 'params': params}
-    
+
     def simplernn(self, items):
         params = {}
         if items and items[0] is not None:
@@ -1514,7 +1587,7 @@ class ModelTransformer(lark.Transformer):
 
         if 'units' not in params:
             self.raise_validation_error("SimpleRNN requires 'units' parameter", items[0])
-        
+
         units = params['units']
         if isinstance(units, dict) and 'hpo' in units:
             pass
@@ -1524,7 +1597,52 @@ class ModelTransformer(lark.Transformer):
             if units <= 0:
                 self.raise_validation_error(f"SimpleRNN units must be positive, got {units}", items[0])
             params['units'] = int(units)
-        
+
+        return {'type': 'SimpleRNN', 'params': params}
+
+    def lr_schedule(self, items):
+        """Process learning rate schedule expressions."""
+        schedule_type = items[0].value
+        args = []
+        if len(items) > 1 and hasattr(items[1], 'data') and items[1].data == 'lr_schedule_args':
+            args = [self._extract_value(arg) for arg in items[1].children]
+        return {
+            'type': schedule_type,
+            'args': args
+        }
+
+    def lr_schedule_args(self, items):
+        return items
+
+    def lr_schedule_arg(self, items):
+        return self._extract_value(items[0])
+        params = {}
+        if items and items[0] is not None:
+            param_node = items[0]
+            param_values = self._extract_value(param_node)
+            if isinstance(param_values, list):
+                for val in param_values:
+                    if isinstance(val, dict):
+                        params.update(val)
+                    else:
+                        if 'units' not in params:
+                            params['units'] = val
+            elif isinstance(param_values, dict):
+                params = param_values
+
+        if 'units' not in params:
+            self.raise_validation_error("SimpleRNN requires 'units' parameter", items[0])
+
+        units = params['units']
+        if isinstance(units, dict) and 'hpo' in units:
+            pass
+        else:
+            if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
+                self.raise_validation_error(f"SimpleRNN units must be an integer, got {units}", items[0])
+            if units <= 0:
+                self.raise_validation_error(f"SimpleRNN units must be positive, got {units}", items[0])
+            params['units'] = int(units)
+
         return {'type': 'SimpleRNN', 'params': params}
 
     def conv_lstm(self, items):
@@ -1577,7 +1695,7 @@ class ModelTransformer(lark.Transformer):
         else:
             params = raw_params
 
-        if 'units' not in params:   
+        if 'units' not in params:
             self.raise_validation_error("LSTMCell requires 'units' parameter", items)
         return {'type': 'LSTMCell', 'params': params}
 
@@ -1601,7 +1719,7 @@ class ModelTransformer(lark.Transformer):
     def simple_rnn_dropout(self, items):
         param_style = self._extract_value(items[0])
         params = {}
-        
+
         # Handle both positional and named parameters
         if isinstance(param_style, list):
             for param in param_style:
@@ -1613,13 +1731,13 @@ class ModelTransformer(lark.Transformer):
                         params['units'] = param
         elif isinstance(param_style, dict):
             params.update(param_style)
-        
+
         # Validate required 'units' parameter
         if 'units' not in params:
             self.raise_validation_error("SimpleRNNDropoutWrapper requires 'units' parameter", items[0])
-        
+
         return {"type": "SimpleRNNDropoutWrapper", 'params': params}
-    
+
     def gru_dropout(self, items):
         return {"type": "GRUDropoutWrapper", 'params': self._extract_value(items[0])}
 
@@ -1692,24 +1810,24 @@ class ModelTransformer(lark.Transformer):
         import logging
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)
-        
+
         logger.debug(f"Processing network with items: {items}")
-        
+
         name = items[0].value
         input_shapes = self._extract_value(items[1])
         layers = self._extract_value(items[2])
-        
+
         # Initialize configs
         loss_config = None
         optimizer_config = None
         training_config = {}
         execution_config = None
-        
+
         # Process remaining items (loss, optimizer, training_config, execution_config)
         for i, item in enumerate(items[3:], 3):
             value = self._extract_value(item)
             logger.debug(f"Processing item {i}: {item}, value: {value}")
-            
+
             if isinstance(item, Tree):
                 if item.data == 'loss':
                     loss_config = value
@@ -1735,27 +1853,27 @@ class ModelTransformer(lark.Transformer):
                     training_config = item.get('params', {})
             else:
                 logger.warning(f"Skipping unhandled item at index {i}: {item}")
-        
+
         # Build the network configuration
         network_config = {
             'name': name,
             'input_shapes': input_shapes,
             'layers': layers
         }
-        
+
         if loss_config:
             network_config['loss'] = loss_config
-            
+
         if optimizer_config:
             network_config['optimizer'] = optimizer_config
             logger.debug(f"Adding optimizer to network_config: {optimizer_config}")
-            
+
         if training_config:
             network_config['training'] = training_config
-            
+
         if execution_config:
             network_config['execution'] = execution_config
-            
+
         logger.debug(f"Final network_config: {network_config}")
         return network_config
 
@@ -1839,10 +1957,10 @@ class ModelTransformer(lark.Transformer):
                     params.update(self._extract_value(i))
         return params
 
-    
+
     def named_param(self, items):
         return {items[0].value: self._extract_value(items[1])}
-    
+
     def named_float(self, items):
         return {items[0].value: self._extract_value(items[1])}
 
@@ -1992,12 +2110,12 @@ class ModelTransformer(lark.Transformer):
     def attention(self, items):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'Attention', 'params': params, 'sublayers': []}
-    
+
 
     def residual(self, items):
         raw_params = items[0] if items else None
         sub_layers = items[1] if len(items) > 1 else []
-        
+
         params = {}
         if raw_params:
             if isinstance(raw_params, list):
@@ -2006,9 +2124,9 @@ class ModelTransformer(lark.Transformer):
                         params.update(p)
             elif isinstance(raw_params, dict):
                 params.update(raw_params)
-        
+
         return {'type': 'ResidualConnection', 'params': params, 'sublayers': sub_layers}
-    
+
     def inception(self, items):
         params = self._extract_value(items[0]) if items else {}
         return {'type': 'Inception', 'params': params, 'sublayers': []}
@@ -2039,7 +2157,7 @@ class ModelTransformer(lark.Transformer):
             layer_type = items[0].value
         else:
             layer_type = items[0]
-            
+
         params = {}
         if len(items) > 1:
             param_values = self._extract_value(items[1])
@@ -2049,7 +2167,7 @@ class ModelTransformer(lark.Transformer):
                         params.update(param)
             elif isinstance(param_values, dict):
                 params = param_values
-                
+
         return {
             'type': layer_type,
             'params': params,
@@ -2144,7 +2262,7 @@ class ModelTransformer(lark.Transformer):
     def average(self, items):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'Average', 'params': params, 'sublayers': []}
-    
+
     def maximum(self, items):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'Maximum', 'params': params, 'sublayers': []}
@@ -2181,7 +2299,7 @@ class ModelTransformer(lark.Transformer):
                 )
 
         return {'type': 'Concatenate', 'params': params, 'sublayers': []}
-        
+
     def dot(self, items):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'Dot', 'params': params, 'sublayers': []}
@@ -2189,7 +2307,7 @@ class ModelTransformer(lark.Transformer):
     ## Wrappers ##
 
     @pysnooper.snoop()
-    def timedistributed(self, items): 
+    def timedistributed(self, items):
         raw_params = self._extract_value(items[0]) if items else None
         if isinstance(raw_params, list):
             params = {}
@@ -2199,7 +2317,7 @@ class ModelTransformer(lark.Transformer):
                 else:
                     self.raise_validation_error("Invalid parameters for TimeDistributed", items[0])
         else:
-            params = raw_params 
+            params = raw_params
         return {'type': 'TimeDistributed', 'params': params}
 
     @pysnooper.snoop()
@@ -2233,7 +2351,7 @@ class ModelTransformer(lark.Transformer):
     def gaussian_noise(self, items):
         raw_params = self._extract_value(items[0])
         params = {}
-        
+
         if isinstance(raw_params, list):
             # Flatten nested lists and merge dictionaries
             for param in raw_params:
@@ -2244,9 +2362,9 @@ class ModelTransformer(lark.Transformer):
                         params.update(sub_param)
         elif isinstance(raw_params, dict):
             params = raw_params
-        
+
         return {'type': 'GaussianNoise', 'params': params}
-    
+
     def stddev(self, items):
         return {'stddev': self._extract_value(items[1])}
 
@@ -2283,7 +2401,7 @@ class ModelTransformer(lark.Transformer):
     def l1_l2(self, items):
         return {'type': 'L1L2', 'params': self._extract_value(items[0])}
 
-    
+
     def named_layer(self, items):
         layer_name = self._extract_value(items[0])
         dimensions = self._extract_value(items[1])
@@ -2294,11 +2412,11 @@ class ModelTransformer(lark.Transformer):
 
     def self_defined_shape(self, items):
         layer_info = self._extract_value(items[1])  # items[1] is the named_layer result
-        
+
         #Error handling for negative dims
         if any(dim < 0 for dim in layer_info['params']):
             self.raise_validation_error(f"Invalid dimensions for {layer_info['type']}: {layer_info['params']}", items[1])
-        
+
 
 
         return {
@@ -2310,9 +2428,11 @@ class ModelTransformer(lark.Transformer):
     ## HPO ##
 
     def _track_hpo(self, layer_type, param_name, hpo_data, node):
+        path = f"{layer_type}.{param_name}" if param_name else layer_type
         self.hpo_params.append({
             'layer_type': layer_type,
             'param_name': param_name,
+            'path': path,
             'hpo': hpo_data['hpo'],
             'node': node  # Optional: for debugging
         })
@@ -2321,6 +2441,104 @@ class ModelTransformer(lark.Transformer):
         try:
             tree = create_parser('network').parse(config)
             model = self.transform(tree)
+
+            # Track HPO parameters in the optimizer
+            if 'optimizer' in model and 'params' in model['optimizer']:
+                params = model['optimizer']['params']
+
+                # Track HPO parameters in the optimizer
+                for param_name, param_value in params.items():
+                    if isinstance(param_value, dict) and 'hpo' in param_value:
+                        self._track_hpo('optimizer', f'params.{param_name}', param_value, None)
+                    # Track HPO parameters in learning rate schedules
+                    elif param_name == 'learning_rate' and isinstance(param_value, dict) and 'type' in param_value and 'args' in param_value:
+                        # This is a learning rate schedule
+                        for i, arg in enumerate(param_value['args']):
+                            if isinstance(arg, dict) and 'hpo' in arg:
+                                # Track HPO in learning rate schedule
+                                self._track_hpo('optimizer', f'params.learning_rate.args[{i}]', arg, None)
+
+                # Process learning rate schedule string
+                if 'learning_rate' in params and isinstance(params['learning_rate'], str):
+                    lr_value = params['learning_rate']
+                    if '(' in lr_value and ')' in lr_value:
+                        # Process learning rate schedule string
+                        schedule_str = lr_value.strip('"\'')
+                        schedule_type = schedule_str[:schedule_str.index('(')]
+                        args_str = schedule_str[schedule_str.index('(')+1:schedule_str.rindex(')')]
+
+                        # Parse arguments
+                        args = []
+                        if args_str:
+                            import re
+                            # Handle nested parentheses for HPO expressions
+                            def parse_args(args_str):
+                                result = []
+                                current = ''
+                                paren_level = 0
+
+                                for char in args_str:
+                                    if char == ',' and paren_level == 0:
+                                        result.append(current.strip())
+                                        current = ''
+                                    else:
+                                        if char == '(':
+                                            paren_level += 1
+                                        elif char == ')':
+                                            paren_level -= 1
+                                        current += char
+
+                                if current:
+                                    result.append(current.strip())
+                                return result
+
+                            arg_list = parse_args(args_str)
+
+                            for arg in arg_list:
+                                if arg.startswith('HPO('):
+                                    # Extract HPO parameters
+                                    hpo_type = re.search(r'HPO\(([^(]+)\(', arg)
+                                    if hpo_type:
+                                        hpo_type = hpo_type.group(1).strip()
+                                        if hpo_type == 'range':
+                                            match = re.search(r'range\(([^,]+),\s*([^,]+)(?:,\s*step=([^)]+))?\)', arg)
+                                            if match:
+                                                low, high = float(match.group(1)), float(match.group(2))
+                                                step = float(match.group(3)) if match.group(3) else None
+                                                hpo_dict = {'type': 'range', 'low': low, 'high': high}
+                                                if step:
+                                                    hpo_dict['step'] = step
+                                                args.append({'hpo': hpo_dict})
+                                                # Track HPO in learning rate schedule
+                                                self._track_hpo('optimizer', f'params.learning_rate.args[{len(args)-1}]', {'hpo': hpo_dict}, None)
+                                        elif hpo_type == 'log_range':
+                                            match = re.search(r'log_range\(([^,]+),\s*([^)]+)\)', arg)
+                                            if match:
+                                                low, high = float(match.group(1)), float(match.group(2))
+                                                hpo_dict = {'type': 'log_range', 'low': low, 'high': high}
+                                                args.append({'hpo': hpo_dict})
+                                                # Track HPO in learning rate schedule
+                                                self._track_hpo('optimizer', f'params.learning_rate.args[{len(args)-1}]', {'hpo': hpo_dict}, None)
+                                        elif hpo_type == 'choice':
+                                            match = re.search(r'choice\(([^)]+)\)', arg)
+                                            if match:
+                                                choices = [float(x.strip()) for x in match.group(1).split(',')]
+                                                hpo_dict = {'type': 'choice', 'values': choices}
+                                                args.append({'hpo': hpo_dict})
+                                                # Track HPO in learning rate schedule
+                                                self._track_hpo('optimizer', f'params.learning_rate.args[{len(args)-1}]', {'hpo': hpo_dict}, None)
+                                else:
+                                    try:
+                                        args.append(float(arg))
+                                    except ValueError:
+                                        args.append(arg)
+
+                        # Replace string with structured representation
+                        params['learning_rate'] = {
+                            'type': schedule_type,
+                            'args': args
+                        }
+
             return model, self.hpo_params
         except VisitError as e:
             # Check if the original exception is a DSLValidationError
@@ -2383,7 +2601,7 @@ class ModelTransformer(lark.Transformer):
 
     def hpo_expr(self, items):
         return {"hpo": self._extract_value(items[0])}
-    
+
     def hpo_with_params(self, items):
         return [self._extract_value(item) for item in items]
 
@@ -2414,7 +2632,7 @@ class ModelTransformer(lark.Transformer):
             if tree is None:
                 raise DSLValidationError("Parsing failed due to warnings", Severity.ERROR)
             warnings.extend(parse_result["warnings"])
-            
+
             model = self.transform(tree)
             if framework == 'auto':
                 framework = self._detect_framework(model)
@@ -2432,7 +2650,7 @@ class ModelTransformer(lark.Transformer):
         except (lark.LarkError, DSLValidationError) as e:
             log_by_severity(Severity.ERROR, f"Error parsing network: {str(e)}")
             raise
-        
+
     def _detect_framework(self, model):
         for layer in model['layers']:
             params = layer.get('params') or {}  # Handle None case

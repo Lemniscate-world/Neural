@@ -120,7 +120,7 @@ neural version  # Show version info
 
 ### Example Messages
 ```text
-CRITICAL at line 5, column 12: 
+CRITICAL at line 5, column 12:
 Invalid device 'npu' - must be one of [cpu, cuda, tpu]
 
 ERROR at line 12, column 8:
@@ -229,12 +229,48 @@ network MyModel {
 
 ### Optimizer Configuration
 ```yaml
+# Basic optimizer configuration
 optimizer: Adam(
     learning_rate=HPO(log_range(1e-4, 1e-2)),
     beta_1=0.9,
     beta_2=0.999
 )
+
+# Learning rate schedules
+optimizer: SGD(
+    learning_rate=ExponentialDecay(0.1, 1000, 0.96),
+    momentum=0.9
+)
+
+# Learning rate schedules with HPO
+optimizer: SGD(
+    learning_rate=ExponentialDecay(HPO(range(0.05, 0.2, step=0.05)), 1000, HPO(range(0.9, 0.99, step=0.01)))
+)
 ```
+
+### Learning Rate Schedules
+Learning rate schedules allow you to dynamically adjust the learning rate during training. They can be specified directly in the `learning_rate` parameter of optimizers.
+
+```yaml
+# ExponentialDecay schedule
+learning_rate=ExponentialDecay(0.1, 1000, 0.96)
+
+# With HPO parameters
+learning_rate=ExponentialDecay(HPO(range(0.05, 0.2, step=0.05)), 1000, 0.96)
+```
+
+For backward compatibility, string-based learning rate schedules are also supported:
+
+```yaml
+# String-based ExponentialDecay schedule
+learning_rate="ExponentialDecay(0.1, 1000, 0.96)"
+```
+
+Supported schedules:
+- `ExponentialDecay`: Applies exponential decay to the learning rate
+- `PiecewiseConstantDecay`: Uses a piecewise constant decay schedule
+- `PolynomialDecay`: Applies a polynomial decay to the learning rate
+- `InverseTimeDecay`: Applies inverse time decay to the learning rate
 
 ---
 
