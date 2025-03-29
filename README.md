@@ -23,7 +23,7 @@
 
 ![design-01jmphv5f1-1740433387](https://github.com/user-attachments/assets/ecbcce19-73df-4696-ace2-69e32d02709f)
 
-## 🎯 Pain Points Solved
+##  Pain Points Solved
 
 Neural addresses deep learning challenges across **Criticality** (how essential) and **Impact Scope** (how transformative):
 
@@ -46,7 +46,7 @@ Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.ty
 
 
 
-## 🚀 Features
+## Features
 
 - **YAML-like Syntax**: Define models intuitively without framework boilerplate.
 - **Shape Propagation**: Catch dimension mismatches *before* runtime.
@@ -56,8 +56,12 @@ Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.ty
 - **Training Orchestration**: Configure optimizers, schedulers, and metrics in one place.
 - **Visual Debugging**: Render interactive 3D architecture diagrams.
 - **Extensible**: Add custom layers/losses via Python plugins.
+- **NeuralDbg**: Built-in Neural Network Debugger and Visualizer.
+- **No-Code Interface**: Quick Prototyping for researchers and ean ducational, accessible tool for beginners.
 
-### **🛠 NeuralDbg: Built-in Neural Network Debugger**
+---
+
+### **NeuralDbg: Built-in Neural Network Debugger**
 NeuralDbg provides **real-time execution tracing, profiling, and debugging**, allowing you to visualize and analyze deep learning models in action.
 
 ✅ **Real-Time Execution Monitoring** – Track activations, gradients, memory usage, and FLOPs.  
@@ -77,7 +81,7 @@ NeuralDbg provides **real-time execution tracing, profiling, and debugging**, al
 ✅ **Step Debugging Mode** – Pause execution and inspect tensors manually.
 
 
-## 📦 Installation
+## Installation
 
 # Clone the repository
 git clone https://github.com/yourusername/neural.git
@@ -102,7 +106,7 @@ see v0.2.4 for bug fixes
 
 **Prerequisites**: Python 3.8+, pip
 
-## 🛠️ Quick Start
+## Quick Start
 
 ### 1. Define a Model
 
@@ -182,7 +186,7 @@ python neural.py debug mnist.neural
 ```bash
 python neural.py debug --gradients mnist.neural
 ```
-🚀 **Detect vanishing/exploding gradients** with interactive charts.
+ **Detect vanishing/exploding gradients** with interactive charts.
 
 ### **🔹 3️⃣ Identify Dead Neurons**
 ```bash
@@ -194,7 +198,7 @@ python neural.py debug --dead-neurons mnist.neural
 ```bash
 python neural.py debug --anomalies mnist.neural
 ```
-🔥 **Flag NaNs, weight explosions, and extreme activations.**
+ **Flag NaNs, weight explosions, and extreme activations.**
 
 ### **🔹 5️⃣ Step Debugging (Interactive Tensor Inspection)**
 ```bash
@@ -204,7 +208,7 @@ python neural.py debug --step mnist.neural
 
 ---
 
-## 🌟 Why Neural?
+##  Why Neural?
 
 | Feature               | Neural      | Raw TensorFlow/PyTorch |
 |-----------------------|-------------|-------------------------|
@@ -220,13 +224,13 @@ python neural.py debug --step mnist.neural
 | `Conv2D(filters=32)`| `tf.keras.layers.Conv2D(32)`| `nn.Conv2d(in_channels, 32)` |
 | `Dense(units=128)`  | `tf.keras.layers.Dense(128)`| `nn.Linear(in_features, 128)`|
 
-## 🏆 Benchmarks  
+##  Benchmarks  
 | Task                 | Neural | Baseline (TF/PyTorch) |  
 |----------------------|--------|-----------------------|  
 | MNIST Training       | 1.2x ⚡| 1.0x                  |  
 | Debugging Setup      | 5min 🕒| 2hr+                  |  
 
-## 📚 Documentation
+##  Documentation
 
 - [DSL Documentation](docs/dsl.md)
 
@@ -236,14 +240,14 @@ Explore advanced features:
 - [Training Configuration]()
 - [NeuralDbg Debugging Features]()
 
-## 📚 Examples
+##  Examples
 
 Explore common use cases in `examples/` with step-by-step guides in `docs/examples/`:
 - [MNIST Classifier Guide](docs/examples/mnist_guide.md)
 - [Sentiment Analysis Guide](docs/examples/sentiment_guide.md)
 - [Transformer for NLP Guide](docs/examples/transformer_guide.md)
 
-## 🕸Architecture Graphs (Zoom Alot For Some🫩)
+## 🕸Architecture Graphs (Zoom A Lot For Some)
 
 ![classes](https://github.com/Lemniscate-SHA-256/Neural/blob/main/classes.png)
 ![packages](https://github.com/Lemniscate-SHA-256/Neural/blob/main/packages.png)
@@ -253,7 +257,7 @@ Explore common use cases in `examples/` with step-by-step guides in `docs/exampl
 ---
 
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions! See our:
 - [Contributing Guidelines](CONTRIBUTING.md)
@@ -274,9 +278,9 @@ pre-commit install  # Auto-format code on commit
 
 ## Support
 Please give us a star ⭐️ to increase our chances of getting into GitHub trends - the more attention we get, the higher our chances of actually making a difference.
-Please share this project with your friends! Every share helps us reach more developers and grow our community. The more developers we reach, the more likely we are to build something truly revolutionary together. 🚀
+Please share this project with your friends! Every share helps us reach more developers and grow our community. The more developers we reach, the more likely we are to build something truly revolutionary together. 
 
-## 📬 Community
+## Community
 
 - [Discord Server](https://discord.gg/KFku4KvS): Chat with developers
 - [Twitter @NLang4438](https://x.com/NLang4438): Updates & announcements
