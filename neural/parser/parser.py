@@ -409,7 +409,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         // Training & Configurations
         training_config: "train" "{" training_params  "}"
-        training_params: (epochs_param | batch_size_param | optimizer_param | search_method_param | validation_split_param | device)*
+        training_params: (epochs_param | batch_size_param | search_method_param | validation_split_param | device)*
         device: "@" NAME
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" values_list
