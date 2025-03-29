@@ -128,14 +128,14 @@ class TestHPOOptimizers:
             ),
         ],
         ids=[
-            "adam-basic", "adam-lr-hpo", "sgd-multiple-hpo", 
+            "adam-basic", "adam-lr-hpo", "sgd-multiple-hpo",
             "sgd-lr-schedule", "sgd-lr-schedule-hpo"
         ]
     )
     def test_optimizer_parsing(self, transformer, network_string, expected_optimizer, test_id):
         """Test parsing of optimizer configurations with HPO within complete networks."""
         model_dict, hpo_params = transformer.parse_network_with_hpo(network_string)
-        
+
         # Check that the optimizer matches the expected configuration
         assert model_dict['optimizer'] == expected_optimizer, \
             f"Failed for {test_id}: expected {expected_optimizer}, got {model_dict['optimizer']}"
@@ -151,7 +151,7 @@ class TestHPOOptimizers:
                         Dense(128)
                         Output(10)
                     loss: "categorical_crossentropy"
-                    optimizer: "Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))"
+                    optimizer: Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))
                 }
                 """,
                 "Adam",
@@ -166,7 +166,7 @@ class TestHPOOptimizers:
                         Dense(128)
                         Output(10)
                     loss: "categorical_crossentropy"
-                    optimizer: "SGD(learning_rate=ExponentialDecay(HPO(choice(0.1, 0.01)), 1000, 0.96))"
+                    optimizer: SGD(learning_rate=ExponentialDecay(HPO(choice(0.1, 0.01)), 1000, 0.96))
                 }
                 """,
                 "SGD",
@@ -179,16 +179,16 @@ class TestHPOOptimizers:
     def test_optimizer_in_network(self, transformer, network_string, expected_optimizer_type, expected_hpo_param, test_id):
         """Test HPO in optimizers within complete network definitions."""
         model_dict, hpo_params = transformer.parse_network_with_hpo(network_string)
-        
+
         # Check optimizer type
         assert model_dict['optimizer']['type'] == expected_optimizer_type, \
             f"Expected optimizer type {expected_optimizer_type}, got {model_dict['optimizer']['type']}"
-        
+
         # Check that we have HPO parameters in the optimizer
         found_hpo = False
         for param in hpo_params:
             if param.get('path', '').startswith('optimizer.params'):
                 found_hpo = True
                 break
-        
+
         assert found_hpo, f"No HPO parameters found in optimizer for {test_id}"
