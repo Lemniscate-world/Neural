@@ -99,6 +99,24 @@ def custom_error_handler(error):
     return {"warning": msg, "line": error.line, "column": error.column}
 
 def create_parser(start_rule: str = 'network') -> lark.Lark:
+    """
+    Create a Lark parser for the Neural DSL grammar with the specified start rule.
+
+    This function initializes a Lark parser with the Neural DSL grammar and configures
+    it to start parsing from the specified rule. The parser handles various layer types,
+    network configurations, and hyperparameter optimization expressions.
+
+    Args:
+        start_rule (str, optional): The grammar rule to start parsing from.
+                                    Defaults to 'network'.
+
+    Returns:
+        lark.Lark: A configured Lark parser instance ready to parse Neural DSL code.
+
+    Example:
+        >>> parser = create_parser('network')
+        >>> tree = parser.parse('network MyModel { input: (28, 28, 1) layers: Dense(128) }')
+    """
     grammar = r"""
         // Layer type tokens (case-insensitive)
         DENSE: "dense"i
@@ -488,6 +506,32 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
     )
 
 def safe_parse(parser, text):
+    """
+    Safely parse text using the provided parser, handling common parsing errors.
+
+    This function attempts to parse the input text and catches any parsing exceptions,
+    converting them to more user-friendly error messages with line and column information.
+
+    Args:
+        parser (lark.Lark): The Lark parser to use for parsing.
+        text (str): The input text to parse.
+
+    Returns:
+        dict: A dictionary containing:
+            - result: The parsed tree if successful, None otherwise.
+            - warnings: A list of warning messages.
+
+    Raises:
+        DSLValidationError: If there are syntax errors or other parsing issues.
+
+    Example:
+        >>> parser = create_parser('network')
+        >>> try:
+        ...     parse_result = safe_parse(parser, 'network MyModel { input: (28, 28, 1) }')
+        ...     tree = parse_result["result"]
+        ... except DSLValidationError as e:
+        ...     print(f"Error: {e}")
+    """
     warnings = []
     try:
         tree = parser.parse(text)
@@ -495,14 +539,24 @@ def safe_parse(parser, text):
     except (lark.UnexpectedCharacters, lark.UnexpectedToken) as e:
         # Log details about syntax error
         log_by_severity(Severity.ERROR, f"Syntax error at line {e.line}, column {e.column}")
-        log_by_severity(Severity.ERROR, f"Unexpected {e.token} - Expected: {e.accepts}")
 
-        # Add warning
+        # Add warning with appropriate error details
+        error_msg = f"Syntax error at line {e.line}, column {e.column}"
+        details = ""
+
+        if hasattr(e, 'token') and hasattr(e, 'accepts'):
+            log_by_severity(Severity.ERROR, f"Unexpected {e.token} - Expected: {e.accepts}")
+            details = f"Unexpected {e.token}, expected one of: {e.accepts}"
+        elif hasattr(e, 'char') and hasattr(e, 'allowed'):
+            details = f"Unexpected character '{e.char}', expected one of: {', '.join(sorted(e.allowed))}"
+        else:
+            details = "Syntax error in the input"
+
         warnings.append({
-            "message": f"Syntax error at line {e.line}, column {e.column}",
+            "message": error_msg,
             "line": e.line,
             "column": e.column,
-            "details": f"Unexpected {e.token}, expected one of: {e.accepts}"
+            "details": details
         })
 
         # Use custom_error_handler to process the error
@@ -543,6 +597,17 @@ def split_params(s):
     return parts
 
 class ModelTransformer(lark.Transformer):
+    """
+    Transformer for converting parsed Neural DSL syntax trees into model configurations.
+
+    This class transforms the Lark parse tree into a structured dictionary representation
+    of the neural network model. It handles various layer types, network configurations,
+    hyperparameter optimization expressions, and validation of parameters.
+
+    The transformer processes each node in the parse tree according to its type and
+    converts it into the appropriate Python data structure (dictionaries, lists, etc.)
+    that can be used to construct the actual neural network model.
+    """
     def __init__(self):
         super().__init__()
         self.variables = {}
@@ -589,6 +654,27 @@ class ModelTransformer(lark.Transformer):
         self.hpo_params = []
 
     def raise_validation_error(self, msg, item=None, severity=Severity.ERROR):
+        """
+        Raise a validation error with line and column information from the parse tree node.
+
+        This method extracts position information from the parse tree node and raises
+        a DSLValidationError with the provided message and severity level. It helps
+        provide detailed error messages to users with exact line and column information.
+
+        Args:
+            msg (str): The error message to display to the user.
+            item: The parse tree node where the error occurred.
+            severity (Severity, optional): The severity level of the error.
+                                          Defaults to Severity.ERROR.
+
+        Raises:
+            DSLValidationError: An exception containing the error message, severity,
+                               and position information.
+
+        Returns:
+            dict: For warnings (non-error severity levels), returns a dictionary with
+                 warning information including the message and position.
+        """
         if item and hasattr(item, 'meta'):
             line, col = item.meta.line, item.meta.column
             full_msg = f"{severity.name} at line {line}, column {col}: {msg}"
@@ -1601,7 +1687,18 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'SimpleRNN', 'params': params}
 
     def lr_schedule(self, items):
-        """Process learning rate schedule expressions."""
+        """
+        Process learning rate schedule expressions.
+
+        This method processes learning rate schedule expressions like ExponentialDecay,
+        StepDecay, etc. and extracts their parameters.
+
+        Args:
+            items: The parse tree items for the learning rate schedule.
+
+        Returns:
+            dict: A dictionary containing the schedule type and arguments.
+        """
         schedule_type = items[0].value
         args = []
         if len(items) > 1 and hasattr(items[1], 'data') and items[1].data == 'lr_schedule_args':
@@ -1612,78 +1709,216 @@ class ModelTransformer(lark.Transformer):
         }
 
     def lr_schedule_args(self, items):
+        """
+        Process learning rate schedule arguments.
+
+        This method processes the arguments for a learning rate schedule.
+
+        Args:
+            items: The parse tree items for the learning rate schedule arguments.
+
+        Returns:
+            The original items list to be processed by the parent lr_schedule method.
+        """
         return items
 
     def lr_schedule_arg(self, items):
+        """
+        Process a learning rate schedule argument.
+
+        This method extracts the value from a learning rate schedule argument.
+
+        Args:
+            items: The parse tree items for the learning rate schedule argument.
+
+        Returns:
+            The extracted value from the learning rate schedule argument.
+        """
         return self._extract_value(items[0])
-        params = {}
-        if items and items[0] is not None:
-            param_node = items[0]
-            param_values = self._extract_value(param_node)
-            if isinstance(param_values, list):
-                for val in param_values:
-                    if isinstance(val, dict):
-                        params.update(val)
-                    else:
-                        if 'units' not in params:
-                            params['units'] = val
-            elif isinstance(param_values, dict):
-                params = param_values
-
-        if 'units' not in params:
-            self.raise_validation_error("SimpleRNN requires 'units' parameter", items[0])
-
-        units = params['units']
-        if isinstance(units, dict) and 'hpo' in units:
-            pass
-        else:
-            if not isinstance(units, (int, float)) or (isinstance(units, float) and not units.is_integer()):
-                self.raise_validation_error(f"SimpleRNN units must be an integer, got {units}", items[0])
-            if units <= 0:
-                self.raise_validation_error(f"SimpleRNN units must be positive, got {units}", items[0])
-            params['units'] = int(units)
-
-        return {'type': 'SimpleRNN', 'params': params}
 
     def conv_lstm(self, items):
+        """
+        Process a ConvLSTM2D layer.
+
+        This method processes a ConvLSTM2D layer and extracts its parameters.
+
+        Args:
+            items: The parse tree items for the ConvLSTM2D layer.
+
+        Returns:
+            dict: A dictionary containing the ConvLSTM2D layer configuration.
+        """
         return {'type': 'ConvLSTM2D', 'params': self._extract_value(items[0])}
 
     def conv_gru(self, items):
+        """
+        Process a ConvGRU2D layer.
+
+        This method processes a ConvGRU2D layer and extracts its parameters.
+
+        Args:
+            items: The parse tree items for the ConvGRU2D layer.
+
+        Returns:
+            dict: A dictionary containing the ConvGRU2D layer configuration.
+        """
         return {'type': 'ConvGRU2D', 'params': self._extract_value(items[0])}
 
     def bidirectional_rnn(self, items):
+        """
+        Process a bidirectional RNN layer.
+
+        This method processes a bidirectional RNN layer (like Bidirectional(LSTM),
+        Bidirectional(GRU), etc.) and combines the RNN layer parameters with the
+        bidirectional wrapper parameters.
+
+        Args:
+            items: The parse tree items for the bidirectional RNN layer.
+
+        Returns:
+            dict: A dictionary containing the bidirectional RNN layer configuration.
+        """
         rnn_layer = items[0]
         bidirectional_params = self._extract_value(items[1])
         rnn_layer['params'].update(bidirectional_params)
         return {'type': f"Bidirectional({rnn_layer['type']})", 'params': rnn_layer['params']}
 
     def cudnn_gru_layer(self, items):
+        """
+        Process a CuDNN GRU layer.
+
+        This method processes a CuDNN GRU layer, which is a GPU-optimized version of GRU.
+        It maps the CuDNN GRU to the standard GRU layer type with the same parameters.
+
+        Args:
+            items: The parse tree items for the CuDNN GRU layer.
+
+        Returns:
+            dict: A dictionary containing the GRU layer configuration.
+        """
         return {'type': 'GRU', 'params': self._extract_value(items[0])}
 
     def bidirectional_simple_rnn_layer(self, items):
+        """
+        Process a bidirectional SimpleRNN layer.
+
+        This method processes a bidirectional SimpleRNN layer and extracts its parameters.
+
+        Args:
+            items: The parse tree items for the bidirectional SimpleRNN layer.
+
+        Returns:
+            dict: A dictionary containing the bidirectional SimpleRNN layer configuration.
+        """
         return {'type': 'Bidirectional(SimpleRNN)', 'params': self._extract_value(items[0])}
 
     def bidirectional_lstm_layer(self, items):
+        """
+        Process a bidirectional LSTM layer.
+
+        This method processes a bidirectional LSTM layer and extracts its parameters.
+
+        Args:
+            items: The parse tree items for the bidirectional LSTM layer.
+
+        Returns:
+            dict: A dictionary containing the bidirectional LSTM layer configuration.
+        """
         return {'type': 'Bidirectional(LSTM)', 'params': self._extract_value(items[0])}
 
     def bidirectional_gru_layer(self, items):
+        """
+        Process a bidirectional GRU layer.
+
+        This method processes a bidirectional GRU layer and extracts its parameters.
+
+        Args:
+            items: The parse tree items for the bidirectional GRU layer.
+
+        Returns:
+            dict: A dictionary containing the bidirectional GRU layer configuration.
+        """
         return {'type': 'Bidirectional(GRU)', 'params': self._extract_value(items[0])}
 
     def conv_lstm_layer(self, items):
+        """
+        Process a ConvLSTM2D layer.
+
+        This method processes a ConvLSTM2D layer and extracts its parameters.
+        ConvLSTM2D combines convolutional and LSTM operations for spatiotemporal data.
+
+        Args:
+            items: The parse tree items for the ConvLSTM2D layer.
+
+        Returns:
+            dict: A dictionary containing the ConvLSTM2D layer configuration.
+        """
         return {'type': 'ConvLSTM2D', 'params': self._extract_value(items[0])}
 
     def conv_gru_layer(self, items):
+        """
+        Process a ConvGRU2D layer.
+
+        This method processes a ConvGRU2D layer and extracts its parameters.
+        ConvGRU2D combines convolutional and GRU operations for spatiotemporal data.
+
+        Args:
+            items: The parse tree items for the ConvGRU2D layer.
+
+        Returns:
+            dict: A dictionary containing the ConvGRU2D layer configuration.
+        """
         return {'type': 'ConvGRU2D', 'params': self._extract_value(items[0])}
 
     ## Cell Layers ##
 
     def rnn_cell_layer(self, items):
+        """
+        Process an RNNCell layer.
+
+        This method processes an RNNCell layer and extracts its parameters.
+        RNNCell is a basic RNN cell that can be used in custom RNN architectures.
+
+        Args:
+            items: The parse tree items for the RNNCell layer.
+
+        Returns:
+            dict: A dictionary containing the RNNCell layer configuration.
+        """
         return {'type': 'RNNCell', 'params': self._extract_value(items[0])}
 
     def simple_rnn_cell(self, items):
+        """
+        Process a SimpleRNNCell layer.
+
+        This method processes a SimpleRNNCell layer and extracts its parameters.
+        SimpleRNNCell is a cell with a single output recurrent unit.
+
+        Args:
+            items: The parse tree items for the SimpleRNNCell layer.
+
+        Returns:
+            dict: A dictionary containing the SimpleRNNCell layer configuration.
+        """
         return {'type': 'SimpleRNNCell', 'params': self._extract_value(items[0])}
 
     def lstmcell(self, items):
+        """
+        Process an LSTMCell layer.
+
+        This method processes an LSTMCell layer and extracts its parameters.
+        LSTMCell is a cell with LSTM gates that can be used in custom RNN architectures.
+        It validates that the units parameter is present.
+
+        Args:
+            items: The parse tree items for the LSTMCell layer.
+
+        Returns:
+            dict: A dictionary containing the LSTMCell layer configuration.
+
+        Raises:
+            DSLValidationError: If the units parameter is missing or invalid.
+        """
         raw_params = self._extract_value(items[0])
         if isinstance(raw_params, list):
             params = {}
@@ -1700,6 +1935,22 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'LSTMCell', 'params': params}
 
     def grucell(self, items):
+        """
+        Process a GRUCell layer.
+
+        This method processes a GRUCell layer and extracts its parameters.
+        GRUCell is a cell with GRU gates that can be used in custom RNN architectures.
+        It validates that the units parameter is present.
+
+        Args:
+            items: The parse tree items for the GRUCell layer.
+
+        Returns:
+            dict: A dictionary containing the GRUCell layer configuration.
+
+        Raises:
+            DSLValidationError: If the units parameter is missing.
+        """
         params = {}
         if items and items[0] is not None:
             param_node = items[0]  # From param_style1
@@ -1717,6 +1968,22 @@ class ModelTransformer(lark.Transformer):
         return {"type": "GRUCell", "params": params}
 
     def simple_rnn_dropout(self, items):
+        """
+        Process a SimpleRNNDropoutWrapper layer.
+
+        This method processes a SimpleRNNDropoutWrapper layer and extracts its parameters.
+        SimpleRNNDropoutWrapper is a wrapper that adds dropout to a SimpleRNN layer.
+        It validates that the units parameter is present.
+
+        Args:
+            items: The parse tree items for the SimpleRNNDropoutWrapper layer.
+
+        Returns:
+            dict: A dictionary containing the SimpleRNNDropoutWrapper layer configuration.
+
+        Raises:
+            DSLValidationError: If the units parameter is missing.
+        """
         param_style = self._extract_value(items[0])
         params = {}
 
@@ -1739,12 +2006,50 @@ class ModelTransformer(lark.Transformer):
         return {"type": "SimpleRNNDropoutWrapper", 'params': params}
 
     def gru_dropout(self, items):
+        """
+        Process a GRUDropoutWrapper layer.
+
+        This method processes a GRUDropoutWrapper layer and extracts its parameters.
+        GRUDropoutWrapper is a wrapper that adds dropout to a GRU layer.
+
+        Args:
+            items: The parse tree items for the GRUDropoutWrapper layer.
+
+        Returns:
+            dict: A dictionary containing the GRUDropoutWrapper layer configuration.
+        """
         return {"type": "GRUDropoutWrapper", 'params': self._extract_value(items[0])}
 
     def lstm_dropout(self, items):
+        """
+        Process an LSTMDropoutWrapper layer.
+
+        This method processes an LSTMDropoutWrapper layer and extracts its parameters.
+        LSTMDropoutWrapper is a wrapper that adds dropout to an LSTM layer.
+
+        Args:
+            items: The parse tree items for the LSTMDropoutWrapper layer.
+
+        Returns:
+            dict: A dictionary containing the LSTMDropoutWrapper layer configuration.
+        """
         return {"type": "LSTMDropoutWrapper", 'params': self._extract_value(items[0])}
 
     def research(self, items):
+        """
+        Process a Research block.
+
+        This method processes a Research block in the DSL, which is used to define
+        research-specific configurations. It extracts the name and parameters of the
+        research block.
+
+        Args:
+            items: The parse tree items for the Research block.
+
+        Returns:
+            dict: A dictionary containing the Research block configuration, including
+                 its type, name (if provided), and parameters.
+        """
         name = None
         params = {}
         if items and isinstance(items[0], Token) and items[0].type == 'NAME':
@@ -1757,6 +2062,18 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'Research', 'name': name, 'params': params}
 
     def research_params(self, items):
+        """
+        Process parameters for a Research block.
+
+        This method processes the parameters for a Research block, extracting and
+        combining parameters from different sources (Trees or dictionaries).
+
+        Args:
+            items: The parse tree items containing the Research parameters.
+
+        Returns:
+            dict: A dictionary containing the combined parameters for the Research block.
+        """
         params = {}
         for item in items:
             if isinstance(item, Tree):
@@ -1766,6 +2083,20 @@ class ModelTransformer(lark.Transformer):
         return params
 
     def metrics(self, items):
+        """
+        Process metrics specifications.
+
+        This method processes metrics specifications in the DSL, which define the metrics
+        to be used for model evaluation. It extracts metric names and their parameters,
+        handling both dictionary-based and string-based specifications.
+
+        Args:
+            items: The parse tree items containing the metrics specifications.
+
+        Returns:
+            dict: A dictionary containing the metrics configuration, with metric names as keys
+                 and their parameters as values.
+        """
         if not items:
             return {'metrics': {}}
         result = {}
@@ -1784,29 +2115,115 @@ class ModelTransformer(lark.Transformer):
         return {'metrics': result}
 
     def accuracy_param(self, items):
+        """
+        Process an accuracy metric parameter.
+
+        This method processes an accuracy metric parameter in the DSL, extracting
+        its value and returning it in a dictionary format.
+
+        Args:
+            items: The parse tree items containing the accuracy parameter.
+
+        Returns:
+            dict: A dictionary with 'accuracy' as the key and the extracted parameter value.
+        """
         return {'accuracy': self._extract_value(items[0])}
 
     def precision_param(self, items):
+        """
+        Process a precision metric parameter.
+
+        This method processes a precision metric parameter in the DSL, extracting
+        its value and returning it in a dictionary format.
+
+        Args:
+            items: The parse tree items containing the precision parameter.
+
+        Returns:
+            dict: A dictionary with 'precision' as the key and the extracted parameter value.
+        """
         return {'precision': self._extract_value(items[0])}
 
     def recall_param(self, items):
+        """
+        Process a recall metric parameter.
+
+        This method processes a recall metric parameter in the DSL, extracting
+        its value and returning it in a dictionary format.
+
+        Args:
+            items: The parse tree items containing the recall parameter.
+
+        Returns:
+            dict: A dictionary with 'recall' as the key and the extracted parameter value.
+        """
         return {'recall': self._extract_value(items[0])}
 
     def paper_param(self, items):
+        """
+        Process a paper reference parameter.
+
+        This method processes a paper reference parameter in the DSL, extracting
+        the reference string value.
+
+        Args:
+            items: The parse tree items containing the paper reference.
+
+        Returns:
+            str: The extracted paper reference string.
+        """
         # Extract the string value from the 'paper:' parameter
         return self._extract_value(items[0])
 
     def references(self, items):
+        """
+        Process paper references.
+
+        This method processes paper references in the DSL, extracting and collecting
+        all the paper references into a list.
+
+        Args:
+            items: The parse tree items containing the paper references.
+
+        Returns:
+            dict: A dictionary with 'references' as the key and a list of paper references as the value.
+        """
         papers = [self._extract_value(item) for item in items if item is not None]
         return {'references': papers}
     def metrics_loss_param(self, items):
+        """
+        Process a loss metric parameter.
+
+        This method processes a loss metric parameter in the DSL, extracting
+        its value and returning it in a dictionary format.
+
+        Args:
+            items: The parse tree items containing the loss parameter.
+
+        Returns:
+            dict: A dictionary with 'loss' as the key and the extracted parameter value.
+        """
         return {'loss': self._extract_value(items[0])}
 
     ## Network ##
 
     @pysnooper.snoop()
     def network(self, items):
-        """Process network rule."""
+        """
+        Process a network rule and build a complete network configuration.
+
+        This method processes the network rule from the parse tree and constructs a
+        structured dictionary representation of the neural network. It handles input shapes,
+        layers, loss functions, optimizers, training configurations, and execution settings.
+
+        Args:
+            items: The parse tree items for the network rule.
+
+        Returns:
+            dict: A structured dictionary containing the complete network configuration,
+                  including name, input shapes, layers, loss, optimizer, training, and
+                  execution settings.
+        """
         import logging
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)
@@ -1884,6 +2301,24 @@ class ModelTransformer(lark.Transformer):
         return {'search_method': value}
 
     def _extract_value(self, item):
+        """
+        Extract a Python value from a parse tree node.
+
+        This method recursively processes parse tree nodes and converts them into
+        appropriate Python data structures (strings, numbers, lists, dictionaries, etc.).
+        It handles various node types including tokens, trees, and nested structures.
+
+        Args:
+            item: A parse tree node (Token, Tree, list, dict, or primitive value).
+
+        Returns:
+            The extracted Python value corresponding to the parse tree node.
+            - For tokens, returns the token value.
+            - For trees, processes according to the tree data type.
+            - For lists, processes each element recursively.
+            - For dictionaries, processes each value recursively.
+            - For other types, returns the value as is.
+        """
         if isinstance(item, Token):
             if item.type == 'NAME':
                 return item.value
@@ -2231,12 +2666,28 @@ class ModelTransformer(lark.Transformer):
         return {"ff_dim": params}
 
     def embedding(self, items):
-        params = self._extract_value(items[0]) if items else None
-        for key in ['input_dim', 'output_dim']:
-            if key in params:
-                dim = params[key]
-                if not isinstance(dim, int) or dim <= 0:
-                    self.raise_validation_error(f"Embedding {key} must be a positive integer, got {dim}", items[0])
+        """
+        Process an Embedding layer and validate its parameters.
+
+        This method extracts and validates parameters for an Embedding layer,
+        ensuring that input_dim and output_dim are positive integers.
+
+        Args:
+            items: The parse tree items for the Embedding layer.
+
+        Returns:
+            dict: A dictionary containing the Embedding layer configuration.
+
+        Raises:
+            DSLValidationError: If input_dim or output_dim are not positive integers.
+        """
+        params = self._extract_value(items[0]) if items else {}
+        if params is not None:  # Handle the case where params might be None
+            for key in ['input_dim', 'output_dim']:
+                if key in params:
+                    dim = params[key]
+                    if not isinstance(dim, int) or dim <= 0:
+                        self.raise_validation_error(f"Embedding {key} must be a positive integer, got {dim}", items[0])
         return {'type': 'Embedding', 'params': params, 'sublayers': []}
 
     ### Lambda Layers ###
@@ -2428,6 +2879,19 @@ class ModelTransformer(lark.Transformer):
     ## HPO ##
 
     def _track_hpo(self, layer_type, param_name, hpo_data, node):
+        """
+        Track hyperparameter optimization (HPO) parameters found during parsing.
+
+        This method records HPO parameters with their layer type, parameter name, and path
+        for later use in the hyperparameter optimization system. It maintains a list of all
+        HPO parameters found in the network configuration.
+
+        Args:
+            layer_type (str): The type of layer or component containing the HPO parameter.
+            param_name (str): The name of the parameter using HPO.
+            hpo_data (dict): The HPO configuration data.
+            node: The parse tree node where the HPO parameter was found.
+        """
         path = f"{layer_type}.{param_name}" if param_name else layer_type
         self.hpo_params.append({
             'layer_type': layer_type,
@@ -2438,6 +2902,24 @@ class ModelTransformer(lark.Transformer):
         })
 
     def parse_network_with_hpo(self, config):
+        """
+        Parse a Neural DSL network configuration with hyperparameter optimization (HPO) support.
+
+        This method parses the Neural DSL configuration and tracks all HPO parameters
+        found in the network, including those in layers, optimizers, and training settings.
+        It creates a structured representation of the network that includes HPO search spaces.
+
+        Args:
+            config (str): The Neural DSL configuration text to parse.
+
+        Returns:
+            dict: A dictionary containing the parsed network configuration with HPO parameters
+                  tracked and properly formatted for the HPO system.
+
+        Raises:
+            DSLValidationError: If there are validation errors in the configuration.
+            Exception: For other parsing or processing errors.
+        """
         try:
             tree = create_parser('network').parse(config)
             model = self.transform(tree)
@@ -2565,7 +3047,24 @@ class ModelTransformer(lark.Transformer):
             return value  # Return as string if not a number
 
     def _parse_hpo(self, hpo_str, item):
-        """Parse HPO expressions and retain original string values."""
+        """
+        Parse hyperparameter optimization (HPO) expressions and retain original string values.
+
+        This method parses HPO expressions like choice(), range(), and log_range() into
+        structured representations that can be used by the HPO system. It preserves the
+        original string values to maintain exact numeric formats.
+
+        Args:
+            hpo_str (str): The HPO expression string to parse.
+            item: The parse tree node where the HPO expression was found.
+
+        Returns:
+            dict: A structured dictionary representing the HPO parameter, including its
+                  type (categorical, range, log_range) and values.
+
+        Raises:
+            DSLValidationError: If the HPO expression is invalid or contains errors.
+        """
         original_str = hpo_str  # Store the original string
         if hpo_str.startswith('choice('):
             values = [v.strip() for v in hpo_str[7:-1].split(',')]  # Keep as strings
@@ -2625,13 +3124,36 @@ class ModelTransformer(lark.Transformer):
     ######
 
     def parse_network(self, config: str, framework: str = 'auto'):
+        """
+        Parse a Neural DSL network configuration into a structured model representation.
+
+        This method parses the Neural DSL configuration text and converts it into a
+        structured dictionary representation that can be used to construct a neural network
+        model in the specified framework.
+
+        Args:
+            config (str): The Neural DSL configuration text to parse.
+            framework (str, optional): The target framework for the model ('tensorflow',
+                                      'pytorch', or 'auto'). Defaults to 'auto'.
+
+        Returns:
+            dict: A structured dictionary representation of the neural network model,
+                  including layers, optimizer, training configuration, and other settings.
+
+        Raises:
+            DSLValidationError: If there are validation errors in the configuration.
+            Exception: For other parsing or processing errors.
+        """
         warnings = []
         try:
-            parse_result = safe_parse(network_parser, config)
-            tree = parse_result["result"]
-            if tree is None:
-                raise DSLValidationError("Parsing failed due to warnings", Severity.ERROR)
-            warnings.extend(parse_result["warnings"])
+            # The safe_parse function will raise DSLValidationError if parsing fails
+            try:
+                parse_result = safe_parse(network_parser, config)
+                tree = parse_result["result"]
+                warnings.extend(parse_result.get("warnings", []))
+            except Exception as e:
+                log_by_severity(Severity.ERROR, f"Error during parsing: {str(e)}")
+                raise DSLValidationError(f"Failed to parse network: {str(e)}", Severity.ERROR)
 
             model = self.transform(tree)
             if framework == 'auto':
@@ -2641,7 +3163,7 @@ class ModelTransformer(lark.Transformer):
             model['warnings'] = warnings  # Ensure warnings are always included
             return model
         except VisitError as e:
-            if isinstance(e.orig_exc, DSLValidationError):
+            if hasattr(e, 'orig_exc') and isinstance(e.orig_exc, DSLValidationError):
                 log_by_severity(Severity.ERROR, f"Error parsing network: {str(e.orig_exc)}")
                 raise e.orig_exc from e
             else:
@@ -2652,6 +3174,20 @@ class ModelTransformer(lark.Transformer):
             raise
 
     def _detect_framework(self, model):
+        """
+        Detect the appropriate framework for a model based on its layer parameters.
+
+        This method examines the model's layers to determine whether it should use
+        PyTorch or TensorFlow as the backend framework. It looks for framework-specific
+        keywords in the layer parameters.
+
+        Args:
+            model (dict): The parsed model configuration.
+
+        Returns:
+            str: The detected framework ('pytorch' or 'tensorflow'). Defaults to
+                 'tensorflow' if no framework-specific indicators are found.
+        """
         for layer in model['layers']:
             params = layer.get('params') or {}  # Handle None case
             if 'torch' in params.values():
