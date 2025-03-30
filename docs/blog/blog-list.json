@@ -1,0 +1,9 @@
+[
+  {
+    "title": "Neural DSL v0.2.5: Multi-Framework HPO Support & More",
+    "date": "2025-03-30",
+    "excerpt": "We're excited to announce the release of Neural DSL v0.2.5! This update brings significant improvements to hyperparameter optimization (HPO), making it seamlessly work across both PyTorch and TensorFl...",
+    "filename": "website_v0.2.5_release.md",
+    "url": "website_v0.2.5_release.html"
+  }
+]

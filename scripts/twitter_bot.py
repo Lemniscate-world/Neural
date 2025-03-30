@@ -26,7 +26,7 @@ def format_tweet(version, changes):
     """Create tweet text with version, changes, and truncate if needed"""
     max_length = 250
     change_text = "\n".join(f"• {change}" for change in changes)
-    base_text = f"🚀 Neural-dsl v{version} released!\n{change_text}\n\n#MachineLearning #Python\nGitHub: https://github.com/Lemniscate-SHA-256/Neuralreleases/tag/v{version}"
+    base_text = f"🚀 Neural-dsl v{version} released!\n{change_text}\n\n#MachineLearning #Python\nGitHub: https://github.com/Lemniscate-world/Neuralreleases/tag/v{version}"
     
     if len(base_text) > max_length:
         base_text = base_text[:max_length-3] + "..."

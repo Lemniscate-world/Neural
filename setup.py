@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="neural-dsl",
-    version="0.2.4",
+    version="0.2.5",
     packages=find_packages(where="."),
     package_dir={"": "."},
     install_requires=[
@@ -44,7 +44,7 @@ setup(
     author="Lemniscate-SHA-256/SENOUVO Jacques-Charles Gad",
     author_email="Lemniscate_zero@proton.me",
     description="A domain-specific language and debugger for neural networks",
-    long_description=open("README.md").read() + "\n\n**Note**: This is an early release (v0.1.0) with known bugs—see GitHub for updates!",
+    long_description=open("README.md").read() + "\n\n**Note**: See v0.2.5 release notes for latest fixes and improvements!",
     long_description_content_type="text/markdown",
     url="https://github.com/Lemniscate-SHA-256/Neural",
     classifiers=[
