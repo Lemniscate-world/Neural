@@ -1,5 +1,26 @@
 # Neural DSL Documentation
 
+## What's New in v0.2.5
+
+### Key Improvements
+- **Multi-Framework HPO Support**: Seamless hyperparameter optimization across PyTorch and TensorFlow
+- **Enhanced Optimizer Handling**: Improved parsing and validation of optimizer configurations
+- **Precision & Recall Metrics**: Comprehensive metrics reporting in training loops
+- **Error Message Improvements**: More detailed error messages with line/column information
+- **No-Quote Syntax**: Cleaner syntax for optimizer parameters without quotes
+
+### Example: Advanced HPO with Learning Rate Schedules
+```yaml
+optimizer: SGD(
+  learning_rate=ExponentialDecay(
+    HPO(range(0.05, 0.2, step=0.05)),  # Initial learning rate
+    1000,                              # Decay steps
+    HPO(range(0.9, 0.99, step=0.01))   # Decay rate
+  ),
+  momentum=HPO(range(0.8, 0.99, step=0.01))
+)
+```
+
 ## Table of Contents
 - [Syntax Reference](#syntax-reference)
 - [Core Components](#core-components)
@@ -130,6 +151,30 @@ WARNING at line 8, column 15:
 Implicit conversion of 256.0 to integer 256
 ```
 
+### Enhanced Error Messages (v0.2.5)
+
+Version 0.2.5 includes improved error messages with more context and better formatting:
+
+```text
+ERROR at line 15, column 10:
+Dense units must be positive integers. Got -128
+
+ERROR at line 22, column 14:
+Dropout rate must be between 0 and 1. Got 1.5
+
+ERROR at line 30, column 18:
+TransformerEncoder num_heads must be positive. Got 0
+
+WARNING at line 42, column 22:
+HPO parameter 'learning_rate' should use log_range for better optimization
+```
+
+Error messages now include:
+- Precise line and column numbers
+- Clear descriptions of the validation rule that was violated
+- The actual value that caused the error
+- Suggestions for fixing common issues
+
 ---
 
 ## Examples
@@ -193,21 +238,55 @@ HPO(log_range(1e-4, 1e-2))      # Log-scale range for learning rates
 - Learning rate must be positive
 - Step size must be provided for range type
 
-### HPO Parameters Updates
-- **Supported in Optimizers**: `learning_rate` now fully tracked with `HPO(log_range(1e-4, 1e-2))` (#434).
+### HPO Parameters Updates (v0.2.5)
+- **Multi-Framework Support**: HPO now works seamlessly across both PyTorch and TensorFlow backends.
+- **Optimizer Parameters**: All optimizer parameters now support HPO, including:
+  - `learning_rate` with `HPO(log_range(1e-4, 1e-2))` (#434)
+  - `beta_1` and `beta_2` for Adam
+  - `momentum` for SGD
+- **Learning Rate Schedules**: HPO parameters can be nested within learning rate schedules.
+- **String Representation**: Improved handling of scientific notation (e.g., `1e-4` vs `0.0001`).
+- **No-Quote Syntax**: Parameters can be specified without quotes for cleaner syntax.
 
 ### Examples
-#### Multi-Framework HPO
+#### Basic HPO Example
 ```yaml
 network HPOExample {
   input: (28, 28, 1)
   layers:
     Dense(HPO(choice(128, 256)))
+    Dropout(HPO(range(0.3, 0.7, step=0.1)))
     Output(10, "softmax")
   optimizer: Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))
   train {
     epochs: 10
     search_method: "random"
+  }
+}
+```
+
+#### Advanced HPO with Learning Rate Schedules
+```yaml
+network AdvancedHPO {
+  input: (28, 28, 1)
+  layers:
+    Conv2D(filters=HPO(choice(32, 64)), kernel_size=(3,3))
+    MaxPooling2D(pool_size=(2,2))
+    Flatten()
+    Dense(HPO(choice(128, 256, 512)))
+    Output(10, "softmax")
+  optimizer: SGD(
+    learning_rate=ExponentialDecay(
+      HPO(range(0.05, 0.2, step=0.05)),  # Initial learning rate
+      1000,                              # Decay steps
+      HPO(range(0.9, 0.99, step=0.01))   # Decay rate
+    ),
+    momentum=HPO(range(0.8, 0.99, step=0.01))
+  )
+  train {
+    epochs: 20
+    batch_size: HPO(choice(32, 64, 128))
+    search_method: "bayesian"
   }
 }
 
@@ -306,6 +385,45 @@ coverage run -m pytest && coverage html
 
 ## Migration Guide
 
+### From v0.2.4 to v0.2.5
+
+#### HPO Optimizer Improvements
+
+**Old Style (v0.2.4):**
+```yaml
+# Quoted optimizer parameters
+optimizer: "Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))"
+
+# Limited support for nested HPO in learning rate schedules
+```
+
+**New Style (v0.2.5):**
+```yaml
+# No quotes needed for optimizer parameters
+optimizer: Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))
+
+# Full support for nested HPO in learning rate schedules
+optimizer: SGD(
+  learning_rate=ExponentialDecay(
+    HPO(range(0.05, 0.2, step=0.05)),
+    1000,
+    HPO(range(0.9, 0.99, step=0.01))
+  )
+)
+```
+
+#### Multi-Framework Support
+
+In v0.2.5, HPO works seamlessly across both PyTorch and TensorFlow backends:
+
+```bash
+# Run HPO with PyTorch backend
+neural compile mnist_hpo.neural --backend pytorch --hpo
+
+# Run HPO with TensorFlow backend
+neural compile mnist_hpo.neural --backend tensorflow --hpo
+```
+
 ### From v0.2.1 to v0.2.2
 
 #### Old Style (Deprecated)
@@ -325,5 +443,5 @@ network NewStyle {
 ```
 
 
-[Report Issues](https://github.com/Lemniscate-SHA-256/Neural/issues)
+[Report Issues](https://github.com/Lemniscate-world/Neural/issues)
 

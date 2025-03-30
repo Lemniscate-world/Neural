@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.2.5] - 24-03-2025
+
+### Added
+- **Multi-Framework HPO Support**: Extended hyperparameter optimization to work seamlessly across both PyTorch and TensorFlow backends.
+- **Enhanced Optimizer Handling**: Improved parsing and validation of optimizer configurations with HPO parameters.
+- **Precision & Recall Metrics**: Added comprehensive metrics reporting in training loops for better model evaluation.
+- **TensorRT Integration**: Added conditional TensorRT setup in CI pipeline for GPU environments.
+- **VSCode Snippets**: Added code snippets for faster Neural DSL development in VSCode.
+
+### Fixed
+- **HPO Optimizer Integration (#434)**:
+  - Fixed parsing of optimizer HPO parameters without quotes (e.g., `Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))`).
+  - Corrected string representation handling in HPO parameters to maintain exact numeric formats.
+  - Resolved issues with nested HPO parameters in learning rate schedules.
+- **Parameter Type Handling (#297)**:
+  - Improved type conversion for numeric parameters to maintain consistency between string and numeric representations.
+  - Fixed handling of scientific notation in HPO ranges (e.g., `1e-4` vs `0.0001`).
+- **Layer Validation (#179, #363, #367, #368)**:
+  - Enhanced validation for `MaxPooling2D`, `BatchNormalization`, `Dropout`, and `Conv2D` layers.
+  - Added proper error handling for negative values in `Dense.units` and `Conv2D.filters`.
+  - Fixed validation for `Transformer` layers with zero heads.
+- **Parser Improvements (#140, #329)**:
+  - Fixed parameter handling in `Concatenate`, `Activation`, `Lambda`, and `Embedding` layers.
+  - Improved parsing of nested layer configurations for complex architectures.
+- **Test Suite Stability**:
+  - Fixed flaky tests in HPO integration pipeline.
+  - Improved mock data handling for consistent test outcomes.
+  - Enhanced CLI tests with proper temporary file handling.
+
+### Improved
+- **Error Messages**: Enhanced validation error messages with more context about parameter constraints and line numbers.
+- **Documentation**: Updated examples to demonstrate proper HPO usage with optimizers and layer configurations.
+- **Performance**: Optimized HPO trial execution for faster hyperparameter search.
+- **CI/CD Pipeline**:
+  - Enhanced GitHub Actions workflows with better error handling and reporting.
+  - Improved issue creation from test failures with more detailed context.
+
+### Known Issues
+- Complex nested HPO configurations may require additional validation.
+- Some edge cases in TensorFlow backend HPO integration need further testing.
+- Certain advanced layer configurations may not be fully supported in PyTorch backend.
+
+---
+
 ## [0.2.4] - 23-03-2025
 
 ### Added

@@ -40,7 +40,7 @@
     <section>
         <h2>🚀 What is Neural?</h2>
         <p>Neural simplifies deep learning with a declarative syntax, cross-framework support, and built-in debugging via <strong>NeuralDbg</strong>. Define, train, and deploy neural networks with ease.</p>
-        <p><a href="https://github.com/Lemniscate-world/Neural">Explore on GitHub</a> | <a href="https://discord.gg/KFku4KvS">Join our Discord</a></p>
+        <p><a href="https://github.com/Lemniscate-world/Neural">Explore on GitHub</a> | <a href="https://discord.gg/KFku4KvS">Join our Discord</a> | <a href="blog/index.html">Read our Blog</a></p>
     </section>
 
     <section>
@@ -92,6 +92,36 @@ pip install -r requirements.txt
 neural run examples/mnist.neural --backend pytorch
         </pre>
         <p>Debug with: <code>neural debug examples/mnist.neural</code></p>
+    </section>
+
+    <section>
+        <h2>📝 Latest from our Blog</h2>
+        <div id="latest-blog">
+            <p>Loading latest blog post...</p>
+        </div>
+        <p><a href="blog/index.html">View all blog posts →</a></p>
+        <script>
+            // Fetch the latest blog post
+            fetch('blog/blog-list.json')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        const latest = data[0];
+                        document.getElementById('latest-blog').innerHTML = `
+                            <h3>${latest.title}</h3>
+                            <p><em>Posted on ${latest.date}</em></p>
+                            <p>${latest.excerpt}</p>
+                            <p><a href="blog/${latest.url}">Read more →</a></p>
+                        `;
+                    } else {
+                        document.getElementById('latest-blog').innerHTML = '<p>No blog posts available yet.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching blog posts:', error);
+                    document.getElementById('latest-blog').innerHTML = '<p>Failed to load blog posts.</p>';
+                });
+        </script>
     </section>
 
     <footer>

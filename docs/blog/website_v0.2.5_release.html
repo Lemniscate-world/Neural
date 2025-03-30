@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2Q74G78HEW"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-2Q74G78HEW');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural DSL v0.2.5: Multi-Framework HPO Support & More - Neural DSL Blog</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+        header { text-align: center; padding: 20px; background: #1f73b7; color: white; margin-bottom: 30px; }
+        h1 { margin: 0; }
+        .blog-container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .blog-title { color: #1f73b7; margin-top: 0; }
+        .blog-meta { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+        .blog-content { line-height: 1.6; }
+        .blog-content img { max-width: 100%; height: auto; }
+        .blog-content pre { background: #f8f8f8; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .blog-content code { background: #f8f8f8; padding: 2px 5px; border-radius: 3px; }
+        .back-link { margin-bottom: 20px; }
+        footer { text-align: center; padding: 20px; color: #666; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Neural DSL Blog</h1>
+        <p>Latest news, updates, and tutorials</p>
+    </header>
+
+    <div class="blog-container">
+        <div class="back-link">
+            <a href="index.html">← Back to Blog</a>
+        </div>
+
+        <div class="blog-content">
+            <h1>Neural DSL v0.2.5: Multi-Framework HPO Support &amp; More</h1>
+<p><img alt="Neural DSL Logo" src="../assets/images/neural-logo.png" /></p>
+<p><em>Posted on March 24, 2025 by Lemniscate-SHA-256</em></p>
+<p>We're excited to announce the release of Neural DSL v0.2.5! This update brings significant improvements to hyperparameter optimization (HPO), making it seamlessly work across both PyTorch and TensorFlow backends, along with several other enhancements and fixes.</p>
+<h2>Multi-Framework HPO Support</h2>
+<p>The standout feature in v0.2.5 is the unified hyperparameter optimization system that works consistently across both PyTorch and TensorFlow backends. This means you can:</p>
+<ul>
+<li>Define your model and HPO parameters once</li>
+<li>Run optimization with either backend</li>
+<li>Compare results across frameworks</li>
+<li>Leverage the strengths of each framework</li>
+</ul>
+<p>Here's how easy it is to use:</p>
+<div class="codehilite"><pre><span></span><code><span class="l l-Scalar l-Scalar-Plain">network HPOExample {</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">input</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(28, 28, 1)</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">layers</span><span class="p p-Indicator">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Conv2D(filters=HPO(choice(32, 64)), kernel_size=(3,3))</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">MaxPooling2D(pool_size=(2,2))</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Flatten()</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Dense(HPO(choice(128, 256, 512)))</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Output(10, &quot;softmax&quot;)</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">optimizer</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))</span>
+<span class="w w-Error">  </span><span class="l l-Scalar l-Scalar-Plain">train {</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">epochs</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">search_method</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;bayesian&quot;</span>
+<span class="w">  </span><span class="err">}</span>
+<span class="err">}</span>
+</code></pre></div>
+
+<p>Run with either backend:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># PyTorch backend</span>
+neural<span class="w"> </span>compile<span class="w"> </span>model.neural<span class="w"> </span>--backend<span class="w"> </span>pytorch<span class="w"> </span>--hpo
+
+<span class="c1"># TensorFlow backend</span>
+neural<span class="w"> </span>compile<span class="w"> </span>model.neural<span class="w"> </span>--backend<span class="w"> </span>tensorflow<span class="w"> </span>--hpo
+</code></pre></div>
+
+<h2>Enhanced Optimizer Handling</h2>
+<p>We've significantly improved how optimizers are handled in the DSL:</p>
+<ul>
+<li><strong>No-Quote Syntax</strong>: Cleaner syntax for optimizer parameters without quotes</li>
+<li><strong>Nested HPO Parameters</strong>: Full support for HPO within learning rate schedules</li>
+<li><strong>Scientific Notation</strong>: Better handling of scientific notation (e.g., <code>1e-4</code> vs <code>0.0001</code>)</li>
+</ul>
+<p>Before:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">optimizer</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Adam(learning_rate=HPO(log_range(1e-4,</span><span class="nv"> </span><span class="s">1e-2)))&quot;</span>
+</code></pre></div>
+
+<p>After:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">optimizer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))</span>
+</code></pre></div>
+
+<p>Advanced example with learning rate schedules:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">optimizer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SGD(</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">learning_rate=ExponentialDecay(</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">HPO(range(0.05, 0.2, step=0.05)),</span><span class="w">  </span><span class="c1"># Initial learning rate</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">1000,</span><span class="w">                              </span><span class="c1"># Decay steps</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">HPO(range(0.9, 0.99, step=0.01))</span><span class="w">   </span><span class="c1"># Decay rate</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">),</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">momentum=HPO(range(0.8, 0.99, step=0.01))</span>
+<span class="l l-Scalar l-Scalar-Plain">)</span>
+</code></pre></div>
+
+<h2>Precision &amp; Recall Metrics</h2>
+<p>Training loops now report precision and recall alongside loss and accuracy, giving you a more comprehensive view of your model's performance:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">loss</span><span class="p">,</span> <span class="n">acc</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">recall</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">)</span>
+</code></pre></div>
+
+<h2>Other Improvements</h2>
+<ul>
+<li><strong>Error Message Enhancements</strong>: More detailed error messages with line/column information</li>
+<li><strong>Layer Validation</strong>: Better validation for MaxPooling2D, BatchNormalization, Dropout, and Conv2D layers</li>
+<li><strong>TensorRT Integration</strong>: Added conditional TensorRT setup in CI pipeline for GPU environments</li>
+<li><strong>VSCode Snippets</strong>: Added code snippets for faster Neural DSL development in VSCode</li>
+<li><strong>CI/CD Pipeline</strong>: Enhanced GitHub Actions workflows with better error handling and reporting</li>
+</ul>
+<h2>Bug Fixes</h2>
+<ul>
+<li>Fixed parsing of optimizer HPO parameters without quotes</li>
+<li>Corrected string representation handling in HPO parameters</li>
+<li>Resolved issues with nested HPO parameters in learning rate schedules</li>
+<li>Enhanced validation for various layer types</li>
+<li>Fixed parameter handling in Concatenate, Activation, Lambda, and Embedding layers</li>
+</ul>
+<h2>Installation</h2>
+<div class="codehilite"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>neural-dsl
+</code></pre></div>
+
+<h2>Get Involved</h2>
+<ul>
+<li><a href="https://github.com/Lemniscate-SHA-256/Neural">GitHub Repository</a></li>
+<li><a href="https://github.com/Lemniscate-SHA-256/Neural/blob/main/docs/dsl.md">Documentation</a></li>
+<li><a href="https://discord.gg/KFku4KvS">Discord Community</a></li>
+</ul>
+<p>If you find Neural DSL useful, please consider giving us a star on GitHub ⭐ and sharing this project with your friends and colleagues. The more developers we reach, the more likely we are to build something truly revolutionary together!</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>⭐ <a href="https://github.com/Lemniscate-world/Neural">Star us on GitHub</a> | Follow <a href="https://x.com/NLang4438">@NLang4438</a></p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Apply syntax highlighting to code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+        });
+    </script>
+</body>
+</html>
