@@ -306,8 +306,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         // Optimizer
         optimizer_param: "optimizer:" named_optimizer
         named_optimizer: NAME "(" [param_style1] ("," [param_style1])* ")"
-        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | explicit_lr_schedule)
-        explicit_lr_schedule: "ExponentialDecay" "(" [lr_schedule_args] ")" | NAME "(" [lr_schedule_args] ")"
+        EXPONENTIALDECAY: "ExponentialDecay"
+        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | NAME "(" [lr_schedule_args] ")")
         lr_schedule_args: param_style1 ("," param_style1)*
         momentum_param: "momentum=" param_style1
         search_method_param: "search_method:" STRING
@@ -425,7 +425,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         activity_regularization: "ActivityRegularization" "(" param_style1 ")"
 
 
-        // Training & Configurations
+        //Training & Configurations
         training_config: "train" "{" training_params  "}"
         training_params: (epochs_param | batch_size_param | search_method_param | validation_split_param | device)*
         device: "@" NAME
@@ -433,7 +433,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         batch_size_param: "batch_size:" values_list
         values_list: "[" (value | hpo_expr) ("," (value | hpo_expr))* "]" | (value | hpo_expr) ("," (value | hpo_expr))*
 
-        execution_config: "execution" "{" device_param "}"
+        //Execution Configuration & Devices
+        execution_config: "execute" "{" device_param "}"
         device_param: "device:" STRING
 
         // Customized Shapes
@@ -1300,35 +1301,65 @@ class ModelTransformer(lark.Transformer):
         elif isinstance(value, (int, float)) and value <= 0:
             self.raise_validation_error(f"learning_rate must be positive, got {value}", items[0])
         # Handle string-based learning rate schedule for backward compatibility
-        elif isinstance(value, str) and '(' in value and ')' in value:
-            schedule_str = value.strip('"\'')
-            schedule_type = schedule_str[:schedule_str.index('(')]
-            args_str = schedule_str[schedule_str.index('(')+1:schedule_str.rindex(')')]
-
-            # Parse arguments
-            args = []
-            if args_str:
-                import re
-                # Handle nested parentheses for HPO expressions
-                def parse_args(args_str):
-                    result = []
-                    current = ''
-                    paren_level = 0
-
-                    for char in args_str:
-                        if char == ',' and paren_level == 0:
-                            result.append(current.strip())
-                            current = ''
+        elif isinstance(value, str):
+            # Special handling for ExponentialDecay
+            if value == 'ExponentialDecay':
+                # Create a learning rate schedule for ExponentialDecay
+                args = []
+                if len(items) > 1:
+                    # Try to extract the arguments directly
+                    try:
+                        # If the next item is a token with parentheses, extract the arguments
+                        if hasattr(items[1], 'value') and '(' in items[1].value and ')' in items[1].value:
+                            args_str = items[1].value.strip('()')
+                            # Split by comma and convert to appropriate types
+                            for arg in args_str.split(','):
+                                arg = arg.strip()
+                                # Try to convert to float if possible
+                                try:
+                                    args.append(float(arg))
+                                except ValueError:
+                                    # If not a float, keep as string
+                                    args.append(arg)
                         else:
-                            if char == '(':
-                                paren_level += 1
-                            elif char == ')':
-                                paren_level -= 1
-                            current += char
+                            # Otherwise use the standard extraction
+                            args = self._extract_value(items[1])
+                            if not isinstance(args, list):
+                                args = [args]
+                    except Exception as e:
+                        # Fallback to standard extraction
+                        args = self._extract_value(items[1])
+                        if not isinstance(args, list):
+                            args = [args]
+                value = {
+                    'type': 'ExponentialDecay',
+                    'args': args
+                }
+            # Handle other string-based learning rate schedules
+            elif '(' in value and ')' in value:
+                schedule_str = value.strip('"\'')
+                schedule_type = schedule_str[:schedule_str.index('(')]
+                args_str = schedule_str[schedule_str.index('(')+1:schedule_str.rindex(')')]
 
-                    if current:
-                        result.append(current.strip())
-                    return result
+                # Parse arguments
+                args = []
+                if args_str:
+                    # Split by comma and convert to appropriate types
+
+                        for char in args_str:
+                            if char == ',' and paren_level == 0:
+                                result.append(current.strip())
+                                current = ''
+                            else:
+                                if char == '(':
+                                    paren_level += 1
+                                elif char == ')':
+                                    paren_level -= 1
+                                current += char
+
+                        if current:
+                            result.append(current.strip())
+                        return result
 
                 arg_list = parse_args(args_str)
 
@@ -1703,8 +1734,34 @@ class ModelTransformer(lark.Transformer):
         args = []
         if len(items) > 1 and hasattr(items[1], 'data') and items[1].data == 'lr_schedule_args':
             args = [self._extract_value(arg) for arg in items[1].children]
+        elif len(items) > 1:
+            args = self._extract_value(items[1])
+            if not isinstance(args, list):
+                args = [args]
         return {
             'type': schedule_type,
+            'args': args
+        }
+
+    def exponentialdecay(self, items):
+        """
+        Process an ExponentialDecay learning rate schedule.
+
+        This method processes an ExponentialDecay learning rate schedule and extracts its parameters.
+
+        Args:
+            items: The parse tree items for the ExponentialDecay schedule.
+
+        Returns:
+            dict: A dictionary containing the schedule type and arguments.
+        """
+        args = []
+        if len(items) > 0:
+            args = self._extract_value(items[0])
+            if not isinstance(args, list):
+                args = [args]
+        return {
+            'type': 'ExponentialDecay',
             'args': args
         }
 

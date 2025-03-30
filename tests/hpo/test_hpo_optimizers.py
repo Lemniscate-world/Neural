@@ -84,7 +84,7 @@ class TestHPOOptimizers:
                         Dense(128)
                         Output(10)
                     loss: "categorical_crossentropy"
-                    optimizer: SGD(learning_rate=ExponentialDecay(0.1, 1000, 0.96), momentum=0.9)
+                    optimizer: SGD(learning_rate="ExponentialDecay(0.1, 1000, 0.96)", momentum=0.9)
                 }
                 ''',
                 {
@@ -108,7 +108,7 @@ class TestHPOOptimizers:
                         Dense(128)
                         Output(10)
                     loss: "categorical_crossentropy"
-                    optimizer: SGD(learning_rate=ExponentialDecay(HPO(range(0.05, 0.2, step=0.05)), 1000, HPO(range(0.9, 0.99, step=0.01))))
+                    optimizer: SGD(learning_rate="ExponentialDecay(HPO(range(0.05, 0.2, step=0.05)), 1000, HPO(range(0.9, 0.99, step=0.01)))")
                 }
                 ''',
                 {
@@ -166,7 +166,7 @@ class TestHPOOptimizers:
                         Dense(128)
                         Output(10)
                     loss: "categorical_crossentropy"
-                    optimizer: SGD(learning_rate=ExponentialDecay(HPO(choice(0.1, 0.01)), 1000, 0.96))
+                    optimizer: SGD(learning_rate="ExponentialDecay(HPO(choice(0.1, 0.01)), 1000, 0.96)")
                 }
                 """,
                 "SGD",
