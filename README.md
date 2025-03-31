@@ -280,6 +280,9 @@ pre-commit install  # Auto-format code on commit
 Please give us a star ⭐️ to increase our chances of getting into GitHub trends - the more attention we get, the higher our chances of actually making a difference.
 Please share this project with your friends! Every share helps us reach more developers and grow our community. The more developers we reach, the more likely we are to build something truly revolutionary together.
 
+### Repository Status
+This repository has been cleaned and optimized for better performance. Large files have been removed from the Git history.
+
 ## Community
 
 - [Discord Server](https://discord.gg/KFku4KvS): Chat with developers
