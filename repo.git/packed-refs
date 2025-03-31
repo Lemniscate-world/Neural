@@ -1,0 +1,22 @@
+# pack-refs with: peeled fully-peeled sorted 
+3b7f442dd0273cd6ae751a57480d0d2fa7f29fc1 refs/heads/Lemniscate-SHA-256/issue52
+ef29ba431eae11d19a987e67b7ec25183196a24f refs/heads/main
+3daa1c3f187e03dd1a04d81a4fa3fc667f76f674 refs/remotes/origin/HEAD
+b3ebc08f947d230b9f302f242dbc879e633eaaeb refs/remotes/origin/Lemniscate-world-patch-1
+c478c429fb87edb7b97bd7efe0df498ab133c96c refs/remotes/origin/Lemniscate-world-patch-2
+ab67b52625df161b991f2d4e2436e5a066c10f3a refs/remotes/origin/NoBackendServer
+4cd6887209f736233b937aa77f0fa683c550e780 refs/remotes/origin/dependabot/pip/click-8.1.8
+d5ac48cb181d6bcc0fd9a712bee2b42614ba191d refs/remotes/origin/dependabot/pip/lark-1.2.2
+8aa6dc476e5ba7c56b925bc8aedf10b0d172f689 refs/remotes/origin/dependabot/pip/matplotlib-lt-3.10
+697e508fe118280fff8d3eaa30041a8cf0010c71 refs/remotes/origin/dependabot/pip/matplotlib-lt-3.11
+96ecefd175cb9e95eb3f756b70b9e1e1a57d30c7 refs/remotes/origin/dependabot/pip/tweepy-4.15.0
+3daa1c3f187e03dd1a04d81a4fa3fc667f76f674 refs/remotes/origin/main
+76f8f199c549f2b4639614deb5b2a3f933159fd0 refs/tags/v0.1.0
+d3a6393b38f93bd698e97de87ecd437aee81a8ea refs/tags/v0.1.1
+ccac591b598b92694016ca01f4b6100ab220c5ec refs/tags/v0.1.2
+edf6b7e7f3fb2a1ce56d28a8c0ac56ea8999310e refs/tags/v0.2.0
+5181a96f59482bfda0a18c4d1c367c08afec78b4 refs/tags/v0.2.1
+9441718568d61428568018905e00a02fb90986b6 refs/tags/v0.2.2
+b3c7a79013188c87f83ddd0a972e880dbd97599d refs/tags/v0.2.3
+9f83e6a788a2d2bdfe88b13982197982ca0f0146 refs/tags/v0.2.4
+9e98953131a4c94edaa31871786fde675ec9fbe3 refs/tags/v0.2.5
