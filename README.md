@@ -70,63 +70,26 @@ Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.ty
 - **NeuralDbg**: Built-in Neural Network Debugger and Visualizer.
 - **No-Code Interface**: Quick Prototyping for researchers and ean ducational, accessible tool for beginners.
 
-<div align="center">
-  <h2>🔍 NeuralDbg: Built-in Neural Network Debugger</h2>
-  <p><em>Visualize, analyze, and debug deep learning models in real-time</em></p>
-</div>
+---
 
-<table>
-  <tr>
-    <td width="60%">
-      <h3>🔄 Real-Time Execution Monitoring</h3>
-      <p>Track activations, gradients, memory usage, and FLOPs as your model trains. Identify bottlenecks and optimization opportunities with interactive visualizations.</p>
-      <ul>
-        <li>✅ <strong>Layer-wise execution traces</strong></li>
-        <li>✅ <strong>Memory & computation profiling</strong></li>
-        <li>✅ <strong>Performance benchmarking</strong></li>
-      </ul>
-    </td>
-    <td width="40%">
-      <img src="https://github.com/user-attachments/assets/15b1edd2-2643-4587-9843-aa4697ed2e4b" alt="Execution Trace Graph" width="100%"/>
-    </td>
-  </tr>
-  <tr>
-    <td width="60%">
-      <h3>📊 Gradient Flow Analysis</h3>
-      <p>Detect vanishing & exploding gradients with interactive charts. Understand how gradients propagate through your network and identify training stability issues.</p>
-    </td>
-    <td width="40%">
-      <img src="https://github.com/user-attachments/assets/ca6b9f20-7dd8-4c72-9ee8-a3f35af6208b" alt="Gradient Flow Chart" width="100%"/>
-    </td>
-  </tr>
-  <tr>
-    <td width="60%">
-      <h3>🧠 Dead Neuron Detection</h3>
-      <p>Identify inactive neurons in deep networks. Optimize your architecture by detecting and addressing neurons that aren't contributing to the model's learning.</p>
-    </td>
-    <td width="40%">
-      <img src="https://github.com/user-attachments/assets/f4629b4f-2988-410e-8b49-3dde225f926f" alt="Dead Neurons Visualization" width="100%"/>
-    </td>
-  </tr>
-  <tr>
-    <td width="60%">
-      <h3>⚠️ Anomaly Detection</h3>
-      <p>Automatically spot NaNs, extreme activations, and weight explosions. Get alerted to numerical instabilities before they derail your training.</p>
-    </td>
-    <td width="40%">
-      <img src="https://github.com/user-attachments/assets/b57d3142-6da8-4d57-94f0-486d1797e92c" alt="Anomaly Detection Chart" width="100%"/>
-    </td>
-  </tr>
-  <tr>
-    <td width="60%">
-      <h3>🔍 Shape Propagation Debugging</h3>
-      <p>Visualize tensor transformations at each layer. Catch dimension mismatches before runtime and understand how data flows through your network.</p>
-    </td>
-    <td width="40%">
-      <img src="https://github.com/user-attachments/assets/debef7d5-9989-45da-ae91-7cef19aac2b0" alt="Shape Propagation Visualization" width="100%"/>
-    </td>
-  </tr>
-</table>
+### **NeuralDbg: Built-in Neural Network Debugger**
+NeuralDbg provides **real-time execution tracing, profiling, and debugging**, allowing you to visualize and analyze deep learning models in action.
+
+✅ **Real-Time Execution Monitoring** – Track activations, gradients, memory usage, and FLOPs.
+![test_trace_graph](https://github.com/user-attachments/assets/15b1edd2-2643-4587-9843-aa4697ed2e4b)
+![test_flops_memory_chart](https://github.com/user-attachments/assets/de1f6504-787b-4948-b543-fe3d2f8bfd74)
+![test_trace_graph_stacked](https://github.com/user-attachments/assets/529fc487-fb31-48ad-bb11-b0c64ab330ed)
+![test_trace_graph_heatmap](https://github.com/user-attachments/assets/debef7d5-9989-45da-ae91-7cef19aac2b0)
+![test_anomaly_chart](https://github.com/user-attachments/assets/b57d3142-6da8-4d57-94f0-486d1797e92c)
+![test_dead_neurons](https://github.com/user-attachments/assets/f4629b4f-2988-410e-8b49-3dde225f926f)
+![test_gradient_chart](https://github.com/user-attachments/assets/ca6b9f20-7dd8-4c72-9ee8-a3f35af6208b)
+
+
+✅ **Shape Propagation Debugging** – Visualize tensor transformations at each layer.
+✅ **Gradient Flow Analysis** – Detect **vanishing & exploding gradients**.
+✅ **Dead Neuron Detection** – Identify inactive neurons in deep networks.
+✅ **Anomaly Detection** – Spot **NaNs, extreme activations, and weight explosions**.
+✅ **Step Debugging Mode** – Pause execution and inspect tensors manually.
 
 
 ## Installation
