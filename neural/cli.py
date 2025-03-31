@@ -13,14 +13,26 @@ from lark import exceptions
 def configure_logging(verbose=False):
     """Configure logging levels based on verbosity"""
     if verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            handlers=[logging.StreamHandler(sys.stdout)]
+        )
     else:
         # Suppress debug messages from dependencies
-        logging.basicConfig(level=logging.INFO)
-        logging.getLogger('graphviz').setLevel(logging.WARNING)
-        logging.getLogger('matplotlib').setLevel(logging.WARNING)
-        logging.getLogger('tensorflow').setLevel(logging.WARNING)
-        logging.getLogger('jax').setLevel(logging.WARNING)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(message)s",
+            handlers=[logging.StreamHandler(sys.stdout)]
+        )
+        # Suppress verbose output from dependencies
+        for logger_name in [
+            'graphviz', 'matplotlib', 'tensorflow', 'jax',
+            'optuna', 'PIL', 'torch', 'urllib3', 'requests',
+            'filelock', 'numba', 'h5py', 'asyncio', 'parso',
+            'matplotlib.font_manager', 'matplotlib.ticker'
+        ]:
+            logging.getLogger(logger_name).setLevel(logging.WARNING)
 
 # Add parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -32,12 +44,7 @@ from neural.dashboard.tensor_flow import create_animated_network
 from neural.hpo.hpo import optimize_and_return
 from neural.code_generation.code_generator import generate_optimized_dsl
 
-# Configure logging with richer output
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
+# Create logger for this module
 logger = logging.getLogger(__name__)
 
 # Supported datasets (extend as implemented)
@@ -138,7 +145,7 @@ def run(file: str, backend: str, dataset: str, hpo: bool):
         best_params = optimize_and_return(content, n_trials=3, dataset_name=dataset, backend=backend)
         logger.info("Best parameters found: %s", best_params)
         optimized_config = generate_optimized_dsl(content, best_params)
-        
+
         output_file = f"{os.path.splitext(file)[0]}_optimized_{backend}.py"
         parser_instance = create_parser(start_rule=start_rule)
         try:

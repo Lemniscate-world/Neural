@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import logging
 from enum import Enum
 from lark.visitors import VisitError
+import re
 
 
 logger = logging.getLogger('neural.parser')
@@ -425,7 +426,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         activity_regularization: "ActivityRegularization" "(" param_style1 ")"
 
 
-        //Training & Configurations
+        // Training & Configurations
         training_config: "train" "{" training_params  "}"
         training_params: (epochs_param | batch_size_param | search_method_param | validation_split_param | device)*
         device: "@" NAME
@@ -433,7 +434,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         batch_size_param: "batch_size:" values_list
         values_list: "[" (value | hpo_expr) ("," (value | hpo_expr))* "]" | (value | hpo_expr) ("," (value | hpo_expr))*
 
-        //Execution Configuration & Devices
+        // Execution Configuration & Devices
         execution_config: "execute" "{" device_param "}"
         device_param: "device:" STRING
 
@@ -1100,7 +1101,6 @@ class ModelTransformer(lark.Transformer):
     def loss(self, items):
         return items[0].value.strip('"')
 
-    @pysnooper.snoop()
     def named_optimizer(self, items):
         import logging
         logger = logging.getLogger(__name__)
@@ -1450,7 +1450,6 @@ class ModelTransformer(lark.Transformer):
                     self.raise_validation_error(f"MaxPooling1D {key} must be a positive integer, got {val}", items[0])
         return {'type': 'MaxPooling1D', 'params': params}
 
-    @pysnooper.snoop()
     def maxpooling2d(self, items):
         param_style = self._extract_value(items[0])
         params = {}
@@ -1567,7 +1566,7 @@ class ModelTransformer(lark.Transformer):
     def norm_layer(self, items):
         return self._extract_value(items[0])
 
-    @pysnooper.snoop()
+
     def batch_norm(self, items):
         raw_params = self._extract_value(items[0]) if items and items[0] is not None else None
         params = None  # Default to None for empty parameters
@@ -1611,7 +1610,7 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0]) if items else None
         return {'type': 'InstanceNormalization', 'params': params}
 
-    @pysnooper.snoop()
+
     def group_norm(self, items):
         raw_params = self._extract_value(items[0]) if items else None
         params = {}
@@ -1625,7 +1624,7 @@ class ModelTransformer(lark.Transformer):
 
     ############
 
-    @pysnooper.snoop()
+
     def lstm(self, items):
         params = {}
         if items and items[0] is not None:
@@ -2264,7 +2263,7 @@ class ModelTransformer(lark.Transformer):
 
     ## Network ##
 
-    @pysnooper.snoop()
+
     def network(self, items):
         """
         Process a network rule and build a complete network configuration.
@@ -2285,10 +2284,10 @@ class ModelTransformer(lark.Transformer):
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)
 
-        logger.debug(f"Processing network with items: {items}")
+        # logger.debug(f"Processing network with items: {items}")
 
         name = items[0].value
-        input_shapes = self._extract_value(items[1])
+        input = self._extract_value(items[1])
         layers = self._extract_value(items[2])
 
         # Initialize configs
@@ -2300,29 +2299,30 @@ class ModelTransformer(lark.Transformer):
         # Process remaining items (loss, optimizer, training_config, execution_config)
         for i, item in enumerate(items[3:], 3):
             value = self._extract_value(item)
-            logger.debug(f"Processing item {i}: {item}, value: {value}")
+            # logger.debug(f"Processing item {i}: {item}, value: {value}")
 
             if isinstance(item, Tree):
                 if item.data == 'loss':
                     loss_config = value
                 elif item.data == 'optimizer_param':
                     optimizer_config = value.get('optimizer')
-                    logger.debug(f"Found optimizer_param: {optimizer_config}")
+                    # logger.debug(f"Found optimizer_param: {optimizer_config}")
                 elif item.data == 'training_config':
                     training_config = value.get('params', value) if isinstance(value, dict) else value
                 elif item.data == 'execution_config':
                     execution_config = value
                 else:
-                    logger.warning(f"Unrecognized tree data: {item.data}")
+                    # logger.warning(f"Unrecognized tree data: {item.data}")
+                    pass
             elif isinstance(value, str) and i == 3:  # Check if this is the loss value
                 loss_config = value  # Directly assign string value for loss
             elif isinstance(item, dict):
                 if 'optimizer' in item:
                     optimizer_config = item['optimizer']
-                    logger.debug(f"Found optimizer in dict: {optimizer_config}")
+                    # logger.debug(f"Found optimizer in dict: {optimizer_config}")
                 elif 'type' in item and item.get('type') in {'Adam', 'SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adamax', 'Nadam'}:
                     optimizer_config = item
-                    logger.debug(f"Found optimizer by type: {optimizer_config}")
+                    # logger.debug(f"Found optimizer by type: {optimizer_config}")
                 elif 'type' in item and item.get('type') == 'training_config':
                     training_config = item.get('params', {})
             else:
@@ -2331,7 +2331,7 @@ class ModelTransformer(lark.Transformer):
         # Build the network configuration
         network_config = {
             'name': name,
-            'input_shapes': input_shapes,
+            'input': input,
             'layers': layers
         }
 
@@ -2340,7 +2340,7 @@ class ModelTransformer(lark.Transformer):
 
         if optimizer_config:
             network_config['optimizer'] = optimizer_config
-            logger.debug(f"Adding optimizer to network_config: {optimizer_config}")
+            # logger.debug(f"Adding optimizer to network_config: {optimizer_config}")
 
         if training_config:
             network_config['training'] = training_config
@@ -2348,7 +2348,7 @@ class ModelTransformer(lark.Transformer):
         if execution_config:
             network_config['execution'] = execution_config
 
-        logger.debug(f"Final network_config: {network_config}")
+        # logger.debug(f"Final network_config: {network_config}")
         return network_config
 
     #########
@@ -2681,7 +2681,7 @@ class ModelTransformer(lark.Transformer):
 
     ## Transformers - Encoders - Decoders ##
 
-    @pysnooper.snoop()
+
     def transformer(self, items):
         if isinstance(items[0], Token):
             transformer_type = items[0].value
@@ -2814,7 +2814,7 @@ class ModelTransformer(lark.Transformer):
 
     ## Wrappers ##
 
-    @pysnooper.snoop()
+
     def timedistributed(self, items):
         raw_params = self._extract_value(items[0]) if items else None
         if isinstance(raw_params, list):
@@ -2828,7 +2828,7 @@ class ModelTransformer(lark.Transformer):
             params = raw_params
         return {'type': 'TimeDistributed', 'params': params}
 
-    @pysnooper.snoop()
+
     def wrapper(self, items):
         wrapper_type = items[0]  # e.g., "TimeDistributed"
         inner_layer = self._extract_value(items[1])  # The wrapped layer
@@ -2855,7 +2855,7 @@ class ModelTransformer(lark.Transformer):
 
     ## Statistical Noises ##
 
-    @pysnooper.snoop()
+
     def gaussian_noise(self, items):
         raw_params = self._extract_value(items[0])
         params = {}

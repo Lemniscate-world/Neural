@@ -20,7 +20,6 @@ fastapi>=0.68
 dash>=2.0
 python-dotenv>=1.0
 webdriver-manager
-torch>=1.10
 tensorflow>=2.6
 huggingface_hub>=0.16
 transformers>=4.30

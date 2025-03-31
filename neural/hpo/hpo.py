@@ -87,7 +87,7 @@ def resolve_hpo_params(model_dict, trial, hpo_params):
     logger = logging.getLogger(__name__)
     resolved_dict = copy.deepcopy(model_dict)
     
-    logger.debug(f"Original layers: {resolved_dict['layers']}")
+    # logger.debug(f"Original layers: {resolved_dict['layers']}")
     for i, layer in enumerate(resolved_dict['layers']):
         if 'params' in layer and layer['params'] is not None and 'units' in layer['params'] and isinstance(layer['params']['units'], dict) and 'hpo' in layer['params']['units']:
             hpo = layer['params']['units']['hpo']
@@ -96,14 +96,14 @@ def resolve_hpo_params(model_dict, trial, hpo_params):
                 layer['params']['units'] = trial.suggest_categorical(key, hpo['values'])
             elif hpo['type'] == 'log_range':
                 layer['params']['units'] = trial.suggest_float(key, hpo['low'], hpo['high'], log=True)
-            logger.debug(f"Layer {i} resolved units: {layer['params']['units']}")
+            # logger.debug(f"Layer {i} resolved units: {layer['params']['units']}")
     
     if resolved_dict['optimizer'] and 'params' in resolved_dict['optimizer']:
         # Clean up optimizer type
         opt_type = resolved_dict['optimizer']['type']
         if '(' in opt_type:
             resolved_dict['optimizer']['type'] = opt_type[:opt_type.index('(')].capitalize()  # 'adam(...)' -> 'Adam'
-        logger.debug(f"Cleaned optimizer type: {resolved_dict['optimizer']['type']}")
+        # logger.debug(f"Cleaned optimizer type: {resolved_dict['optimizer']['type']}")
         
         for param, val in resolved_dict['optimizer']['params'].items():
             if isinstance(val, dict) and 'hpo' in val:
@@ -112,9 +112,9 @@ def resolve_hpo_params(model_dict, trial, hpo_params):
                     resolved_dict['optimizer']['params'][param] = trial.suggest_float(
                         f"opt_{param}", hpo['low'], hpo['high'], log=True
                     )
-                logger.debug(f"Optimizer resolved {param}: {resolved_dict['optimizer']['params'][param]}")
+                # logger.debug(f"Optimizer resolved {param}: {resolved_dict['optimizer']['params'][param]}")
     
-    logger.debug(f"Resolved dict: {resolved_dict}")
+    # logger.debug(f"Resolved dict: {resolved_dict}")
     return resolved_dict
 
 

@@ -17,7 +17,7 @@ network MNISTClassifier {
     validation_split: 0.2
     search_method: "bayesian"  
   }
-  execution {
+  execute {
     device: "cuda"  
   }
 }
