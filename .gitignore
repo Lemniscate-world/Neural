@@ -13,6 +13,9 @@ tests/hpo/data/MNIST/
 data/cifar-10-python.tar.gz
 data/cifar-10-batches-py/
 
+# Next.js build output and cache
+.next/
+
 # Large HTML files
 *.html
 
@@ -46,3 +49,7 @@ wheels/
 venv/
 env/
 ENV/
+
+# Backup and large files
+.git.bak/
+*.pack
