@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from parser.parser import create_parser, ModelTransformer
-from visualization.visualizer import NeuralVisualizer
+from neural.visualization.static_visualizer.visualizer import NeuralVisualizer
 
 app = Flask(__name__)
 CORS(app, resources={r"/parse": {"origins": "*"}})
