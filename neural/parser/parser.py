@@ -305,7 +305,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         loss: "loss" ":" (NAME | STRING) ["(" param_style1 ")"]
 
         // Optimizer
-        optimizer_param: "optimizer:" named_optimizer
+        optimizer_param: "optimizer:" (named_optimizer | STRING)
         named_optimizer: NAME "(" [param_style1] ("," [param_style1])* ")"
         EXPONENTIALDECAY: "ExponentialDecay"
         learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | NAME "(" [lr_schedule_args] ")")

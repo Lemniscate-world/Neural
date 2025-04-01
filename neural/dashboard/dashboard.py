@@ -1,10 +1,10 @@
 import dash
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, callback, Input, Output, State
+from dash.exceptions import PreventUpdate
 import sys
 import os
 import numpy as np
 import pysnooper
-from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 from flask import Flask
 from numpy import random
@@ -19,7 +19,11 @@ from dash_bootstrap_components import themes
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from neural.shape_propagation.shape_propagator import ShapePropagator
-from neural.dashboard.tensor_flow import create_animated_network
+from neural.dashboard.tensor_flow import (
+    create_animated_network, 
+    create_progress_component,
+    create_layer_computation_timeline
+)
 
 
 
@@ -489,8 +493,128 @@ app.layout = html.Div([
     dcc.Graph(id="resource_graph"),
     
     # Interval for updates (initial value, updated dynamically)
-    dcc.Interval(id="interval_component", interval=UPDATE_INTERVAL, n_intervals=0)
+    dcc.Interval(id="interval_component", interval=UPDATE_INTERVAL, n_intervals=0),
+
+    # Add progress tracking to the layout
+    html.Div([
+        html.H3("Network Visualization"),
+        dcc.Loading(
+            id="loading-network-viz",
+            type="circle",
+            children=[
+                html.Div(id="network-viz-container", children=[
+                    dcc.Graph(id="architecture_graph"),
+                    create_progress_component(),
+                    html.Button("Generate Visualization", id="generate-viz-button", n_clicks=0),
+                ])
+            ]
+        ),
+        
+        html.Div([
+            html.H3("Computation Timeline"),
+            dcc.Graph(id="computation-timeline")
+        ], style={"marginTop": "30px"})
+    ], className="container"),
+
+    # Hidden div for storing progress data
+    html.Div(id="progress-store", style={"display": "none"})
 ])
+
+# Add callbacks for the visualization and progress updates
+@app.callback(
+    [Output("architecture_graph", "figure"),
+     Output("progress-store", "children")],
+    [Input("generate-viz-button", "n_clicks"),
+     Input("architecture_selector", "value")],
+    [State("progress-store", "children")]
+)
+def update_network_visualization(n_clicks, arch_type, progress_data):
+    if n_clicks == 0:
+        # Initial load - return empty figure
+        return go.Figure(), json.dumps({"progress": 0, "details": "Click to generate"})
+    
+    # Get layer data based on selected architecture
+    if arch_type == "A":
+        layer_data = [
+            {"layer": "Input", "output_shape": (1, 28, 28, 3)},
+            {"layer": "Conv2D", "output_shape": (1, 26, 26, 32)},
+            {"layer": "MaxPooling2D", "output_shape": (1, 13, 13, 32)},
+            {"layer": "Flatten", "output_shape": (1, 5408)},
+            {"layer": "Dense", "output_shape": (1, 128)},
+            {"layer": "Output", "output_shape": (1, 10)}
+        ]
+    else:
+        # Default or other architectures
+        layer_data = [
+            {"layer": "Input", "output_shape": (1, 224, 224, 3)},
+            {"layer": "Conv2D_1", "output_shape": (1, 112, 112, 64)},
+            {"layer": "Conv2D_2a", "output_shape": (1, 56, 56, 128)},
+            {"layer": "Conv2D_2b", "output_shape": (1, 56, 56, 128)},
+            {"layer": "Concat", "output_shape": (1, 56, 56, 256)},
+            {"layer": "Dense", "output_shape": (1, 1000)},
+        ]
+    
+    # Generate the visualization with progress tracking
+    fig = create_animated_network(layer_data, show_progress=True)
+    
+    # Return the figure and final progress state
+    return fig, json.dumps({"progress": 100, "details": "Visualization complete"})
+
+# Update progress bar
+@app.callback(
+    [Output("progress-bar", "style"),
+     Output("progress-text", "children"),
+     Output("progress-details", "children")],
+    [Input("progress-store", "children")]
+)
+def update_progress_display(progress_json):
+    if not progress_json:
+        raise PreventUpdate
+    
+    progress_data = json.loads(progress_json)
+    progress = progress_data.get("progress", 0)
+    details = progress_data.get("details", "")
+    
+    # Update progress bar style
+    bar_style = {
+        "width": f"{progress}%", 
+        "backgroundColor": "#4CAF50", 
+        "height": "30px"
+    }
+    
+    return bar_style, f"{progress:.1f}%", details
+
+# Add computation timeline
+@app.callback(
+    Output("computation-timeline", "figure"),
+    [Input("architecture_graph", "figure")]
+)
+def update_computation_timeline(network_fig):
+    if not network_fig:
+        raise PreventUpdate
+    
+    # Get the same layer data used for the network visualization
+    # In a real implementation, you would use actual execution times
+    if "A" in network_fig.get("layout", {}).get("title", {}).get("text", ""):
+        layer_data = [
+            {"layer": "Input", "execution_time": 0.1},
+            {"layer": "Conv2D", "execution_time": 0.8},
+            {"layer": "MaxPooling2D", "execution_time": 0.3},
+            {"layer": "Flatten", "execution_time": 0.1},
+            {"layer": "Dense", "execution_time": 0.5},
+            {"layer": "Output", "execution_time": 0.2}
+        ]
+    else:
+        layer_data = [
+            {"layer": "Input", "execution_time": 0.1},
+            {"layer": "Conv2D_1", "execution_time": 1.2},
+            {"layer": "Conv2D_2a", "execution_time": 0.9},
+            {"layer": "Conv2D_2b", "execution_time": 0.9},
+            {"layer": "Concat", "execution_time": 0.2},
+            {"layer": "Dense", "execution_time": 0.7}
+        ]
+    
+    return create_layer_computation_timeline(layer_data)
 
 if __name__ == "__main__":
     app.run_server(debug=False, use_reloader=False)

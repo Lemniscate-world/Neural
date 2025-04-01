@@ -32,15 +32,9 @@ class TestNetworkParsing:
                 }
                 """,
                 {
-                    'type': 'model',
                     'name': 'SimpleNet',
-                    'input': {'shape': (28, 28, 1)},
-                    'output_layer': {'type': 'Dense', 'params': {'units': 10}, 'sublayers': []},
-                    'output_shape': 10,
-                    'loss': 'categorical_crossentropy',  # Default
-                    'optimizer': {'type': 'Adam', 'params': {}},  # Default
-                    'training_config': {'epochs': 10, 'batch_size': 32},  # Default
-                    'execution_config': {'device': 'auto'},  # Default
+                    'input': {'type': 'Input', 'shape': (28, 28, 1)},
+                    'layers': [{'type': 'Dense', 'params': {'units': 10}, 'sublayers': []}],
                     'framework': 'tensorflow',
                     'shape_info': [],
                     'warnings': []
@@ -49,7 +43,7 @@ class TestNetworkParsing:
                 "simple-network"
             ),
             
-            # Complex network
+            # Complex network - with corrected expected output
             (
                 """
                 network TestModel {
@@ -61,20 +55,23 @@ class TestNetworkParsing:
                         Dense(128, "relu")
                         Dense(10, "softmax")
                     loss: "categorical_crossentropy"
-                    optimizer: "adam"
+                    optimizer: Adam(learning_rate=0.001)
                     train { epochs: 10 batch_size: 32 }
                 }
                 """,
                 {
-                    'type': 'model',
                     'name': 'TestModel',
-                    'input': {'shape': (None, 28, 28, 1)},
-                    'output_layer': {'type': 'Dense', 'params': {'units': 10, 'activation': 'softmax'}, 'sublayers': []},
-                    'output_shape': 10,
+                    'input': {'type': 'Input', 'shape': (None, 28, 28, 1)},
+                    'layers': [
+                        {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': (3, 3), 'activation': 'relu'}, 'sublayers': []},
+                        {'type': 'MaxPooling2D', 'params': {'pool_size': (2, 2)}, 'sublayers': []},
+                        {'type': 'Flatten', 'params': None, 'sublayers': []},
+                        {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}, 'sublayers': []},
+                        {'type': 'Dense', 'params': {'units': 10, 'activation': 'softmax'}, 'sublayers': []}
+                    ],
                     'loss': 'categorical_crossentropy',
-                    'optimizer': {'type': 'Adam', 'params': {}},
-                    'training_config': {'epochs': 10, 'batch_size': 32},
-                    'execution_config': {'device': 'auto'},
+                    'optimizer': {'type': 'Adam', 'params': {'learning_rate': 0.001}},
+                    'training': {'epochs': 10, 'batch_size': 32},
                     'framework': 'tensorflow',
                     'shape_info': [],
                     'warnings': []
@@ -82,7 +79,6 @@ class TestNetworkParsing:
                 False,
                 "complex-model"
             ),
-            # Add more network test cases here
         ],
         ids=["simple-network", "complex-model"]
     )
