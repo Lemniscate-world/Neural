@@ -29,15 +29,20 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
     # Initial input shape includes batch dimension: (None, channels, height, width)
     current_input_shape = (None,) + tuple(model_data['input']['shape'])  # e.g., (None, 1, 28, 28)
     
-    # Process expanded layers before modifying model_data
+    # Process expanded layers before modifying model_dat
+    # Expand layers based on 'multiply' key
     expanded_layers = []
     for layer in model_data.get('layers', []):
+        # Validate layer format with default to dictionary
         if not isinstance(layer, dict) or 'type' not in layer:
             raise ValueError(f"Invalid layer format: {layer}")
+        # Default Multiply Value to 1
         multiply = layer.get('multiply', 1)
         if not isinstance(multiply, int) or multiply < 1:
             raise ValueError(f"Invalid 'multiply' value: {multiply}")
+        # Shallow copy to avoid modifying original layer
         layer_copy = layer.copy()
+        # Changes to nested mutable objects will affect both copies
         if 'multiply' in layer_copy:
             del layer_copy['multiply']
         for _ in range(multiply):
@@ -136,13 +141,16 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
             if layer_type not in layer_counts:
                 layer_counts[layer_type] = 0
             
-            layer_name = f"layer{i}_{layer_type.lower()}_{layer_counts[layer_type]}"
+            layer_name = f"layer{i}_{layer_type.lower()}"
             layer_counts[layer_type] += 1
             
             if layer_type == "Dense":
                 # If first layer or previous layer requires flattening
                 if i == 0 or expanded_layers[i-1]['type'] in ["Input", "Flatten"]:
-                    in_features = np.prod(current_input_shape[1:])  # Flatten all dims except batch: 1 * 28 * 28 = 784
+                    # product of current_input_shape elements over specified axis
+                    in_features = np.prod([dim for dim in current_input_shape[1:] if dim is not None])
+                    # Modified to evict None values and NoneType * Int Errors
+                    # The first input shape tuple in the list for tensorflow contains None
                 else:
                     in_features = current_input_shape[-1]  # Previous layer's output features
                 out_features = params.get("units", 64)
@@ -391,6 +399,8 @@ def generate_tensorflow_layer(layer_type, params):
         warnings.warn(f"Unsupported layer type '{layer_type}' for tensorflow. Skipping.", UserWarning)
         return None
 
+
+# Pytorch Layers Code Generator
 def generate_pytorch_layer(layer_type, params, input_shape=None):
     """Generate PyTorch layer code"""
     if layer_type == "Conv2D":
