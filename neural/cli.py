@@ -28,7 +28,7 @@ def configure_logging(verbose=False):
         # Suppress verbose output from dependencies
         for logger_name in [
             'graphviz', 'matplotlib', 'tensorflow', 'jax',
-            'optuna', 'PIL', 'torch', 'urllib3', 'requests',
+            'pydot', 'PIL', 'torch', 'urllib3', 'requests',
             'filelock', 'numba', 'h5py', 'asyncio', 'parso',
             'matplotlib.font_manager', 'matplotlib.ticker'
         ]:

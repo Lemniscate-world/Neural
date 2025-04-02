@@ -77,10 +77,31 @@ class TestHPOParser:
         ]
     )
     def test_basic_hpo_types(self, transformer, hpo_string, expected_result, test_id):
-        """Test basic HPO type parsing."""
-        tree = layer_parser.parse(hpo_string)
-        result = transformer.transform(tree)
-        assert result == expected_result, f"Failed for {test_id}: expected {expected_result}, got {result}"
+        """Test basic HPO type parsing within a network context."""
+        # Create a simple network with the HPO expression in a layer
+        network_string = f"""
+        network TestNetwork {{
+            input: (28, 28, 1)
+            layers:
+                Dense({hpo_string})
+                Output(10)
+            loss: "categorical_crossentropy"
+            optimizer: "adam"
+        }}
+        """
+        
+        # Parse the network with HPO expressions
+        model_dict, hpo_params = transformer.parse_network_with_hpo(network_string)
+        
+        # Extract the HPO parameter from the first layer (Dense)
+        layer_params = model_dict['layers'][0]['params']
+        
+        # The first parameter of Dense should contain our HPO expression
+        assert 'units' in layer_params, f"Failed for {test_id}: 'units' not found in layer params"
+        hpo_result = layer_params['units']
+        
+        # Verify the parsing result
+        assert hpo_result == expected_result, f"Failed for {test_id}: expected {expected_result}, got {hpo_result}"
 
     # Complex HPO Tests
     @pytest.mark.parametrize(

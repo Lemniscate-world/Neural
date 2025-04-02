@@ -447,13 +447,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         factor: NUMBER | NAME| "(" math_expr ")" | function_call
         function_call: NAME "(" math_expr ("," math_expr)* ")"
 
-        hpo_with_params: hpo_expr ("," named_params)*
+        hpo_with_params: hpo_expr "," named_params
         hpo: hpo_expr | layer_choice
 
         // HPO for Hyperparameters
-        hpo_expr: "HPO" "(" (hpo_choice | hpo_range | hpo_log_range )* ")"
+        hpo_expr: "HPO" "(" (hpo_choice | hpo_range | hpo_log_range) ")"
         hpo_choice: "choice" "(" value ("," value)* ")"
-        hpo_range: "range" "(" number "," number ("," "step="number)? ")"
+        hpo_range: "range" "(" number "," number ("," "step=" number)? ")"
         hpo_log_range: "log_range" "(" number "," number ")"
 
         // HPO for layer choice
@@ -465,7 +465,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
         layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION | GLOBALAVERAGEPOOLING2D | OUTPUT
-        ?param_style1: params | hpo_with_params
+        ?param_style1: params | hpo_param
+        hpo_param: hpo_expr | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
         ?value: STRING -> string_value | number | tuple_ | BOOL
@@ -3135,8 +3136,16 @@ class ModelTransformer(lark.Transformer):
         elif hpo_str.startswith('range('):
             parts = [v.strip() for v in hpo_str[6:-1].split(',')]
             parsed = [self._parse_hpo_value(p) for p in parts]
-            hpo_data = {'type': 'range', 'start': parsed[0], 'end': parsed[1]}
+            
+            # Handle step parameter if present
             if len(parts) >= 3:
+                step_part = parts[2]
+                if step_part.startswith('step='):
+                    step_value = step_part[5:]  # Extract value after 'step='
+                    parsed[2] = self._parse_hpo_value(step_value)
+            
+            hpo_data = {'type': 'range', 'start': parsed[0], 'end': parsed[1]}
+            if len(parsed) >= 3:
                 hpo_data['step'] = parsed[2]
             hpo_data['original_parts'] = parts  # Store original strings
             return {'hpo': hpo_data}
@@ -3146,8 +3155,8 @@ class ModelTransformer(lark.Transformer):
             return {
                 'hpo': {
                     'type': 'log_range',
-                    'low': parsed[0],
-                    'high': parsed[1],
+                    'start': parsed[0],
+                    'end': parsed[1],
                     'original_low': parts[0],  # Store original strings
                     'original_high': parts[1]
                 }
