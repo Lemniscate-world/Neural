@@ -465,7 +465,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
         layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION | GLOBALAVERAGEPOOLING2D | OUTPUT
-        ?param_style1: params | hpo_param
+        ?param_style1:  hpo_param | params 
         hpo_param: hpo_expr | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
@@ -933,6 +933,7 @@ class ModelTransformer(lark.Transformer):
         params = self._extract_value(items[0])
         return {'type': 'execution_config', 'params': params}
 
+    @pysnooper.snoop()
     def dense(self, items):
         params = {}
         if items and items[0] is not None:
@@ -944,12 +945,17 @@ class ModelTransformer(lark.Transformer):
             if isinstance(param_values, list):
                 for val in param_values:
                     if isinstance(val, dict):
-                        if 'hpo' in val:  # Handle HPO as units
-                            named_params['units'] = val
+                        if 'hpo' in val:  # HPO expression
+                            if 'units' not in named_params:  # Assign to units if not already set
+                                named_params['units'] = val
+                            else:
+                                self.raise_validation_error("Multiple HPO expressions not supported as positional args", items[0])
                         else:
-                            named_params.update(val)
+                            named_params.update(val)  # Named parameter
+                    elif isinstance(val, list):
+                        ordered_params.extend(val)  # List of positional parameters
                     else:
-                        ordered_params.append(val)
+                        ordered_params.append(val)  # Positional parameter
             elif isinstance(param_values, dict):
                 named_params = param_values
 
@@ -969,6 +975,18 @@ class ModelTransformer(lark.Transformer):
         units = params['units']
         if isinstance(units, dict) and 'hpo' in units:
             self._track_hpo('Dense', 'units', units, items[0])
+        elif isinstance(units, list):
+            # Handle list case (e.g., [16, 32, 64]) as categorical if intended for HPO and Return True if all items are true
+            if len(units) > 1 and all(isinstance(u, (int, float)) for u in units):
+                hpo_config = {
+                    'hpo': {
+                        'type': 'categorical',
+                        'values': units,
+                        'original_values': [str(u) for u in units]
+                    }
+                }
+                params['units'] = self._extract_value(hpo_config)
+                self._track_hpo('Dense', 'units', hpo_config, items[0])
         else:
             if not isinstance(units, (int, float)):
                 self.raise_validation_error(f"Dense units must be a number, got {units}", items[0])
@@ -978,28 +996,24 @@ class ModelTransformer(lark.Transformer):
 
         if 'activation' in params:
             activation = params['activation']
-            if isinstance(activation, dict):  # HPO case
-                pass  # No validation for HPO
+            if isinstance(activation, dict) and 'hpo' in activation:
+                self._track_hpo('Dense', 'activation', activation, items[0])
+            elif isinstance(activation, dict) and 'hpo' not in activation:
+                params['activation'] = self._extract_value(activation)
+            elif not isinstance(activation, str):
+                self.raise_validation_error(f"Dense activation must be a string or HPO, got {activation}", items[0])
             else:
-                if not isinstance(activation, str):
+                valid_activations = {
+                    'relu', 'sigmoid', 'tanh', 'softmax', 'softplus',
+                    'softsign', 'selu', 'elu', 'exponential', 'linear'
+                }
+                if activation.lower() not in valid_activations:
                     self.raise_validation_error(
-                        f"Dense activation must be a string or HPO, got {activation}",
+                        f"Invalid activation function {activation}. Allowed: {', '.join(valid_activations)}",
                         items[0]
                     )
-                else:
-                    # Validate activation function
-                    valid_activations = {
-                        'relu', 'sigmoid', 'tanh', 'softmax', 'softplus',
-                        'softsign', 'selu', 'elu', 'exponential', 'linear'
-                    }
-                    if activation.lower() not in valid_activations:
-                        self.raise_validation_error(
-                            f"Invalid activation function {activation}. "
-                            f"Allowed: {', '.join(valid_activations)}",
-                            items[0]
-                        )
 
-        return {"type": "Dense", "params": params, 'sublayers': []}  # Explicitly add sublayers
+        return {"type": "Dense", "params": params, 'sublayers': []}
 
     def conv(self, items):
         return items[0]
