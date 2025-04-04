@@ -301,7 +301,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         network: "network" NAME "{" input_layer layers [loss] [optimizer_param] [training_config] [execution_config] "}"
         input_layer: "input" ":" shape ("," shape)*
-        layers: "layers" ":" layer_or_repeated+
+        layers: "layers" ":" layer_or_repeated ("," layer_or_repeated)*
         loss: "loss" ":" (NAME | STRING) ["(" param_style1 ")"]
 
         // Optimizer
@@ -311,14 +311,11 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | NAME "(" [lr_schedule_args] ")")
         lr_schedule_args: param_style1 ("," param_style1)*
         momentum_param: "momentum=" param_style1
-        search_method_param: "search_method:" STRING
-        validation_split_param: "validation_split:" FLOAT
+        
 
 
         layer_or_repeated: layer ["*" INT]
         ?layer: basic_layer | advanced_layer | special_layer
-        config: training_config | execution_config
-
 
         shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
         number_or_none: number | NONE
@@ -427,13 +424,15 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         // Training & Configurations
-        training_config: "train" "{" training_params  "}"
+        training_config: "train" "{" training_params "}"
         training_params: (epochs_param | batch_size_param | search_method_param | validation_split_param | device)*
         device: "@" NAME
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" values_list
         values_list: "[" (value | hpo_expr) ("," (value | hpo_expr))* "]" | (value | hpo_expr) ("," (value | hpo_expr))*
-
+        search_method_param: "search_method:" STRING
+        validation_split_param: "validation_split:" FLOAT
+        
         // Execution Configuration & Devices
         execution_config: "execute" "{" device_param "}"
         device_param: "device:" STRING
