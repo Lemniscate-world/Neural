@@ -498,44 +498,13 @@ def generate_optimized_dsl(config, best_params):
     logger.info(f"best_params: {best_params}")
     logger.info(f"hpo_params: {hpo_params}")
     
-    # Handle batch_size specifically
-    if 'batch_size' in best_params:
-        for i, line in enumerate(lines):
-            if 'batch_size: HPO(' in line:
-                old_line = lines[i]
-                # Extract the HPO part to ensure we're replacing the right string
-                hpo_start = line.find('HPO(')
-                hpo_end = line.find(')', hpo_start) + 1
-                if hpo_start != -1 and hpo_end != -1:
-                    hpo_str = line[hpo_start:hpo_end]
-                    new_line = line.replace(hpo_str, str(best_params['batch_size']))
-                    lines[i] = new_line
-                    logger.info(f"Replaced line {i} (batch_size): '{old_line}' -> '{new_line}'")
-                    break
-    
-    # Handle learning_rate explicitly
-    if 'learning_rate' in best_params:
-        for i, line in enumerate(lines):
-            if 'learning_rate=HPO(' in line:
-                old_line = lines[i]
-                hpo_start = line.find('HPO(')
-                hpo_end = line.find(')', hpo_start) + 1
-                if hpo_start != -1 and hpo_end != -1:
-                    hpo_str = line[hpo_start:hpo_end]
-                    new_line = line.replace(hpo_str, str(best_params['learning_rate']))
-                    lines[i] = new_line
-                    logger.info(f"Replaced line {i} (learning_rate): '{old_line}' -> '{new_line}'")
-                    break
-    
-    # Process other HPO parameters
+    # Process all HPO parameters uniformly
     for hpo in hpo_params:
-        # Skip batch_size and learning_rate as they're handled separately
-        if (hpo['layer_type'].lower() == 'training_config' and hpo['param_name'] == 'batch_size') or \
-           (hpo['layer_type'].lower() == 'optimizer' and hpo['param_name'] == 'learning_rate'):
-            continue
-            
-        if hpo['layer_type'].lower() == 'optimizer':
-            param_key = hpo['param_name']
+        # Determine param_key based on layer_type
+        if hpo['layer_type'].lower() == 'training_config' and hpo['param_name'] == 'batch_size':
+            param_key = 'batch_size'
+        elif hpo['layer_type'].lower() == 'optimizer' and hpo['param_name'] == 'params.learning_rate':
+            param_key = 'learning_rate'
         else:
             param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"
         
@@ -543,60 +512,56 @@ def generate_optimized_dsl(config, best_params):
             logger.warning(f"Parameter {param_key} not found in best_params, skipping")
             continue
         
-        # Skip if hpo data is missing
         if 'hpo' not in hpo or not hpo['hpo']:
             logger.warning(f"Missing 'hpo' data for parameter {param_key}, skipping")
             continue
             
-        # Construct the HPO string based on the type
-        try:
-            hpo_type = hpo['hpo'].get('type')
-            if not hpo_type:
-                logger.warning(f"Missing 'type' in hpo data for parameter {param_key}, skipping")
-                continue
-                
-            if hpo_type in ('choice', 'categorical'):
-                values = hpo['hpo'].get('original_values', hpo['hpo'].get('values', []))
-                if not values:
-                    logger.warning(f"Missing 'values' for choice/categorical parameter {param_key}, skipping")
-                    continue
-                hpo_str = f"choice({', '.join(map(str, values))})"
-            elif hpo_type == 'range':
-                start = hpo['hpo'].get('start')
-                end = hpo['hpo'].get('end')
-                original_parts = hpo['hpo'].get('original_parts', [])
-                if not original_parts and (start is None or end is None):
-                    logger.warning(f"Missing range bounds for parameter {param_key}, skipping")
-                    continue
-                if not original_parts:
-                    original_parts = [str(start), str(end)]
-                if 'step' in hpo['hpo']:
-                    hpo_str = f"range({', '.join(original_parts)}, step={hpo['hpo']['step']})"
-                else:
-                    hpo_str = f"range({', '.join(original_parts)})"
-            elif hpo_type == 'log_range':
-                low = hpo['hpo'].get('original_low', str(hpo['hpo'].get('low', '')))
-                high = hpo['hpo'].get('original_high', str(hpo['hpo'].get('high', '')))
-                if not low or not high:
-                    logger.warning(f"Missing log_range bounds for parameter {param_key}, skipping")
-                    continue
-                hpo_str = f"log_range({low}, {high})"
-            else:
-                logger.warning(f"Unknown HPO type: {hpo_type}, skipping")
-                continue
-            
-            # Replace in the lines
-            logger.info(f"Processing hpo: {hpo}, param_key: {param_key}, hpo_str: {hpo_str}")
-            for i, line in enumerate(lines):
-                if f"HPO({hpo_str})" in line:
-                    old_line = lines[i]
-                    new_line = line.replace(f"HPO({hpo_str})", str(best_params[param_key]))
-                    lines[i] = new_line
-                    logger.info(f"Replaced line {i}: '{old_line}' -> '{new_line}'")
-                    break
-        except Exception as e:
-            logger.error(f"Error processing HPO parameter {param_key}: {str(e)}")
+        # Construct the HPO string based on type
+        hpo_type = hpo['hpo'].get('type')
+        if not hpo_type:
+            logger.warning(f"Missing 'type' in hpo data for parameter {param_key}, skipping")
             continue
+            
+        if hpo_type in ('choice', 'categorical'):
+            values = hpo['hpo'].get('original_values', hpo['hpo'].get('values', []))
+            if not values:
+                logger.warning(f"Missing 'values' for choice/categorical parameter {param_key}, skipping")
+                continue
+            hpo_str = f"choice({', '.join(map(str, values))})"
+        elif hpo_type == 'range':
+            start = hpo['hpo'].get('start')
+            end = hpo['hpo'].get('end')
+            original_parts = hpo['hpo'].get('original_parts', [])
+            if not original_parts and (start is None or end is None):
+                logger.warning(f"Missing range bounds for parameter {param_key}, skipping")
+                continue
+            if not original_parts:
+                original_parts = [str(start), str(end)]
+            if 'step' in hpo['hpo']:
+                hpo_str = f"range({', '.join(original_parts)}, step={hpo['hpo']['step']})"
+            else:
+                hpo_str = f"range({', '.join(original_parts)})"
+        elif hpo_type == 'log_range':
+            low = hpo['hpo'].get('original_low', str(hpo['hpo'].get('low', '')))
+            high = hpo['hpo'].get('original_high', str(hpo['hpo'].get('high', '')))
+            if not low or not high:
+                logger.warning(f"Missing log_range bounds for parameter {param_key}, skipping")
+                continue
+            hpo_str = f"log_range({low}, {high})"
+        else:
+            logger.warning(f"Unknown HPO type: {hpo_type}, skipping")
+            continue
+        
+        # Replace the entire HPO expression
+        logger.info(f"Processing hpo: {hpo}, param_key: {param_key}, hpo_str: {hpo_str}")
+        for i, line in enumerate(lines):
+            full_hpo = f"HPO({hpo_str})"
+            if full_hpo in line:
+                old_line = lines[i]
+                new_line = line.replace(full_hpo, str(best_params[param_key]))
+                lines[i] = new_line
+                logger.info(f"Replaced line {i}: '{old_line}' -> '{new_line}'")
+                break
     
     logger.info(f"Final lines: {lines}")
     return '\n'.join(lines)

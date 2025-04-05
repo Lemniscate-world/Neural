@@ -299,24 +299,26 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ?named_param: ( learning_rate_param | momentum_param | named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value | NAME "=" hpo_expr | named_alpha)
 
 
-        network: "network" NAME "{" input_layer layers [loss] [optimizer_param] [training_config] [execution_config] "}"
+        network: "network" NAME "{" input_layer layers ";" [loss] [optimizer_param] [training_config] [execution_config] "}"
         input_layer: "input" ":" shape ("," shape)*
-        layers: "layers" ":" layer_or_repeated ("," layer_or_repeated)*
+        layers: "layers" ":" layer_or_repeated+
         loss: "loss" ":" (NAME | STRING) ["(" param_style1 ")"]
 
         // Optimizer
-        optimizer_param: "optimizer:" NAME [optimizer_params]
-        optimizer_params: "optimizer_param:" param_style1 ("," param_style1)*
+        optimizer_param: "optimizer:" (named_optimizer | STRING)
         named_optimizer: NAME "(" [param_style1] ("," [param_style1])* ")"
         EXPONENTIALDECAY: "ExponentialDecay"
         learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | NAME "(" [lr_schedule_args] ")")
         lr_schedule_args: param_style1 ("," param_style1)*
         momentum_param: "momentum=" param_style1
-        
+        search_method_param: "search_method:" STRING
+        validation_split_param: "validation_split:" FLOAT
 
 
         layer_or_repeated: layer ["*" INT]
         ?layer: basic_layer | advanced_layer | special_layer
+        config: training_config | execution_config
+
 
         shape: "(" [number_or_none ("," number_or_none)* [","]] ")"
         number_or_none: number | NONE
@@ -425,15 +427,13 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
 
         // Training & Configurations
-        training_config: "train" "{" training_params "}"
+        training_config: "train" "{" training_params  "}"
         training_params: (epochs_param | batch_size_param | search_method_param | validation_split_param | device)*
         device: "@" NAME
         epochs_param: "epochs:" INT
         batch_size_param: "batch_size:" values_list
         values_list: "[" (value | hpo_expr) ("," (value | hpo_expr))* "]" | (value | hpo_expr) ("," (value | hpo_expr))*
-        search_method_param: "search_method:" STRING
-        validation_split_param: "validation_split:" FLOAT
-        
+
         // Execution Configuration & Devices
         execution_config: "execute" "{" device_param "}"
         device_param: "device:" STRING
@@ -536,45 +536,33 @@ def safe_parse(parser, text):
         ...     print(f"Error: {e}")
     """
     warnings = []
+    # Extract the lexer from the parser
+    lexer = parser.lexer
+    
+    # Tokenize the input and log the stream
+    logger.debug("Token stream:")
+    tokens = list(lexer.lex(text))
+    for token in tokens:
+        logger.debug(f"Token: {token.type}('{token.value}') at line {token.line}, column {token.column}")
+    
     try:
         tree = parser.parse(text)
+        logger.debug("Parse successful, tree generated.")
         return {"result": tree, "warnings": warnings}
     except (lark.UnexpectedCharacters, lark.UnexpectedToken) as e:
-        # Log details about syntax error
         log_by_severity(Severity.ERROR, f"Syntax error at line {e.line}, column {e.column}")
-
-        # Add warning with appropriate error details
         error_msg = f"Syntax error at line {e.line}, column {e.column}"
         details = ""
-
-        if hasattr(e, 'token') and hasattr(e, 'accepts'):
-            log_by_severity(Severity.ERROR, f"Unexpected {e.token} - Expected: {e.accepts}")
-            details = f"Unexpected {e.token}, expected one of: {e.accepts}"
-        elif hasattr(e, 'char') and hasattr(e, 'allowed'):
+        if isinstance(e, lark.UnexpectedToken):
+            details = f"Unexpected {e.token}, expected one of: {', '.join(sorted(e.expected))}"
+        elif isinstance(e, lark.UnexpectedCharacters):
             details = f"Unexpected character '{e.char}', expected one of: {', '.join(sorted(e.allowed))}"
-        else:
-            details = "Syntax error in the input"
-
-        warnings.append({
-            "message": error_msg,
-            "line": e.line,
-            "column": e.column,
-            "details": details
-        })
-
-        # Use custom_error_handler to process the error
-        custom_error_handler(e)  # This raises DSLValidationError
-
+        warnings.append({"message": error_msg, "line": e.line, "column": e.column, "details": details})
+        custom_error_handler(e)
     except DSLValidationError as e:
-        # Re-raise DSLValidationError as-is
         raise
     except Exception as e:
-        # Handle other unexpected errors
         log_by_severity(Severity.ERROR, f"Unexpected error while parsing: {str(e)}")
-        warnings.append({
-            "message": f"Unexpected error: {str(e)}",
-            "details": "Parser encountered an unexpected error"
-        })
         raise DSLValidationError(f"Parser error: {str(e)}", Severity.ERROR)
 
 network_parser = create_parser('network')
@@ -1129,41 +1117,16 @@ class ModelTransformer(lark.Transformer):
 
         params = {}
         if len(items) > 1:
-            # Extract parameters and handle string case
+            # If items[1] is a list of dictionaries, merge them into a single dictionary
             param_items = self._extract_value(items[1]) or {}
-            logger.debug(f"param_items (raw): {param_items}")
-
-            # Handle case where param_items is a string (e.g., "learning_rate=0.001")
-            if isinstance(param_items, str):
-                parsed_params = {}
-                parts = split_params(param_items)
-                logger.debug(f"Split parts from string: {parts}")
-                for part in parts:
-                    part = part.strip()
-                    if '=' in part:
-                        key, value = part.split('=', 1)
-                        key = key.strip()
-                        value = value.strip()
-                        parsed_params[key] = value
-                    else:
-                        self.raise_validation_error(
-                            f"Invalid parameter format: '{part}'. Expected 'key=value'.",
-                            items[1],
-                            Severity.ERROR
-                        )
-                param_items = parsed_params
-                logger.debug(f"Parsed param_items from string: {param_items}")
+            logger.debug(f"param_items: {param_items}")
 
             if isinstance(param_items, list):
                 for param_dict in param_items:
                     if isinstance(param_dict, dict):
                         params.update(param_dict)
-                    else:
-                        logger.warning(f"Skipping non-dict param: {param_dict}")
-            elif isinstance(param_items, dict):
-                params = param_items
             else:
-                logger.warning(f"Unexpected param_items type: {type(param_items)}")
+                params = param_items
 
             logger.debug(f"merged params: {params}")
 
@@ -1218,9 +1181,15 @@ class ModelTransformer(lark.Transformer):
             logger.debug("opt_type is empty")
             self.raise_validation_error("Optimizer type must be specified", opt_node, Severity.ERROR)
 
-        # Validate optimizer name against common optimizers (case-insensitive)
+        # Validate optimizer name against common PyTorch/TensorFlow optimizers (case-insensitive)
         valid_optimizers = {'Adam', 'SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adamax', 'Nadam'}
-        opt_type_normalized = next((valid for valid in valid_optimizers if valid.lower() == opt_type.lower()), None)
+
+        # Find the correct case version of the optimizer
+        opt_type_normalized = None
+        for valid_opt in valid_optimizers:
+            if valid_opt.lower() == opt_type.lower():
+                opt_type_normalized = valid_opt
+                break
 
         if not opt_type_normalized:
             logger.debug(f"Invalid optimizer: {opt_type}")
