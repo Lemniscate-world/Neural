@@ -9,7 +9,8 @@ network MNISTClassifier {
     Output(units=10, activation="softmax")
 
   loss: "sparse_categorical_crossentropy"
-  optimizer: Adam(learning_rate=HPO(log_range(1e-4, 1e-2)))
+  optimizer: Adam
+  optimizer_param: learning_rate=HPO(log_range(1e-4, 1e-2))
 
   train {
     epochs: 15

@@ -305,7 +305,8 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         loss: "loss" ":" (NAME | STRING) ["(" param_style1 ")"]
 
         // Optimizer
-        optimizer_param: "optimizer:" (named_optimizer | STRING)
+        optimizer_param: "optimizer:" NAME [optimizer_params]
+        optimizer_params: "optimizer_param:" param_style1 ("," param_style1)*
         named_optimizer: NAME "(" [param_style1] ("," [param_style1])* ")"
         EXPONENTIALDECAY: "ExponentialDecay"
         learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | NAME "(" [lr_schedule_args] ")")
@@ -1128,16 +1129,41 @@ class ModelTransformer(lark.Transformer):
 
         params = {}
         if len(items) > 1:
-            # If items[1] is a list of dictionaries, merge them into a single dictionary
+            # Extract parameters and handle string case
             param_items = self._extract_value(items[1]) or {}
-            logger.debug(f"param_items: {param_items}")
+            logger.debug(f"param_items (raw): {param_items}")
+
+            # Handle case where param_items is a string (e.g., "learning_rate=0.001")
+            if isinstance(param_items, str):
+                parsed_params = {}
+                parts = split_params(param_items)
+                logger.debug(f"Split parts from string: {parts}")
+                for part in parts:
+                    part = part.strip()
+                    if '=' in part:
+                        key, value = part.split('=', 1)
+                        key = key.strip()
+                        value = value.strip()
+                        parsed_params[key] = value
+                    else:
+                        self.raise_validation_error(
+                            f"Invalid parameter format: '{part}'. Expected 'key=value'.",
+                            items[1],
+                            Severity.ERROR
+                        )
+                param_items = parsed_params
+                logger.debug(f"Parsed param_items from string: {param_items}")
 
             if isinstance(param_items, list):
                 for param_dict in param_items:
                     if isinstance(param_dict, dict):
                         params.update(param_dict)
-            else:
+                    else:
+                        logger.warning(f"Skipping non-dict param: {param_dict}")
+            elif isinstance(param_items, dict):
                 params = param_items
+            else:
+                logger.warning(f"Unexpected param_items type: {type(param_items)}")
 
             logger.debug(f"merged params: {params}")
 
@@ -1192,15 +1218,9 @@ class ModelTransformer(lark.Transformer):
             logger.debug("opt_type is empty")
             self.raise_validation_error("Optimizer type must be specified", opt_node, Severity.ERROR)
 
-        # Validate optimizer name against common PyTorch/TensorFlow optimizers (case-insensitive)
+        # Validate optimizer name against common optimizers (case-insensitive)
         valid_optimizers = {'Adam', 'SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adamax', 'Nadam'}
-
-        # Find the correct case version of the optimizer
-        opt_type_normalized = None
-        for valid_opt in valid_optimizers:
-            if valid_opt.lower() == opt_type.lower():
-                opt_type_normalized = valid_opt
-                break
+        opt_type_normalized = next((valid for valid in valid_optimizers if valid.lower() == opt_type.lower()), None)
 
         if not opt_type_normalized:
             logger.debug(f"Invalid optimizer: {opt_type}")
