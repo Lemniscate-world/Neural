@@ -63,6 +63,7 @@ Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.ty
 - **Shape Propagation**: Catch dimension mismatches *before* runtime.
   - ✅ Interactive shape flow diagrams included.
 - **Multi-Framework HPO**: Optimize hyperparameters for both PyTorch and TensorFlow with a single DSL config (#434).
+![Peek06-04-202517-00-ezgif com-speed](https://github.com/user-attachments/assets/5c4f51b5-e40f-47b3-872d-445f71c6582f)
 - **Enhanced Dashboard UI**: Improved NeuralDbg dashboard with a more aesthetic dark theme design (#452).
 - **Blog Support**: Infrastructure for blog content with markdown support and Dev.to integration (#445).
 - **Multi-Backend Export**: Generate code for **TensorFlow**, **PyTorch**, or **ONNX**.
@@ -70,7 +71,7 @@ Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.ty
 - **Visual Debugging**: Render interactive 3D architecture diagrams.
 - **Extensible**: Add custom layers/losses via Python plugins.
 - **NeuralDbg**: Built-in Neural Network Debugger and Visualizer.
-- **No-Code Interface**: Quick Prototyping for researchers and ean ducational, accessible tool for beginners.
+- **No-Code Interface**: Quick Prototyping for researchers and an educational, accessible tool for beginners.
 
 ---
 
