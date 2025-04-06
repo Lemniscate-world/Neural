@@ -63,6 +63,8 @@ Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.ty
 - **Shape Propagation**: Catch dimension mismatches *before* runtime.
   - ✅ Interactive shape flow diagrams included.
 - **Multi-Framework HPO**: Optimize hyperparameters for both PyTorch and TensorFlow with a single DSL config (#434).
+- **Enhanced Dashboard UI**: Improved NeuralDbg dashboard with a more aesthetic dark theme design (#452).
+- **Blog Support**: Infrastructure for blog content with markdown support and Dev.to integration (#445).
 - **Multi-Backend Export**: Generate code for **TensorFlow**, **PyTorch**, or **ONNX**.
 - **Training Orchestration**: Configure optimizers, schedulers, and metrics in one place.
 - **Visual Debugging**: Render interactive 3D architecture diagrams.
@@ -73,7 +75,7 @@ Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.ty
 ---
 
 ### **NeuralDbg: Built-in Neural Network Debugger**
-NeuralDbg provides **real-time execution tracing, profiling, and debugging**, allowing you to visualize and analyze deep learning models in action.
+NeuralDbg provides **real-time execution tracing, profiling, and debugging**, allowing you to visualize and analyze deep learning models in action. Now with an enhanced dark theme UI for better visualization (#452).
 
 ✅ **Real-Time Execution Monitoring** – Track activations, gradients, memory usage, and FLOPs.
 ![test_trace_graph](https://github.com/user-attachments/assets/15b1edd2-2643-4587-9843-aa4697ed2e4b)
@@ -103,7 +105,7 @@ NeuralDbg provides **real-time execution tracing, profiling, and debugging**, al
 pip install neural-dsl
 
 # Or specify a version
-pip install neural-dsl==0.2.5  # Latest version with HPO optimizer fixes
+pip install neural-dsl==0.2.6  # Latest version with enhanced dashboard UI
 ```
 
 ### Option 2: Install from Source
@@ -253,6 +255,7 @@ python neural.py debug --step mnist.neural
 ##  Documentation
 
 - [DSL Documentation](docs/dsl.md)
+- [Blog](docs/blog/README.md)
 
 Explore advanced features:
 - [Custom Layers Guide]()

@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.2.6] - 25-03-2025
+
+### Added
+- **Enhanced Dashboard UI (#452)**: Improved NeuralDbg dashboard with a more aesthetic design using Dash Bootstrap dark theme and better visualization components.
+- **Advanced HPO Examples (#448)**: Added comprehensive examples for hyperparameter optimization with complex configurations, including nested parameters.
+- **Blog Section Support (#445)**: Added infrastructure for blog content with markdown support and Dev.to integration.
+- **Automated Release Workflow (#441)**: Enhanced post-release workflow with automated social media updates via Twitter API.
+
+### Fixed
+- **CLI Version Display (#437)**: Updated version command to dynamically fetch package version using pkg_resources.
+- **HPO Parameter Handling (#456)**: Fixed edge cases in HPO parameter validation and parsing for complex nested configurations.
+- **Error Reporting Planning (#459)**: Planned improvements for error context in validation messages with more precise line/column information for better debugging.
+- **Dashboard Connectivity (#462)**: Fixed WebSocket connection issues in the dashboard for real-time updates and data streaming.
+- **Test Suite Stability (#464, #465)**: Resolved flaky tests in CI pipeline with better mocking and error handling for dashboard and HPO tests.
+
+### Improved
+- **Documentation (#447)**: Enhanced examples and documentation for HPO usage and error handling with more detailed explanations.
+- **UI Components (#452, #453)**: Upgraded dashboard with dark mode theme and responsive design elements for better user experience.
+- **Performance (#458)**: Optimized shape propagation and tensor flow visualization for complex models with large parameter counts.
+- **CI/CD Pipeline (#460)**: Streamlined GitHub Actions workflows with better error reporting and artifact handling for faster builds.
+- **Code Quality (#461)**: Enhanced validation for layer parameters with better error handling infrastructure.
+
+### Known Issues
+- Some complex nested HPO configurations may still require additional validation.
+- Edge cases in TensorFlow backend HPO integration need further testing.
+- Certain advanced layer configurations may not be fully supported in PyTorch backend.
+
+---
+
 ## [0.2.5] - 24-03-2025
 
 ### Added

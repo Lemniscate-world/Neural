@@ -1,5 +1,62 @@
 # Neural DSL Documentation
 
+## What's New in v0.2.6
+
+### Key Improvements
+- **Enhanced Dashboard UI**: Improved NeuralDbg dashboard with a more aesthetic dark theme design (#452)
+- **Advanced HPO Examples**: Added comprehensive examples for complex hyperparameter optimization configurations (#448)
+- **Blog Support**: Infrastructure for blog content with markdown support and Dev.to integration (#445)
+- **Improved Error Reporting**: Planning enhanced error context in validation messages with more precise line/column information (#459)
+- **CLI Version Display**: Updated version command to dynamically fetch package version (#437)
+
+### Example: Enhanced Dashboard UI
+```bash
+# Start the NeuralDbg dashboard with the new dark theme
+neuraldbg --theme dark
+
+# Or use the debug command with visualization
+neural debug my_model.neural --gradients --theme dark
+```
+
+### Example: Advanced Nested HPO Configuration
+```yaml
+network AdvancedHPOExample {
+  input: (28, 28, 1)
+  layers:
+    # Convolutional layers with HPO parameters
+    Conv2D(filters=HPO(choice(32, 64)), kernel_size=(3,3), activation="relu")
+    MaxPooling2D(pool_size=(2,2))
+
+    # Another conv block with HPO
+    Conv2D(filters=HPO(choice(64, 128)), kernel_size=(3,3), activation="relu")
+    MaxPooling2D(pool_size=(2,2))
+
+    # Flatten and dense layers
+    Flatten()
+    Dense(HPO(choice(128, 256, 512)), activation="relu")
+    Dropout(HPO(range(0.3, 0.7, step=0.1)))
+    Output(10, "softmax")
+
+  # Advanced optimizer configuration with HPO
+  optimizer: SGD(
+    learning_rate=ExponentialDecay(
+      HPO(range(0.05, 0.2, step=0.05)),  # Initial learning rate
+      1000,                              # Decay steps
+      HPO(range(0.9, 0.99, step=0.01))   # Decay rate
+    ),
+    momentum=HPO(range(0.8, 0.99, step=0.01))
+  )
+
+  # Training configuration with HPO
+  train {
+    epochs: 20
+    batch_size: HPO(choice(32, 64, 128))
+    validation_split: 0.2
+    search_method: "bayesian"  # Use Bayesian optimization
+  }
+}
+```
+
 ## What's New in v0.2.5
 
 ### Key Improvements
@@ -28,6 +85,8 @@ optimizer: SGD(
 - [CLI Reference](#cli-reference)
 - [Error Handling](#error-handling)
 - [Examples](#examples)
+- [Enhanced Dashboard UI (v0.2.6+)](#enhanced-dashboard-ui-v026)
+- [Blog Support (v0.2.6+)](#blog-support-v026)
 - [Development Guide](#development-guide)
 
 ---
@@ -118,7 +177,7 @@ neural profile <file> [--memory] [--latency]
 
 # Project Management
 neural clean  # Remove generated files
-neural version  # Show version info
+neural version  # Show version and dependencies info
 ```
 
 ### Key Options
@@ -126,6 +185,7 @@ neural version  # Show version info
 - `--hpo`: Enable hyperparameter optimization
 - `--step`: Interactive debugging mode
 - `--port`: Specify GUI port for no-code interface
+- `--theme`: Set dashboard theme (light/dark, v0.2.6+)
 
 ---
 
@@ -150,6 +210,27 @@ Conv2D kernel_size requires positive integers. Got (0,3)
 WARNING at line 8, column 15:
 Implicit conversion of 256.0 to integer 256
 ```
+
+### Planned Error Message Improvements (v0.2.6)
+
+Version 0.2.6 plans to improve error messages with more context and better formatting (#459):
+
+```text
+# Current error format
+ERROR at line 15, column 10:
+Dense units must be positive integers. Got -128
+
+# Planned improvements for future releases
+# ERROR at line 15, column 10:
+# Dense units must be positive integers. Got -128
+# Context: In network 'MNISTClassifier', layer 2
+# Suggestion: Use a positive integer value
+```
+
+Planned error message improvements include:
+- Context information about where the error occurred
+- Suggestions for fixing common issues
+- Better handling of nested structures
 
 ### Enhanced Error Messages (v0.2.5)
 
@@ -237,6 +318,16 @@ HPO(log_range(1e-4, 1e-2))      # Log-scale range for learning rates
 - Dropout rate must be between 0 and 1
 - Learning rate must be positive
 - Step size must be provided for range type
+
+### HPO Parameters Updates (v0.2.6)
+- **Advanced Examples**: Added comprehensive examples demonstrating complex HPO configurations (#448):
+  - Multiple HPO parameters within the same layer
+  - HPO parameters in both optimizer and learning rate schedules
+  - Batch size optimization alongside model parameters
+- **Planned Error Handling Improvements**: Planning better validation and error reporting for HPO parameters (#459):
+  - More precise line/column information in error messages
+  - Detailed context about parameter constraints
+  - Validation for complex nested configurations
 
 ### HPO Parameters Updates (v0.2.5)
 - **Multi-Framework Support**: HPO now works seamlessly across both PyTorch and TensorFlow backends.
@@ -350,6 +441,70 @@ Supported schedules:
 - `PiecewiseConstantDecay`: Uses a piecewise constant decay schedule
 - `PolynomialDecay`: Applies a polynomial decay to the learning rate
 - `InverseTimeDecay`: Applies inverse time decay to the learning rate
+
+---
+
+## Enhanced Dashboard UI (v0.2.6+)
+
+Version 0.2.6 introduces a significantly improved NeuralDbg dashboard with a more aesthetic design and better visualization components (#452).
+
+### Key UI Improvements
+- **Dark Theme**: A modern, eye-friendly dark interface using Dash Bootstrap components
+- **Responsive Design**: Better layout that adapts to different screen sizes
+- **Improved Visualizations**: Enhanced tensor flow animations and shape propagation charts
+- **Real-time Updates**: Fixed WebSocket connectivity for smoother data streaming
+
+### Using the Enhanced Dashboard
+```bash
+# Start the dashboard with dark theme (default in v0.2.6+)
+neural debug my_model.neural --theme dark
+
+# Use light theme if preferred
+neural debug my_model.neural --theme light
+```
+
+### Dashboard Components
+- **Execution Trace**: Real-time visualization of layer activations
+- **Gradient Flow**: Analysis of gradient magnitudes across layers
+- **Dead Neuron Detection**: Identification of inactive neurons
+- **Resource Monitoring**: CPU/GPU/Memory usage tracking
+- **Shape Propagation**: Interactive visualization of tensor shapes
+
+---
+
+## Blog Support (v0.2.6+)
+
+Neural DSL now includes infrastructure for blog content with markdown support and Dev.to integration (#445).
+
+### Blog Directory Structure
+```
+docs/
+  blog/
+    README.md             # Blog overview and guidelines
+    blog-list.json       # Metadata for all blog posts
+    website_*.md         # Posts for the website
+    devto_*.md           # Posts formatted for Dev.to
+```
+
+### Creating a Blog Post
+1. Create a new markdown file in the `docs/blog/` directory
+2. Use the `website_` prefix for website posts or `devto_` prefix for Dev.to posts
+3. Add metadata to `blog-list.json`
+
+### Dev.to Integration
+Posts with the `devto_` prefix include special frontmatter for Dev.to:
+
+```markdown
+---
+title: "Your Title Here"
+published: true
+description: "Brief description of your post"
+tags: tag1, tag2, tag3
+cover_image: https://url-to-your-cover-image.png
+---
+
+# Your Content Here
+```
 
 ---
 

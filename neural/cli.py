@@ -265,7 +265,13 @@ def clean():
 def version():
     """Show the version of Neural CLI and dependencies."""
     import lark
-    click.echo("Neural CLI v0.1.0")  # Update with your actual version
+    # Get version from package metadata
+    import pkg_resources
+    try:
+        version = pkg_resources.get_distribution("neural-dsl").version
+    except pkg_resources.DistributionNotFound:
+        version = "0.2.6"  # Fallback version if package not installed
+    click.echo(f"Neural CLI v{version}")
     click.echo(f"Python: {sys.version.split()[0]}")
     click.echo(f"Click: {click.__version__}")
     click.echo(f"Lark: {lark.__version__}")

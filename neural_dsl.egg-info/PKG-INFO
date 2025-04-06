@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: neural-dsl
-Version: 0.2.5
+Version: 0.2.6
 Summary: A domain-specific language and debugger for neural networks
 Home-page: https://github.com/Lemniscate-SHA-256/Neural
 Author: Lemniscate-SHA-256/SENOUVO Jacques-Charles Gad
@@ -369,4 +369,4 @@ Join our growing community of developers and researchers:
 </div>
 
 
-**Note**: See v0.2.5 release notes for latest fixes and improvements!
+**Note**: See v0.2.6 release notes for latest fixes and improvements!
