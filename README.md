@@ -1,9 +1,329 @@
-# Code Complexity Analysis
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/f92005cc-7b1c-4020-aec6-0e6922c36b1b" alt="Neural Logo" width="200"/>
+  <h1>Neural: A Neural Network Programming Language</h1>
+  <p><strong>Simplify deep learning development with a powerful DSL, cross-framework support, and built-in debugging</strong></p>
 
-Below is the complexity analysis for all Python files in this repository, generated using `radon`. Cyclomatic complexity measures the number of linearly independent paths through the code (lower is simpler).
+  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+  [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-green.svg)](https://www.python.org/)
+  [![Discord](https://img.shields.io/badge/Chat-Discord-7289DA)](https://discord.gg/KFku4KvS)
+  [![Pylint](https://github.com/Lemniscate-world/Neural/actions/workflows/pylint.yml/badge.svg?branch=main)](https://github.com/Lemniscate-world/Neural/actions/workflows/pylint.yml)
+  [![Python package](https://github.com/Lemniscate-world/Neural/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/Lemniscate-world/Neural/actions/workflows/python-package.yml)
+  [![CodeQL Advanced](https://github.com/Lemniscate-world/Neural/actions/workflows/codeql.yml/badge.svg)](https://github.com/Lemniscate-world/Neural/actions/workflows/codeql.yml)
+  [![Tests](https://github.com/Lemniscate-world/Neural/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/Lemniscate-world/Neural/actions/workflows/pytest-to-issues.yml)
+  [![Coverage](https://img.shields.io/codecov/c/github/Lemniscate-world/Neural)](https://codecov.io/gh/Lemniscate-world/Neural)
 
-| File | Avg. Cyclomatic Complexity | Lines of Code (LOC) | Comment Lines |
-|------|----------------------------|---------------------|---------------|
-| No Python files found | N/A | N/A | N/A |
+  <a href="https://www.producthunt.com/posts/neural-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-neural&#0045;2" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=945073&theme=dark&t=1742808173867" alt="Neural - DSL for defining, training, debugging neural networks | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+</div>
 
-*Generated on: Sun Apr  6 19:31:44 UTC 2025*
+> ⚠️ **BETA STATUS**: Neural-dsl is under active development—bugs may exist, feedback welcome! Not yet recommended for production use.
+
+![Neural Demo](https://github.com/user-attachments/assets/ecbcce19-73df-4696-ace2-69e32d02709f)
+
+## 📋 Table of Contents
+- [Overview](#overview)
+- [Pain Points Solved](#pain-points-solved)
+- [Key Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Debugging with NeuralDbg](#-debugging-with-neuraldbg)
+- [Why Neural?](#why-neural)
+- [Documentation](#documentation)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [Community](#community)
+- [Support](#support)
+
+## Overview
+Neural is a domain-specific language (DSL) designed for defining, training, debugging, and deploying neural networks. With declarative syntax, cross-framework support, and built-in execution tracing (NeuralDbg), it simplifies deep learning development whether via code, CLI, or a no-code interface.
+
+##  Pain Points Solved
+
+Neural addresses deep learning challenges across **Criticality** (how essential) and **Impact Scope** (how transformative):
+
+| Criticality / Impact | Low Impact                  | Medium Impact                       | High Impact                         |
+|----------------------|-----------------------------|-------------------------------------|-------------------------------------|
+| **High**             |                             |                                     | - **Shape Mismatches**: Pre-runtime validation stops runtime errors.<br>- **Debugging Complexity**: Real-time tracing & anomaly detection. |
+| **Medium**           |                             | - **Steep Learning Curve**: No-code GUI eases onboarding. | - **Framework Switching**: One-flag backend swaps.<br>- **HPO Inconsistency**: Unified tuning across frameworks. |
+| **Low**              | - **Boilerplate**: Clean DSL syntax saves time. | - **Model Insight**: FLOPs & diagrams.<br>- **Config Fragmentation**: Centralized setup. |                                     |
+
+### Why It Matters
+- **Core Value**: Fix critical blockers like shape errors and debugging woes with game-changing tools.
+- **Strategic Edge**: Streamline framework switches and HPO for big wins.
+- **User-Friendly**: Lower barriers and enhance workflows with practical features.
+
+## Feedback
+
+Help us improve Neural DSL! Share your feedback: [Typeform link](https://form.typeform.com/to/xcibBdKD#name=xxxxx&email=xxxxx&phone_number=xxxxx&user_id=xxxxx&product_id=xxxxx&auth_code=xxxxx).
+
+
+
+## Features
+
+- **YAML-like Syntax**: Define models intuitively without framework boilerplate.
+- **Shape Propagation**: Catch dimension mismatches *before* runtime.
+  - ✅ Interactive shape flow diagrams included.
+- **Multi-Framework HPO**: Optimize hyperparameters for both PyTorch and TensorFlow with a single DSL config (#434).
+![Peek06-04-202517-00-ezgif com-speed](https://github.com/user-attachments/assets/5c4f51b5-e40f-47b3-872d-445f71c6582f)
+- **Enhanced Dashboard UI**: Improved NeuralDbg dashboard with a more aesthetic dark theme design (#452).
+- **Blog Support**: Infrastructure for blog content with markdown support and Dev.to integration (#445).
+- **Multi-Backend Export**: Generate code for **TensorFlow**, **PyTorch**, or **ONNX**.
+- **Training Orchestration**: Configure optimizers, schedulers, and metrics in one place.
+- **Visual Debugging**: Render interactive 3D architecture diagrams.
+- **Extensible**: Add custom layers/losses via Python plugins.
+- **NeuralDbg**: Built-in Neural Network Debugger and Visualizer.
+- **No-Code Interface**: Quick Prototyping for researchers and an educational, accessible tool for beginners.
+
+---
+
+### **NeuralDbg: Built-in Neural Network Debugger**
+NeuralDbg provides **real-time execution tracing, profiling, and debugging**, allowing you to visualize and analyze deep learning models in action. Now with an enhanced dark theme UI for better visualization (#452).
+
+✅ **Real-Time Execution Monitoring** – Track activations, gradients, memory usage, and FLOPs.
+![test_trace_graph](https://github.com/user-attachments/assets/15b1edd2-2643-4587-9843-aa4697ed2e4b)
+![test_flops_memory_chart](https://github.com/user-attachments/assets/de1f6504-787b-4948-b543-fe3d2f8bfd74)
+![test_trace_graph_stacked](https://github.com/user-attachments/assets/529fc487-fb31-48ad-bb11-b0c64ab330ed)
+![test_trace_graph_heatmap](https://github.com/user-attachments/assets/debef7d5-9989-45da-ae91-7cef19aac2b0)
+![test_anomaly_chart](https://github.com/user-attachments/assets/b57d3142-6da8-4d57-94f0-486d1797e92c)
+![test_dead_neurons](https://github.com/user-attachments/assets/f4629b4f-2988-410e-8b49-3dde225f926f)
+![test_gradient_chart](https://github.com/user-attachments/assets/ca6b9f20-7dd8-4c72-9ee8-a3f35af6208b)
+
+
+✅ **Shape Propagation Debugging** – Visualize tensor transformations at each layer.
+✅ **Gradient Flow Analysis** – Detect **vanishing & exploding gradients**.
+✅ **Dead Neuron Detection** – Identify inactive neurons in deep networks.
+✅ **Anomaly Detection** – Spot **NaNs, extreme activations, and weight explosions**.
+✅ **Step Debugging Mode** – Pause execution and inspect tensors manually.
+
+
+## Installation
+
+**Prerequisites**: Python 3.8+, pip
+
+### Option 1: Install from PyPI (Recommended)
+
+```bash
+# Install the latest stable version
+pip install neural-dsl
+
+# Or specify a version
+pip install neural-dsl==0.2.6  # Latest version with enhanced dashboard UI
+```
+
+### Option 2: Install from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/Lemniscate-world/Neural.git
+cd Neural
+
+# Create a virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+## Quick Start
+
+### 1. Define a Model
+
+Create a file named `mnist.neural` with your model definition:
+
+```yaml
+network MNISTClassifier {
+  input: (28, 28, 1)  # Channels-last format
+
+  layers:
+    Conv2D(filters=32, kernel_size=(3,3), activation="relu")
+    MaxPooling2D(pool_size=(2,2))
+    Flatten()
+    Dense(units=128, activation="relu")
+    Dropout(rate=0.5)
+    Output(units=10, activation="softmax")
+
+  loss: "sparse_categorical_crossentropy"
+  optimizer: Adam(learning_rate=0.001)
+  metrics: ["accuracy"]
+
+  train {
+    epochs: 15
+    batch_size: 64
+    validation_split: 0.2
+  }
+}
+```
+
+### 2. Run or Compile the Model
+
+```bash
+# Generate and run TensorFlow code
+neural run mnist.neural --backend tensorflow --output mnist_tf.py
+
+# Or generate and run PyTorch code
+neural run mnist.neural --backend pytorch --output mnist_torch.py
+```
+
+### 3. Visualize Architecture
+
+```bash
+neural visualize mnist.neural --format png
+```
+
+This will create visualization files for inspecting the network structure and shape propagation:
+- `architecture.png`: Visual representation of your model
+- `shape_propagation.html`: Interactive tensor shape flow diagram
+- `tensor_flow.html`: Detailed tensor transformations
+
+### 4. Debug with NeuralDbg
+
+```bash
+neural debug mnist.neural
+```
+
+Open your browser to http://localhost:8050 to monitor execution traces, gradients, and anomalies interactively.
+
+### 5. Use the No-Code Interface
+
+```bash
+neural --no_code
+```
+
+Open your browser to http://localhost:8051 to build and compile models via a graphical interface.
+
+---
+
+## **🛠 Debugging with NeuralDbg**
+
+### **🔹 1️⃣ Start Real-Time Execution Tracing**
+```bash
+python neural.py debug mnist.neural
+```
+**Features:**
+✅ Layer-wise execution trace
+✅ Memory & FLOP profiling
+✅ Live performance monitoring
+
+### **🔹 2️⃣ Analyze Gradient Flow**
+```bash
+python neural.py debug --gradients mnist.neural
+```
+ **Detect vanishing/exploding gradients** with interactive charts.
+
+### **🔹 3️⃣ Identify Dead Neurons**
+```bash
+python neural.py debug --dead-neurons mnist.neural
+```
+🛠 **Find layers with inactive neurons (common in ReLU networks).**
+
+### **🔹 4️⃣ Detect Training Anomalies**
+```bash
+python neural.py debug --anomalies mnist.neural
+```
+ **Flag NaNs, weight explosions, and extreme activations.**
+
+### **🔹 5️⃣ Step Debugging (Interactive Tensor Inspection)**
+```bash
+python neural.py debug --step mnist.neural
+```
+🔍 **Pause execution at any layer and inspect tensors manually.**
+
+---
+
+##  Why Neural?
+
+| Feature               | Neural      | Raw TensorFlow/PyTorch |
+|-----------------------|-------------|-------------------------|
+| Shape Validation      | ✅ Auto     | ❌ Manual               |
+| Framework Switching   | 1-line flag | Days of rewriting       |
+| Architecture Diagrams | Built-in    | Third-party tools       |
+| Training Config       | Unified     | Fragmented configs      |
+
+
+### **🔄 Cross-Framework Code Generation**
+| Neural DSL          | TensorFlow Output          | PyTorch Output            |
+|---------------------|----------------------------|---------------------------|
+| `Conv2D(filters=32)`| `tf.keras.layers.Conv2D(32)`| `nn.Conv2d(in_channels, 32)` |
+| `Dense(units=128)`  | `tf.keras.layers.Dense(128)`| `nn.Linear(in_features, 128)`|
+
+##  Benchmarks
+| Task                 | Neural | Baseline (TF/PyTorch) |
+|----------------------|--------|-----------------------|
+| MNIST Training       | 1.2x ⚡| 1.0x                  |
+| Debugging Setup      | 5min 🕒| 2hr+                  |
+
+##  Documentation
+
+- [DSL Documentation](docs/dsl.md)
+- [Blog](docs/blog/README.md)
+
+Explore advanced features:
+- [Custom Layers Guide]()
+- [ONNX Export Tutorial]()
+- [Training Configuration]()
+- [NeuralDbg Debugging Features]()
+
+##  Examples
+
+Explore common use cases in `examples/` with step-by-step guides in `docs/examples/`:
+- [MNIST Classifier Guide](docs/examples/mnist_guide.md)
+- [Sentiment Analysis Guide](docs/examples/sentiment_guide.md)
+- [Transformer for NLP Guide](docs/examples/transformer_guide.md)
+
+## 🕸 Architecture Graphs
+
+![classes](https://github.com/Lemniscate-world/Neural/blob/main/classes.png)
+![packages](https://github.com/Lemniscate-world/Neural/blob/main/packages.png)
+
+*Note: You may need to zoom in to see details in these architecture diagrams.*
+
+
+
+---
+
+
+##  Contributing
+
+We welcome contributions! See our:
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Roadmap](ROADMAP.md)
+
+To set up a development environment:
+```bash
+git clone https://github.com/Lemniscate-world/Neural.git
+cd Neural
+pip install -r requirements-dev.txt  # Includes linter, formatter, etc.
+pre-commit install  # Auto-format code on commit
+```
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Lemniscate-world/Neural&type=Timeline)](https://www.star-history.com/#Lemniscate-world/Neural&Timeline)
+
+## Support
+
+If you find Neural useful, please consider supporting the project:
+
+- ⭐ **Star the repository**: Help us reach more developers by starring the project on GitHub
+- 🔄 **Share with others**: Spread the word on social media, blogs, or developer communities
+- 🐛 **Report issues**: Help us improve by reporting bugs or suggesting features
+- 🤝 **Contribute**: Submit pull requests to help us enhance Neural (see [Contributing](#contributing))
+
+### Repository Status
+
+This repository has been cleaned and optimized for better performance. Large files have been removed from the Git history to ensure a smoother experience when cloning or working with the codebase.
+
+## Community
+
+Join our growing community of developers and researchers:
+
+- [Discord Server](https://discord.gg/KFku4KvS): Chat with developers, get help, and share your projects
+- [Twitter @NLang4438](https://x.com/NLang4438): Follow for updates, announcements, and community highlights
+- [GitHub Discussions](https://github.com/Lemniscate-world/Neural/discussions): Participate in discussions about features, use cases, and best practices
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/9edd42b3-dd23-4f4a-baad-422e690d687c" alt="Neural Logo" width="150"/>
+  <p><em>Building the future of neural network development, one line of DSL at a time.</em></p>
+</div>
