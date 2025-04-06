@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.6] - 25-03-2025
+## [0.2.6] - 06-04-2025
 
 ### Added
 - **Enhanced Dashboard UI (#452)**: Improved NeuralDbg dashboard with a more aesthetic design using Dash Bootstrap dark theme and better visualization components.
