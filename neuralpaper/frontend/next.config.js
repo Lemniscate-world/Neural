@@ -1,5 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Disable CSS modules for Monaco Editor
+  webpack: (config, { isServer }) => {
+    // Fixes npm packages that depend on `fs` module
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+      };
+    }
+
+    return config;
+  },
   reactStrictMode: true,
   images: {
     domains: ['localhost', 'neuralpaper-api.onrender.com'],

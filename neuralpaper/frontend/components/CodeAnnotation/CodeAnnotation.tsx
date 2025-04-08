@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Editor from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiCode, FiInfo, FiBookOpen } from 'react-icons/fi';
-import * as monaco from 'monaco-editor';
+
+// Import Monaco Editor dynamically to avoid SSR issues
+const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
+
 
 interface CodeSection {
   id: string;
@@ -27,13 +30,10 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
   title,
 }) => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [codeLines, setCodeLines] = useState<string[]>([]);
+  // We don't need codeLines state anymore as we're using Monaco Editor
   const [hoveredLine, setHoveredLine] = useState<number | null>(null);
 
   useEffect(() => {
-    // Split code into lines
-    setCodeLines(code.split('\n'));
-
     // Set first section as active by default
     if (sections.length > 0 && !activeSection) {
       setActiveSection(sections[0].id);
@@ -58,7 +58,7 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
   };
 
   // Create editor decorations for highlighted sections
-  const createEditorDecorations = (editor: monaco.editor.IStandaloneCodeEditor | null) => {
+  const createEditorDecorations = (editor: any) => {
     if (!editor) return;
 
     // Clear existing decorations
@@ -68,6 +68,10 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
     // Create decorations for each section
     const decorations = sections.map(section => {
       const isActive = activeSection === section.id;
+      // Use the monaco instance from the editor
+      const monaco = (window as any).monaco;
+      if (!monaco) return null;
+
       return {
         range: new monaco.Range(
           section.lineStart,
@@ -86,33 +90,13 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
     });
 
     // Apply decorations
-    editor.deltaDecorations([], decorations);
+    editor.deltaDecorations([], decorations.filter(Boolean));
   };
 
-  // Determine if a line should be highlighted
-  const getLineHighlightStatus = (lineNumber: number): boolean => {
-    const active = getActiveSection();
-    if (!active) return false;
-    return lineNumber >= active.lineStart && lineNumber <= active.lineEnd;
-  };
-
-  // Get highlight intensity (for gradient effect)
-  const getHighlightIntensity = (lineNumber: number): number => {
-    const active = getActiveSection();
-    if (!active) return 0;
-    if (lineNumber < active.lineStart || lineNumber > active.lineEnd) return 0;
-
-    // Create a gradient effect with highest intensity in the middle
-    const totalLines = active.lineEnd - active.lineStart + 1;
-    const position = lineNumber - active.lineStart;
-    const normalizedPos = position / totalLines;
-
-    // Bell curve intensity (highest in the middle)
-    return Math.sin(normalizedPos * Math.PI) * 0.5 + 0.5;
-  };
+  // These functions are no longer needed as we're using Monaco Editor's decoration API
 
   // Handle editor mount
-  const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
+  const handleEditorDidMount = (editor: any) => {
     // Store editor reference
     editorRef.current = editor;
 
@@ -131,7 +115,7 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
     createEditorDecorations(editor);
 
     // Add mouse move event listener to detect hovered lines
-    editor.onMouseMove((e) => {
+    editor.onMouseMove((e: any) => {
       if (e.target.position) {
         const lineNumber = e.target.position.lineNumber;
         setHoveredLine(lineNumber);
@@ -139,7 +123,7 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
     });
 
     // Add click event listener to navigate to section
-    editor.onMouseDown((e) => {
+    editor.onMouseDown((e: any) => {
       if (e.target.position) {
         const lineNumber = e.target.position.lineNumber;
         const section = sections.find(
@@ -153,10 +137,9 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
   };
 
   // Editor reference
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<any>(null);
 
   // Scroll to active section
-  const codeRef = useRef<HTMLDivElement>(null);
   const annotationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -222,7 +205,7 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
             height="100%"
             defaultLanguage={language}
             value={code}
-            theme="vs-dark"
+            theme="neural-dark"
             options={{
               readOnly: true,
               minimap: { enabled: false },
