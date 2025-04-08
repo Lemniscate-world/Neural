@@ -465,7 +465,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
 
         basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
         layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION | GLOBALAVERAGEPOOLING2D | OUTPUT
-        ?param_style1:  hpo_param | params 
+        ?param_style1:  hpo_param | params
         hpo_param: hpo_expr | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
@@ -538,13 +538,13 @@ def safe_parse(parser, text):
     warnings = []
     # Extract the lexer from the parser
     lexer = parser.lexer
-    
+
     # Tokenize the input and log the stream
     logger.debug("Token stream:")
     tokens = list(lexer.lex(text))
     for token in tokens:
         logger.debug(f"Token: {token.type}('{token.value}') at line {token.line}, column {token.column}")
-    
+
     try:
         tree = parser.parse(text)
         logger.debug("Parse successful, tree generated.")
@@ -1474,9 +1474,9 @@ class ModelTransformer(lark.Transformer):
                 val = params[key]
                 if isinstance(val, (list, tuple)):
                     if not all(isinstance(v, int) and v > 0 for v in val):
-                        self.raise_validation_error(f"MaxPooling2D {key.strip("_")} must be positive integers, got {val}", items[0])
+                        self.raise_validation_error(f"MaxPooling2D {key.strip('_')} must be positive integers, got {val}", items[0])
                 elif not isinstance(val, int) or val <= 0:
-                    self.raise_validation_error(f"MaxPooling2D {key.strip("_")} must be a positive integer, got {val}", items[0])
+                    self.raise_validation_error(f"MaxPooling2D {key.strip('_')} must be a positive integer, got {val}", items[0])
 
         if 'pool_size' in params:
             pool_size = params['pool_size']
@@ -3138,14 +3138,14 @@ class ModelTransformer(lark.Transformer):
         elif hpo_str.startswith('range('):
             parts = [v.strip() for v in hpo_str[6:-1].split(',')]
             parsed = [self._parse_hpo_value(p) for p in parts]
-            
+
             # Handle step parameter if present
             if len(parts) >= 3:
                 step_part = parts[2]
                 if step_part.startswith('step='):
                     step_value = step_part[5:]  # Extract value after 'step='
                     parsed[2] = self._parse_hpo_value(step_value)
-            
+
             hpo_data = {'type': 'range', 'start': parsed[0], 'end': parsed[1]}
             if len(parsed) >= 3:
                 hpo_data['step'] = parsed[2]
