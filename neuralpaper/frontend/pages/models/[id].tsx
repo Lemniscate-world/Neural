@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Image from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
@@ -312,45 +311,45 @@ export default function ModelPage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="flex">
+          <div className="flex border-b border-gray-700">
             <button
               className={`flex-1 px-6 py-4 flex items-center justify-center space-x-2 transition-all duration-300 ${
                 activeTab === 'code'
-                  ? 'bg-neural-secondary bg-opacity-20 text-neural-secondary'
+                  ? 'bg-neural-secondary bg-opacity-20 text-neural-secondary border-b-2 border-neural-secondary'
                   : 'text-gray-400 hover:bg-neural-dark hover:bg-opacity-30 hover:text-white'
               }`}
               onClick={() => setActiveTab('code')}
             >
-              <FiCode className={activeTab === 'code' ? 'animate-pulse' : ''} />
-              <span>Annotated Code</span>
+              <FiCode className={activeTab === 'code' ? 'animate-pulse' : ''} size={18} />
+              <span className="font-medium">Annotated Code</span>
             </button>
             <button
               className={`flex-1 px-6 py-4 flex items-center justify-center space-x-2 transition-all duration-300 ${
                 activeTab === 'visualization'
-                  ? 'bg-neural-secondary bg-opacity-20 text-neural-secondary'
+                  ? 'bg-neural-secondary bg-opacity-20 text-neural-secondary border-b-2 border-neural-secondary'
                   : 'text-gray-400 hover:bg-neural-dark hover:bg-opacity-30 hover:text-white'
               }`}
               onClick={() => setActiveTab('visualization')}
             >
-              <FiEye className={activeTab === 'visualization' ? 'animate-pulse' : ''} />
-              <span>Visualization</span>
+              <FiEye className={activeTab === 'visualization' ? 'animate-pulse' : ''} size={18} />
+              <span className="font-medium">Visualization</span>
             </button>
             <button
               className={`flex-1 px-6 py-4 flex items-center justify-center space-x-2 transition-all duration-300 ${
                 activeTab === 'debug'
-                  ? 'bg-neural-secondary bg-opacity-20 text-neural-secondary'
+                  ? 'bg-neural-secondary bg-opacity-20 text-neural-secondary border-b-2 border-neural-secondary'
                   : 'text-gray-400 hover:bg-neural-dark hover:bg-opacity-30 hover:text-white'
               }`}
               onClick={() => setActiveTab('debug')}
             >
-              <FiTerminal className={activeTab === 'debug' ? 'animate-pulse' : ''} />
-              <span>Debug</span>
+              <FiTerminal className={activeTab === 'debug' ? 'animate-pulse' : ''} size={18} />
+              <span className="font-medium">Debug</span>
             </button>
           </div>
         </motion.div>
 
         <div className="content-container mb-16">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             {activeTab === 'code' && (
               <motion.div
                 key="code"
@@ -409,16 +408,35 @@ export default function ModelPage() {
                   </h3>
                 </div>
 
-                <div className="h-[700px]">
+                <div className="h-[700px] bg-neural-dark rounded-lg shadow-inner border border-gray-800 overflow-hidden">
                   {nodes.length > 0 ? (
                     <ModelViewer nodes={nodes} links={links} />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full">
-                      <div className="w-20 h-20 rounded-full bg-neural-dark flex items-center justify-center mb-4 animate-pulse">
-                        <FiEye className="text-4xl text-gray-500" />
+                      <div className="w-20 h-20 rounded-full bg-neural-primary flex items-center justify-center mb-4 animate-pulse">
+                        <FiEye className="text-4xl text-gray-400" />
                       </div>
-                      <p className="text-gray-400 text-lg">Visualization data not available</p>
-                      <p className="text-gray-500 text-sm mt-2 max-w-md text-center">The model structure could not be parsed for visualization. This may be due to an unsupported model type or syntax.</p>
+                      <p className="text-gray-300 text-lg font-medium">Visualization data not available</p>
+                      <p className="text-gray-400 text-sm mt-2 max-w-md text-center">The model structure could not be parsed for visualization. This may be due to an unsupported model type or syntax.</p>
+                      <button
+                        className="mt-6 px-4 py-2 bg-neural-secondary text-white rounded-md hover:bg-opacity-90 transition-all"
+                        onClick={() => {
+                          if (model) {
+                            try {
+                              axios.post('/api/parse', {
+                                code: model.dsl_code,
+                                backend: 'tensorflow',
+                              }).then(response => {
+                                createGraphData(response.data.model_data, response.data.shape_history);
+                              });
+                            } catch (err) {
+                              console.error('Failed to parse DSL:', err);
+                            }
+                          }
+                        }}
+                      >
+                        Retry Visualization
+                      </button>
                     </div>
                   )}
                 </div>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiCode, FiInfo, FiBookOpen } from 'react-icons/fi';
+import * as monaco from 'monaco-editor';
 
 interface CodeSection {
   id: string;
@@ -57,32 +57,36 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
     return sections.find((s) => s.id === activeSection) || null;
   };
 
-  // Render line numbers with highlighting
-  const renderLineNumbers = () => {
-    return (
-      <div className="line-numbers select-none pr-4 text-right text-gray-500 border-r border-gray-800">
-        {codeLines.map((_, i) => {
-          const lineNumber = i + 1;
-          const isHighlighted = getLineHighlightStatus(lineNumber);
-          const intensity = getHighlightIntensity(lineNumber);
+  // Create editor decorations for highlighted sections
+  const createEditorDecorations = (editor: monaco.editor.IStandaloneCodeEditor | null) => {
+    if (!editor) return;
 
-          return (
-            <div
-              key={i}
-              className={`line-number py-1 px-2 transition-colors duration-200 ${
-                isHighlighted ? 'text-white font-medium' : ''
-              }`}
-              style={{
-                backgroundColor: isHighlighted ? `rgba(233, 69, 96, ${intensity * 0.15})` : 'transparent',
-              }}
-              onMouseEnter={() => setHoveredLine(lineNumber)}
-            >
-              {lineNumber}
-            </div>
-          );
-        })}
-      </div>
-    );
+    // Clear existing decorations
+    const model = editor.getModel();
+    if (!model) return;
+
+    // Create decorations for each section
+    const decorations = sections.map(section => {
+      const isActive = activeSection === section.id;
+      return {
+        range: new monaco.Range(
+          section.lineStart,
+          1,
+          section.lineEnd,
+          model.getLineMaxColumn(section.lineEnd)
+        ),
+        options: {
+          isWholeLine: true,
+          className: isActive ? 'active-section-highlight' : 'section-highlight',
+          linesDecorationsClassName: isActive ? 'active-section-decoration' : 'section-decoration',
+          inlineClassName: isActive ? 'active-section-inline' : 'section-inline',
+          marginClassName: isActive ? 'active-section-margin' : 'section-margin'
+        }
+      };
+    });
+
+    // Apply decorations
+    editor.deltaDecorations([], decorations);
   };
 
   // Determine if a line should be highlighted
@@ -107,60 +111,76 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
     return Math.sin(normalizedPos * Math.PI) * 0.5 + 0.5;
   };
 
-  // Render code with line highlighting
-  const renderCode = () => {
-    return (
-      <div className="code-content relative flex-1 overflow-x-auto">
-        <SyntaxHighlighter
-          language={language}
-          style={vscDarkPlus}
-          showLineNumbers={false}
-          wrapLines={true}
-          lineProps={(lineNumber) => {
-            const isHighlighted = getLineHighlightStatus(lineNumber);
-            const intensity = getHighlightIntensity(lineNumber);
+  // Handle editor mount
+  const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    // Store editor reference
+    editorRef.current = editor;
 
-            return {
-              style: {
-                display: 'block',
-                backgroundColor: isHighlighted ? `rgba(62, 68, 113, ${0.2 + intensity * 0.3})` : undefined,
-                borderLeft: isHighlighted ? `3px solid rgba(233, 69, 96, ${0.7 + intensity * 0.3})` : undefined,
-                paddingLeft: isHighlighted ? '16px' : '19px',
-                transition: 'background-color 0.3s ease, border-left 0.3s ease',
-              },
-              onMouseEnter: () => setHoveredLine(lineNumber),
-            };
-          }}
-          customStyle={{
-            fontSize: '0.9rem',
-            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-          }}
-        >
-          {code}
-        </SyntaxHighlighter>
-      </div>
-    );
+    // Add custom CSS classes
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      .section-highlight { background-color: rgba(62, 68, 113, 0.1); }
+      .active-section-highlight { background-color: rgba(62, 68, 113, 0.2); }
+      .section-decoration { border-left: 2px solid rgba(233, 69, 96, 0.5); margin-left: 3px; }
+      .active-section-decoration { border-left: 3px solid rgba(233, 69, 96, 0.8); margin-left: 2px; }
+      .monaco-editor .line-numbers { font-family: 'JetBrains Mono', 'Fira Code', monospace !important; }
+    `;
+    document.head.appendChild(styleElement);
+
+    // Create decorations
+    createEditorDecorations(editor);
+
+    // Add mouse move event listener to detect hovered lines
+    editor.onMouseMove((e) => {
+      if (e.target.position) {
+        const lineNumber = e.target.position.lineNumber;
+        setHoveredLine(lineNumber);
+      }
+    });
+
+    // Add click event listener to navigate to section
+    editor.onMouseDown((e) => {
+      if (e.target.position) {
+        const lineNumber = e.target.position.lineNumber;
+        const section = sections.find(
+          (s) => lineNumber >= s.lineStart && lineNumber <= s.lineEnd
+        );
+        if (section) {
+          setActiveSection(section.id);
+        }
+      }
+    });
   };
+
+  // Editor reference
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
   // Scroll to active section
   const codeRef = useRef<HTMLDivElement>(null);
   const annotationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (activeSection && codeRef.current && annotationRef.current) {
+    if (activeSection && editorRef.current && annotationRef.current) {
       const section = getActiveSection();
       if (section) {
         // Scroll code panel to active section
-        const lineElements = codeRef.current.querySelectorAll('.line-number');
-        if (lineElements.length >= section.lineStart) {
-          lineElements[section.lineStart - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        editorRef.current.revealLineInCenter(section.lineStart);
+
+        // Update decorations
+        createEditorDecorations(editorRef.current);
 
         // Scroll annotation panel to top
         annotationRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
   }, [activeSection]);
+
+  // Update decorations when sections or active section changes
+  useEffect(() => {
+    if (editorRef.current) {
+      createEditorDecorations(editorRef.current);
+    }
+  }, [sections, activeSection]);
 
   // Animation variants
   const containerVariants = {
@@ -195,17 +215,35 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full">
         {/* Code panel */}
-        <div className="code-panel w-full lg:w-1/2 overflow-auto bg-[#1E1E2E] text-white border-r border-gray-800" ref={codeRef}>
-          <div className="code-container flex min-h-[500px]">
-            {renderLineNumbers()}
-            {renderCode()}
-          </div>
+        <div className="code-panel h-[500px] bg-[#1E1E2E] text-white border-r border-gray-800">
+          <Editor
+            height="100%"
+            defaultLanguage={language}
+            value={code}
+            theme="vs-dark"
+            options={{
+              readOnly: true,
+              minimap: { enabled: false },
+              fontSize: 14,
+              wordWrap: 'on',
+              scrollBeyondLastLine: false,
+              lineNumbers: 'on',
+              glyphMargin: true,
+              folding: true,
+              lineDecorationsWidth: 10,
+              renderLineHighlight: 'none',
+              automaticLayout: true,
+              fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+              fontLigatures: true
+            }}
+            onMount={handleEditorDidMount}
+          />
         </div>
 
         {/* Annotation panel */}
-        <div className="annotation-panel w-full lg:w-1/2 bg-neural-primary p-6 overflow-auto min-h-[500px]" ref={annotationRef}>
+        <div className="annotation-panel bg-neural-primary p-6 overflow-auto h-[500px]" ref={annotationRef}>
           {getActiveSection() ? (
             <motion.div
               className="annotation-content"
@@ -251,7 +289,13 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
                 ? 'bg-neural-secondary text-white shadow-lg'
                 : 'bg-neural-dark bg-opacity-50 text-gray-300 hover:bg-opacity-70'
             }`}
-            onClick={() => setActiveSection(section.id)}
+            onClick={() => {
+              setActiveSection(section.id);
+              // Scroll to the section in the editor
+              if (editorRef.current) {
+                editorRef.current.revealLineInCenter(section.lineStart);
+              }
+            }}
             variants={itemVariants}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -259,7 +303,7 @@ const CodeAnnotation: React.FC<CodeAnnotationProps> = ({
             <span className="w-5 h-5 rounded-full bg-neural-dark flex items-center justify-center mr-2 text-xs">
               {index + 1}
             </span>
-            {`Lines ${section.lineStart}-${section.lineEnd}`}
+            <span className="whitespace-nowrap">{`Lines ${section.lineStart}-${section.lineEnd}`}</span>
           </motion.button>
         ))}
       </div>

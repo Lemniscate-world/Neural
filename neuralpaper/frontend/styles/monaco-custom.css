@@ -1,0 +1,62 @@
+/* Custom styles for Monaco Editor integration */
+
+/* Section highlighting */
+.section-highlight {
+  background-color: rgba(62, 68, 113, 0.1);
+}
+
+.active-section-highlight {
+  background-color: rgba(62, 68, 113, 0.2);
+}
+
+/* Line decoration (left border) */
+.section-decoration {
+  border-left: 2px solid rgba(233, 69, 96, 0.5) !important;
+  margin-left: 3px;
+}
+
+.active-section-decoration {
+  border-left: 3px solid rgba(233, 69, 96, 0.8) !important;
+  margin-left: 2px;
+}
+
+/* Margin decoration (line number area) */
+.section-margin {
+  background-color: rgba(233, 69, 96, 0.1);
+}
+
+.active-section-margin {
+  background-color: rgba(233, 69, 96, 0.2);
+}
+
+/* Font settings */
+.monaco-editor, 
+.monaco-editor .line-numbers {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+}
+
+/* Fix line number alignment */
+.monaco-editor .margin-view-overlays .line-numbers {
+  text-align: right !important;
+  padding-right: 8px !important;
+}
+
+/* Improve contrast for line numbers */
+.monaco-editor .margin-view-overlays .line-numbers {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Improve active line number visibility */
+.monaco-editor .current-line ~ .line-numbers {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-weight: bold;
+}
+
+/* Fix scrollbar styling */
+.monaco-editor .monaco-scrollable-element .scrollbar {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.monaco-editor .monaco-scrollable-element .slider {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}

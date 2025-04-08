@@ -71,19 +71,21 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ nodes, links, onNodeClick }) 
 
     // Add a subtle grid pattern
     container.append('rect')
-      .attr('width', dimensions.width)
-      .attr('height', dimensions.height)
+      .attr('width', dimensions.width * 2) // Make grid larger than viewport
+      .attr('height', dimensions.height * 2)
+      .attr('x', -dimensions.width / 2) // Center the grid
+      .attr('y', -dimensions.height / 2)
       .attr('fill', 'none')
       .attr('class', 'bg-grid-pattern');
 
     // Set up the simulation with more realistic forces
     const simulation = d3.forceSimulation<Node>(nodes)
       .force("link", d3.forceLink<Node, Link>(links).id(d => d.id).distance(150))
-      .force("charge", d3.forceManyBody().strength(-500))
+      .force("charge", d3.forceManyBody().strength(-800)) // Stronger repulsion
       .force("center", d3.forceCenter(dimensions.width / 2, dimensions.height / 2))
-      .force("x", d3.forceX(dimensions.width / 2).strength(0.05))
-      .force("y", d3.forceY(dimensions.height / 2).strength(0.05))
-      .force("collision", d3.forceCollide().radius(d => getNodeSize(d) * 1.5));
+      .force("x", d3.forceX(dimensions.width / 2).strength(0.1)) // Stronger centering
+      .force("y", d3.forceY(dimensions.height / 2).strength(0.1)) // Stronger centering
+      .force("collision", d3.forceCollide().radius(d => getNodeSize(d) * 2)); // Larger collision radius
 
     // Create the links with gradient and animation
     const link = container.append("g")
@@ -211,9 +213,9 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ nodes, links, onNodeClick }) 
 
       // Update node positions with boundary constraints
       node.attr("transform", d => {
-        // Keep nodes within boundaries
-        d.x = Math.max(50, Math.min(dimensions.width - 50, d.x || 0));
-        d.y = Math.max(50, Math.min(dimensions.height - 50, d.y || 0));
+        // Keep nodes within boundaries with more padding
+        d.x = Math.max(80, Math.min(dimensions.width - 80, d.x || 0));
+        d.y = Math.max(80, Math.min(dimensions.height - 80, d.y || 0));
         return `translate(${d.x},${d.y})`;
       });
 
@@ -356,30 +358,30 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ nodes, links, onNodeClick }) 
       </div>
 
       {/* Legend */}
-      <div className="absolute top-4 left-4 z-10 bg-neural-primary bg-opacity-70 p-3 rounded-lg">
+      <div className="absolute top-4 left-4 z-10 bg-neural-primary bg-opacity-80 p-3 rounded-lg shadow-lg border border-gray-700">
         <h4 className="text-xs font-semibold mb-2 text-white">Layer Types</h4>
-        <div className="flex flex-col space-y-1">
+        <div className="flex flex-col space-y-1 max-h-[200px] overflow-y-auto pr-2">
           {nodeTypes.map(type => (
             <div key={type} className="flex items-center text-xs">
               <div
-                className="w-3 h-3 rounded-full mr-2"
+                className="w-3 h-3 rounded-full mr-2 flex-shrink-0"
                 style={{ backgroundColor: colorScale(type) }}
               />
-              <span className="text-white">{type}</span>
+              <span className="text-white truncate">{type}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Zoom indicator */}
-      <div className="absolute bottom-4 left-4 z-10 bg-neural-primary bg-opacity-70 px-2 py-1 rounded text-xs text-white">
+      <div className="absolute bottom-4 left-4 z-10 bg-neural-primary bg-opacity-80 px-3 py-1.5 rounded-md shadow-md border border-gray-700 text-xs font-medium text-white">
         {Math.round(zoom * 100)}%
       </div>
 
       {/* SVG container */}
       <svg
         ref={svgRef}
-        className="w-full h-full bg-neural-dark rounded-lg"
+        className="w-full h-full bg-neural-dark rounded-lg shadow-inner border border-gray-800"
         width={dimensions.width}
         height={dimensions.height}
       />
@@ -392,11 +394,11 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ nodes, links, onNodeClick }) 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
             transition={{ duration: 0.2 }}
-            className="absolute z-20 bg-neural-primary bg-opacity-90 p-3 rounded-lg shadow-lg max-w-xs pointer-events-none"
+            className="absolute z-20 bg-neural-primary bg-opacity-95 p-3 rounded-lg shadow-xl border border-gray-700 max-w-xs pointer-events-none"
             style={{
-              left: (hoveredNode.x || 0) + dimensions.width / 2,
-              top: (hoveredNode.y || 0) + dimensions.height / 2 - 80,
-              transform: 'translate(-50%, -100%)'
+              left: Math.min(Math.max((hoveredNode.x || 0), 100), dimensions.width - 100),
+              top: Math.max((hoveredNode.y || 0) - 80, 20),
+              transform: 'translateX(-50%)'
             }}
           >
             <h3 className="text-sm font-semibold text-white">{hoveredNode.type}</h3>
