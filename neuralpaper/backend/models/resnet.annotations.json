@@ -1,0 +1,37 @@
+{
+  "model_id": "resnet",
+  "name": "ResNet-18",
+  "description": "Deep Residual Network with skip connections for image classification",
+  "sections": [
+    {
+      "id": "section1",
+      "lineStart": 1,
+      "lineEnd": 7,
+      "annotation": "# Initial Layers\n\nThe ResNet architecture begins with standard convolutional layers that reduce spatial dimensions while increasing the number of channels.\n\n- **Input**: 224×224×3 RGB image\n- **Conv2D**: Large 7×7 kernel with stride 2 reduces spatial dimensions to 112×112 while creating 64 feature maps\n- **MaxPooling2D**: Further downsamples to 56×56\n\nThis initial downsampling is computationally efficient and creates a feature representation for the residual blocks to refine."
+    },
+    {
+      "id": "section2",
+      "lineStart": 8,
+      "lineEnd": 21,
+      "annotation": "# Residual Blocks\n\nThe key innovation in ResNet is the **residual connection** (or skip connection), which allows gradients to flow directly through the network.\n\nEach residual block follows this pattern:\n```\nx → Conv → ReLU → Conv → + → ReLU\n↓                         ↑\n└─────────────────────────┘\n```\n\nThe identity shortcut (x) is added to the output of the convolutions before the final ReLU activation. This helps with:\n\n1. **Vanishing gradients**: Provides a direct path for gradients during backpropagation\n2. **Optimization**: Makes it easier to learn identity mappings when needed\n3. **Deep networks**: Enables training of much deeper networks (50+ layers)\n\nThese first two blocks maintain the same dimensions (56×56×64)."
+    },
+    {
+      "id": "section3",
+      "lineStart": 22,
+      "lineEnd": 31,
+      "annotation": "# Dimension Transition Block\n\nThis special residual block changes both spatial dimensions and channel depth:\n\n- Spatial dimensions: 56×56 → 28×28 (using stride 2)\n- Channel depth: 64 → 128 filters\n\nWhen dimensions change, the shortcut connection needs a projection to match dimensions. This is done with a 1×1 convolution that:\n1. Increases channels from 64 to 128\n2. Reduces spatial dimensions with stride 2\n\nThe 1×1 convolution is parameter-efficient while allowing the network to learn how to best project the input to the new dimension space."
+    },
+    {
+      "id": "section4",
+      "lineStart": 32,
+      "lineEnd": 41,
+      "annotation": "# Final Layers\n\nAfter several residual blocks, the network has learned a rich feature hierarchy. The final layers:\n\n1. **Additional Residual Block**: Further refines the 28×28×128 feature maps\n2. **GlobalAveragePooling2D**: Reduces each feature map to a single value, creating a 128-dimensional vector\n   - More parameter-efficient than flattening\n   - Provides some translation invariance\n3. **Dense Layer**: Maps the 128 features to 1000 class probabilities (for ImageNet)\n   - Softmax activation ensures outputs sum to 1\n\nThe full ResNet-18 has more blocks and transitions to 256 and 512 filters, but this simplified version captures the core architecture."
+    },
+    {
+      "id": "section5",
+      "lineStart": 42,
+      "lineEnd": 45,
+      "annotation": "# Training Configuration\n\nThe model is configured for image classification with:\n\n- **Loss**: Categorical cross-entropy is the standard loss function for multi-class classification\n- **Optimizer**: Adam with learning rate 0.001\n  - Adaptive learning rate that combines the benefits of:\n    - RMSProp (handling sparse gradients)\n    - Momentum (accelerating convergence)\n- **Metrics**: Accuracy is tracked during training\n\nFor ResNet training, the original paper used SGD with momentum and learning rate decay, but Adam often converges faster for many applications."
+    }
+  ]
+}

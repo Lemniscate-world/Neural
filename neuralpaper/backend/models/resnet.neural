@@ -1,0 +1,46 @@
+network ResNet18 {
+  input: (224, 224, 3)
+  layers:
+    # Initial convolution
+    Conv2D(filters=64, kernel_size=(7,7), strides=(2,2), padding="same", activation="relu")
+    MaxPooling2D(pool_size=(3,3), strides=(2,2), padding="same")
+    
+    # Residual block 1
+    ResidualConnection {
+      Conv2D(filters=64, kernel_size=(3,3), padding="same", activation="relu")
+      Conv2D(filters=64, kernel_size=(3,3), padding="same")
+    }
+    Activation("relu")
+    
+    # Residual block 2
+    ResidualConnection {
+      Conv2D(filters=64, kernel_size=(3,3), padding="same", activation="relu")
+      Conv2D(filters=64, kernel_size=(3,3), padding="same")
+    }
+    Activation("relu")
+    
+    # Transition to 128 filters
+    ResidualConnection {
+      Conv2D(filters=128, kernel_size=(3,3), strides=(2,2), padding="same", activation="relu")
+      Conv2D(filters=128, kernel_size=(3,3), padding="same")
+      
+      # Shortcut connection with projection
+      Conv2D(filters=128, kernel_size=(1,1), strides=(2,2), padding="same")
+    }
+    Activation("relu")
+    
+    # Residual block 3
+    ResidualConnection {
+      Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu")
+      Conv2D(filters=128, kernel_size=(3,3), padding="same")
+    }
+    Activation("relu")
+    
+    # Global pooling and output
+    GlobalAveragePooling2D()
+    Dense(units=1000, activation="softmax")
+  
+  loss: "categorical_crossentropy"
+  optimizer: Adam(learning_rate=0.001)
+  metrics: ["accuracy"]
+}

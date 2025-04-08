@@ -1,0 +1,30 @@
+services:
+  # Backend API service
+  - type: web
+    name: neuralpaper-api
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && gunicorn -w 4 -k uvicorn.workers.UvicornWorker api.main:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: NEURAL_ENV
+        value: production
+    healthCheckPath: /
+    autoDeploy: true
+
+  # Frontend service (optional - you can also deploy this on Vercel)
+  - type: web
+    name: neuralpaper-frontend
+    env: node
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 16.13.0
+      - key: API_URL
+        fromService:
+          name: neuralpaper-api
+          type: web
+          property: url
+    autoDeploy: true
