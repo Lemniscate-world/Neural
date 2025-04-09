@@ -32,6 +32,13 @@ setup.py
 ./neural/training/__init__.py
 ./neural/training/device.py
 ./neural/training/training.py
+./neuralpaper/__init__.py
+./neuralpaper/backend/__init__.py
+./neuralpaper/backend/api/__init__.py
+./neuralpaper/backend/api/main.py
+./neuralpaper/backend/integrations/__init__.py
+./neuralpaper/backend/integrations/mock_connector.py
+./neuralpaper/backend/integrations/neural_connector.py
 neural/__init__.py
 neural/cli.py
 neural/example_tensorflow.py
@@ -69,6 +76,13 @@ neural_dsl.egg-info/dependency_links.txt
 neural_dsl.egg-info/entry_points.txt
 neural_dsl.egg-info/requires.txt
 neural_dsl.egg-info/top_level.txt
+neuralpaper/__init__.py
+neuralpaper/backend/__init__.py
+neuralpaper/backend/api/__init__.py
+neuralpaper/backend/api/main.py
+neuralpaper/backend/integrations/__init__.py
+neuralpaper/backend/integrations/mock_connector.py
+neuralpaper/backend/integrations/neural_connector.py
 tests/test_device_execution.py
 tests/test_error_handling.py
 tests/test_parser.py

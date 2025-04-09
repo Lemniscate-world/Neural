@@ -19,7 +19,7 @@ const nextConfig = {
   },
   async rewrites() {
     // Get API URL from environment variable or use localhost as default
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002';
     console.log(`Using API URL: ${apiUrl}`);
 
     return [

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import axios from 'axios';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import dynamic from 'next/dynamic';
-import { FiCode, FiEye, FiTerminal, FiArrowLeft, FiInfo, FiDownload, FiShare2 } from 'react-icons/fi';
+import { FiCode, FiEye, FiTerminal, FiArrowLeft, FiInfo, FiDownload, FiShare2, FiExternalLink } from 'react-icons/fi';
 
 // Import components
 import CodeAnnotation from '../../components/CodeAnnotation/CodeAnnotation';
@@ -55,6 +55,7 @@ export default function ModelPage() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
   const [codeSections, setCodeSections] = useState<CodeSection[]>([]);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // Fetch model data
   useEffect(() => {
@@ -76,23 +77,45 @@ export default function ModelPage() {
         setModel(modelData);
 
         // Parse annotations into sections
-        if (Array.isArray(modelData.annotations)) {
-          setCodeSections(modelData.annotations as CodeSection[]);
+        if (modelData.annotations) {
+          setDebugInfo(JSON.stringify(modelData.annotations, null, 2));
+
+          if (Array.isArray(modelData.annotations.sections)) {
+            // New format with sections array inside annotations object
+            setCodeSections(modelData.annotations.sections as CodeSection[]);
+          } else if (Array.isArray(modelData.annotations)) {
+            // Old format with annotations as array
+            setCodeSections(modelData.annotations as CodeSection[]);
+          } else {
+            console.error('Unexpected annotations format:', modelData.annotations);
+            setCodeSections([]);
+          }
         } else {
+          console.error('No annotations found in model data');
           setCodeSections([]);
         }
 
         // Parse DSL to get visualization data
         try {
-          const response = await axios.post('/api/parse', {
-            code: modelData.dsl_code,
-            backend: 'tensorflow',
-          });
+          // Add a small delay to ensure the model data is fully loaded
+          setTimeout(async () => {
+            try {
+              console.log('Parsing DSL code:', modelData.dsl_code.substring(0, 100) + '...');
+              const response = await axios.post('/api/parse', {
+                code: modelData.dsl_code,
+                backend: 'tensorflow',
+              });
 
-          // Create nodes and links for visualization
-          createGraphData(response.data.model_data, response.data.shape_history);
+              console.log('Parse response received:', response.data);
+              // Create nodes and links for visualization
+              createGraphData(response.data.model_data, response.data.shape_history);
+            } catch (err) {
+              console.error('Failed to parse DSL:', err);
+              // Continue without visualization data
+            }
+          }, 500);
         } catch (err) {
-          console.error('Failed to parse DSL:', err);
+          console.error('Error in DSL parsing setup:', err);
           // Continue without visualization data
         }
 
@@ -418,16 +441,38 @@ export default function ModelPage() {
                       </div>
                       <p className="text-gray-300 text-lg font-medium">Visualization data not available</p>
                       <p className="text-gray-400 text-sm mt-2 max-w-md text-center">The model structure could not be parsed for visualization. This may be due to an unsupported model type or syntax.</p>
+
+                      {debugInfo && (
+                        <div className="mt-4 p-4 bg-gray-800 rounded-md w-full max-w-md overflow-auto max-h-[200px] text-xs">
+                          <div className="flex items-center mb-2 text-neural-secondary">
+                            <FiInfo className="mr-1" />
+                            <span>Debug Information</span>
+                          </div>
+                          <pre className="text-gray-300 whitespace-pre-wrap">
+                            {debugInfo}
+                          </pre>
+                        </div>
+                      )}
+
                       <button
                         className="mt-6 px-4 py-2 bg-neural-secondary text-white rounded-md hover:bg-opacity-90 transition-all"
                         onClick={() => {
                           if (model) {
                             try {
+                              console.log('Manually parsing DSL code:', model.dsl_code.substring(0, 100) + '...');
                               axios.post('/api/parse', {
                                 code: model.dsl_code,
                                 backend: 'tensorflow',
                               }).then(response => {
+                                console.log('Parse response received:', response.data);
                                 createGraphData(response.data.model_data, response.data.shape_history);
+                              }).catch(err => {
+                                console.error('Manual parse failed:', err);
+                                setDebugInfo(JSON.stringify({
+                                  error: err.message,
+                                  response: err.response?.data,
+                                  status: err.response?.status
+                                }, null, 2));
                               });
                             } catch (err) {
                               console.error('Failed to parse DSL:', err);

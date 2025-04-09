@@ -156,9 +156,10 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         TIMEDISTRIBUTED: "timedistributed"i
         RESIDUALCONNECTION: "residualconnection"i
         GLOBALAVERAGEPOOLING2D: "globalaveragepooling2d"i
+        GLOBALAVERAGEPOOLING1D: "globalaveragepooling1d"i
 
         // Layer type tokens (case-insensitive)
-        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i | "add"i | "subtract"i | "multiply"i | "average"i | "maximum"i | "concatenate"i | "dot"i | "timedistributed"i | "residualconnection"i | "globalaveragepooling2d"i
+        LAYER_TYPE.2: "dense"i | "conv2d"i | "conv1d"i | "conv3d"i | "dropout"i | "flatten"i | "lstm"i | "gru"i | "simplernndropoutwrapper"i | "simplernn"i | "output"i| "transformer"i | "transformerencoder"i | "transformerdecoder"i | "conv2dtranspose"i | "maxpooling2d"i | "maxpooling1d"i | "maxpooling3d"i | "batchnormalization"i | "gaussiannoise"i | "instancenormalization"i | "groupnormalization"i | "activation"i | "add"i | "subtract"i | "multiply"i | "average"i | "maximum"i | "concatenate"i | "dot"i | "timedistributed"i | "residualconnection"i | "globalaveragepooling2d"i | "globalaveragepooling1d"i
 
         // Basic tokens
         NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
@@ -464,7 +465,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         macro_ref: MACRO_NAME "(" [param_style1] ")" [layer_block]
 
         basic_layer: layer_type "(" [param_style1] ")" [device_spec] [layer_block]
-        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION | GLOBALAVERAGEPOOLING2D | OUTPUT
+        layer_type: DENSE | CONV2D | CONV1D | CONV3D | DROPOUT | FLATTEN | LSTM | GRU | SIMPLE_RNN_DROPOUT_WRAPPER | SIMPLERNN | OUTPUT | TRANSFORMER | TRANSFORMER_ENCODER | TRANSFORMER_DECODER | CONV2DTRANSPOSE | LSTMCELL | GRUCELL | MAXPOOLING1D | MAXPOOLING2D | MAXPOOLING3D | BATCHNORMALIZATION | GAUSSIANNOISE | LAYERNORMALIZATION | INSTANCENORMALIZATION | GROUPNORMALIZATION | ACTIVATION | ADD | SUBSTRACT | MULTIPLY | AVERAGE | MAXIMUM | CONCATENATE | DOT | TIMEDISTRIBUTED | RESIDUALCONNECTION | GLOBALAVERAGEPOOLING2D | GLOBALAVERAGEPOOLING1D | OUTPUT
         ?param_style1:  hpo_param | params
         hpo_param: hpo_expr | hpo_with_params
         params: param ("," param)*
@@ -641,6 +642,7 @@ class ModelTransformer(lark.Transformer):
             'TIMEDISTRIBUTED': 'timedistributed',
             'RESIDUALCONNECTION': 'residual',
             'GLOBALAVERAGEPOOLING2D': 'global_average_pooling2d',
+            'GLOBALAVERAGEPOOLING1D': 'global_average_pooling1d',
         }
         self.hpo_params = []
 
@@ -1537,11 +1539,11 @@ class ModelTransformer(lark.Transformer):
         return {'type': 'GlobalMaxPooling3D', 'params': self._extract_value(items[0])}
 
     def global_average_pooling1d(self, items):
-        return {'type': 'GlobalAveragePooling1D', 'params': self._extract_value(items[0])}
+        params = self._extract_value(items[0]) if items else {}
+        return {'type': 'GlobalAveragePooling1D', 'params': params or {}, 'sublayers': []}
 
     def global_average_pooling2d(self, items):
-        params = self._extract_value(items[0]) if items else {}
-        return {'type': 'GlobalAveragePooling2D', 'params': params or {}, 'sublayers': []}
+        return {'type': 'GlobalAveragePooling2D', 'params': self._extract_value(items[0])}
 
     def global_average_pooling3d(self, items):
         return {'type': 'GlobalAveragePooling3D', 'params': self._extract_value(items[0])}
