@@ -47,16 +47,16 @@ def create_dynamic_model(model_dict, trial, hpo_params, backend='pytorch'):
                         layer['params'][param_name] = trial.suggest_categorical(f"{layer['type']}_{param_name}", hpo['values'])
                     elif hpo['type'] == 'range':
                         layer['params'][param_name] = trial.suggest_float(
-                            f"{layer['type']}_{param_name}", 
-                            hpo['start'], 
-                            hpo['end'], 
+                            f"{layer['type']}_{param_name}",
+                            hpo['start'],
+                            hpo['end'],
                             step=hpo.get('step', None)
                         )
                     elif hpo['type'] == 'log_range':
                         layer['params'][param_name] = trial.suggest_float(
-                            f"{layer['type']}_{param_name}", 
-                            hpo['low'], 
-                            hpo['high'], 
+                            f"{layer['type']}_{param_name}",
+                            hpo['low'],
+                            hpo['high'],
                             log=True
                         )
 
@@ -67,9 +67,9 @@ def create_dynamic_model(model_dict, trial, hpo_params, backend='pytorch'):
                 hpo = param_value['hpo']
                 if hpo['type'] == 'log_range':
                     resolved_model_dict['optimizer']['params'][param_name] = trial.suggest_float(
-                        f"opt_{param_name}", 
-                        hpo['low'], 
-                        hpo['high'], 
+                        f"opt_{param_name}",
+                        hpo['low'],
+                        hpo['high'],
                         log=True
                     )
 
@@ -78,7 +78,7 @@ def create_dynamic_model(model_dict, trial, hpo_params, backend='pytorch'):
         return DynamicPTModel(resolved_model_dict, trial, hpo_params)
     else:
         raise ValueError(f"Unsupported backend: {backend}")
-    
+
 
 def resolve_hpo_params(model_dict, trial, hpo_params):
     import copy
@@ -86,7 +86,7 @@ def resolve_hpo_params(model_dict, trial, hpo_params):
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__name__)
     resolved_dict = copy.deepcopy(model_dict)
-    
+
     # logger.debug(f"Original layers: {resolved_dict['layers']}")
     for i, layer in enumerate(resolved_dict['layers']):
         if 'params' in layer and layer['params'] is not None and 'units' in layer['params'] and isinstance(layer['params']['units'], dict) and 'hpo' in layer['params']['units']:
@@ -97,14 +97,14 @@ def resolve_hpo_params(model_dict, trial, hpo_params):
             elif hpo['type'] == 'log_range':
                 layer['params']['units'] = trial.suggest_float(key, hpo['low'], hpo['high'], log=True)
             # logger.debug(f"Layer {i} resolved units: {layer['params']['units']}")
-    
+
     if resolved_dict['optimizer'] and 'params' in resolved_dict['optimizer']:
         # Clean up optimizer type
         opt_type = resolved_dict['optimizer']['type']
         if '(' in opt_type:
             resolved_dict['optimizer']['type'] = opt_type[:opt_type.index('(')].capitalize()  # 'adam(...)' -> 'Adam'
         # logger.debug(f"Cleaned optimizer type: {resolved_dict['optimizer']['type']}")
-        
+
         for param, val in resolved_dict['optimizer']['params'].items():
             if isinstance(val, dict) and 'hpo' in val:
                 hpo = val['hpo']
@@ -113,7 +113,7 @@ def resolve_hpo_params(model_dict, trial, hpo_params):
                         f"opt_{param}", hpo['low'], hpo['high'], log=True
                     )
                 # logger.debug(f"Optimizer resolved {param}: {resolved_dict['optimizer']['params'][param]}")
-    
+
     # logger.debug(f"Resolved dict: {resolved_dict}")
     return resolved_dict
 
@@ -213,7 +213,7 @@ class DynamicPTModel(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return x
-    
+
 class DynamicTFModel(tf.keras.Model):
     def __init__(self, model_dict, trial, hpo_params):
         super().__init__()
@@ -277,15 +277,15 @@ def train_model(model, optimizer, train_loader, val_loader, backend='pytorch', e
                 total += target.size(0)
                 preds.extend(pred.cpu().numpy())
                 targets.extend(target.cpu().numpy())
-        
+
         # Compute precision and recall
         preds_np = np.array(preds)
         targets_np = np.array(targets)
         precision = precision_score(targets_np, preds_np, average='macro')
         recall = recall_score(targets_np, preds_np, average='macro')
-        
+
         return val_loss / len(val_loader), correct / total, precision, recall
-    
+
 
 # HPO Objective
 def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
@@ -294,10 +294,10 @@ def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
     train_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, True)
     val_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, False)
-    
+
     model = create_dynamic_model(model_dict, trial, hpo_params, backend)
     optimizer_config = model.model_dict['optimizer']
-    
+
     learning_rate_param = optimizer_config['params'].get('learning_rate', 0.001)
     if isinstance(learning_rate_param, dict) and 'hpo' in learning_rate_param:
         hpo = learning_rate_param['hpo']
@@ -307,10 +307,10 @@ def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
             lr = float(learning_rate_param)
     else:
         lr = float(learning_rate_param)
-    
+
     if backend == 'pytorch':
         optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
-    
+
     # Pass optimizer correctly
     loss, acc, precision, recall = train_model(model, optimizer, train_loader, val_loader, backend=backend)
     return loss, acc, precision, recall
@@ -320,15 +320,15 @@ def objective(trial, config, dataset_name='MNIST', backend='pytorch'):
 # Optimize and Return
 def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pytorch'):
     study = optuna.create_study(directions=["minimize", "minimize", "maximize", "maximize"])
-    
+
     def objective_wrapper(trial):
         # Parse the config once per trial
         model_dict, hpo_params = ModelTransformer().parse_network_with_hpo(config)
-        
+
         # Resolve batch_size from training_config or HPO
         training_config = model_dict.get('training_config', {})
         batch_size = training_config.get('batch_size', 32)  # Default if not specified
-        
+
         if isinstance(batch_size, dict) and 'hpo' in batch_size:
             hpo = batch_size['hpo']
             if hpo['type'] == 'categorical':
@@ -339,34 +339,34 @@ def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pyto
                 batch_size = trial.suggest_int("batch_size", hpo['low'], hpo['high'], log=True)
         elif isinstance(batch_size, list):
             batch_size = trial.suggest_categorical("batch_size", batch_size)
-        
+
         # Ensure batch_size is an integer
         batch_size = int(batch_size)
-        
+
         train_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, True, backend)
         val_loader = get_data(dataset_name, model_dict['input']['shape'], batch_size, False, backend)
-        
+
         # Create model and resolve all HPO parameters in one place
         model = create_dynamic_model(model_dict, trial, hpo_params, backend)
-        
+
         # Get optimizer configuration from resolved model_dict, default if None
         optimizer_config = model.model_dict['optimizer']
         if optimizer_config is None:
             optimizer_config = {'type': 'Adam', 'params': {'learning_rate': 0.001}}
         elif 'params' not in optimizer_config or not optimizer_config['params']:
             optimizer_config['params'] = {'learning_rate': 0.001}
-        
+
         lr = optimizer_config['params']['learning_rate']  # Already resolved by create_dynamic_model or default
-        
+
         if backend == 'pytorch':
             optimizer = getattr(optim, optimizer_config['type'])(model.parameters(), lr=lr)
-        
+
         # Train and evaluate
         loss, acc, precision, recall = train_model(model, optimizer, train_loader, val_loader, backend=backend)
         return loss, acc, precision, recall
 
     study.optimize(objective_wrapper, n_trials=n_trials)
-    
+
     # Normalize the best parameters
     best_params = study.best_trials[0].params
     normalized_params = {
@@ -380,5 +380,5 @@ def optimize_and_return(config, n_trials=10, dataset_name='MNIST', backend='pyto
         normalized_params['learning_rate'] = best_params['opt_learning_rate']
     else:
         normalized_params['learning_rate'] = 0.001  # Default from optimizer_config
-    
+
     return normalized_params

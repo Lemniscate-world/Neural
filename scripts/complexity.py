@@ -42,7 +42,7 @@ def analyze_all_files():
     ]
     if not py_files:
         return [{"file": "No Python files found", "avg_complexity": "N/A", "loc": "N/A", "comments": "N/A"}]
-    
+
     return [get_complexity_metrics(file) for file in py_files]
 
 # Generate README content

@@ -66,14 +66,14 @@ def test_update_trace_graph_basic():
     """Ensures basic bar chart in execution trace visualization updates correctly."""
     figs = update_trace_graph(1, "basic", ["Conv2D", "Dense"])
     fig = figs[0]  # Extract the Figure object from the list
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_basic.html")
     try:
         fig.write_image("test_trace_graph_basic.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 1
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
@@ -88,14 +88,14 @@ def test_update_trace_graph_stacked():
     """Ensures stacked bar chart in execution trace visualization updates correctly."""
     figs = update_trace_graph(1, "stacked", ["Conv2D", "Dense"])
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_stacked.html")
     try:
         fig.write_image("test_trace_graph_stacked.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 2
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
@@ -108,14 +108,14 @@ def test_update_trace_graph_horizontal():
     """Ensures horizontal sorted bar chart in execution trace visualization updates correctly."""
     figs = update_trace_graph(1, "horizontal", ["Conv2D", "Dense"])
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_horizontal.html")
     try:
         fig.write_image("test_trace_graph_horizontal.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 1
     assert list(fig.data[0].y) == ["Dense", "Conv2D"]  # Sorted by execution time (Dense > Conv2D)
@@ -130,14 +130,14 @@ def test_update_trace_graph_box():
     """Ensures box plot for variability in execution trace visualization updates correctly."""
     figs = update_trace_graph(1, "box", ["Conv2D", "Dense"])
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_box.html")
     try:
         fig.write_image("test_trace_graph_box.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 1
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
@@ -150,14 +150,14 @@ def test_update_trace_graph_gantt():
     """Ensures Gantt chart for timeline in execution trace visualization updates correctly."""
     figs = update_trace_graph(1, "gantt", ["Conv2D", "Dense"])
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_gantt.html")
     try:
         fig.write_image("test_trace_graph_gantt.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 2  # One bar per layer
     assert fig.data[0].name == "Conv2D"
@@ -168,14 +168,14 @@ def test_update_trace_graph_heatmap():
     """Ensures heatmap of execution time over time in execution trace visualization updates correctly."""
     figs = update_trace_graph(1, "heatmap", ["Conv2D", "Dense"])
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_heatmap.html")
     try:
         fig.write_image("test_trace_graph_heatmap.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 1
     assert fig.data[0].type == "heatmap"
@@ -187,14 +187,14 @@ def test_update_trace_graph_thresholds():
     """Ensures bar chart with thresholds in execution trace visualization updates correctly."""
     figs = update_trace_graph(1, "thresholds", ["Conv2D", "Dense"])
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_thresholds.html")
     try:
         fig.write_image("test_trace_graph_thresholds.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 1
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
@@ -206,14 +206,14 @@ def test_update_trace_graph_empty():
     """Ensures execution trace visualization handles empty data correctly."""
     figs = update_trace_graph(1, "basic", [])
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_empty.html")
     try:
         fig.write_image("test_trace_graph_empty.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 0
 
@@ -226,14 +226,14 @@ def test_update_flops_memory_chart():
     """Ensures FLOPs and memory usage visualization updates correctly."""
     figs = update_flops_memory_chart(1)
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_flops_memory_chart.html")
     try:
         fig.write_image("test_flops_memory_chart.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 2  # Should contain two bar graphs (FLOPs & memory)
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
@@ -259,14 +259,14 @@ def test_update_gradient_chart(mock_get):
 
     figs = update_gradient_chart(1)
     fig = figs[0]  # Extract the Figure object from the list
-    
+
     # Save visualization
     fig.write_html("test_gradient_chart.html")
     try:
         fig.write_image("test_gradient_chart.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 1
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
@@ -290,14 +290,14 @@ def test_update_dead_neurons(mock_get):
 
     figs = update_dead_neurons(1)
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_dead_neurons.html")
     try:
         fig.write_image("test_dead_neurons.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 1
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
@@ -321,14 +321,14 @@ def test_update_anomaly_chart(mock_get):
 
     figs = update_anomaly_chart(1)
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_anomaly_chart.html")
     try:
         fig.write_image("test_anomaly_chart.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 2
     assert list(fig.data[0].x) == ["Conv2D", "Dense"]
@@ -367,7 +367,7 @@ def test_websocket_connection():
     # Mock WebSocket response
     mock_data = TRACE_DATA
     socket_client.emit("request_trace_update")
-    
+
     # Simulate receiving data
     socket_client.get_received = MagicMock(return_value=[("trace_update", json.dumps(mock_data))])
     received = socket_client.get_received()
@@ -386,7 +386,7 @@ def test_model_comparison():
     fig_a = figs_a[0]  # Extract the Figure object
     figs_b = update_graph("B")
     fig_b = figs_b[0]
-    
+
     # Save visualizations
     fig_a.write_html("test_model_comparison_a.html")
     fig_b.write_html("test_model_comparison_b.html")
@@ -395,7 +395,7 @@ def test_model_comparison():
         fig_b.write_image("test_model_comparison_b.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert fig_a is not None
     assert fig_b is not None
@@ -420,14 +420,14 @@ def test_update_trace_graph_large_data():
     """Ensures execution trace visualization handles large datasets correctly."""
     figs = update_trace_graph(1, "basic", None)
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_large.html")
     try:
         fig.write_image("test_trace_graph_large.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 1
     assert len(list(fig.data[0].x)) == 200  # 100 Conv2D + 100 Dense
@@ -437,14 +437,14 @@ def test_update_trace_graph_thresholds_annotations():
     """Ensures bar chart with thresholds includes correct annotations."""
     figs = update_trace_graph(1, "thresholds", ["Conv2D", "Dense"])
     fig = figs[0]
-    
+
     # Save visualization
     fig.write_html("test_trace_graph_thresholds_annotations.html")
     try:
         fig.write_image("test_trace_graph_thresholds_annotations.png")
     except Exception as e:
         print(f"Warning: Could not save PNG (kaleido might be missing): {e}")
-    
+
     # Assertions
     assert len(fig.data) == 1
     assert len(fig.layout.annotations) == 1  # Only Dense should have an annotation (execution_time > 0.003)
@@ -489,7 +489,7 @@ def test_dashboard_visualization(driver):  # Use pytest fixture
     server = Flask(__name__)
     app = Dash(__name__, server=server, title="NeuralDbg")
     app.layout = html.Div("Test")
-    
+
     # Start server in a separate thread
     server_thread = threading.Thread(
         target=app.run_server,

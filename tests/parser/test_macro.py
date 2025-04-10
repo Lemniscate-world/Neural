@@ -47,7 +47,7 @@ class TestMacroParsing:
                     }
                 }
                 """,
-                {'type': 'ResBlock', 'params': {}, 'sublayers': 
+                {'type': 'ResBlock', 'params': {}, 'sublayers':
                 [
                     {'type': 'Conv2D', 'params': {'filters': 64, 'kernel_size': (3, 3)}, 'sublayers': []},
                     {'type': 'BatchNormalization', 'params': None, 'sublayers': []},
@@ -86,7 +86,7 @@ class TestMacroParsing:
             define_tree = define_parser.parse(config)
             definition_result = transformer.transform(define_tree)
             assert definition_result == expected_definition, f"Definition mismatch in {test_id}"
-            
+
             ref_string = f"{config.split()[1]}()"
             ref_tree = layer_parser.parse(ref_string)
             ref_result = transformer.transform(ref_tree)

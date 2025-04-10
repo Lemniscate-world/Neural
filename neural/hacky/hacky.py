@@ -11,7 +11,7 @@ def hacky_mode(propagator, model_data):
               grad = param.grad
               if grad is not None and torch.any(torch.isnan(grad)):
                   print(f"Gradient leakage detected: NaN values in {param}")
-  
+
   # Adversarial Input Simulation
   def simulate_adversarial_input(input_shape):
       noise = torch.randn(*input_shape) * 0.1

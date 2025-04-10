@@ -41,7 +41,7 @@ class PretrainedModelHub:
                 }
             }
         }
-        
+
     def load(self, model_name: str, pretrained: bool = True) -> Any:
         config = None
         for category in self.model_db.values():
@@ -50,7 +50,7 @@ class PretrainedModelHub:
                 break
         if not config:
             raise ValueError(f"Model {model_name} not found in hub")
-            
+
         if pretrained:
             weights_path = hf_hub_download(
                 repo_id=config["hf_repo"],
@@ -58,7 +58,7 @@ class PretrainedModelHub:
             )
             # Assume NeuralModel is a placeholder; replace with actual model loading
             return torch.load(weights_path)
-        
+
         return self._create_architecture(model_name)
 
     def _convert_torch_weights(self, model: torch.nn.Module) -> Dict:
@@ -110,9 +110,9 @@ class TritonConv2D(torch.autograd.Function):
         )
         ctx.save_for_backward(input, weight, bias)
         return output
-    
+
     @staticmethod
-    @triton.jit  
+    @triton.jit
     def backward(ctx, grad_output):
         # Optimized backward pass
         input, weight, bias = ctx.saved_tensors
@@ -125,10 +125,10 @@ class TritonConv2D(torch.autograd.Function):
 class OptimizedModel:
     def __init__(self, model_config: Dict):
         self.layers = self._compile_layers(model_config)
-        
+
     def _compile_layers(self, config: Dict) -> list:
         return [self._create_optimized_layer(l) for l in config['layers']]
-    
+
     def _create_optimized_layer(self, layer: Dict) -> torch.nn.Module:
         if layer['type'] == 'Conv2D':
             if layer.get('fused_conv_bn'):
@@ -145,14 +145,14 @@ class ModelOptimizer:
             'mixed_precision': True,
             'sparse_format': 'blocked'
         }
-        
+
     def apply(self):
         if self.optimizations['kernel_fusion']:
             self._fuse_conv_bn()
-            
+
         if self.optimizations['mixed_precision']:
             self._convert_to_mixed_precision()
-            
+
         return self._compile_model()
 
     def _fuse_conv_bn(self):

@@ -8,7 +8,7 @@ def test_load_model_success(mock_hf):
     # Setup mock Hugging Face download
     mock_hf.return_value = "dummy_path"
     hub = PretrainedModelHub()
-    
+
     # Test loading a valid model
     model = hub.load("resnet50", pretrained=True)
     assert model is not None  # Simplified; replace with actual checks
@@ -27,11 +27,11 @@ def test_fuse_conv_bn_weights():
     bn_w = torch.randn(64)
     bn_b = torch.randn(64)
     eps = 1e-5
-    
+
     fused_w, fused_b = fuse_conv_bn_weights(
         conv_w, conv_b, bn_rm, bn_rv, bn_w, bn_b, eps
     )
-    
+
     assert fused_w.shape == conv_w.shape
     assert fused_b.shape == conv_b.shape
 
@@ -44,7 +44,7 @@ def test_convert_torch_weights(mock_torch_load):
     )
     hub = PretrainedModelHub()
     converted = hub._convert_torch_weights(model)
-    
+
     # Check if weights are fused
     assert '0.weight' in converted
     assert '0.bias' in converted

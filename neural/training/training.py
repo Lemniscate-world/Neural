@@ -52,7 +52,7 @@ def train(file, backend, log_dir):
     model_data = ModelTransformer().transform(tree)
     code = generate_code(model_data, backend)
     save_file(f"model_{backend}.py", code)
-    
+
     # Load and train the model (simplified)
     if backend == "tensorflow":
         import tensorflow as tf

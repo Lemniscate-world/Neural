@@ -20,10 +20,10 @@ class Neurallm:
         # Placeholder for fine-tuning on .neural files
         from transformers import Trainer, TrainingArguments
         from datasets import load_dataset
-        
+
         dataset = load_dataset("text", data_files=dataset_path)
         tokenized_dataset = dataset.map(lambda x: self.tokenizer(x["text"], truncation=True, padding="max_length"), batched=True)
-        
+
         training_args = TrainingArguments(
             output_dir="./neurallm",
             num_train_epochs=epochs,

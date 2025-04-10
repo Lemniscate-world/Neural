@@ -61,13 +61,13 @@ def update_graph(n):
             edge_y.extend([-1, -1])
 
     fig = go.Figure()
-    
+
     # Draw edges
     fig.add_trace(go.Scatter(x=edge_x, y=edge_y, mode="lines", line=dict(width=2)))
-    
+
     # Draw nodes
     fig.add_trace(go.Scatter(
-        x=node_x, y=node_y, mode="markers+text", 
+        x=node_x, y=node_y, mode="markers+text",
         marker=dict(size=30, color="lightblue"),
         text=node_labels, textposition="top center"
     ))

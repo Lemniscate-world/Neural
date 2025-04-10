@@ -28,7 +28,7 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
     propagator = ShapePropagator(debug=False)
     # Initial input shape includes batch dimension: (None, channels, height, width)
     current_input_shape = (None,) + tuple(model_data['input']['shape'])  # e.g., (None, 1, 28, 28)
-    
+
     # Process expanded layers before modifying model_dat
     # Expand layers based on 'multiply' key
     expanded_layers = []
@@ -68,7 +68,7 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
         for layer in expanded_layers:
             layer_type = layer['type']
             params = layer.get('params', {})
-            
+
             if layer_type == "Residual":
                 code += "# Residual block\n"
                 code += "residual_input = x\n"
@@ -87,7 +87,7 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
 
         code += "\n# Build model\n"
         code += "model = tf.keras.Model(inputs=inputs, outputs=x)\n"
-        
+
         opt_params = []
         if isinstance(optimizer_config, dict):
             for k, v in optimizer_config.get('params', {}).items():
@@ -101,7 +101,7 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
             loss_value = loss_entry.get('value', 'categorical_crossentropy')
         code += f"# Compile model with {optimizer_type} optimizer and {loss_value} loss\n"
         code += f"model.compile(loss='{loss_value}', optimizer={optimizer_type}({', '.join(opt_params)}))\n"
-        
+
         if 'training_config' in model_data:
             tc = model_data['training_config']
             code += "# Training configuration\n"
@@ -133,17 +133,17 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
         layers_code = []
         forward_code_body = []
         layer_counts = {}
-        
+
         for i, layer in enumerate(expanded_layers):
             layer_type = layer['type']
             params = layer.get('params', {}).copy()
-            
+
             if layer_type not in layer_counts:
                 layer_counts[layer_type] = 0
-            
+
             layer_name = f"layer{i}_{layer_type.lower()}"
             layer_counts[layer_type] += 1
-            
+
             if layer_type == "Dense":
                 # If first layer or previous layer requires flattening
                 if i == 0 or expanded_layers[i-1]['type'] in ["Input", "Flatten"]:
@@ -209,7 +209,7 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
             loss_value = loss_entry.get('value', 'crossentropy')
         loss_fn = "nn.CrossEntropyLoss()" if "crossentropy" in loss_value.lower() else "nn.MSELoss()"
         code += f"# Loss function\nloss_fn = {loss_fn}\n"
-        
+
         opt_params = []
         if isinstance(optimizer_config, dict):
             for k, v in optimizer_config.get('params', {'lr': 0.001}).items():
@@ -248,7 +248,7 @@ def generate_code(model_data: Dict[str, Any], backend: str, best_params: Dict[st
             code += "print(f'Accuracy: {100 * correct / total:.2f}%')\n"
             if 'save_path' in tc:
                 code += f"{indent}{indent}torch.save(model.state_dict(), '{tc['save_path']}')\n"
-            
+
 
         return code
 
@@ -283,12 +283,12 @@ def generate_onnx(model_data):
     # Create nodes for each layer
     nodes = []
     current_input = "input"
-    
+
     for i, layer in enumerate(model_data['layers']):
         layer_type = layer['type']
         params = layer.get('params', {})
         output_name = f"layer_{i}_output"
-        
+
         if layer_type == "Conv2D":
             nodes.append(helper.make_node(
                 'Conv',
@@ -298,7 +298,7 @@ def generate_onnx(model_data):
                 strides=params.get('strides', [1, 1])
             ))
         # Add other layer types as needed
-        
+
         current_input = output_name
 
     # Create graph with nodes
@@ -309,11 +309,11 @@ def generate_onnx(model_data):
         outputs=[helper.make_tensor_value_info(current_input, TensorProto.FLOAT, None)],
         initializer=[]
     )
-    
+
     # Create model
     model = helper.make_model(graph, producer_name="Neural")
     model.opset_import[0].version = 13
-    
+
     return model
 
 def export_onnx(model_data: Dict[str, Any], filename: str = "model.onnx") -> str:
@@ -486,18 +486,18 @@ def generate_pytorch_layer(layer_type, params, input_shape=None):
     else:
         warnings.warn(f"Unsupported layer type '{layer_type}' for pytorch. Skipping.", UserWarning)
         return None
-    
+
 ## Optimized Code Generation ##
 
 def generate_optimized_dsl(config, best_params):
     transformer = ModelTransformer()
     model_dict, hpo_params = transformer.parse_network_with_hpo(config)
     lines = config.strip().split('\n')
-    
+
     logger.info(f"Initial lines: {lines}")
     logger.info(f"best_params: {best_params}")
     logger.info(f"hpo_params: {hpo_params}")
-    
+
     # Process all HPO parameters uniformly
     for hpo in hpo_params:
         # Determine param_key based on layer_type
@@ -507,21 +507,21 @@ def generate_optimized_dsl(config, best_params):
             param_key = 'learning_rate'
         else:
             param_key = f"{hpo['layer_type'].lower()}_{hpo['param_name']}"
-        
+
         if param_key not in best_params:
             logger.warning(f"Parameter {param_key} not found in best_params, skipping")
             continue
-        
+
         if 'hpo' not in hpo or not hpo['hpo']:
             logger.warning(f"Missing 'hpo' data for parameter {param_key}, skipping")
             continue
-            
+
         # Construct the HPO string based on type
         hpo_type = hpo['hpo'].get('type')
         if not hpo_type:
             logger.warning(f"Missing 'type' in hpo data for parameter {param_key}, skipping")
             continue
-            
+
         if hpo_type in ('choice', 'categorical'):
             values = hpo['hpo'].get('original_values', hpo['hpo'].get('values', []))
             if not values:
@@ -551,7 +551,7 @@ def generate_optimized_dsl(config, best_params):
         else:
             logger.warning(f"Unknown HPO type: {hpo_type}, skipping")
             continue
-        
+
         # Replace the entire HPO expression
         logger.info(f"Processing hpo: {hpo}, param_key: {param_key}, hpo_str: {hpo_str}")
         for i, line in enumerate(lines):
@@ -562,6 +562,6 @@ def generate_optimized_dsl(config, best_params):
                 lines[i] = new_line
                 logger.info(f"Replaced line {i}: '{old_line}' -> '{new_line}'")
                 break
-    
+
     logger.info(f"Final lines: {lines}")
     return '\n'.join(lines)

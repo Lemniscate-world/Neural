@@ -51,7 +51,7 @@ def update_layer_params(layer_type, n_clicks):
             params["params"] = {"units": 128, "activation": "relu"}
         elif layer_type == "Dropout":
             params["params"] = {"rate": 0.5}
-        
+
         data = [{"param": k, "value": str(v)} for k, v in params["params"].items()]
         propagator = ShapePropagator()
         input_shape = (1, 28, 28, 1)  # Default input shape
@@ -59,7 +59,7 @@ def update_layer_params(layer_type, n_clicks):
         for layer in [params]:
             input_shape = propagator.propagate(input_shape, layer, "tensorflow")
             shape_history.append({"layer": layer["type"], "output_shape": input_shape})
-        
+
         fig = go.Figure(data=[go.Scatter(x=[i for i in range(len(shape_history))], y=[np.prod(s["output_shape"]) for s in shape_history], mode="lines+markers")])
         fig.update_layout(title="Shape Propagation Preview", xaxis_title="Layer", yaxis_title="Parameters")
         return data, fig
@@ -85,7 +85,7 @@ def compile_model(n_clicks, params_data):
                     except:
                         layer_params[row["param"]] = row["value"]
             layers.append({"type": layer_type, "params": layer_params})
-        
+
         model_data = {
             "type": "model",
             "input": {"type": "Input", "shape": (1, 28, 28, 1)},

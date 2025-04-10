@@ -62,7 +62,7 @@ class NeuralIntro(Scene):
         # Scene 4: NeuralDbg
         debug_title = Text("NeuralDbg: Real-Time Debugging", font_size=36).to_edge(UP)
         self.play(FadeOut(frameworks), Write(debug_title))
-        
+
         # Network with flowing activations
         nn_copy = nn.copy().shift(DOWN * 1.5)
         flow = VGroup(*[
@@ -70,7 +70,7 @@ class NeuralIntro(Scene):
             for i in range(3) for j in range(3)
         ])
         self.play(FadeIn(nn_copy), *flow)
-        
+
         # 3D diagram placeholder (simplified as a cube)
         cube = Cube(fill_opacity=0.5, fill_color=BLUE).scale(0.5).shift(RIGHT * 3)
         self.play(Create(cube))
@@ -86,7 +86,7 @@ class NeuralIntro(Scene):
         ).to_edge(LEFT)
         self.play(FadeOut(nn_copy), FadeOut(cube), FadeOut(debug_title), Write(benefits))
         self.wait(1)
-        
+
         cta = Text("Try Neural Today!", font_size=36, color=YELLOW).next_to(benefits, DOWN)
         self.play(Write(cta))
         self.wait(2)

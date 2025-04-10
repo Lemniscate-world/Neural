@@ -11,7 +11,7 @@ def parse_changelog(version):
     """Extract changelog entries for a specific version from CHANGELOG.md"""
     with open("CHANGELOG.md", "r") as f:
         changelog = f.read()
-    
+
     # Split changelog into version sections
     sections = re.split(r"## \[(\d+\.\d+\.\d+)\]", changelog)
     for i in range(1, len(sections), 2):
@@ -27,7 +27,7 @@ def format_tweet(version, changes):
     max_length = 250
     change_text = "\n".join(f"• {change}" for change in changes)
     base_text = f"🚀 Neural-dsl v{version} released!\n{change_text}\n\n#MachineLearning #Python\nGitHub: https://github.com/Lemniscate-world/Neuralreleases/tag/v{version}"
-    
+
     if len(base_text) > max_length:
         base_text = base_text[:max_length-3] + "..."
     return base_text

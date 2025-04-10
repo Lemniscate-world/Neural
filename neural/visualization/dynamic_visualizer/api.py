@@ -17,11 +17,11 @@ def parse_network():
         print(tree.pretty())
         model_data = ModelTransformer().transform(tree)
         print(model_data)
-        
+
         visualizer = NeuralVisualizer(model_data)
         visualization_data = visualizer.model_to_d3_json()
         print(visualization_data)
-        
+
         return jsonify(visualization_data)
     except Exception as e:
         return jsonify({'error': str(e)}), 400

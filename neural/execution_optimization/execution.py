@@ -39,7 +39,7 @@ def optimize_model_with_tensorrt(model):
 def run_inference(model, data, execution_config):
     """ Runs optimized inference using TensorRT or PyTorch """
     device = get_device(execution_config.get("device", "auto"))
-    
+
     if device.type == "cuda":
         model = optimize_model_with_tensorrt(model)
 
