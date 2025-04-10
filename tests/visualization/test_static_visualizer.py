@@ -179,10 +179,10 @@ class TestStaticVisualizer:
         file_size = os.path.getsize(test_filename)
         print(f"File size: {file_size} bytes")
 
-        # Clean up
-        if os.path.exists(test_filename):
-            os.remove(test_filename)
-            print(f"Removed test file: {test_filename}")
+        # Comment out cleanup to keep the files
+        # if os.path.exists(test_filename):
+        #     os.remove(test_filename)
+        #     print(f"Removed test file: {test_filename}")
 
     def test_save_shape_visualization(self, sample_model_data):
         """Test saving shape visualization to HTML file."""
@@ -219,10 +219,10 @@ class TestStaticVisualizer:
         file_size = os.path.getsize(test_filename)
         print(f"File size: {file_size} bytes")
 
-        # Clean up
-        if os.path.exists(test_filename):
-            os.remove(test_filename)
-            print(f"Removed test file: {test_filename}")
+        # Comment out cleanup to keep the files
+        # if os.path.exists(test_filename):
+        #     os.remove(test_filename)
+        #     print(f"Removed test file: {test_filename}")
 
 
 if __name__ == '__main__':
