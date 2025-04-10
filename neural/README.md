@@ -21,7 +21,7 @@ Neural-dsl v0.1.0 is live on PyPI (`pip install neural-dsl`)! It’s a work-in-p
 Neural is a domain-specific language (DSL) designed for defining, training, debugging, and deploying neural networks. With **declarative syntax**, **cross-framework support**, and **built-in execution tracing (NeuralDbg)**, it simplifies deep learning development.
 
 
-![Network Visualization Demo]()  
+![Network Visualization Demo]()
 *Example: Auto-generated architecture diagram and shape propagation report*
 
 ## 🚀 Features
@@ -36,14 +36,14 @@ Neural is a domain-specific language (DSL) designed for defining, training, debu
 ### **🛠 NeuralDbg: Built-in Neural Network Debugger**
 NeuralDbg provides **real-time execution tracing, profiling, and debugging**, allowing you to visualize and analyze deep learning models in action.
 
-✅ **Real-Time Execution Monitoring** – Track activations, gradients, memory usage, and FLOPs.  
+✅ **Real-Time Execution Monitoring** – Track activations, gradients, memory usage, and FLOPs.
 ![test_trace_graph](https://github.com/user-attachments/assets/15b1edd2-2643-4587-9843-aa4697ed2e4b)
 ![test_flops_memory_chart](https://github.com/user-attachments/assets/de1f6504-787b-4948-b543-fe3d2f8bfd74)
 
-✅ **Shape Propagation Debugging** – Visualize tensor transformations at each layer.  
-✅ **Gradient Flow Analysis** – Detect **vanishing & exploding gradients**.  
-✅ **Dead Neuron Detection** – Identify inactive neurons in deep networks.  
-✅ **Anomaly Detection** – Spot **NaNs, extreme activations, and weight explosions**.  
+✅ **Shape Propagation Debugging** – Visualize tensor transformations at each layer.
+✅ **Gradient Flow Analysis** – Detect **vanishing & exploding gradients**.
+✅ **Dead Neuron Detection** – Identify inactive neurons in deep networks.
+✅ **Anomaly Detection** – Spot **NaNs, extreme activations, and weight explosions**.
 ✅ **Step Debugging Mode** – Pause execution and inspect tensors manually.
 
 
@@ -80,11 +80,11 @@ network MNISTClassifier {
     Dense(units=128, activation="relu")
     Dropout(rate=0.5)
     Output(units=10, activation="softmax")
-  
+
   loss: "sparse_categorical_crossentropy"
   optimizer: Adam(learning_rate=0.001)
   metrics: ["accuracy"]
-  
+
   train {
     epochs: 15
     batch_size: 64
@@ -138,10 +138,10 @@ Open your browser to http://localhost:8051 to build and compile models via a gra
 ```bash
 python neural.py debug mnist.neural
 ```
-**Features:**  
-✅ Layer-wise execution trace  
-✅ Memory & FLOP profiling  
-✅ Live performance monitoring  
+**Features:**
+✅ Layer-wise execution trace
+✅ Memory & FLOP profiling
+✅ Live performance monitoring
 
 ### **🔹 2️⃣ Analyze Gradient Flow**
 ```bash
@@ -179,17 +179,17 @@ python neural.py debug --step mnist.neural
 | Training Config       | Unified     | Fragmented configs      |
 
 
-### **🔄 Cross-Framework Code Generation**  
+### **🔄 Cross-Framework Code Generation**
 | Neural DSL          | TensorFlow Output          | PyTorch Output            |
 |---------------------|----------------------------|---------------------------|
 | `Conv2D(filters=32)`| `tf.keras.layers.Conv2D(32)`| `nn.Conv2d(in_channels, 32)` |
 | `Dense(units=128)`  | `tf.keras.layers.Dense(128)`| `nn.Linear(in_features, 128)`|
 
-## 🏆 Benchmarks  
-| Task                 | Neural | Baseline (TF/PyTorch) |  
-|----------------------|--------|-----------------------|  
-| MNIST Training       | 1.2x ⚡| 1.0x                  |  
-| Debugging Setup      | 5min 🕒| 2hr+                  |  
+## 🏆 Benchmarks
+| Task                 | Neural | Baseline (TF/PyTorch) |
+|----------------------|--------|-----------------------|
+| MNIST Training       | 1.2x ⚡| 1.0x                  |
+| Debugging Setup      | 5min 🕒| 2hr+                  |
 
 ## 📚 Documentation
 
@@ -225,7 +225,7 @@ pip install -r requirements-dev.txt  # Includes linter, formatter, etc.
 pre-commit install  # Auto-format code on commit
 ```
 
-## 🌐 Supported Integrations  
+## 🌐 Supported Integrations
 | Service               | Status | Docs                   |
 |-----------------------|--------|------------------------|
 | TensorBoard           | ✅     | [Link]()              |

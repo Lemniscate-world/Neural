@@ -11,7 +11,7 @@ Neural uses Flask and Flask-SocketIO for its API and WebSocket endpoints, with s
     username: "admin"
     password: "your_secure_password"
 
-    
+
 ## Hacky Mode
 - **Purpose**: Inspired by "HackingNeuralNetworks," `--hacky` mode analyzes gradient leakage and simulates adversarial inputs to detect security vulnerabilities.
 - **Usage**: `neural debug my_model.neural --hacky`

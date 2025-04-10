@@ -278,6 +278,41 @@ Explore common use cases in `examples/` with step-by-step guides in `docs/exampl
 
 *Note: You may need to zoom in to see details in these architecture diagrams.*
 
+## Repository Structure
+
+The Neural repository is organized into the following main directories:
+
+- **`docs/`**: Documentation files
+- **`examples/`**: Example Neural DSL files
+- **`neural/`**: Main source code
+  - **`neural/cli/`**: Command-line interface
+  - **`neural/parser/`**: Neural DSL parser
+  - **`neural/shape_propagation/`**: Shape propagation and validation
+  - **`neural/code_generation/`**: Code generation for different backends
+  - **`neural/visualization/`**: Visualization tools
+  - **`neural/dashboard/`**: NeuralDbg dashboard
+  - **`neural/hpo/`**: Hyperparameter optimization
+- **`neuralpaper/`**: NeuralPaper.ai implementation
+- **`profiler/`**: Performance profiling tools
+- **`tests/`**: Test suite
+
+For a detailed explanation of the repository structure, see [REPOSITORY_STRUCTURE.md](REPOSITORY_STRUCTURE.md).
+
+Each directory contains its own README with detailed documentation:
+
+- [neural/cli](neural/cli/README.md): Command-line interface
+- [neural/parser](neural/parser/README.md): Neural DSL parser
+- [neural/code_generation](neural/code_generation/README.md): Code generation
+- [neural/shape_propagation](neural/shape_propagation/README.md): Shape propagation
+- [neural/visualization](neural/visualization/README.md): Visualization tools
+- [neural/dashboard](neural/dashboard/README.md): NeuralDbg dashboard
+- [neural/hpo](neural/hpo/README.md): Hyperparameter optimization
+- [neuralpaper](neuralpaper/README.md): NeuralPaper.ai implementation
+- [profiler](profiler/README.md): Performance profiling tools
+- [docs](docs/README.md): Documentation
+- [examples](examples/README.md): Example models
+- [tests](tests/README.md): Test suite
+
 
 
 ---

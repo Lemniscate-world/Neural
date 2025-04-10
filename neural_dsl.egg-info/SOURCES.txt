@@ -2,9 +2,12 @@ LICENSE.md
 README.md
 setup.py
 ./neural/__init__.py
+./neural/__main__.py
 ./neural/cli.py
+./neural/cli_aesthetics.py
 ./neural/example_tensorflow.py
 ./neural/test.py
+./neural/welcome_message.py
 ./neural/code_generation/__init__.py
 ./neural/code_generation/code_generator.py
 ./neural/dashboard/__init__.py

@@ -47,17 +47,17 @@ network AdvancedHPOExample {
     # Convolutional layers with HPO parameters
     Conv2D(filters=HPO(choice(32, 64)), kernel_size=(3,3), activation="relu")
     MaxPooling2D(pool_size=(2,2))
-    
+
     # Another conv block with HPO
     Conv2D(filters=HPO(choice(64, 128)), kernel_size=(3,3), activation="relu")
     MaxPooling2D(pool_size=(2,2))
-    
+
     # Flatten and dense layers
     Flatten()
     Dense(HPO(choice(128, 256, 512)), activation="relu")
     Dropout(HPO(range(0.3, 0.7, step=0.1)))
     Output(10, "softmax")
-  
+
   # Advanced optimizer configuration with HPO
   optimizer: SGD(
     learning_rate=ExponentialDecay(
@@ -67,7 +67,7 @@ network AdvancedHPOExample {
     ),
     momentum=HPO(range(0.8, 0.99, step=0.01))
   )
-  
+
   # Training configuration with HPO
   train {
     epochs: 20

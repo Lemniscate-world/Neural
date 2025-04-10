@@ -1,6 +1,10 @@
-# Neural Visualizer
+# Neural Visualization
 
-The Neural Visualizer provides powerful tools to visualize neural network architectures, shape propagation, and tensor flow in multiple formats.
+<p align="center">
+  <img src="../../docs/images/visualization_example.png" alt="Visualization Example" width="600"/>
+</p>
+
+The Neural Visualization module provides powerful tools to visualize neural network architectures, shape propagation, and tensor flow in multiple formats.
 
 ## Overview
 

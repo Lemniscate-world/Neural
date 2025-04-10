@@ -1,6 +1,10 @@
 # NeuralPaper.ai
 
-NeuralPaper.ai is a platform that integrates Neural DSL with NeuralDbg to create interactive, annotated neural network models with visualization features similar to [nn.labml.ai](https://nn.labml.ai).
+<p align="center">
+  <img src="../docs/images/neuralpaper_architecture.png" alt="NeuralPaper Architecture" width="600"/>
+</p>
+
+NeuralPaper.ai is a platform that integrates Neural DSL with NeuralDbg to create interactive, annotated neural network models with visualization features similar to [nn.labml.ai](https://nn.labml.ai). It provides a web-based interface for creating, visualizing, and sharing neural network models with detailed explanations and interactive elements.
 
 ## Features
 

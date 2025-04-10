@@ -1,2 +1,2 @@
 [console_scripts]
-neural = neural.cli:cli
+neural = neural.__main__:cli
