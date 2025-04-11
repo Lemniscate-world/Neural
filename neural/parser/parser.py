@@ -6,7 +6,7 @@ import json
 import plotly.graph_objects as go
 import logging
 from enum import Enum
-from lark.visitors import VisitError
+from lark.exceptions import VisitError
 import re
 
 
@@ -75,10 +75,13 @@ def custom_error_handler(error):
     if isinstance(error, KeyError):
         msg = "Unexpected end of input (KeyError). The parser did not expect '$END'."
         severity = Severity.ERROR
+        # KeyError doesn't have line/column attributes
+        line = column = None
     elif isinstance(error, lark.UnexpectedCharacters):
         msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected character '{error.char}'.\n" \
               f"Expected one of: {', '.join(sorted(error.allowed))}"
         severity = Severity.ERROR
+        line, column = error.line, error.column
     elif isinstance(error, lark.UnexpectedToken):
         # Check for end-of-input scenarios more robustly
         if str(error.token) in ['', '$END'] or 'RBRACE' in error.expected:
@@ -90,14 +93,18 @@ def custom_error_handler(error):
             msg = f"Syntax error at line {error.line}, column {error.column}: Unexpected token '{error.token}'.\n" \
                   f"Expected one of: {', '.join(sorted(error.expected))}"
             severity = Severity.ERROR
+        line, column = error.line, error.column
     else:
         msg = str(error)
         severity = Severity.ERROR
+        # Default to None for line/column if not available
+        line = getattr(error, 'line', None)
+        column = getattr(error, 'column', None)
 
     log_by_severity(severity, msg)
     if severity.value >= Severity.ERROR.value:
-        raise DSLValidationError(msg, severity, error.line, error.column)
-    return {"warning": msg, "line": error.line, "column": error.column}
+        raise DSLValidationError(msg, severity, line, column)
+    return {"warning": msg, "line": line, "column": column}
 
 def create_parser(start_rule: str = 'network') -> lark.Lark:
     """
@@ -300,7 +307,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         ?named_param: ( learning_rate_param | momentum_param | named_layer | named_clipvalue | named_clipnorm | named_units | pool_size | named_kernel_size | named_size | named_activation | named_filters | named_strides | named_padding | named_dilation_rate | named_groups | named_data_format | named_channels | named_return_sequences | named_num_heads | named_ff_dim | named_input_dim | named_output_dim | named_rate | named_dropout | named_axis | named_epsilon | named_center | named_scale | named_beta_initializer | named_gamma_initializer | named_moving_mean_initializer | named_moving_variance_initializer | named_training | named_trainable | named_use_bias | named_kernel_initializer | named_bias_initializer | named_kernel_regularizer | named_bias_regularizer | named_activity_regularizer | named_kernel_constraint | named_bias_constraint | named_return_state | named_go_backwards | named_stateful | named_time_major | named_unroll | named_input_shape | named_batch_input_shape | named_dtype | named_name | named_weights | named_embeddings_initializer | named_mask_zero | named_input_length | named_embeddings_regularizer | named_embeddings_constraint | named_num_layers | named_bidirectional | named_merge_mode | named_recurrent_dropout | named_noise_shape | named_seed | named_target_shape | named_interpolation | named_crop_to_aspect_ratio | named_mask_value | named_return_attention_scores | named_causal | named_use_scale | named_key_dim | named_value_dim | named_output_shape | named_arguments | named_initializer | named_regularizer | named_constraint | named_l1 | named_l2 | named_l1_l2 | named_int | named_float | NAME "=" value | NAME "=" hpo_expr | named_alpha)
 
 
-        network: "network" NAME "{" input_layer layers ";" [loss] [optimizer_param] [training_config] [execution_config] "}"
+        network: "network" NAME "{" input_layer layers [loss] [optimizer_param] [training_config] [execution_config] "}"
         input_layer: "input" ":" shape ("," shape)*
         layers: "layers" ":" layer_or_repeated+
         loss: "loss" ":" (NAME | STRING) ["(" param_style1 ")"]
@@ -309,7 +316,9 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         optimizer_param: "optimizer:" (named_optimizer | STRING)
         named_optimizer: NAME "(" [param_style1] ("," [param_style1])* ")"
         EXPONENTIALDECAY: "ExponentialDecay"
-        learning_rate_param: "learning_rate=" (FLOAT | hpo_expr | NAME "(" [lr_schedule_args] ")")
+        exponential_decay: EXPONENTIALDECAY "(" [exponential_decay_param ("," exponential_decay_param)*] ")"
+        exponential_decay_param: hpo_expr | number | STRING
+        learning_rate_param: "learning_rate=" (exponential_decay | FLOAT | hpo_expr | NAME "(" [lr_schedule_args] ")")
         lr_schedule_args: param_style1 ("," param_style1)*
         momentum_param: "momentum=" param_style1
         search_method_param: "search_method:" STRING
@@ -470,7 +479,7 @@ def create_parser(start_rule: str = 'network') -> lark.Lark:
         hpo_param: hpo_expr | hpo_with_params
         params: param ("," param)*
         ?param: named_param | value
-        ?value: STRING -> string_value | number | tuple_ | BOOL
+        ?value: STRING -> string_value | number | tuple_ | BOOL | exponential_decay
         tuple_: "(" number "," number ")"
         number: NUMBER
         named_params: named_param ("," named_param)*
@@ -537,12 +546,11 @@ def safe_parse(parser, text):
         ...     print(f"Error: {e}")
     """
     warnings = []
-    # Extract the lexer from the parser
-    lexer = parser.lexer
 
     # Tokenize the input and log the stream
     logger.debug("Token stream:")
-    tokens = list(lexer.lex(text))
+    # Use the parser's lex method instead of trying to access lexer directly
+    tokens = list(parser.lex(text))
     for token in tokens:
         logger.debug(f"Token: {token.type}('{token.value}') at line {token.line}, column {token.column}")
 
@@ -560,6 +568,8 @@ def safe_parse(parser, text):
             details = f"Unexpected character '{e.char}', expected one of: {', '.join(sorted(e.allowed))}"
         warnings.append({"message": error_msg, "line": e.line, "column": e.column, "details": details})
         custom_error_handler(e)
+        # This line will never be reached because custom_error_handler raises an exception
+        return {"result": None, "warnings": warnings}
     except DSLValidationError as e:
         raise
     except Exception as e:
@@ -820,9 +830,23 @@ class ModelTransformer(lark.Transformer):
         return expanded_layers
 
     def layer_or_repeated(self, items):
-        if len(items) == 2:  # layer and multiplier
-            return (items[0], int(items[1]))
-        return items[0]  # single layer
+        # Debug the items to understand what's being passed
+        if len(items) == 1:
+            return items[0]  # Just the layer, no repetition
+        elif len(items) == 2:  # layer and multiplier
+            layer, multiplier = items
+            # Check if multiplier exists and is valid
+            if multiplier is not None:
+                try:
+                    return (layer, int(multiplier))
+                except (TypeError, ValueError):
+                    # If conversion fails, just return the layer
+                    return layer
+            else:
+                return layer
+        else:
+            # Fallback for unexpected number of items
+            return items[0] if items else None
 
     def input_layer(self, items):
         shapes = [self._extract_value(item) for item in items]
@@ -1283,6 +1307,46 @@ class ModelTransformer(lark.Transformer):
         else:
             self.raise_validation_error(f"Invalid batch_size value: {value}", items[0])
 
+    def optimizer(self, items):
+        """Process optimizer configuration."""
+        optimizer_type = str(items[0])
+        params = {}
+
+        # Process parameters if provided
+        if len(items) > 1 and items[1]:
+            for param_name, param_value in items[1].items():
+                # Special handling for learning_rate with ExponentialDecay
+                if param_name == 'learning_rate' and isinstance(param_value, dict) and param_value.get('type') == 'ExponentialDecay':
+                    params['learning_rate'] = param_value
+                else:
+                    params[param_name] = param_value
+
+        return {
+            'type': optimizer_type,
+            'params': params
+        }
+
+    def exponential_decay(self, items):
+        """Process ExponentialDecay learning rate schedule."""
+        params = {}
+
+        # First argument is initial_learning_rate
+        if len(items) > 0:
+            params['initial_learning_rate'] = items[0]
+
+        # Second argument is decay_steps
+        if len(items) > 1:
+            params['decay_steps'] = items[1]
+
+        # Third argument is decay_rate
+        if len(items) > 2:
+            params['decay_rate'] = items[2]
+
+        return {
+            'type': 'ExponentialDecay',
+            'params': params
+        }
+
     ###############
 
 
@@ -1350,6 +1414,10 @@ class ModelTransformer(lark.Transformer):
                 args = []
                 if args_str:
                     # Split by comma and convert to appropriate types
+                    def parse_args(args_str):
+                        result = []
+                        current = ''
+                        paren_level = 0
 
                         for char in args_str:
                             if char == ',' and paren_level == 0:
@@ -2158,6 +2226,37 @@ class ModelTransformer(lark.Transformer):
             dict: A dictionary containing the metrics configuration, with metric names as keys
                  and their parameters as values.
         """
+    def exponential_decay(self, items):
+        """Process ExponentialDecay learning rate schedule with parameters."""
+        # Expected structure:
+        # {
+        #     'type': 'ExponentialDecay',
+        #     'params': {
+        #         'initial_learning_rate': {'hpo': {...}},
+        #         'decay_steps': 1000,
+        #         'decay_rate': {'hpo': {...}}
+        #     }
+        # }
+
+        params = {}
+
+        # Parse the arguments based on their position
+        # First argument is initial_learning_rate
+        if len(items) > 0:
+            params['initial_learning_rate'] = items[0]
+
+        # Second argument is decay_steps
+        if len(items) > 1:
+            params['decay_steps'] = items[1]
+
+        # Third argument is decay_rate
+        if len(items) > 2:
+            params['decay_rate'] = items[2]
+
+        return {
+            'type': 'ExponentialDecay',
+            'params': params
+        }
         if not items:
             return {'metrics': {}}
         result = {}
@@ -3096,7 +3195,7 @@ class ModelTransformer(lark.Transformer):
         except DSLValidationError as e:
             # Handle direct DSLValidationError (unlikely here, but for completeness)
             log_by_severity(Severity.ERROR, f"Direct parsing error: {str(e)}")
-            raise VisitError("Direct DSL validation error") from e
+            raise VisitError("direct_dsl_validation", e, e) from e
         except Exception as e:
             log_by_severity(Severity.ERROR, f"Unexpected error: {str(e)}")
             raise

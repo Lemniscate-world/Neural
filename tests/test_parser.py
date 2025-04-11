@@ -6,7 +6,6 @@ import lark
 from lark import Lark, exceptions
 from lark.exceptions import VisitError
 
-
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -392,7 +391,7 @@ def test_research_parsing(research_parser, transformer, research_string, expecte
                 }
             }
             """,
-            {'type': 'ResBlock', 'params': {}, 'sublayers': 
+            {'type': 'ResBlock', 'params': {}, 'sublayers':
             [
                 {'type': 'Conv2D', 'params': {'filters': 64, 'kernel_size': (3, 3)}, 'sublayers': []},
                 {'type': 'BatchNormalization', 'params': None, 'sublayers': []},
@@ -431,7 +430,7 @@ def test_macro_parsing(define_parser, layer_parser, transformer, config, expecte
         define_tree = define_parser.parse(config)
         definition_result = transformer.transform(define_tree)
         assert definition_result == expected_definition, f"Definition mismatch in {test_id}"
-        
+
         ref_string = f"{config.split()[1]}()"
         ref_tree = layer_parser.parse(ref_string)
         ref_result = transformer.transform(ref_tree)
@@ -653,7 +652,7 @@ def test_validation_rules(network_parser, transformer, network_string, expected_
     with pytest.raises(DSLValidationError) as exc_info:
         transformer.parse_network(network_string)
     assert expected_error_msg in str(exc_info.value), f"Error message mismatch for {test_id}"
-   
+
 def test_grammar_token_definitions():
     """Test that grammar token definitions are correct and complete."""
     parser = create_parser()
@@ -677,12 +676,12 @@ def test_grammar_token_definitions():
         assert matching_token is not None, f"Token {token_name} not found in grammar"
         # Compare the pattern.value instead of str()
         assert matching_token.pattern.value == pattern, f"Unexpected pattern for {token_name}"
-        
+
 def test_rule_dependencies():
         """Test that grammar rules have correct dependencies."""
         parser = create_parser()
         rules = {rule.origin.name: rule for rule in parser.grammar.rules}
-        
+
         # Check essential rule dependencies
         dependencies = {
             'network': ['input_layer', 'layers', 'loss', 'optimizer'],
@@ -690,7 +689,7 @@ def test_rule_dependencies():
             'conv': ['conv1d', 'conv2d', 'conv3d'],
             'pooling': ['max_pooling', 'average_pooling', 'global_pooling']
         }
-        
+
         for rule_name, required_deps in dependencies.items():
             assert rule_name in rules, f"Missing rule: {rule_name}"
             rule = rules[rule_name]
@@ -736,7 +735,7 @@ def test_rule_precedence():
         ('conv_params', 'Conv2D(filters=32, kernel_size=(3,3))'),
         ('nested_block', 'Transformer() { Dense(10) }')
     ]
-        
+
     for test_id, test_input in test_cases:
         try:
             result = parser.parse(f"network TestNet {{ input: (1,1) layers: {test_input} }}")
@@ -753,7 +752,7 @@ def test_grammar_ambiguity():
         ('mixed_params', 'Conv2D(32, kernel_size=(3,3))'),
         ('nested_params', 'Transformer(num_heads=8) { Dense(10) }')
     ]
-    
+
     for test_id, test_input in test_cases:
         try:
             # Parse normally - LALR parser should resolve any ambiguities
@@ -822,21 +821,21 @@ def test_grammar_completeness():
             "layer_string, expected, test_id",
             [
                 # Extended Basic Layer Tests
-                ('Dense(64, activation="tanh")', 
-                 {'type': 'Dense', 'params': {'units': 64, 'activation': 'tanh'}, 'sublayers': []}, 
+                ('Dense(64, activation="tanh")',
+                 {'type': 'Dense', 'params': {'units': 64, 'activation': 'tanh'}, 'sublayers': []},
                  "dense-tanh"),
-                
+
                 # Multiple Parameter Tests
                 ('Conv2D(32, (3,3), strides=(2,2), padding="same", activation="relu")',
                  {'type': 'Conv2D', 'params': {
-                     'filters': 32, 
+                     'filters': 32,
                      'kernel_size': (3,3),
                      'strides': (2,2),
                      'padding': 'same',
                      'activation': 'relu'
                  }, 'sublayers': []},
                  "conv2d-multiple-params"),
-                
+
                 # Layer with Mixed Parameter Styles
                 ('LSTM(128, return_sequences=true, dropout=0.2)',
                  {'type': 'LSTM', 'params': {
@@ -845,14 +844,14 @@ def test_grammar_completeness():
                      'dropout': 0.2
                  }, 'sublayers': []},
                  "lstm-mixed-params"),
-                
+
                 # Nested Layer with Complex Configuration
                 ('''TransformerEncoder(num_heads=8, ff_dim=256) {
                     LayerNormalization()
                     Dense(64, "relu")
                     Dropout(0.1)
                 }''',
-                 {'type': 'TransformerEncoder', 
+                 {'type': 'TransformerEncoder',
                   'params': {'num_heads': 8, 'ff_dim': 256},
                   'sublayers': [
                       {'type': 'LayerNormalization', 'params': None, 'sublayers': []},
@@ -860,32 +859,32 @@ def test_grammar_completeness():
                       {'type': 'Dropout', 'params': {'rate': 0.1}, 'sublayers': []}
                   ]},
                  "transformer-complex"),
-                
+
                 # Edge Cases
                 ('Dense(0)', None, "dense-zero-units"),
                 ('Conv2D(32, (0,0))', None, "conv2d-zero-kernel"),
                 ('Dropout(2.0)', None, "dropout-invalid-rate"),
                 ('LSTM(units=-1)', None, "lstm-negative-units"),
-                
+
                 # Device Specification Tests
                 ('Dense(128) @ "cpu"',
                  {'type': 'Dense', 'params': {'units': 128, 'device': 'cpu'}, 'sublayers': []},
                  "dense-cpu-device"),
                 ('Dense(128) @ "invalid_device"', None, "dense-invalid-device"),
-                
+
                 # Custom Layer Tests
                 ('CustomTestLayer(param1=10, param2="test")',
                  {'type': 'CustomTestLayer', 'params': {'param1': 10, 'param2': 'test'}, 'sublayers': []},
                  "custom-layer-basic"),
-                
+
                 # Activation Layer Tests
                 ('Activation("leaky_relu", alpha=0.1)',
                  {'type': 'Activation', 'params': {'function': 'leaky_relu', 'alpha': 0.1}, 'sublayers': []},
                  "activation-with-params"),
-                
+
                 # Layer with HPO Parameters
                 ('Dense(HPO(choice(32, 64, 128)), activation=HPO(choice("relu", "tanh")))',
-                 {'type': 'Dense', 
+                 {'type': 'Dense',
                   'params': {
                       'units': {'hpo': {'type': 'categorical', 'values': [32, 64, 128]}},
                       'activation': {'hpo': {'type': 'categorical', 'values': ['relu', 'tanh']}}
@@ -931,12 +930,12 @@ def test_extended_layer_parsing(layer_parser, transformer, layer_string, expecte
         ('MaxPooling2D(pool_size=(0,0))', "pool_size must be positive", "maxpool-zero-size"),
     ],
     ids=[
-        "dense-invalid-units-type", 
-        "conv2d-negative-filters", 
-        "lstm-zero-units", 
+        "dense-invalid-units-type",
+        "conv2d-negative-filters",
+        "lstm-zero-units",
         "dropout-high-rate",
-        "batchnorm-invalid-momentum", 
-        "conv2d-negative-kernel", 
+        "batchnorm-invalid-momentum",
+        "conv2d-negative-kernel",
         "maxpool-zero-size"
     ]
 )
@@ -955,51 +954,51 @@ def test_layer_validation_errors(layer_parser, transformer, layer_string, valida
         # Empty parameter lists
         ('Dense()', None, "dense-empty-params"),
         ('Conv2D()', None, "conv2d-empty-params"),
-        
+
         # Whitespace handling
         ('Dense ( 128 ,  "relu" )', {'type': 'Dense', 'params': {'units': 128, 'activation': 'relu'}, 'sublayers': []}, "dense-extra-whitespace"),
         ('Conv2D(32,(3,3))', {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': (3, 3)}, 'sublayers': []}, "conv2d-no-whitespace"),
-        
+
         # Case sensitivity
         ('dense(64, "relu")', None, "dense-lowercase"),
         ('DENSE(64, "relu")', {'type': 'Dense', 'params': {'units': 64, 'activation': 'relu'}, 'sublayers': []}, "dense-uppercase"),
-        
+
         # Boolean parameters
         ('LSTM(128, return_sequences=true)', {'type': 'LSTM', 'params': {'units': 128, 'return_sequences': True}, 'sublayers': []}, "lstm-boolean-true"),
         ('LSTM(128, return_sequences=false)', {'type': 'LSTM', 'params': {'units': 128, 'return_sequences': False}, 'sublayers': []}, "lstm-boolean-false"),
-        
+
         # Nested tuples and lists
         ('Conv3D(32, ((3, 3), 3))', {'type': 'Conv3D', 'params': {'filters': 32, 'kernel_size': ((3, 3), 3)}, 'sublayers': []}, "conv3d-nested-tuple"),
         ('CustomLayer(params=[1, 2, [3, 4]])', {'type': 'CustomLayer', 'params': {'params': [1, 2, [3, 4]]}, 'sublayers': []}, "custom-nested-list"),
-        
+
         # Special characters in strings
         ('Dense(64, activation="relu\\n")', None, "dense-newline-in-string"),
         ('Dense(64, activation="re\\"lu")', None, "dense-quote-in-string"),
-        
+
         # Mixed positional and named parameters
         ('Conv2D(32, (3, 3), padding="same")', {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': (3, 3), 'padding': 'same'}, 'sublayers': []}, "conv2d-mixed-params"),
         ('Dense(64, activation="relu", use_bias=true)', {'type': 'Dense', 'params': {'units': 64, 'activation': 'relu', 'use_bias': True}, 'sublayers': []}, "dense-mixed-params"),
-        
+
         # Scientific notation
         ('Dense(1e3)', {'type': 'Dense', 'params': {'units': 1000}, 'sublayers': []}, "dense-scientific-notation"),
         ('Dropout(1e-2)', {'type': 'Dropout', 'params': {'rate': 0.01}, 'sublayers': []}, "dropout-scientific-notation"),
-        
+
         # Extremely large values
         ('Dense(1000000000)', {'type': 'Dense', 'params': {'units': 1000000000}, 'sublayers': []}, "dense-large-value"),
         ('Conv2D(999999, (9999, 9999))', None, "conv2d-unreasonable-values"),
-        
+
         # Multiple nested layers with comments
         ('''Residual() {  # Outer comment
             Conv2D(32, (3, 3))  # Inner comment 1
             BatchNormalization()  # Inner comment 2
-        }''', 
+        }''',
         {'type': 'Residual', 'params': None, 'sublayers': [
             {'type': 'Conv2D', 'params': {'filters': 32, 'kernel_size': (3, 3)}, 'sublayers': []},
             {'type': 'BatchNormalization', 'params': None, 'sublayers': []}
         ]}, "residual-with-comments"),
-        
+
         # Complex HPO with multiple nested choices
-        ('Dense(HPO(choice(HPO(range(64, 256, 64)), HPO(choice(512, 1024)))))', 
+        ('Dense(HPO(choice(HPO(range(64, 256, 64)), HPO(choice(512, 1024)))))',
          {'type': 'Dense', 'params': {'units': {'hpo': {'type': 'categorical', 'values': [
              {'hpo': {'type': 'range', 'min': 64, 'max': 256, 'step': 64}},
              {'hpo': {'type': 'categorical', 'values': [512, 1024]}}
@@ -1051,7 +1050,7 @@ def test_edge_case_layer_parsing(layer_parser, transformer, layer_string, expect
             "Network must have a layers section",
             "missing-layers-section"
         ),
-        
+
         # Duplicate sections
         (
             """
@@ -1066,7 +1065,7 @@ def test_edge_case_layer_parsing(layer_parser, transformer, layer_string, expect
             "Duplicate input section",
             "duplicate-input-section"
         ),
-        
+
         # Invalid input shapes
         (
             """
@@ -1080,7 +1079,7 @@ def test_edge_case_layer_parsing(layer_parser, transformer, layer_string, expect
             "Input dimensions must be positive",
             "negative-input-dimension"
         ),
-        
+
         # Empty layers section
         (
             """
@@ -1094,7 +1093,7 @@ def test_edge_case_layer_parsing(layer_parser, transformer, layer_string, expect
             "Layers section cannot be empty",
             "empty-layers-section"
         ),
-        
+
         # Invalid loss function
         (
             """
@@ -1108,7 +1107,7 @@ def test_edge_case_layer_parsing(layer_parser, transformer, layer_string, expect
             "Invalid loss function",
             "invalid-loss-function"
         ),
-        
+
         # Invalid optimizer
         (
             """
@@ -1122,7 +1121,7 @@ def test_edge_case_layer_parsing(layer_parser, transformer, layer_string, expect
             "Invalid optimizer",
             "invalid-optimizer"
         ),
-        
+
         # Incompatible layer sequence
         (
             """
@@ -1138,7 +1137,7 @@ def test_edge_case_layer_parsing(layer_parser, transformer, layer_string, expect
             "Conv2D cannot follow Dense",
             "incompatible-layer-sequence"
         ),
-        
+
         # Mismatched input/output dimensions
         (
             """
@@ -1154,7 +1153,7 @@ def test_edge_case_layer_parsing(layer_parser, transformer, layer_string, expect
             "Output dimensions don't match loss function",
             "mismatched-dimensions"
         ),
-        
+
         # Invalid training parameters
         (
             """
@@ -1185,3 +1184,71 @@ def test_network_structure_validation(network_parser, transformer, network_strin
     with pytest.raises(DSLValidationError) as exc_info:
         transformer.parse_network(network_string)
     assert expected_error_msg in str(exc_info.value), f"Error message mismatch for {test_id}"
+
+def test_learning_rate_schedule():
+    """Test parsing of learning rate schedules."""
+    config = """
+    network LRScheduleModel {
+        input: (28, 28, 1)
+        layers:
+            Conv2D(32, kernel_size=(3,3), activation="relu")
+            MaxPooling2D(pool_size=(2,2))
+            Flatten()
+            Dense(128, activation="relu")
+            Dense(10, activation="softmax")
+        optimizer: SGD(
+            learning_rate=ExponentialDecay(
+                HPO(range(0.05, 0.2, step=0.05)),
+                1000,
+                HPO(range(0.9, 0.99, step=0.01))
+            ),
+            momentum=0.9
+        )
+    }
+    """
+
+    expected = {
+        'framework': 'tensorflow',
+        'input': {'shape': (28, 28, 1), 'type': 'Input'},
+        'layers': [
+            {'params': {'activation': 'relu', 'filters': 32, 'kernel_size': (3, 3)}, 'sublayers': [], 'type': 'Conv2D'},
+            {'params': {'pool_size': (2, 2)}, 'sublayers': [], 'type': 'MaxPooling2D'},
+            {'params': None, 'sublayers': [], 'type': 'Flatten'},
+            {'params': {'activation': 'relu', 'units': 128}, 'sublayers': [], 'type': 'Dense'},
+            {'params': {'activation': 'softmax', 'units': 10}, 'sublayers': [], 'type': 'Dense'}
+        ],
+        'name': 'LRScheduleModel',
+        'optimizer': {
+            'type': 'SGD',
+            'params': {
+                'learning_rate': {
+                    'type': 'ExponentialDecay',
+                    'params': {
+                        'initial_learning_rate': {
+                            'hpo': {
+                                'type': 'range',
+                                'start': 0.05,
+                                'end': 0.2,
+                                'step': 0.05
+                            }
+                        },
+                        'decay_steps': 1000,
+                        'decay_rate': {
+                            'hpo': {
+                                'type': 'range',
+                                'start': 0.9,
+                                'end': 0.99,
+                                'step': 0.01
+                            }
+                        }
+                    }
+                },
+                'momentum': 0.9
+            }
+        },
+        'shape_info': [],
+        'warnings': []
+    }
+
+    result = ModelTransformer().transform(config)
+    assert_dict_equal(result, expected)

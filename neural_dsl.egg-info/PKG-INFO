@@ -11,36 +11,46 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE.md
-Requires-Dist: click
-Requires-Dist: dash
-Requires-Dist: dash-bootstrap-components
-Requires-Dist: flask
-Requires-Dist: flask-socketio
-Requires-Dist: graphviz
-Requires-Dist: lark
-Requires-Dist: matplotlib
-Requires-Dist: networkx
-Requires-Dist: numpy
-Requires-Dist: plotly
-Requires-Dist: psutil
-Requires-Dist: pytest
-Requires-Dist: torch
-Requires-Dist: pygithub
-Requires-Dist: pyyaml
-Requires-Dist: selenium
-Requires-Dist: optuna
-Requires-Dist: fastapi
-Requires-Dist: python-dotenv
-Requires-Dist: webdriver-manager
-Requires-Dist: tensorflow
-Requires-Dist: huggingface_hub
-Requires-Dist: transformers
-Requires-Dist: torchvision
-Requires-Dist: multiprocess
+Requires-Dist: click>=8.1.3
+Requires-Dist: flask>=3.0
+Requires-Dist: flask-cors>=3.1
+Requires-Dist: flask-httpauth>=4.4
+Requires-Dist: graphviz>=0.20
+Requires-Dist: lark>=1.1.5
+Requires-Dist: matplotlib<3.10
+Requires-Dist: networkx>=2.8.8
+Requires-Dist: numpy>=1.23.0
+Requires-Dist: psutil>=5.9.0
+Requires-Dist: pytest>=7.0.0
+Requires-Dist: pyyaml>=6.0.1
+Requires-Dist: python-dotenv>=1.0
 Requires-Dist: pysnooper
-Requires-Dist: onnx
-Requires-Dist: flask-cors
-Requires-Dist: flask-httpauth
+Requires-Dist: radon>=5.0
+Provides-Extra: full
+Requires-Dist: dash>=2.18.2; extra == "full"
+Requires-Dist: dash-bootstrap-components>=1.0.0; extra == "full"
+Requires-Dist: flask-socketio>=5.0.0; extra == "full"
+Requires-Dist: plotly>=5.18; extra == "full"
+Requires-Dist: torch>=1.10.0; extra == "full"
+Requires-Dist: pygithub>=1.59; extra == "full"
+Requires-Dist: selenium>=4.0; extra == "full"
+Requires-Dist: optuna>=3.0; extra == "full"
+Requires-Dist: fastapi>=0.68; extra == "full"
+Requires-Dist: webdriver-manager; extra == "full"
+Requires-Dist: tensorflow>=2.6; extra == "full"
+Requires-Dist: huggingface_hub>=0.16; extra == "full"
+Requires-Dist: transformers>=4.30; extra == "full"
+Requires-Dist: torchvision>=0.15; extra == "full"
+Requires-Dist: multiprocess>=0.70; extra == "full"
+Requires-Dist: tweepy==4.15.0; extra == "full"
+Requires-Dist: pandas>=1.3; extra == "full"
+Requires-Dist: scikit-learn>=1.0; extra == "full"
+Requires-Dist: scipy>=1.7; extra == "full"
+Requires-Dist: seaborn>=0.11; extra == "full"
+Requires-Dist: statsmodels>=0.13; extra == "full"
+Requires-Dist: sympy>=1.9; extra == "full"
+Requires-Dist: onnx>=1.10; extra == "full"
+Requires-Dist: onnxruntime>=1.10; extra == "full"
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/f92005cc-7b1c-4020-aec6-0e6922c36b1b" alt="Neural Logo" width="200"/>
@@ -321,6 +331,41 @@ Explore common use cases in `examples/` with step-by-step guides in `docs/exampl
 ![packages](https://github.com/Lemniscate-world/Neural/blob/main/packages.png)
 
 *Note: You may need to zoom in to see details in these architecture diagrams.*
+
+## Repository Structure
+
+The Neural repository is organized into the following main directories:
+
+- **`docs/`**: Documentation files
+- **`examples/`**: Example Neural DSL files
+- **`neural/`**: Main source code
+  - **`neural/cli/`**: Command-line interface
+  - **`neural/parser/`**: Neural DSL parser
+  - **`neural/shape_propagation/`**: Shape propagation and validation
+  - **`neural/code_generation/`**: Code generation for different backends
+  - **`neural/visualization/`**: Visualization tools
+  - **`neural/dashboard/`**: NeuralDbg dashboard
+  - **`neural/hpo/`**: Hyperparameter optimization
+- **`neuralpaper/`**: NeuralPaper.ai implementation
+- **`profiler/`**: Performance profiling tools
+- **`tests/`**: Test suite
+
+For a detailed explanation of the repository structure, see [REPOSITORY_STRUCTURE.md](REPOSITORY_STRUCTURE.md).
+
+Each directory contains its own README with detailed documentation:
+
+- [neural/cli](neural/cli/README.md): Command-line interface
+- [neural/parser](neural/parser/README.md): Neural DSL parser
+- [neural/code_generation](neural/code_generation/README.md): Code generation
+- [neural/shape_propagation](neural/shape_propagation/README.md): Shape propagation
+- [neural/visualization](neural/visualization/README.md): Visualization tools
+- [neural/dashboard](neural/dashboard/README.md): NeuralDbg dashboard
+- [neural/hpo](neural/hpo/README.md): Hyperparameter optimization
+- [neuralpaper](neuralpaper/README.md): NeuralPaper.ai implementation
+- [profiler](profiler/README.md): Performance profiling tools
+- [docs](docs/README.md): Documentation
+- [examples](examples/README.md): Example models
+- [tests](tests/README.md): Test suite
 
 
 

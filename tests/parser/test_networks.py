@@ -9,7 +9,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from neural.parser.parser import ModelTransformer, create_parser, DSLValidationError
 
-
 class TestNetworkParsing:
     @pytest.fixture
     def network_parser(self):
@@ -42,7 +41,7 @@ class TestNetworkParsing:
                 False,
                 "simple-network"
             ),
-            
+
             # Complex network - with corrected expected output
             (
                 """
@@ -131,9 +130,9 @@ class TestNetworkParsing:
                             'learning_rate': {
                                 'type': 'ExponentialDecay',
                                 'params': {
-                                    'initial_learning_rate': {'hpo': {'type': 'range', 'min': 0.05, 'max': 0.2, 'step': 0.05}},
+                                    'initial_learning_rate': {'hpo': {'type': 'range', 'start': 0.05, 'end': 0.2, 'step': 0.05}},
                                     'decay_steps': 1000,
-                                    'decay_rate': {'hpo': {'type': 'range', 'min': 0.9, 'max': 0.99, 'step': 0.01}}
+                                    'decay_rate': {'hpo': {'type': 'range', 'start': 0.9, 'end': 0.99, 'step': 0.01}}
                                 }
                             },
                             'momentum': 0.9
@@ -146,7 +145,7 @@ class TestNetworkParsing:
                 False,
                 "lr-schedule-hpo"
             ),
-            
+
             # Multi-input network
             (
                 """
@@ -202,7 +201,7 @@ class TestNetworkParsing:
                 False,
                 "multi-input-model"
             ),
-            
+
             # Layer repetition syntax
             (
                 """
@@ -234,7 +233,7 @@ class TestNetworkParsing:
                 False,
                 "layer-repetition"
             ),
-            
+
             # Device placement
             (
                 """
@@ -269,7 +268,7 @@ class TestNetworkParsing:
                 False,
                 "device-placement"
             ),
-            
+
             # Comprehensive HPO with activation functions
             (
                 """
@@ -294,14 +293,14 @@ class TestNetworkParsing:
                     'input': {'type': 'Input', 'shape': (28, 28, 1)},
                     'layers': [
                         {'type': 'Conv2D', 'params': {
-                            'filters': 32, 
-                            'kernel_size': (3, 3), 
+                            'filters': 32,
+                            'kernel_size': (3, 3),
                             'activation': {'hpo': {'type': 'categorical', 'values': ['relu', 'elu', 'selu']}}
                         }, 'sublayers': []},
                         {'type': 'MaxPooling2D', 'params': {'pool_size': (2, 2)}, 'sublayers': []},
                         {'type': 'Flatten', 'params': None, 'sublayers': []},
                         {'type': 'Dense', 'params': {
-                            'units': 128, 
+                            'units': 128,
                             'activation': {'hpo': {'type': 'categorical', 'values': ['relu', 'tanh', 'sigmoid']}}
                         }, 'sublayers': []},
                         {'type': 'Dense', 'params': {'units': 10, 'activation': 'softmax'}, 'sublayers': []}
@@ -321,7 +320,7 @@ class TestNetworkParsing:
                 False,
                 "activation-hpo"
             ),
-            
+
             # ResidualConnection test
             (
                 """
@@ -330,17 +329,17 @@ class TestNetworkParsing:
                     layers:
                         Conv2D(64, (7,7), "relu", strides=(2,2))
                         MaxPooling2D((3, 3), strides=(2,2))
-                        
+
                         ResidualConnection {
                             Conv2D(64, (3,3), "relu", padding="same")
                             Conv2D(64, (3,3), padding="same")
                         }
-                        
+
                         ResidualConnection {
                             Conv2D(128, (3,3), "relu", strides=(2,2))
                             Conv2D(128, (3,3), padding="same")
                         }
-                        
+
                         GlobalAveragePooling2D()
                         Dense(1000, "softmax")
                 }
@@ -419,7 +418,7 @@ class TestNetworkParsing:
                 False,
                 "multi-device-model"
             ),
-            
+
             # TPU device specification
             (
                 """
@@ -454,7 +453,7 @@ class TestNetworkParsing:
                 False,
                 "tpu-model"
             ),
-            
+
             # Invalid device specification
             (
                 """
