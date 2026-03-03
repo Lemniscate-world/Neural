@@ -762,6 +762,17 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 23. **Rule 23**: "Knowledge Capture: Post-mortem documented for pivot/failure? [YES/NO]"
 24. **Rule 24**: "Marketing & Outreach Guardian: Communities identified & templates drafted? [YES/NO]"
 25. **Rule 25**: "Project Isolation: Scope limited to current project context only? [YES/NO]"
+26. **Rule 26**: "DevOps/MLOps Tasks: 5 tasks generated and created as Linear issues? [YES/NO]"
+27. **Rule 27**: "Persona Adaptability: Adapted vocabulary/depth for user role? [YES/NO]"
+28. **Rule 28**: "Linear Automation: DevOps tasks created and assigned? [YES/NO]"
+29. **Rule 29**: "Linear Integration: Connection verified at session start? [YES/NO]"
+30. **Rule 30**: "Branch Creation: Working branch created before coding? [YES/NO]"
+31. **Rule 31**: "Codebase Context: Issues include context for contributors? [YES/NO]"
+32. **Rule 32**: "Team Stack: All required tools configured? [YES/NO]"
+33. **Rule 33**: "Rule Parity: Branch has current rule set? [YES/NO]"
+34. **Rule 34**: "CEO Progress Visibility: Tasks visible in Linear? [YES/NO]"
+35. **Rule 35**: "Session Status: Report provided at session start? [YES/NO]"
+36. **Rule 36**: "Real-Time Linear Sync: CEO activities automatically synced? [YES/NO]"
 
 ---
 
@@ -792,6 +803,17 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 | Rule 21 (Intel Harvester) | STOP and conduct intelligence research immediately |
 | Rule 22 (Feature Focus) | STOP and re-focus on a single feature |
 | Rule 25 (Project Isolation) | STOP and filter scope to the target project ONLY |
+| Rule 26 (DevOps/MLOps Tasks) | STOP and generate 5 tasks |
+| Rule 27 (Persona Adaptability) | Adjust communication style |
+| Rule 28 (Linear Automation) | Create Linear issues |
+| Rule 29 (Linear Integration) | STOP and configure Linear |
+| Rule 30 (Branch Creation) | STOP and create branch |
+| Rule 31 (Codebase Context) | Add context to issues |
+| Rule 32 (Team Stack) | Verify tool setup |
+| Rule 33 (Rule Parity) | Sync rules across branches |
+| Rule 34 (CEO Progress) | Verify Linear visibility |
+| Rule 35 (Session Status) | STOP and provide report |
+| Rule 36 (Real-Time Sync) | STOP and sync immediately |
 
 ---
 
@@ -1075,6 +1097,154 @@ IF a new team member joins:
 IF a session starts:
   ACTION: Verify the contributor has the required stack.
   ACTION: If missing, guide setup before any work.
+```
+
+---
+
+---
+
+## RULE 34: CEO Progress Visibility in Linear -- MANDATORY
+
+### Rule
+The CEO's tasks, progress, and milestones MUST be automatically tracked and visible in Linear for all team members.
+
+### Requirements
+1. **Automatic Progress Updates**: Every action taken by the CEO on the `ceo/` branch MUST create or update a Linear issue.
+2. **Real-time Visibility**: Team members can see:
+   - What the CEO has completed (done)
+   - What the CEO is working on (in progress)
+   - What the CEO plans to do next (backlog)
+3. **Milestone Tracking**: Each milestone (10%, 25%, 50%, 75%, 90%, 95%) MUST have a corresponding Linear issue.
+4. **Workflow Integration**: The GitHub Actions workflow MUST update Linear automatically when rules are synced.
+
+### Implementation
+The CEO Progress workflow (`rule-sync.yml`) automatically:
+- Creates/updates Linear issues for each milestone
+- Posts comments on rule sync completion
+- Tracks progress percentage in Linear
+- Assigns label `CEO Decision` to all CEO items
+
+### Verification Checklist
+```
+AT each session start:
+  CHECK: Can you see CEO's current tasks in Linear?
+  CHECK: Is progress percentage updated?
+  CHECK: Are new milestones visible?
+  IF NOT:
+    ACTION: Trigger manual sync via workflow_dispatch
+    ACTION: Report issue to DevOps
+```
+
+### Enforcement
+```
+IF CEO progress is NOT visible in Linear:
+  ACTION: STOP - team cannot work without visibility
+  ACTION: Verify Linear API keys are configured
+  ACTION: Run workflow manually to sync
+  DO NOT: Continue until visibility is restored
+```
+
+---
+
+---
+
+## RULE 35: Automated Session Status Report -- MANDATORY
+
+### Rule
+At the START of every AI session, the agent MUST report the complete status including:
+1. Current branch
+2. Last session progress
+3. Pending tasks in Linear
+4. Any blockers
+
+### Requirements
+1. **Session Gate**: Report status before any code work.
+2. **Linear Integration**: Query Linear for CEO's current tasks.
+3. **Progress Calculation**: Calculate pessimistic progress per Rule 3.
+4. **Format**: Must include both French and English sections.
+
+### Required Report Format
+```markdown
+## Francais
+**Branche actuelle**: ceo/kuro-semantic-event-structures
+**Taches CEO en cours**: [list from Linear]
+**Taches terminees**: [list from Linear]
+**Progression**: X% (pessimiste)
+**Blockers**: [if any]
+
+## English
+**Current branch**: [branch name]
+**CEO tasks in progress**: [list from Linear]
+**CEO tasks completed**: [list from Linear]
+**Progress**: X% (pessimistic)
+**Blockers**: [if any]
+```
+
+### Enforcement
+```
+IF status report is NOT provided:
+  ACTION: STOP - provide status report first
+  DO NOT: Start any coding tasks
+```
+
+---
+
+## RULE 36: CEO Real-Time Activity Sync to Linear -- CRITICAL
+
+### Rule
+The CEO's ALL activities, progress updates, and planned work MUST be automatically synchronized to Linear in real-time. Team members must always see:
+- What the CEO completed (done)
+- What the CEO is working on (in progress)
+- What the CEO plans to do next (backlog)
+- Current progress percentage
+- Any blockers or impediments
+
+### Requirements
+1. **Automatic Issue Creation**: Every task, subtask, or work item MUST create a Linear issue automatically.
+2. **Status Updates**: Status changes (todo -> in progress -> done) MUST be reflected in Linear immediately.
+3. **Progress Tracking**: Progress percentage MUST be calculated and updated in Linear at each session end.
+4. **Session Summary Sync**: Every SESSION_SUMMARY.md update MUST automatically update corresponding Linear issues.
+5. **Milestone Progress**: Each milestone (10%, 25%, 50%, 75%, 90%, 95%) MUST have its own Linear issue with automatic progress updates.
+
+### Implementation via GitHub Actions
+The workflow `rule-sync.yml` MUST execute after EVERY session to sync:
+- New tasks created during the session
+- Tasks completed during the session
+- Current progress percentage
+- Session summary to Linear comments
+
+### Required Linear Issue Types
+| Issue Type | Description | Labels |
+|------------|-------------|--------|
+| Milestone | 10%, 25%, 50%, 75%, 90%, 95% tracking | CEO Decision, Milestone Task |
+| Session Report | Each session's work and next steps | CEO Decision, Documentation |
+| Blocker | Any impediment or roadblock | CEO Decision, Needs Review |
+| Feature Task | Individual feature or rule work | CEO Decision, (appropriate label) |
+
+### Verification Checklist
+```
+AT each session end:
+  CHECK: Were all tasks created as Linear issues?
+  CHECK: Did workflow sync progress to Linear?
+  CHECK: Can team members see CEO's current status?
+  CHECK: Is progress percentage accurate in Linear?
+  IF NOT:
+    ACTION: Manually sync immediately
+    ACTION: Verify workflow configuration
+```
+
+### Enforcement
+```
+IF CEO activity is NOT visible in Linear:
+  ACTION: STOP - team cannot work without visibility
+  ACTION: Trigger manual sync via workflow_dispatch
+  ACTION: Fix automation to prevent future gaps
+  DO NOT: Continue until visibility is restored
+
+IF progress is outdated (>24h old):
+  ACTION: Update Linear immediately
+  ACTION: Document reason for delay
+  DO NOT: Allow stale progress data
 ```
 
 ---
