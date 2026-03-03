@@ -1,0 +1,75 @@
+name: Security Scans (Bandit & Safety)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, develop, 'feat/*', 'fix/*', 'infra/*', 'ceo/*']
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  python-security:
+    name: Python Security Scans
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install security tools
+        run: |
+          pip install --upgrade pip
+          pip install bandit safety
+
+      - name: Run Bandit (code static analysis)
+        run: |
+          bandit -r . -f sarif -o bandit.sarif -q -x venv,.venv,node_modules,dist,build
+
+      - name: Upload Bandit SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit.sarif
+
+      - name: Safety check (requirements.txt)
+        if: hashFiles('requirements.txt') != ''
+        run: |
+          safety check -r requirements.txt --full-report --output json > safety-results-requirements.json
+
+      - name: Safety check (requirements-dev.txt)
+        if: hashFiles('requirements-dev.txt') != ''
+        run: |
+          safety check -r requirements-dev.txt --full-report --output json > safety-results-requirements-dev.json
+
+      - name: Safety check (fallback - installed environment)
+        if: hashFiles('requirements.txt') == '' && hashFiles('requirements-dev.txt') == ''
+        run: |
+          echo "No requirements.txt or requirements-dev.txt found. Scanning installed environment as fallback."
+          safety check --full-report --output json > safety-results-env.json || true
+
+      - name: Upload Safety results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-results
+          path: |
+            safety-results-*.json
+          retention-days: 7
+
+      - name: Post Security Scan Summary
+        if: always()
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Bandit SARIF uploaded to Code Scanning Alerts" >> $GITHUB_STEP_SUMMARY
+          if compgen -G "safety-results-*.json" > /dev/null; then
+            echo "- Safety JSON results uploaded as artifact" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Safety results not generated" >> $GITHUB_STEP_SUMMARY
+          fi

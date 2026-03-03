@@ -773,6 +773,7 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 34. **Rule 34**: "CEO Progress Visibility: Tasks visible in Linear? [YES/NO]"
 35. **Rule 35**: "Session Status: Report provided at session start? [YES/NO]"
 36. **Rule 36**: "Real-Time Linear Sync: CEO activities automatically synced? [YES/NO]"
+37. **Rule 37**: "Code Review: Review completed before continuation? [YES/NO]"
 
 ---
 
@@ -812,8 +813,9 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 | Rule 32 (Team Stack) | Verify tool setup |
 | Rule 33 (Rule Parity) | Sync rules across branches |
 | Rule 34 (CEO Progress) | Verify Linear visibility |
-| Rule 35 (Session Status) | STOP and provide report |
+| Rule 35 (Session Status) | STOP and provide report first |
 | Rule 36 (Real-Time Sync) | STOP and sync immediately |
+| Rule 37 (Code Review) | STOP - review required before continuation |
 
 ---
 
@@ -1245,6 +1247,66 @@ IF progress is outdated (>24h old):
   ACTION: Update Linear immediately
   ACTION: Document reason for delay
   DO NOT: Allow stale progress data
+```
+
+---
+
+## RULE 37: Mandatory Code Review Before Continuation -- MANDATORY
+
+### Rule
+A code review MUST be completed at EVERY push before any continuation of work. If no review is done, the continuation MUST be blocked.
+
+### Requirements
+1. **Review Tools**: Use one of the following automated or manual review tools:
+   - **Qode** - AI-powered code review
+   - **CodeRabbit** - Automated AI code review
+   - **GitHub Pull Request Reviews** - Manual human review
+   - **CodeClimate** - Automated quality analysis
+   - Any equivalent code review tool
+
+2. **Review Timing**:
+   - Review MUST be completed BEFORE any new commits to the same branch
+   - Review MUST pass before continuing to the next feature/fix
+   - Review MUST be completed BEFORE merging to main
+
+3. **Review Criteria**:
+   - Code quality and best practices
+   - Security vulnerabilities (Rule 6)
+   - Test coverage impact (Rule 5)
+   - Regression prevention (Rule 18)
+   - Documentation completeness
+
+4. **Blocker Enforcement**:
+   - If review is pending: STOP all new work
+   - If review fails: FIX issues before continuation
+   - If no review done: BLOCK until review completed
+
+### Verification Checklist
+```
+BEFORE continuation:
+  CHECK: Was a code review requested/completed?
+  CHECK: Did the review pass all checks?
+  CHECK: Are there any pending issues to fix?
+  IF review NOT done:
+    ACTION: STOP immediately
+    ACTION: Request/provide code review
+    DO NOT: Continue coding
+```
+
+### Enforcement
+```
+IF code review NOT completed:
+  ACTION: STOP all development work
+  ACTION: Request code review via Qode/CodeRabbit/GitHub
+  ACTION: Wait for review approval
+  DO NOT: Make any new commits
+  DO NOT: Continue to next task
+
+IF review fails:
+  ACTION: FIX identified issues
+  ACTION: Request re-review
+  DO NOT: Ignore review feedback
+  DO NOT: Push without fixing issues
 ```
 
 ---
