@@ -774,6 +774,7 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 35. **Rule 35**: "Session Status: Report provided at session start? [YES/NO]"
 36. **Rule 36**: "Real-Time Linear Sync: CEO activities automatically synced? [YES/NO]"
 37. **Rule 37**: "Code Review: Review completed before continuation? [YES/NO]"
+38. **Rule 38**: "CEO Complete Dashboard: All tasks visible in Linear automatically? [YES/NO]"
 
 ---
 
@@ -1307,6 +1308,72 @@ IF review fails:
   ACTION: Request re-review
   DO NOT: Ignore review feedback
   DO NOT: Continue without fixing issues
+```
+
+---
+
+## RULE 38: CEO Complete Linear Dashboard Visibility -- MANDATORY
+
+### Rule
+The CEO MUST have complete, real-time visibility into ALL activities through Linear. Every action, progress update, and planned work MUST be automatically visible in Linear for the entire team.
+
+### Requirements
+1. **Complete Task Visibility**: All CEO tasks must be visible in Linear including:
+   - Tasks completed (done)
+   - Tasks in progress (in progress)
+   - Tasks planned (backlog)
+   - Blockers and impediments
+
+2. **Automatic Real-Time Sync**: Every CEO action MUST automatically update Linear:
+   - Task creation -> Linear issue created
+   - Task start -> Linear status changed to "in progress"
+   - Task completion -> Linear status changed to "done"
+   - Session end -> Progress percentage updated in Linear
+
+3. **Dashboard Integration**: The team MUST be able to see:
+   - Current session status (what the CEO is working on now)
+   - Next planned tasks
+   - Progress percentage with breakdown
+   - Any blockers
+
+4. **Zero Manual Updates**: The CEO should NEVER manually update Linear. All updates MUST be automatic through:
+   - GitHub Actions workflow (rule-sync.yml)
+   - Automated scripts
+   - MCP server integration
+
+### Implementation
+The workflow `rule-sync.yml` MUST include a CEO Activity Sync step:
+- Query current branch status
+- Calculate progress percentage
+- List completed tasks from last session
+- List in-progress tasks
+- Identify blockers
+- Update corresponding Linear issues automatically
+
+### Verification Checklist
+```
+AT each session start:
+  CHECK: Can you see ALL CEO tasks in Linear?
+  CHECK: Is every task status accurate (done/in progress/backlog)?
+  CHECK: Is progress percentage current?
+  CHECK: Are blockers visible?
+  IF ANY missing:
+    ACTION: Fix sync automation immediately
+    DO NOT: Continue until visibility is complete
+```
+
+### Enforcement
+```
+IF CEO cannot see complete task list in Linear:
+  ACTION: STOP all work
+  ACTION: Fix sync automation
+  ACTION: Verify Linear API keys
+  DO NOT: Proceed until visibility is complete
+
+IF progress is outdated (>1 hour):
+  ACTION: Trigger immediate sync
+  ACTION: Verify workflow execution
+  DO NOT: Allow stale data
 ```
 
 ---
