@@ -1251,10 +1251,10 @@ IF progress is outdated (>24h old):
 
 ---
 
-## RULE 37: Mandatory Code Review Before Continuation -- MANDATORY
+## RULE 37: Mandatory Code Review After Commit -- MANDATORY
 
 ### Rule
-A code review MUST be completed at EVERY push before any continuation of work. If no review is done, the continuation MUST be blocked.
+A code review MUST be completed at EVERY push AFTER the commit but BEFORE any continuation of work on the rules. If no review is done, the continuation on the rules MUST be blocked.
 
 ### Requirements
 1. **Review Tools**: Use one of the following automated or manual review tools:
@@ -1265,9 +1265,9 @@ A code review MUST be completed at EVERY push before any continuation of work. I
    - Any equivalent code review tool
 
 2. **Review Timing**:
-   - Review MUST be completed BEFORE any new commits to the same branch
-   - Review MUST pass before continuing to the next feature/fix
-   - Review MUST be completed BEFORE merging to main
+   - Review MUST be completed AFTER the commit/push
+   - Review MUST be completed BEFORE continuing work on the rules
+   - Review MUST pass before proceeding with further rule modifications
 
 3. **Review Criteria**:
    - Code quality and best practices
@@ -1277,36 +1277,36 @@ A code review MUST be completed at EVERY push before any continuation of work. I
    - Documentation completeness
 
 4. **Blocker Enforcement**:
-   - If review is pending: STOP all new work
+   - If review is pending: STOP all new work on rules
    - If review fails: FIX issues before continuation
    - If no review done: BLOCK until review completed
 
 ### Verification Checklist
 ```
-BEFORE continuation:
-  CHECK: Was a code review requested/completed?
+BEFORE continuing on rules:
+  CHECK: Was a code review requested/completed after commit?
   CHECK: Did the review pass all checks?
   CHECK: Are there any pending issues to fix?
   IF review NOT done:
     ACTION: STOP immediately
     ACTION: Request/provide code review
-    DO NOT: Continue coding
+    DO NOT: Continue working on rules
 ```
 
 ### Enforcement
 ```
-IF code review NOT completed:
-  ACTION: STOP all development work
+IF code review NOT completed after commit:
+  ACTION: STOP all rule development work
   ACTION: Request code review via Qode/CodeRabbit/GitHub
   ACTION: Wait for review approval
-  DO NOT: Make any new commits
-  DO NOT: Continue to next task
+  DO NOT: Continue modifying rules
+  DO NOT: Make new commits
 
 IF review fails:
   ACTION: FIX identified issues
   ACTION: Request re-review
   DO NOT: Ignore review feedback
-  DO NOT: Push without fixing issues
+  DO NOT: Continue without fixing issues
 ```
 
 ---

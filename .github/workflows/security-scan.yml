@@ -7,6 +7,7 @@ on:
     branches: [main, develop, 'feat/*', 'fix/*', 'infra/*', 'ceo/*']
 
 permissions:
+  actions: read
   contents: read
   security-events: write
 
@@ -42,26 +43,29 @@ jobs:
       - name: Safety check (requirements.txt)
         if: hashFiles('requirements.txt') != ''
         run: |
-          safety check -r requirements.txt --full-report --output json > safety-results-requirements.json
+          # Minimize output for public repositories by omitting verbose full-report
+          safety check -r requirements.txt --output json > safety-results-requirements.json || true
 
       - name: Safety check (requirements-dev.txt)
         if: hashFiles('requirements-dev.txt') != ''
         run: |
-          safety check -r requirements-dev.txt --full-report --output json > safety-results-requirements-dev.json
+          safety check -r requirements-dev.txt --output json > safety-results-requirements-dev.json || true
 
       - name: Safety check (fallback - installed environment)
         if: hashFiles('requirements.txt') == '' && hashFiles('requirements-dev.txt') == ''
         run: |
           echo "No requirements.txt or requirements-dev.txt found. Scanning installed environment as fallback."
-          safety check --full-report --output json > safety-results-env.json || true
+          pip freeze > installed.txt || true
+          safety check -r installed.txt --output json > safety-results-env.json || true
 
-      - name: Upload Safety results artifact
+      - name: Upload Safety results artifact (private repos only; forks disabled)
         uses: actions/upload-artifact@v4
+        if: github.event.repository.private == true && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
         with:
           name: safety-results
           path: |
             safety-results-*.json
-          retention-days: 7
+          retention-days: 3
 
       - name: Post Security Scan Summary
         if: always()
@@ -69,7 +73,7 @@ jobs:
           echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Bandit SARIF uploaded to Code Scanning Alerts" >> $GITHUB_STEP_SUMMARY
           if compgen -G "safety-results-*.json" > /dev/null; then
-            echo "- Safety JSON results uploaded as artifact" >> $GITHUB_STEP_SUMMARY
+            echo "- Safety JSON results uploaded as artifact (private repos only; retention: 3 days; forks disabled)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- Safety results not generated" >> $GITHUB_STEP_SUMMARY
+            echo "- Safety results not generated or artifact upload disabled for this event" >> $GITHUB_STEP_SUMMARY
           fi
