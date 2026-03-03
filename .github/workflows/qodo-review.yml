@@ -1,0 +1,84 @@
+name: Qodo Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, develop, 'feat/*', 'fix/*', 'infra/*']
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  qodo-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Qodo
+        run: |
+          pip install qodo
+
+      - name: Run Qodo Review on PR
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          qodo review --pr $PR_NUMBER --repo $REPO_NAME --token $GITHUB_TOKEN
+
+      - name: Run Qodo Review on Push
+        if: github.event_name == 'push'
+        run: |
+          qodo review --all --output-format json > qodo-review-results.json || true
+          
+      - name: Post Qodo Review Summary
+        if: always()
+        run: |
+          echo "## Qodo Code Review Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Qodo review completed. Check the PR comments for detailed feedback." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "For full review details, check the Qodo output above or install Qodo locally:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "pip install qodo" >> $GITHUB_STEP_SUMMARY
+          echo "qodo review --all" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  qodo-security-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Qodo
+        run: |
+          pip install qodo
+
+      - name: Run Qodo Security Scan
+        run: |
+          qodo security-scan --output-format json > qodo-security-results.json || true
+
+      - name: Upload Security Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qodo-security-results
+          path: qodo-security-results.json
+          retention-days: 30
