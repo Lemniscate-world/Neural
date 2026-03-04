@@ -35,3 +35,8 @@
 - Work on **one project at a time**. No parallel development.
 - Roadmap : `PROJECTS.md` (racine)
 
+
+## CI/CD Debugging First (MANDATORY)
+- If GitHub Actions is red on the active branch/PR, stop unrelated work.
+- Inspect failing checks/logs first (`gh run list`, `gh run view --log`, `gh pr checks`).
+- Apply minimal safe fix, re-run relevant validations, then continue feature work.

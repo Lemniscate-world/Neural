@@ -24,6 +24,12 @@ dependencies = [
     "torch>=1.9.0",
 ]
 
+[project.optional-dependencies]
+automation = [
+    "google-api-python-client>=2.165.0",
+    "google-auth>=2.38.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/Lemniscate-world/Neural"
 Repository = "https://github.com/Lemniscate-world/Neural.git"

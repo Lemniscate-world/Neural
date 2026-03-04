@@ -39,6 +39,8 @@ sync_summary.py
 bandit-report.json
 .env
 .env.*
+google-service-account.json
+*.service-account.json
 secrets/
 *.log
 .antigravity/

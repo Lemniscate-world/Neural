@@ -723,3 +723,32 @@ Every session should leave a structured session summary.
 - Leaving `print()` calls in committed code.
 - Hardcoding API keys, tokens, or secrets.
 - Using emojis in documentation (except language flags in SESSION_SUMMARY.md).
+
+---
+
+## RULE 39: CI/CD Debugging First -- MANDATORY
+
+### Rule
+When any GitHub Actions check is failing on the active branch, pull request, or latest related run, the AI Agent MUST prioritize CI/CD debugging before starting unrelated implementation.
+
+### Required Workflow
+1. Detect failures with `gh` (`gh run list`, `gh pr checks`, `gh run view --log`) or equivalent CI logs.
+2. Identify root cause with failing step name, workflow name, and exact failing command.
+3. Propose the minimum safe fix first (smallest change that restores pipeline health).
+4. Apply fix, run relevant local validation, and re-check CI status.
+5. Report outcome with links to workflow runs and remaining blockers.
+
+### Enforcement
+```
+IF CI/CD is red:
+  ACTION: STOP unrelated feature work
+  ACTION: DEBUG and FIX CI/CD first
+  DO NOT: Ignore failing pipelines
+```
+
+### Compliance Extension
+When asked "Did you follow AGENTS.md?", include:
+39. **Rule 39**: "CI/CD Debugging First: [YES/NO - failing checks analyzed and handled]"
+
+### Enforcement Summary Extension
+| Rule 39 (CI/CD Debugging First) | STOP unrelated work, fix pipeline first |
