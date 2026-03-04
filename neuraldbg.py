@@ -12,6 +12,15 @@ from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 
+# Try to import dynamo for torch.compile suppression
+try:
+    import torch._dynamo as dynamo
+    dynamo_disable = dynamo.disable
+except ImportError:
+    # Fallback for PyTorch < 2.0 or if dynamo is unavailable
+    def dynamo_disable(fn):
+        return fn
+
 class EventType(Enum):
     """Types of semantic events that can occur during training."""
     GRADIENT_HEALTH_TRANSITION = "gradient_health_transition"
@@ -109,6 +118,7 @@ class NeuralDbg:
 
     def _install_hooks(self):
         """Install forward and backward hooks to extract semantic events."""
+        @dynamo_disable
         def forward_hook(module: nn.Module, input: Tuple[torch.Tensor], output: torch.Tensor):
             """Extract semantic events from forward pass."""
             if not self.is_monitoring:
@@ -148,6 +158,7 @@ class NeuralDbg:
 
                 self.previous_activation_stats[layer_name] = activation_stats
 
+        @dynamo_disable
         def full_backward_hook(module: nn.Module, grad_input: Tuple[torch.Tensor], grad_output: Tuple[torch.Tensor]):
             """Extract semantic events from backward pass using full_backward_hook."""
             if not self.is_monitoring:
