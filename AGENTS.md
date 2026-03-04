@@ -338,50 +338,25 @@ IF protected file is committed:
 
 ---
 
-## RULE 11: Unified Rule Management — MANDATORY
+## RULE 11: Sync Rule — MANDATORY
 
 ### Rule
-This rule combines roadmap and sync management into a unified framework:
-
-**Part A - Rule Sync**: When rules are updated in ANY project, SYNC to `~/Documents/kuro-rules` (master copy).
-
-**Part B - Roadmap Adherence**: Every project MUST have a roadmap file (PLAN.md or ROADMAP.md) with clear build order, success criteria, anti-goals, and MVP scope.
-
-**Part C - Roadmap Duration**: Every roadmap MUST have a minimum duration of ONE MONTH with clearly defined phases, weekly milestones, and buffer time (10-15%).
-
-### Nuances Preserved
-- **Rule 11 (Original)**: Focus on kuro-rules master copy sync
-- **Rule 12 (Original)**: Focus on roadmap existence and adherence
-- **Rule 13 (Original)**: Focus on timeline (min 4 weeks)
-
-### Requirements
-- Clear build order with numbered steps
-- Success criteria for each phase
-- Anti-goals (what NOT to build)
-- MVP scope definition
-- Minimum 4 weeks of planned work
-- Weekly milestones or checkpoints
-- Clear deliverables for each phase
-- Buffer time for unexpected issues (10-15%)
+When rules are updated in ANY project, SYNC to `~/Documents/kuro-rules` (master copy).
 
 ### Verification
 ```
 WHEN updating rules:
-  CHECK: Is this update in kuro-rules? (Part A)
-  CHECK: Does PLAN.md or ROADMAP.md exist? (Part B)
-  CHECK: Does roadmap span at least 4 weeks? (Part C)
+  CHECK: Is this update in kuro-rules?
+  IF NO: COPY update to kuro-rules
+  CHECK: Are other projects using old rules?
+  IF YES: SYNC new rules to those projects
 ```
 
 ### Enforcement
 ```
-IF rules updated without sync:
+IF rules are updated without sync:
   ACTION: SYNC to kuro-rules immediately
-
-IF no roadmap exists:
-  ACTION: STOP and create PLAN.md
-
-IF roadmap duration < 1 month:
-  ACTION: STOP and expand the plan
+  ACTION: Update all affected projects
 ```
 
 ---
@@ -760,43 +735,6 @@ IF a project pivots without a post-mortem:
 
 ---
 
-## RULE 24: Marketing & Outreach Guardian — MANDATORY
-
-### Rule
-Before any public release or marketing campaign, the AI Agent MUST ensure proper community outreach, feedback collection channels, and communication templates are prepared.
-
-### Requirements
-1. **Community Identification**: Identify at least 3 relevant communities or forums where the product would be discussed
-2. **Feedback Channels**: Establish clear channels for user feedback (Discord, GitHub issues, survey forms)
-3. **Communication Templates**: Prepare outreach templates for:
-   - Announcements (launch, features, updates)
-   - Bug reports (template with reproduction steps)
-   - Feature requests (template with use case description)
-4. **Launch Checklist**: Verify all marketing materials are reviewed for accuracy
-
-### Verification Checklist
-```
-BEFORE launch or major announcement:
-  CHECK: Are 3+ target communities identified?
-  CHECK: Is feedback channel active and monitored?
-  CHECK: Are communication templates drafted?
-  CHECK: Has marketing content been reviewed?
-  IF any missing:
-    ACTION: STOP launch preparation
-    ACTION: Complete outreach setup
-    DO NOT: Proceed without proper channels
-```
-
-### Enforcement
-```
-IF product is released without outreach preparation:
-  ACTION: POSTPONE release until channels are ready
-  ACTION: Document missing components
-  DO NOT: Launch without user feedback mechanism
-```
-
----
-
 When asking "Did you follow AGENTS.md?", the agent MUST provide:
 
 1.  **Rule 1**: "I read AGENTS.md at the start of this session"
@@ -957,6 +895,8 @@ IF the user's role is known or stated:
   ACTION: Emphasize the rules most relevant to that persona.
   DO NOT: Speak to a CEO like a DevOps, or a DevOps like a CEO, unless pedagogical translation is requested.
 ```
+
+When in doubt, ASK the user. Do not assume.
 
 When in doubt, ASK the user. Do not assume.
 

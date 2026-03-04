@@ -27,6 +27,9 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Rule and session docs are synced from the shared rules repo and do not
+          # follow markdownlint style constraints used for product docs.
+          FILTER_REGEX_EXCLUDE: '(^|/)(AGENTS\.md|AI_GUIDELINES\.md|GAD\.md|copilot-instructions\.md|\.cursorrules|ia_rules/AI_GUIDELINES\.md|\.github/copilot-instructions\.md|SESSION_SUMMARY\.md|SESSION_SUMMARY\.md\.bak|mom_test_results\.md|mom_test_script\.md|decision\.md|acquisition_tracker\.md)$'
           # Enable core linters
           VALIDATE_PYTHON: true
           VALIDATE_MARKDOWN: true

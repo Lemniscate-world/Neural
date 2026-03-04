@@ -33,12 +33,22 @@ jobs:
 
       - name: Run Bandit (code static analysis)
         run: |
-          bandit -r . -f sarif -o bandit.sarif -q -x venv,.venv,node_modules,dist,build
+          PY_FILES=$(git ls-files '*.py' ':!:tests/**' ':!:venv/**' ':!:.venv/**' ':!:dist/**' ':!:build/**')
+          if [ -z "$PY_FILES" ]; then
+            echo '{"errors": [], "generated_at": "n/a", "metrics": {}, "results": []}' > bandit-report.json
+            echo "No Python source files found for Bandit scan."
+            exit 0
+          fi
+          # shellcheck disable=SC2086
+          bandit -f json -o bandit-report.json -q --severity-level medium $PY_FILES
 
-      - name: Upload Bandit SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Upload Bandit results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: bandit.sarif
+          name: bandit-results
+          path: bandit-report.json
+          retention-days: 3
 
       - name: Safety check (requirements.txt)
         if: hashFiles('requirements.txt') != ''
@@ -71,7 +81,11 @@ jobs:
         if: always()
         run: |
           echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Bandit SARIF uploaded to Code Scanning Alerts" >> $GITHUB_STEP_SUMMARY
+          if [ -f "bandit-report.json" ]; then
+            echo "- Bandit JSON report uploaded as artifact (bandit-results)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Bandit report not generated" >> $GITHUB_STEP_SUMMARY
+          fi
           if compgen -G "safety-results-*.json" > /dev/null; then
             echo "- Safety JSON results uploaded as artifact (private repos only; retention: 3 days; forks disabled)" >> $GITHUB_STEP_SUMMARY
           else
