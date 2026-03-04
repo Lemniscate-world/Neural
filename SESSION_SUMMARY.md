@@ -1,3 +1,62 @@
+# Session Summary - 2026-03-04 (Part 14)
+**Editor**: Antigravity
+
+## Francais
+**Ce qui a ete fait** :
+- Correction non-destructive de la synchronisation des regles apres feedback utilisateur
+- Restauration de `AGENTS.md` vers la version complete pre-sync (commit `29a6dbc5`) pour reintroduire les sections supprimees involontairement
+  - Rule 11: Unified Rule Management
+  - Rule 24: Marketing & Outreach Guardian
+- Preservation explicite des anciennes regles locales dans les fichiers miroirs tout en gardant la sync kuro:
+  - `ia_rules/AI_GUIDELINES.md` : ajout d'un bloc `NeuralDBG Legacy Addendum (Preserved)`
+  - `.github/copilot-instructions.md` : ajout d'un bloc `NeuralDBG Legacy Addendum (Preserved)`
+- Objectif respecte: ne pas supprimer les regles existantes, seulement unifier et ajouter
+
+**Initiatives donnees** :
+- Strategie de fusion "superset" pour eviter toute perte de regles locales
+- Priorisation du principe "no deletion" pour les fichiers de gouvernance AI
+
+**Fichiers modifies** :
+- `AGENTS.md`
+- `ia_rules/AI_GUIDELINES.md`
+- `.github/copilot-instructions.md`
+- `SESSION_SUMMARY.md`
+
+**Etapes suivantes** :
+- Continuer ROADMAP Phase 2 (compiler-aware hardening)
+- Maintenir la strategie de sync additive pour les prochains updates de regles
+
+## English
+**What was done**:
+- Applied a non-destructive rule sync recovery after user feedback
+- Restored `AGENTS.md` to the fuller pre-sync version (commit `29a6dbc5`) to reintroduce unintentionally removed sections
+  - Rule 11: Unified Rule Management
+  - Rule 24: Marketing & Outreach Guardian
+- Explicitly preserved legacy local rules in mirrored files while keeping kuro-synced content:
+  - `ia_rules/AI_GUIDELINES.md`: added `NeuralDBG Legacy Addendum (Preserved)`
+  - `.github/copilot-instructions.md`: added `NeuralDBG Legacy Addendum (Preserved)`
+- Goal achieved: no rule deletion; additive/unified sync only
+
+**Initiatives given**:
+- "Superset" merge strategy to avoid losing local rule content
+- Prioritized "no deletion" governance policy for AI rule files
+
+**Files changed**:
+- `AGENTS.md`
+- `ia_rules/AI_GUIDELINES.md`
+- `.github/copilot-instructions.md`
+- `SESSION_SUMMARY.md`
+
+**Next steps**:
+- Continue ROADMAP Phase 2 (compiler-aware hardening)
+- Keep additive sync behavior for future rule updates
+
+**Tests**: 34 passing, 4 skipped
+**Blockers**: None
+**Progress**: 50% (Pessimistic estimate unchanged; governance sync corrected)
+
+---
+
 # Session Summary - 2026-03-04 (Part 13)
 **Editor**: Antigravity
 
