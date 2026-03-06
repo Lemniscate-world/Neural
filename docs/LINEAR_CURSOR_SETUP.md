@@ -1,154 +1,141 @@
-# Linear dans Cursor (MCP) — Guide d'installation
+# Linear dans Cursor (MCP) — Methode A a Z
 
-Ce document explique comment connecter Cursor a Linear pour que l'assistant puisse lire/creer des issues, lister les teams, etc.
+Ce guide decrit la methode utilisee dans ce repo pour connecter Linear proprement.
+Objectif: connexion stable pour tous les collaborateurs, sans cle en dur dans git.
 
-Objectif: avoir une integration Linear fonctionnelle, sans jamais committer de secret.
+## Resume de la methode utilisee
 
-## Concepts (simple)
-
-- **MCP (Model Context Protocol)**: un "connecteur" qui permet a Cursor d'appeler des outils externes (Linear, GitHub, etc.).
-- **Serveur MCP**: le programme (ou service HTTP) que Cursor utilise pour parler a Linear.
-- **Cle API Linear**: un secret qui autorise l'acces a ton workspace Linear. Elle doit rester privee.
+- Integration Linear activee dans Cursor UI (plugin/integration)
+- MCP configure en HTTP dans `.cursor/mcp.json`
+- Cle API chargee via `LINEAR_API_KEY` (variable d'environnement persistante)
+- Cursor lance depuis un shell qui contient cette variable
 
 ## Prerequis
 
-- Cursor (version recente avec MCP)
-- Un compte Linear + une cle API
-- Selon la methode:
-  - **Methode Command (npx)**: Node.js 18+ et `npx`
-  - **Methode HTTP**: aucun Node requis (si Cursor supporte le transport HTTP "streamable")
+- Cursor recent (support MCP)
+- Compte Linear + cle API personnelle
+- Shell `bash`
+- Node non requis avec la methode HTTP (recommandee)
 
-## Etape 1 — Creer une cle API Linear
+## Etape A — Creer la cle API Linear
 
 1. Ouvre Linear.
-2. Va dans **Settings** > **API** > **Personal API keys**.
-3. Cree une cle, puis copie-la.
+2. Va dans `Settings -> API -> Personal API keys`.
+3. Cree une cle et copie-la.
 
-Important: traite cette cle comme un mot de passe.
+Important: considere cette cle comme un mot de passe.
 
-## Etape 2 — Choisir une methode de connexion dans Cursor
+## Etape B — Verifier/activer Linear dans l'UI Cursor
 
-Cursor peut se connecter a Linear de deux manieres principales. Choisis la plus simple pour toi.
+Sur certaines installations, il faut d'abord activer/installer l'integration Linear dans Cursor UI.
 
-### Methode A (recommandee) — Configuration via l'UI de Cursor
+1. Ouvre `Cursor -> Settings`.
+2. Cherche `Linear` dans les integrations/plugins/outils.
+3. Active l'integration Linear si elle est desactivee.
+4. Redemarre Cursor.
 
-1. Ouvre Cursor > **Settings**.
-2. Va dans **Tools & MCP**.
-3. Ajoute/active un serveur MCP Linear.
-4. Renseigne l'authentification (cle API) dans l'UI si Cursor propose un champ pour ca.
-5. Redemarre completement Cursor (quitter puis relancer).
+Indice local dans ce repo: [`.cursor/settings.json`](/home/kami/dojo/NeuralDBG/.cursor/settings.json) contient `"plugins.linear.enabled": true`.
 
-Avantages:
-- Simple, pas besoin de gerer un fichier JSON a la main.
-- Souvent stocke dans un endroit plus "safe" que le depot.
+## Etape C — Rendre la cle disponible pour tous les agents (persistant)
 
-### Methode B — Fichier `.cursor/mcp.json` (serveur "command" avec npx)
+Creer un fichier secret local (hors repo) et le charger automatiquement:
 
-Cette methode lance un serveur MCP local via `npx`.
+```bash
+mkdir -p ~/.config/secrets
+cat > ~/.config/secrets/linear.env <<'EOF'
+export LINEAR_API_KEY='lin_api_xxx'
+EOF
+chmod 600 ~/.config/secrets/linear.env
+```
 
-Le projet contient deja un exemple de config dans:
+Ajouter le chargement auto dans `bash`:
 
-- `.cursor/mcp.json` (mais `.cursor/` est dans `.gitignore`, donc **non versionne**)
+```bash
+grep -q "linear.env" ~/.bashrc || echo '[ -f ~/.config/secrets/linear.env ] && source ~/.config/secrets/linear.env' >> ~/.bashrc
+grep -q "linear.env" ~/.profile || echo '[ -f ~/.config/secrets/linear.env ] && source ~/.config/secrets/linear.env' >> ~/.profile
+source ~/.bashrc
+```
 
-Exemple minimal:
+Verification:
+
+```bash
+echo ${#LINEAR_API_KEY}
+```
+
+Le resultat doit etre `> 1`.
+
+## Etape D — Configurer MCP HTTP dans le repo
+
+Fichier a utiliser: [`.cursor/mcp.json`](/home/kami/dojo/NeuralDBG/.cursor/mcp.json)
+
+Configuration:
 
 ```json
 {
   "mcpServers": {
     "linear": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-linear"],
-      "env": {
-        "LINEAR_API_KEY": ""
+      "url": "https://mcp.linear.app/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:LINEAR_API_KEY}"
       }
     }
   }
 }
 ```
 
-Ensuite, tu fournis la cle via l'environnement (voir Etape 3).
+Regles de securite:
+- Ne jamais mettre la cle en dur dans `mcp.json`.
+- Garder `.cursor/` et `.env` hors git (deja ignore dans ce repo).
 
-### Methode C — Serveur MCP HTTP (si tu utilises le serveur officiel cloud)
+## Etape E — Lancer Cursor correctement
 
-Certains environnements/registries utilisent un serveur MCP Linear expose en HTTP.
-L'exemple le plus courant ressemble a:
-
-- URL: `https://mcp.linear.app/mcp`
-- Transport: `http` / `streamableHttp` (selon l'UI Cursor)
-
-Dans ce cas, l'auth se fait souvent via un header (ou un champ "API key" dans l'UI).
-
-## Etape 3 — Mettre la cle API sans la committer
-
-Regle: **ne jamais mettre la cle dans un fichier versionne**.
-
-### Option 1 (simple) — Variable d'environnement dans le shell
-
-Dans ton terminal:
+Toujours lancer Cursor depuis un shell ou `LINEAR_API_KEY` est chargee:
 
 ```bash
-export LINEAR_API_KEY="lin_api_xxx"
-```
-
-Puis lance Cursor depuis ce meme terminal:
-
-```bash
+cd /home/kami/dojo/NeuralDBG
 cursor .
 ```
 
-### Option 2 — Utiliser un `.env` local (non versionne)
+Puis faire un redemarrage complet de Cursor.
 
-1. Cree un fichier `.env` (il est ignore par git).
-2. Ajoute:
+## Etape F — Valider la connexion
 
-```
-LINEAR_API_KEY=lin_api_xxx
-```
+Verification minimale:
+- Les outils Linear apparaissent dans l'assistant Cursor.
+- Une action de lecture fonctionne (ex: lister teams / afficher `me`).
 
-3. Charge le `.env` puis lance Cursor:
-
-```bash
-cd /chemin/vers/NeuralDBG
-set -a && source .env && set +a
-cursor .
-```
-
-Note: Cursor ne charge pas automatiquement le `.env` du projet. Il faut le `source` avant de lancer Cursor (ou utiliser l'UI).
-
-## Etape 4 — Verifier que la connexion marche
-
-Tu peux tester avec une action "lecture" (safe):
-
-- Lister les teams
-- Afficher l'utilisateur courant ("me")
-
-Dans Cursor, si tout est correct, tu verras des outils Linear disponibles dans l'assistant.
-
-## Depannage (si ca ne marche pas)
-
-### 1) Node / npx introuvable (methode B)
-
-Verifie:
+Verification API (optionnelle):
 
 ```bash
-node --version
-npx --version
+curl -sS https://api.linear.app/graphql \
+  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Content-Type: application/json" \
+  --data '{"query":"{ viewer { id name email } }"}'
 ```
 
-Si c'est vide ou "command not found", installe Node.js 18+ puis redemarre Cursor.
+Si la connexion est bonne, la reponse contient `data.viewer`.
 
-### 2) Cle API invalide / permissions
+## Depannage
 
-- Regenerer une nouvelle cle dans Linear si tu as un doute.
-- Verifier que tu utilises la bonne cle pour le bon workspace.
+1. `echo ${#LINEAR_API_KEY}` renvoie `0`
+- La variable n'est pas chargee dans ce shell.
+- Refaire `source ~/.bashrc` ou ouvrir un nouveau terminal.
 
-### 3) Cursor ne voit pas la variable
+2. Outils Linear absents dans Cursor
+- Verifier l'etape B (integration Linear activee).
+- Verifier [`.cursor/mcp.json`](/home/kami/dojo/NeuralDBG/.cursor/mcp.json).
+- Fermer puis relancer completement Cursor.
 
-- Si tu utilises `.env`, assure-toi de lancer Cursor depuis le terminal apres `source .env`.
-- Sinon, configure l'env directement dans l'UI MCP de Cursor.
+3. Erreur `Unauthorized` / `403`
+- Cle invalide ou mauvais workspace.
+- Regenerer la cle dans Linear et recharger le shell.
 
-## Securite (a lire)
+4. Methode fallback (si HTTP indisponible dans ta version Cursor)
+- Utiliser un serveur MCP local `npx @modelcontextprotocol/server-linear`.
+- Cette methode requiert Node.js 18+.
 
-- Ne colle jamais ta cle dans un fichier commite (README, docs, scripts).
-- Si une cle a ete exposee (meme "juste une seconde"), **revoque-la** et cree-en une nouvelle.
+## Securite
 
+- Ne jamais committer une vraie cle API.
+- Ne jamais partager la cle en capture ecran, PR, ticket, log.
+- Si une cle fuit, la revoquer immediatement et en creer une nouvelle.
