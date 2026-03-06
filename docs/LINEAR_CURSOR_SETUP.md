@@ -34,7 +34,7 @@ Sur certaines installations, il faut d'abord activer/installer l'integration Lin
 3. Active l'integration Linear si elle est desactivee.
 4. Redemarre Cursor.
 
-Indice local dans ce repo: [`.cursor/settings.json`](/home/kami/dojo/NeuralDBG/.cursor/settings.json) contient `"plugins.linear.enabled": true`.
+Indice local dans ce repo: `.cursor/settings.json` contient `"plugins.linear.enabled": true`.
 
 ## Etape C — Rendre la cle disponible pour tous les agents (persistant)
 
@@ -66,7 +66,11 @@ Le resultat doit etre `> 1`.
 
 ## Etape D — Configurer MCP HTTP dans le repo
 
-Fichier a utiliser: [`.cursor/mcp.json`](/home/kami/dojo/NeuralDBG/.cursor/mcp.json)
+Fichier a utiliser: `.cursor/mcp.json` (configuration au niveau du projet).
+
+Note importante:
+- Selon ta configuration Cursor, le MCP peut aussi etre configure au niveau utilisateur.
+- Si c'est ton cas, utilise le chemin de configuration affiche par Cursor dans `Settings -> Tools & MCP`.
 
 Configuration:
 
@@ -92,7 +96,7 @@ Regles de securite:
 Toujours lancer Cursor depuis un shell ou `LINEAR_API_KEY` est chargee:
 
 ```bash
-cd /home/kami/dojo/NeuralDBG
+cd /chemin/vers/NeuralDBG
 cursor .
 ```
 
@@ -123,7 +127,7 @@ Si la connexion est bonne, la reponse contient `data.viewer`.
 
 2. Outils Linear absents dans Cursor
 - Verifier l'etape B (integration Linear activee).
-- Verifier [`.cursor/mcp.json`](/home/kami/dojo/NeuralDBG/.cursor/mcp.json).
+- Verifier `.cursor/mcp.json` (ou le fichier MCP utilisateur indique par Cursor).
 - Fermer puis relancer completement Cursor.
 
 3. Erreur `Unauthorized` / `403`
