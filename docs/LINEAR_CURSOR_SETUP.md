@@ -6,7 +6,7 @@ Objectif: connexion stable pour tous les collaborateurs, sans cle en dur dans gi
 ## Resume de la methode utilisee
 
 - Integration Linear activee dans Cursor UI (plugin/integration)
-- MCP configure en HTTP dans `.cursor/mcp.json`
+- MCP configure en HTTP dans le fichier utilisateur `~/.cursor/mcp.json`
 - Cle API chargee via `LINEAR_API_KEY` (variable d'environnement persistante)
 - Cursor lance depuis un shell qui contient cette variable
 
@@ -64,13 +64,13 @@ echo ${#LINEAR_API_KEY}
 
 Le resultat doit etre `> 1`.
 
-## Etape D — Configurer MCP HTTP dans le repo
+## Etape D — Configurer MCP HTTP au niveau utilisateur
 
-Fichier a utiliser: `.cursor/mcp.json` (configuration au niveau du projet).
+Fichier a utiliser (recommande): `~/.cursor/mcp.json` (configuration utilisateur partagee entre projets).
 
 Note importante:
-- Selon ta configuration Cursor, le MCP peut aussi etre configure au niveau utilisateur.
-- Si c'est ton cas, utilise le chemin de configuration affiche par Cursor dans `Settings -> Tools & MCP`.
+- Dans certains cas, Cursor peut aussi utiliser une config par projet (`.cursor/mcp.json`).
+- En cas de doute, utilise le chemin de configuration affiche dans `Settings -> Tools & MCP`.
 
 Configuration:
 
@@ -89,7 +89,7 @@ Configuration:
 
 Regles de securite:
 - Ne jamais mettre la cle en dur dans `mcp.json`.
-- Garder `.cursor/` et `.env` hors git (deja ignore dans ce repo).
+- Garder `.env` hors git. Le fichier `~/.cursor/mcp.json` est hors repo par nature.
 
 ## Etape E — Lancer Cursor correctement
 
@@ -127,7 +127,7 @@ Si la connexion est bonne, la reponse contient `data.viewer`.
 
 2. Outils Linear absents dans Cursor
 - Verifier l'etape B (integration Linear activee).
-- Verifier `.cursor/mcp.json` (ou le fichier MCP utilisateur indique par Cursor).
+- Verifier `~/.cursor/mcp.json` (ou le fichier MCP indique par Cursor dans l'UI).
 - Fermer puis relancer completement Cursor.
 
 3. Erreur `Unauthorized` / `403`
