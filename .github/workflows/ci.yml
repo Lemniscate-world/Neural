@@ -48,5 +48,6 @@ jobs:
           bandit -r . -ll -x tests,*/tests/*,.venv,venv,__pycache__
 
       - name: Run Safety
+        if: matrix.os == 'ubuntu-latest'
         run: |
           python -m safety check --full-report
