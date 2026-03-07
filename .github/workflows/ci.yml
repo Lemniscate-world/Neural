@@ -52,7 +52,7 @@ jobs:
 
       - name: Install QA tools
         run: |
-          python -m pip install pytest coverage bandit safety
+          python -m pip install numpy pytest coverage bandit safety
 
       - name: Run tests with coverage gate (>=60%)
         run: |
