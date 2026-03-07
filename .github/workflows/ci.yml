@@ -61,9 +61,8 @@ jobs:
           test_rc=${PIPESTATUS[0]}
           python -m coverage report --show-missing --fail-under=60 2>&1 | tee /tmp/coverage-ci.log
           cov_rc=${PIPESTATUS[0]}
-          set -e
           if [ "$test_rc" -ne 0 ] || [ "$cov_rc" -ne 0 ]; then
-            summary="$(grep -E -m 10 'FAILED|ERROR|Required test coverage|fail-under|No module named|Traceback|AssertionError' /tmp/pytest-ci.log /tmp/coverage-ci.log | tr '\n' ' ')"
+            summary="$(grep -E -m 10 'FAILED|ERROR|Required test coverage|fail-under|No module named|Traceback|AssertionError' /tmp/pytest-ci.log /tmp/coverage-ci.log | tr '\n' ' ' || true)"
             if [ -z "$summary" ]; then
               summary="$(tail -n 40 /tmp/pytest-ci.log /tmp/coverage-ci.log | tr '\n' ' ')"
             fi
