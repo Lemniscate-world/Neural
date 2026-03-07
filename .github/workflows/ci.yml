@@ -52,22 +52,12 @@ jobs:
 
       - name: Install QA tools
         run: |
-          python -m pip install pytest pytest-cov bandit safety
+          python -m pip install pytest coverage bandit safety
 
       - name: Run tests with coverage gate (>=60%)
         run: |
-          set -o pipefail
-          python -m pytest --cov=neuraldbg --cov-report=term-missing --cov-fail-under=60 2>&1 | tee /tmp/pytest-ci.log
-          rc=${PIPESTATUS[0]}
-          if [ "$rc" -ne 0 ]; then
-            summary="$(grep -E -m 6 'FAILED|ERROR|No module named|Required test coverage|Traceback' /tmp/pytest-ci.log | tr '\n' ' ')"
-            if [ -z "$summary" ]; then
-              summary="$(tail -n 20 /tmp/pytest-ci.log | tr '\n' ' ')"
-            fi
-            summary="${summary//::/%3A%3A}"
-            echo "::error::${summary}"
-            exit "$rc"
-          fi
+          python -m coverage run -m pytest
+          python -m coverage report --show-missing --fail-under=60
 
       - name: Run Bandit
         run: |
