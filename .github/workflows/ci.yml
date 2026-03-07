@@ -56,8 +56,24 @@ jobs:
 
       - name: Run tests with coverage gate (>=60%)
         run: |
-          python -m coverage run -m pytest
-          python -m coverage report --show-missing --fail-under=60
+          set +e
+          python -m coverage run -m pytest 2>&1 | tee /tmp/pytest-ci.log
+          test_rc=${PIPESTATUS[0]}
+          python -m coverage report --show-missing --fail-under=60 2>&1 | tee /tmp/coverage-ci.log
+          cov_rc=${PIPESTATUS[0]}
+          set -e
+          if [ "$test_rc" -ne 0 ] || [ "$cov_rc" -ne 0 ]; then
+            summary="$(grep -E -m 10 'FAILED|ERROR|Required test coverage|fail-under|No module named|Traceback|AssertionError' /tmp/pytest-ci.log /tmp/coverage-ci.log | tr '\n' ' ')"
+            if [ -z "$summary" ]; then
+              summary="$(tail -n 40 /tmp/pytest-ci.log /tmp/coverage-ci.log | tr '\n' ' ')"
+            fi
+            summary="${summary//::/%3A%3A}"
+            echo "::error title=CI test failure::${summary}"
+            if [ "$test_rc" -ne 0 ]; then
+              exit "$test_rc"
+            fi
+            exit "$cov_rc"
+          fi
 
       - name: Run Bandit
         run: |
