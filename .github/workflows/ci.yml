@@ -56,7 +56,18 @@ jobs:
 
       - name: Run tests with coverage gate (>=60%)
         run: |
-          python -m pytest --cov=neuraldbg --cov-report=term-missing --cov-fail-under=60
+          set -o pipefail
+          python -m pytest --cov=neuraldbg --cov-report=term-missing --cov-fail-under=60 2>&1 | tee /tmp/pytest-ci.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            summary="$(grep -E -m 6 'FAILED|ERROR|No module named|Required test coverage|Traceback' /tmp/pytest-ci.log | tr '\n' ' ')"
+            if [ -z "$summary" ]; then
+              summary="$(tail -n 20 /tmp/pytest-ci.log | tr '\n' ' ')"
+            fi
+            summary="${summary//::/%3A%3A}"
+            echo "::error::${summary}"
+            exit "$rc"
+          fi
 
       - name: Run Bandit
         run: |
