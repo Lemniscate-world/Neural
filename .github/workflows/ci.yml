@@ -56,11 +56,11 @@ jobs:
 
       - name: Run tests with coverage gate (>=60%)
         run: |
-          pytest --cov=neuraldbg --cov-report=term-missing --cov-fail-under=60
+          python -m pytest --cov=neuraldbg --cov-report=term-missing --cov-fail-under=60
 
       - name: Run Bandit
         run: |
-          bandit -r . -ll -x tests,*/tests/*,.venv,venv,__pycache__
+          python -m bandit -r . -ll -x tests,*/tests/*,.venv,venv,__pycache__
 
       - name: Run Safety
         if: matrix.os == 'ubuntu-latest'
