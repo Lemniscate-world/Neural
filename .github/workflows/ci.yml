@@ -49,4 +49,4 @@ jobs:
 
       - name: Run Safety
         run: |
-          safety check --full-report
+          python -m safety check --full-report
