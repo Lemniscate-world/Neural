@@ -57,7 +57,7 @@ jobs:
       - name: Run tests with coverage gate (>=60%)
         run: |
           set +e
-          python -m coverage run -m pytest 2>&1 | tee /tmp/pytest-ci.log
+          python -m coverage run --source=neuraldbg -m pytest 2>&1 | tee /tmp/pytest-ci.log
           test_rc=${PIPESTATUS[0]}
           python -m coverage report --show-missing --fail-under=60 2>&1 | tee /tmp/coverage-ci.log
           cov_rc=${PIPESTATUS[0]}
