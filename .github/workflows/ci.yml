@@ -56,16 +56,21 @@ jobs:
 
       - name: Run tests with coverage gate (>=60%)
         run: |
+          # Keep the script running after failures so we can emit a useful summary.
           set +e
+          # Limit coverage to project source to avoid external library artifacts.
           python -m coverage run --source=neuraldbg -m pytest 2>&1 | tee /tmp/pytest-ci.log
+          # In a pipeline, capture the command status (not tee's status).
           test_rc=${PIPESTATUS[0]}
           python -m coverage report --show-missing --fail-under=60 2>&1 | tee /tmp/coverage-ci.log
           cov_rc=${PIPESTATUS[0]}
           if [ "$test_rc" -ne 0 ] || [ "$cov_rc" -ne 0 ]; then
+            # Prefer compact signal lines; if none, fallback to recent output.
             summary="$(grep -E -m 10 'FAILED|ERROR|Required test coverage|fail-under|No module named|Traceback|AssertionError' /tmp/pytest-ci.log /tmp/coverage-ci.log | tr '\n' ' ' || true)"
             if [ -z "$summary" ]; then
               summary="$(tail -n 40 /tmp/pytest-ci.log /tmp/coverage-ci.log | tr '\n' ' ')"
             fi
+            # Escape annotation control token for GitHub Actions commands.
             summary="${summary//::/%3A%3A}"
             echo "::error title=CI test failure::${summary}"
             if [ "$test_rc" -ne 0 ]; then
@@ -73,6 +78,7 @@ jobs:
             fi
             exit "$cov_rc"
           fi
+
 
       - name: Run Bandit
         run: |
