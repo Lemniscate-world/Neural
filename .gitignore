@@ -27,6 +27,12 @@ venv/
 # Generated artifacts
 artifacts/*
 !artifacts/.gitkeep
+data/*
+!data/.gitkeep
+models/*
+!models/.gitkeep
+outputs/*
+!outputs/.gitkeep
 
 # Private logs and tracking
 SESSION_SUMMARY.md

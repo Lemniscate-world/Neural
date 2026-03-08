@@ -37,6 +37,38 @@ Unlike traditional monitoring tools (TensorBoard, Weights & Biases), NeuralDBG f
 pip install neuraldbg
 ```
 
+### Docker Development (Hermetic Workspace)
+
+Use Docker to keep a reproducible local environment across machines and contributors.
+
+```bash
+# Build image
+docker-compose build
+
+# Start the dev container (one-command startup)
+docker-compose up -d
+
+# Open a shell in the running workspace
+docker-compose exec neuraldbg-dev bash
+```
+
+Run tests inside Docker:
+
+```bash
+docker-compose run --rm neuraldbg-dev bash -lc "pytest"
+```
+
+Persistent volumes are mounted to:
+- `/data` (host: `./data`)
+- `/models` (host: `./models`)
+- `/outputs` (host: `./outputs`)
+
+Stop containers:
+
+```bash
+docker-compose down
+```
+
 ### Basic Usage
 
 ```python

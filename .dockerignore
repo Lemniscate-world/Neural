@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+venv
+__pycache__
+.pytest_cache
+.coverage
+.coverage.*
+htmlcov
+build
+neuraldbg.egg-info
+artifacts
+data
+models
+outputs
+*.log
