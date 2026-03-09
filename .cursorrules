@@ -1,4 +1,4 @@
-﻿# Kuro Rules (.cursorrules)
+# Kuro Rules (.cursorrules)
 
 Shared AI rules for all projects. **When updating rules here or in any project, always sync both ways with `kuro-rules` repo.**
 
@@ -237,6 +237,7 @@ When ANY rule file is updated, ALL rule files MUST be updated:
 - copilot-instructions.md
 - GAD.md
 - acquisition_tracker.md
+- PR Analysis & Improvement (Rule 45)
 
 **Enforcement**: SYNC immediately to all files, document in SYNC_LOG.md.
 

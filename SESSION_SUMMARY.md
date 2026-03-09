@@ -3,6 +3,12 @@
 
 ## Francais
 **Ce qui a ete fait** :
+- Synchronisation globale des regles IA :
+  - Renumerotation de la `RULE 41: PR Analysis & Improvement` en `RULE 45`.
+  - Ajout de la `RULE 41: Personal Quant Mode (PQPO)` pour permettre au CEO de bypasser certaines regles de validation lors de phases de developpement rapides (rules 2, 14, 21, 24).
+- Mise a jour de tous les fichiers de regles dans `NeuralDBG` et `kuro-rules` :
+  - `AGENTS.md`, `AI_GUIDELINES.md`, `GAD.md`, `.cursorrules`, `copilot-instructions.md`.
+- Documentation de la synchronisation dans `SYNC_LOG.md`.
 - Verification complete de la Pull Request #634 (Enforcement des CI gates cross-platform).
 - Validation de la branche `infra/MLO-1-cross-platform-ci-gates` :
   - Execution des tests unitaires et d'integration (34 passants).

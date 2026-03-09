@@ -809,6 +809,8 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 38. **Rule 38**: "Code Review: Review completed before continuation? [YES/NO]"
 39. **Rule 39**: "Pre-Marketing Due Diligence: Perplexity and Grok research completed before marketing claims? [YES/NO]"
 40. **Rule 40**: "CEO Complete Dashboard: All tasks visible in Linear automatically? [YES/NO]"
+41. **Rule 41**: "Personal Quant Mode (PQPO): (Rule 2/14/21/24 Bypassed) [YES/NO]"
+45. **Rule 45**: "PR Analysis & Improvement: PRs strictly analyzed and improved? [YES/NO]"
 
 ---
 
@@ -855,8 +857,9 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 | Rule 38 (Code Review) | STOP - review required before continuation |
 | Rule 39 (Pre-Marketing Due Diligence) | STOP marketing claims and complete desk research first |
 | Rule 40 (CEO Complete Dashboard) | STOP and restore complete Linear visibility |
-
----
+| Rule 41 (Personal Quant Mode - PQPO) | SYSTEM LOCK: Fail any of 10 Gates or Testing Funnel |
+| Rule 45 (PR Analysis & Improvement) | STOP and perform mandatory improvement cycle |
+| **All Rules** | Cease work immediately - Do NOT bypass |
 
 ## FINAL NOTE
 

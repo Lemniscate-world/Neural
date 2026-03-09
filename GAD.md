@@ -44,6 +44,8 @@ Maintain high standards. No emojis (Rule 9), 60% test coverage (Rule 5), and con
 | Code Review Gate | R38 | No continued rule work after push without review. |
 | Pre-Marketing Due Diligence | R39 | Run Perplexity + Grok pain-point research before marketing claims. |
 | CEO Dashboard Visibility | R40 | Linear must show the full CEO dashboard. |
+| Personal Quant Mode | R41 | (Rule 2/14/21/24 Bypassed) (PQPO). |
+| PR Analysis & Improvement | R45 | PRs strictly analyzed and improved (Rules 5, 6, 17, 18). |
 
 ---
 
@@ -588,5 +590,12 @@ Only branches with the **`ceo/`** scope have the authority to modify rule files.
 
 - Linear must expose done, in progress, backlog, blockers, and current progress for CEO work.
 - If the dashboard is incomplete, stop and restore visibility.
+## RULE 45: Mandatory Pull Request Analysis and Improvement — MANDATORY
 
+### Rule
+Every Pull Request (PR) MUST be strictly analyzed for code quality, security, and architectural alignment. Minimal compliance is NOT sufficient; the AI Agent MUST proactively identify and implement improvements to technical debt, documentation, or performance.
+
+### Enforcement
+- STOP and perform mandatory improvement cycle.
+- Do NOT merge until 2+ improvements are integrated.
 

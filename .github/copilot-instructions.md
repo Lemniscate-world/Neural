@@ -1,4 +1,4 @@
-﻿# GitHub Copilot Instructions
+# GitHub Copilot Instructions
 
 ## Global AI Rules (from AGENTS.md & AI_GUIDELINES.md)
 
@@ -13,6 +13,7 @@
 9.  **Hard Milestone Lock**: STOP work at 25, 50, 75, 90, 95% until validated.
 10. **Market Intelligence**: Research 3+ sources at milestones (Rule 21).
 11. **Pre-Marketing Due Diligence**: Before marketing or new product claims, run the project-local prompts in `prompts/` and document the verdict.
+12. **PR Analysis & Improvement**: Every PR MUST be strictly analyzed for quality, security, and architectural alignment. Minimal compliance is NOT sufficient; agents MUST proactively suggest and implement improvements (Rules 5, 6, 17, 18).
 
 ---
 

@@ -594,3 +594,18 @@ When asked "Did you follow AGENTS.md?", include:
 
 ### Enforcement Summary Extension
 | Rule 39 (CI/CD Debugging First) | STOP unrelated work, fix pipeline first |
+
+## RULE 41: Personal Quant Mode (PQPO) — MANDATORY
+
+- **Context**: When the CEO is in "Personal Quant Mode" (PQPO), certain overhead rules are bypassed for speed.
+- **Bypass**: Rules 2 (Mom Test), 14 (Periodic Validation), 21 (Intel Harvester), and 24 (Marketing Outreach) are suspended.
+- **Requirement**: All changes MUST still be documented in `AGENTS.md` and `GAD.md`.
+
+## RULE 45: Mandatory Pull Request Analysis and Improvement — MANDATORY
+
+### Rule
+Every Pull Request (PR) MUST be strictly analyzed for code quality, security, and architectural alignment. Minimal compliance is NOT sufficient; the AI Agent MUST proactively identify and implement improvements to technical debt, documentation, or performance.
+
+### Enforcement
+- STOP and perform mandatory improvement cycle.
+- Do NOT merge until 2+ improvements are integrated.

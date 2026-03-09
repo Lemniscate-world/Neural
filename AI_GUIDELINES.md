@@ -754,3 +754,23 @@ Avant tout marketing, outreach, landing page, waitlist, paid acquisition, ou nou
 ## RULE 40: CEO Complete Linear Dashboard Visibility - MANDATORY
 - Linear must expose the full CEO dashboard: done, in progress, backlog, blockers, and current progress.
 - If the dashboard is incomplete, stop and restore full visibility.
+## RULE 45: Mandatory Pull Request Analysis and Improvement — MANDATORY
+
+### Rule
+Every Pull Request (PR) MUST be strictly analyzed for code quality, security, and architectural alignment. Minimal compliance is NOT sufficient; the AI Agent MUST proactively identify and implement improvements to technical debt, documentation, or performance.
+
+### Verification Checklist
+```
+AFTER reviewing a PR:
+  1. ANALYZE: Does this diff strictly improve the codebase?
+  2. CHECK: Are all Rule 5/6/18 criteria met?
+  3. IDENTIFY: What are the 2nd/3rd order consequences (Rule 17)?
+  4. IMPROVE: Have we refactored related technical debt?
+```
+
+### Enforcement
+```
+IF a PR only meets minimal requirements without improvement:
+  ACTION: STOP and propose 2+ specific improvements.
+  ACTION: Do NOT approve or merge until improvements are integrated.
+```
