@@ -1,6 +1,6 @@
 {
     "sonarlint.connectedMode.project": {
-        "connectionId": "stable-turbo",
-        "projectKey": "STABLE-TURBO_Neural"
+        "connectionId": "lambdasection",
+        "projectKey": "LambdaSection_NeuralDBG"
     }
 }

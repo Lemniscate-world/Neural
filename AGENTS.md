@@ -338,25 +338,50 @@ IF protected file is committed:
 
 ---
 
-## RULE 11: Sync Rule — MANDATORY
+## RULE 11: Unified Rule Management — MANDATORY
 
 ### Rule
-When rules are updated in ANY project, SYNC to `~/Documents/kuro-rules` (master copy).
+This rule combines roadmap and sync management into a unified framework:
+
+**Part A - Rule Sync**: When rules are updated in ANY project, SYNC to `~/Documents/kuro-rules` (master copy).
+
+**Part B - Roadmap Adherence**: Every project MUST have a roadmap file (PLAN.md or ROADMAP.md) with clear build order, success criteria, anti-goals, and MVP scope.
+
+**Part C - Roadmap Duration**: Every roadmap MUST have a minimum duration of ONE MONTH with clearly defined phases, weekly milestones, and buffer time (10-15%).
+
+### Nuances Preserved
+- **Rule 11 (Original)**: Focus on kuro-rules master copy sync
+- **Rule 12 (Original)**: Focus on roadmap existence and adherence
+- **Rule 13 (Original)**: Focus on timeline (min 4 weeks)
+
+### Requirements
+- Clear build order with numbered steps
+- Success criteria for each phase
+- Anti-goals (what NOT to build)
+- MVP scope definition
+- Minimum 4 weeks of planned work
+- Weekly milestones or checkpoints
+- Clear deliverables for each phase
+- Buffer time for unexpected issues (10-15%)
 
 ### Verification
 ```
 WHEN updating rules:
-  CHECK: Is this update in kuro-rules?
-  IF NO: COPY update to kuro-rules
-  CHECK: Are other projects using old rules?
-  IF YES: SYNC new rules to those projects
+  CHECK: Is this update in kuro-rules? (Part A)
+  CHECK: Does PLAN.md or ROADMAP.md exist? (Part B)
+  CHECK: Does roadmap span at least 4 weeks? (Part C)
 ```
 
 ### Enforcement
 ```
-IF rules are updated without sync:
+IF rules updated without sync:
   ACTION: SYNC to kuro-rules immediately
-  ACTION: Update all affected projects
+
+IF no roadmap exists:
+  ACTION: STOP and create PLAN.md
+
+IF roadmap duration < 1 month:
+  ACTION: STOP and expand the plan
 ```
 
 ---
@@ -735,6 +760,43 @@ IF a project pivots without a post-mortem:
 
 ---
 
+## RULE 24: Marketing & Outreach Guardian — MANDATORY
+
+### Rule
+Before any public release or marketing campaign, the AI Agent MUST ensure proper community outreach, feedback collection channels, and communication templates are prepared.
+
+### Requirements
+1. **Community Identification**: Identify at least 3 relevant communities or forums where the product would be discussed
+2. **Feedback Channels**: Establish clear channels for user feedback (Discord, GitHub issues, survey forms)
+3. **Communication Templates**: Prepare outreach templates for:
+   - Announcements (launch, features, updates)
+   - Bug reports (template with reproduction steps)
+   - Feature requests (template with use case description)
+4. **Launch Checklist**: Verify all marketing materials are reviewed for accuracy
+
+### Verification Checklist
+```
+BEFORE launch or major announcement:
+  CHECK: Are 3+ target communities identified?
+  CHECK: Is feedback channel active and monitored?
+  CHECK: Are communication templates drafted?
+  CHECK: Has marketing content been reviewed?
+  IF any missing:
+    ACTION: STOP launch preparation
+    ACTION: Complete outreach setup
+    DO NOT: Proceed without proper channels
+```
+
+### Enforcement
+```
+IF product is released without outreach preparation:
+  ACTION: POSTPONE release until channels are ready
+  ACTION: Document missing components
+  DO NOT: Launch without user feedback mechanism
+```
+
+---
+
 When asking "Did you follow AGENTS.md?", the agent MUST provide:
 
 1.  **Rule 1**: "I read AGENTS.md at the start of this session"
@@ -762,6 +824,19 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 23. **Rule 23**: "Knowledge Capture: Post-mortem documented for pivot/failure? [YES/NO]"
 24. **Rule 24**: "Marketing & Outreach Guardian: Communities identified & templates drafted? [YES/NO]"
 25. **Rule 25**: "Project Isolation: Scope limited to current project context only? [YES/NO]"
+26. **Rule 26**: "DevOps/MLOps Tasks: 5 tasks generated and created as Linear issues? [YES/NO]"
+27. **Rule 27**: "Persona Adaptability: Adapted vocabulary/depth for user role? [YES/NO]"
+28. **Rule 28**: "Linear Automation: DevOps tasks created and assigned? [YES/NO]"
+29. **Rule 29**: "Linear Integration: Connection verified at session start? [YES/NO]"
+30. **Rule 30**: "Branch Creation: Working branch created before coding? [YES/NO]"
+31. **Rule 31**: "Codebase Context: Issues include context for contributors? [YES/NO]"
+32. **Rule 32**: "Team Stack: All required tools configured? [YES/NO]"
+33. **Rule 33**: "Rule Parity: Branch has current rule set? [YES/NO]"
+34. **Rule 34**: "CEO Progress Visibility: Tasks visible in Linear? [YES/NO]"
+35. **Rule 35**: "Session Status: Report provided at session start? [YES/NO]"
+36. **Rule 36**: "Real-Time Linear Sync: CEO activities automatically synced? [YES/NO]"
+37. **Rule 37**: "Code Review: Review completed before continuation? [YES/NO]"
+38. **Rule 38**: "CEO Complete Dashboard: All tasks visible in Linear automatically? [YES/NO]"
 
 ---
 
@@ -792,6 +867,18 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 | Rule 21 (Intel Harvester) | STOP and conduct intelligence research immediately |
 | Rule 22 (Feature Focus) | STOP and re-focus on a single feature |
 | Rule 25 (Project Isolation) | STOP and filter scope to the target project ONLY |
+| Rule 26 (DevOps/MLOps Tasks) | STOP and generate 5 tasks |
+| Rule 27 (Persona Adaptability) | Adjust communication style |
+| Rule 28 (Linear Automation) | Create Linear issues |
+| Rule 29 (Linear Integration) | STOP and configure Linear |
+| Rule 30 (Branch Creation) | STOP and create branch |
+| Rule 31 (Codebase Context) | Add context to issues |
+| Rule 32 (Team Stack) | Verify tool setup |
+| Rule 33 (Rule Parity) | Sync rules across branches |
+| Rule 34 (CEO Progress) | Verify Linear visibility |
+| Rule 35 (Session Status) | STOP and provide report first |
+| Rule 36 (Real-Time Sync) | STOP and sync immediately |
+| Rule 37 (Code Review) | STOP - review required before continuation |
 
 ---
 
@@ -870,8 +957,6 @@ IF the user's role is known or stated:
   ACTION: Emphasize the rules most relevant to that persona.
   DO NOT: Speak to a CEO like a DevOps, or a DevOps like a CEO, unless pedagogical translation is requested.
 ```
-
-When in doubt, ASK the user. Do not assume.
 
 When in doubt, ASK the user. Do not assume.
 
@@ -1079,6 +1164,280 @@ IF a session starts:
 
 ---
 
+---
+
+## RULE 34: CEO Progress Visibility in Linear -- MANDATORY
+
+### Rule
+The CEO's tasks, progress, and milestones MUST be automatically tracked and visible in Linear for all team members.
+
+### Requirements
+1. **Automatic Progress Updates**: Every action taken by the CEO on the `ceo/` branch MUST create or update a Linear issue.
+2. **Real-time Visibility**: Team members can see:
+   - What the CEO has completed (done)
+   - What the CEO is working on (in progress)
+   - What the CEO plans to do next (backlog)
+3. **Milestone Tracking**: Each milestone (10%, 25%, 50%, 75%, 90%, 95%) MUST have a corresponding Linear issue.
+4. **Workflow Integration**: The GitHub Actions workflow MUST update Linear automatically when rules are synced.
+
+### Implementation
+The CEO Progress workflow (`rule-sync.yml`) automatically:
+- Creates/updates Linear issues for each milestone
+- Posts comments on rule sync completion
+- Tracks progress percentage in Linear
+- Assigns label `CEO Decision` to all CEO items
+
+### Verification Checklist
+```
+AT each session start:
+  CHECK: Can you see CEO's current tasks in Linear?
+  CHECK: Is progress percentage updated?
+  CHECK: Are new milestones visible?
+  IF NOT:
+    ACTION: Trigger manual sync via workflow_dispatch
+    ACTION: Report issue to DevOps
+```
+
+### Enforcement
+```
+IF CEO progress is NOT visible in Linear:
+  ACTION: STOP - team cannot work without visibility
+  ACTION: Verify Linear API keys are configured
+  ACTION: Run workflow manually to sync
+  DO NOT: Continue until visibility is restored
+```
+
+---
+
+---
+
+## RULE 35: Automated Session Status Report -- MANDATORY
+
+### Rule
+At the START of every AI session, the agent MUST report the complete status including:
+1. Current branch
+2. Last session progress
+3. Pending tasks in Linear
+4. Any blockers
+
+### Requirements
+1. **Session Gate**: Report status before any code work.
+2. **Linear Integration**: Query Linear for CEO's current tasks.
+3. **Progress Calculation**: Calculate pessimistic progress per Rule 3.
+4. **Format**: Must include both French and English sections.
+
+### Required Report Format
+```markdown
+## Francais
+**Branche actuelle**: ceo/kuro-semantic-event-structures
+**Taches CEO en cours**: [list from Linear]
+**Taches terminees**: [list from Linear]
+**Progression**: X% (pessimiste)
+**Blockers**: [if any]
+
+## English
+**Current branch**: [branch name]
+**CEO tasks in progress**: [list from Linear]
+**CEO tasks completed**: [list from Linear]
+**Progress**: X% (pessimistic)
+**Blockers**: [if any]
+```
+
+### Enforcement
+```
+IF status report is NOT provided:
+  ACTION: STOP - provide status report first
+  DO NOT: Start any coding tasks
+```
+
+---
+
+## RULE 36: CEO Real-Time Activity Sync to Linear -- CRITICAL
+
+### Rule
+The CEO's ALL activities, progress updates, and planned work MUST be automatically synchronized to Linear in real-time. Team members must always see:
+- What the CEO completed (done)
+- What the CEO is working on (in progress)
+- What the CEO plans to do next (backlog)
+- Current progress percentage
+- Any blockers or impediments
+
+### Requirements
+1. **Automatic Issue Creation**: Every task, subtask, or work item MUST create a Linear issue automatically.
+2. **Status Updates**: Status changes (todo -> in progress -> done) MUST be reflected in Linear immediately.
+3. **Progress Tracking**: Progress percentage MUST be calculated and updated in Linear at each session end.
+4. **Session Summary Sync**: Every SESSION_SUMMARY.md update MUST automatically update corresponding Linear issues.
+5. **Milestone Progress**: Each milestone (10%, 25%, 50%, 75%, 90%, 95%) MUST have its own Linear issue with automatic progress updates.
+
+### Implementation via GitHub Actions
+The workflow `rule-sync.yml` MUST execute after EVERY session to sync:
+- New tasks created during the session
+- Tasks completed during the session
+- Current progress percentage
+- Session summary to Linear comments
+
+### Required Linear Issue Types
+| Issue Type | Description | Labels |
+|------------|-------------|--------|
+| Milestone | 10%, 25%, 50%, 75%, 90%, 95% tracking | CEO Decision, Milestone Task |
+| Session Report | Each session's work and next steps | CEO Decision, Documentation |
+| Blocker | Any impediment or roadblock | CEO Decision, Needs Review |
+| Feature Task | Individual feature or rule work | CEO Decision, (appropriate label) |
+
+### Verification Checklist
+```
+AT each session end:
+  CHECK: Were all tasks created as Linear issues?
+  CHECK: Did workflow sync progress to Linear?
+  CHECK: Can team members see CEO's current status?
+  CHECK: Is progress percentage accurate in Linear?
+  IF NOT:
+    ACTION: Manually sync immediately
+    ACTION: Verify workflow configuration
+```
+
+### Enforcement
+```
+IF CEO activity is NOT visible in Linear:
+  ACTION: STOP - team cannot work without visibility
+  ACTION: Trigger manual sync via workflow_dispatch
+  ACTION: Fix automation to prevent future gaps
+  DO NOT: Continue until visibility is restored
+
+IF progress is outdated (>24h old):
+  ACTION: Update Linear immediately
+  ACTION: Document reason for delay
+  DO NOT: Allow stale progress data
+```
+
+---
+
+## RULE 37: Mandatory Code Review After Commit -- MANDATORY
+
+### Rule
+A code review MUST be completed at EVERY push AFTER the commit but BEFORE any continuation of work on the rules. If no review is done, the continuation on the rules MUST be blocked.
+
+### Requirements
+1. **Review Tools**: Use one of the following automated or manual review tools:
+   - **Qode** - AI-powered code review
+   - **CodeRabbit** - Automated AI code review
+   - **GitHub Pull Request Reviews** - Manual human review
+   - **CodeClimate** - Automated quality analysis
+   - Any equivalent code review tool
+
+2. **Review Timing**:
+   - Review MUST be completed AFTER the commit/push
+   - Review MUST be completed BEFORE continuing work on the rules
+   - Review MUST pass before proceeding with further rule modifications
+
+3. **Review Criteria**:
+   - Code quality and best practices
+   - Security vulnerabilities (Rule 6)
+   - Test coverage impact (Rule 5)
+   - Regression prevention (Rule 18)
+   - Documentation completeness
+
+4. **Blocker Enforcement**:
+   - If review is pending: STOP all new work on rules
+   - If review fails: FIX issues before continuation
+   - If no review done: BLOCK until review completed
+
+### Verification Checklist
+```
+BEFORE continuing on rules:
+  CHECK: Was a code review requested/completed after commit?
+  CHECK: Did the review pass all checks?
+  CHECK: Are there any pending issues to fix?
+  IF review NOT done:
+    ACTION: STOP immediately
+    ACTION: Request/provide code review
+    DO NOT: Continue working on rules
+```
+
+### Enforcement
+```
+IF code review NOT completed after commit:
+  ACTION: STOP all rule development work
+  ACTION: Request code review via Qode/CodeRabbit/GitHub
+  ACTION: Wait for review approval
+  DO NOT: Continue modifying rules
+  DO NOT: Make new commits
+
+IF review fails:
+  ACTION: FIX identified issues
+  ACTION: Request re-review
+  DO NOT: Ignore review feedback
+  DO NOT: Continue without fixing issues
+```
+
+---
+
+## RULE 38: CEO Complete Linear Dashboard Visibility -- MANDATORY
+
+### Rule
+The CEO MUST have complete, real-time visibility into ALL activities through Linear. Every action, progress update, and planned work MUST be automatically visible in Linear for the entire team.
+
+### Requirements
+1. **Complete Task Visibility**: All CEO tasks must be visible in Linear including:
+   - Tasks completed (done)
+   - Tasks in progress (in progress)
+   - Tasks planned (backlog)
+   - Blockers and impediments
+
+2. **Automatic Real-Time Sync**: Every CEO action MUST automatically update Linear:
+   - Task creation -> Linear issue created
+   - Task start -> Linear status changed to "in progress"
+   - Task completion -> Linear status changed to "done"
+   - Session end -> Progress percentage updated in Linear
+
+3. **Dashboard Integration**: The team MUST be able to see:
+   - Current session status (what the CEO is working on now)
+   - Next planned tasks
+   - Progress percentage with breakdown
+   - Any blockers
+
+4. **Zero Manual Updates**: The CEO should NEVER manually update Linear. All updates MUST be automatic through:
+   - GitHub Actions workflow (rule-sync.yml)
+   - Automated scripts
+   - MCP server integration
+
+### Implementation
+The workflow `rule-sync.yml` MUST include a CEO Activity Sync step:
+- Query current branch status
+- Calculate progress percentage
+- List completed tasks from last session
+- List in-progress tasks
+- Identify blockers
+- Update corresponding Linear issues automatically
+
+### Verification Checklist
+```
+AT each session start:
+  CHECK: Can you see ALL CEO tasks in Linear?
+  CHECK: Is every task status accurate (done/in progress/backlog)?
+  CHECK: Is progress percentage current?
+  CHECK: Are blockers visible?
+  IF ANY missing:
+    ACTION: Fix sync automation immediately
+    DO NOT: Continue until visibility is complete
+```
+
+### Enforcement
+```
+IF CEO cannot see complete task list in Linear:
+  ACTION: STOP all work
+  ACTION: Fix sync automation
+  ACTION: Verify Linear API keys
+  DO NOT: Proceed until visibility is complete
+
+IF progress is outdated (>1 hour):
+  ACTION: Trigger immediate sync
+  ACTION: Verify workflow execution
+  DO NOT: Allow stale data
+```
+
+---
+
 ## RULE 33: Global Rule Parity and Mandatory Cross-Branch Sync -- CRITICAL
 
 ### Rule
@@ -1095,3 +1454,32 @@ Only branches with the **`ceo/`** scope have the authority to modify rule files.
 2. **Review Enforcement**: No Pull Request (PR) can be merged without explicitly confirming that the branch has the status of the "Current Rule Set" (Rule 33 verification).
 
 
+
+---
+
+## RULE 39: CI/CD Debugging First -- MANDATORY
+
+### Rule
+When any GitHub Actions check is failing on the active branch, pull request, or latest related run, the AI Agent MUST prioritize CI/CD debugging before starting unrelated implementation.
+
+### Required Workflow
+1. Detect failures with `gh` (`gh run list`, `gh pr checks`, `gh run view --log`) or equivalent CI logs.
+2. Identify root cause with failing step name, workflow name, and exact failing command.
+3. Propose the minimum safe fix first (smallest change that restores pipeline health).
+4. Apply fix, run relevant local validation, and re-check CI status.
+5. Report outcome with links to workflow runs and remaining blockers.
+
+### Enforcement
+```
+IF CI/CD is red:
+  ACTION: STOP unrelated feature work
+  ACTION: DEBUG and FIX CI/CD first
+  DO NOT: Ignore failing pipelines
+```
+
+### Compliance Extension
+When asked "Did you follow AGENTS.md?", include:
+39. **Rule 39**: "CI/CD Debugging First: [YES/NO - failing checks analyzed and handled]"
+
+### Enforcement Summary Extension
+| Rule 39 (CI/CD Debugging First) | STOP unrelated work, fix pipeline first |

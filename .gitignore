@@ -3,6 +3,9 @@ PLAN.md
 
 # Mom Test results (private interview data)
 mom_test_results.md
+mom_test_script.md
+decision.md
+concept/
 
 # Ideas and architecture notes (work-in-progress brainstorms)
 ideas.md
@@ -33,8 +36,11 @@ SESSION_SUMMARY.md
 SESSION_SUMMARY.md.bak
 acquisition_tracker.md
 sync_summary.py
+bandit-report.json
 .env
 .env.*
+google-service-account.json
+*.service-account.json
 secrets/
 *.log
 .antigravity/

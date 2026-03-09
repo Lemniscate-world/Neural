@@ -53,13 +53,12 @@ def train_with_monitoring(model, dataloader, num_steps=100):
         for step in range(num_steps):
             for batch_x, batch_y in dataloader:
                 optimizer.zero_grad()
+                # Keep semantic event timestamps aligned with this training step.
+                dbg.step = step
 
                 output = model(batch_x)
                 loss = criterion(output, batch_y)
                 loss.backward()
-
-                # Manual step tracking (in real usage this would be automatic)
-                dbg.step = step
 
                 optimizer.step()
                 break  # Just one batch per step for demo
@@ -92,7 +91,9 @@ def train_with_monitoring(model, dataloader, num_steps=100):
     if couplings:
         print(f"\n[COUPLING] Detected {len(couplings)} coupled failure patterns:")
         for coupling in couplings:
-            print(f"   {coupling['event1']} ↔ {coupling['event2']} (confidence: {coupling['confidence']:.2f})")
+            trigger = coupling.get("trigger", coupling.get("event1", "unknown"))
+            consequence = coupling.get("consequence", coupling.get("event2", "unknown"))
+            print(f"   {trigger} <-> {consequence} (confidence: {coupling['confidence']:.2f})")
 
     # Show all semantic events detected
     print(f"\n[STATS] Total semantic events captured: {len(dbg.events)}")
@@ -127,7 +128,7 @@ def main():
 
     print("[SETUP] Problem Setup:")
     print("   - Deep network with Tanh activations (prone to saturation)")
-    print("   - Very small learning rate (0.001)")
+    print("   - Very small learning rate (0.0001)")
     print("   - Small input/target scales")
     print("   - Expected outcome: Vanishing gradients from LR x saturation mismatch")
     print()

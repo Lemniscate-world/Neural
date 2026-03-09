@@ -132,6 +132,25 @@ MIT License - see [LICENSE.md](LICENSE.md) for details.
 - [PROJECTS.md](PROJECTS.md) - Roadmap Projets A & B (Projet A dans Quant-Search, B ici)
 - [CHANGELOG.md](CHANGELOG.md) - Version history and notable changes
 - [logic_graph.md](logic_graph.md) - System architecture and data flow
+- [GOOGLE_DOCS_SYNC.md](GOOGLE_DOCS_SYNC.md) - Daily SESSION_SUMMARY sync to Google Docs
+
+## Google Docs Daily Sync
+
+You can automate daily publication of `SESSION_SUMMARY.md` to a Google Doc:
+
+1. Install optional automation deps:
+```bash
+pip install -e .[automation]
+```
+2. Configure:
+   - `GOOGLE_DOC_ID`
+   - `GOOGLE_SERVICE_ACCOUNT_FILE` or `GOOGLE_SERVICE_ACCOUNT_JSON`
+3. Run:
+```bash
+python scripts/publish_session_summary_to_gdocs.py --source SESSION_SUMMARY.md --mode append
+```
+
+For GitHub Actions-based daily sync, see `.github/workflows/publish-summary-to-google-docs.yml`.
 
 ## Citation
 
