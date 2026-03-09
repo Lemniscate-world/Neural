@@ -338,50 +338,25 @@ IF protected file is committed:
 
 ---
 
-## RULE 11: Unified Rule Management — MANDATORY
+## RULE 11: Sync Rule — MANDATORY
 
 ### Rule
-This rule combines roadmap and sync management into a unified framework:
-
-**Part A - Rule Sync**: When rules are updated in ANY project, SYNC to `~/Documents/kuro-rules` (master copy).
-
-**Part B - Roadmap Adherence**: Every project MUST have a roadmap file (PLAN.md or ROADMAP.md) with clear build order, success criteria, anti-goals, and MVP scope.
-
-**Part C - Roadmap Duration**: Every roadmap MUST have a minimum duration of ONE MONTH with clearly defined phases, weekly milestones, and buffer time (10-15%).
-
-### Nuances Preserved
-- **Rule 11 (Original)**: Focus on kuro-rules master copy sync
-- **Rule 12 (Original)**: Focus on roadmap existence and adherence
-- **Rule 13 (Original)**: Focus on timeline (min 4 weeks)
-
-### Requirements
-- Clear build order with numbered steps
-- Success criteria for each phase
-- Anti-goals (what NOT to build)
-- MVP scope definition
-- Minimum 4 weeks of planned work
-- Weekly milestones or checkpoints
-- Clear deliverables for each phase
-- Buffer time for unexpected issues (10-15%)
+When rules are updated in ANY project, SYNC to `~/Documents/kuro-rules` (master copy).
 
 ### Verification
 ```
 WHEN updating rules:
-  CHECK: Is this update in kuro-rules? (Part A)
-  CHECK: Does PLAN.md or ROADMAP.md exist? (Part B)
-  CHECK: Does roadmap span at least 4 weeks? (Part C)
+  CHECK: Is this update in kuro-rules?
+  IF NO: COPY update to kuro-rules
+  CHECK: Are other projects using old rules?
+  IF YES: SYNC new rules to those projects
 ```
 
 ### Enforcement
 ```
-IF rules updated without sync:
+IF rules are updated without sync:
   ACTION: SYNC to kuro-rules immediately
-
-IF no roadmap exists:
-  ACTION: STOP and create PLAN.md
-
-IF roadmap duration < 1 month:
-  ACTION: STOP and expand the plan
+  ACTION: Update all affected projects
 ```
 
 ---
@@ -760,19 +735,16 @@ IF a project pivots without a post-mortem:
 
 ---
 
-## RULE 24: Marketing & Outreach Guardian — MANDATORY
+## RULE 24: Marketing & Outreach Guardian â€” MANDATORY
 
 ### Rule
 Before any public release or marketing campaign, the AI Agent MUST ensure proper community outreach, feedback collection channels, and communication templates are prepared.
 
 ### Requirements
-1. **Community Identification**: Identify at least 3 relevant communities or forums where the product would be discussed
-2. **Feedback Channels**: Establish clear channels for user feedback (Discord, GitHub issues, survey forms)
-3. **Communication Templates**: Prepare outreach templates for:
-   - Announcements (launch, features, updates)
-   - Bug reports (template with reproduction steps)
-   - Feature requests (template with use case description)
-4. **Launch Checklist**: Verify all marketing materials are reviewed for accuracy
+1. **Community Identification**: Identify at least 3 relevant communities or forums where the product would be discussed.
+2. **Feedback Channels**: Establish clear channels for user feedback such as Discord, GitHub Issues, or survey forms.
+3. **Communication Templates**: Prepare outreach templates for announcements, bug reports, and feature requests.
+4. **Launch Checklist**: Verify all marketing materials are reviewed for accuracy and current product scope.
 
 ### Verification Checklist
 ```
@@ -782,17 +754,15 @@ BEFORE launch or major announcement:
   CHECK: Are communication templates drafted?
   CHECK: Has marketing content been reviewed?
   IF any missing:
-    ACTION: STOP launch preparation
-    ACTION: Complete outreach setup
-    DO NOT: Proceed without proper channels
+    ACTION: STOP and prepare the missing marketing foundations
 ```
 
 ### Enforcement
 ```
-IF product is released without outreach preparation:
-  ACTION: POSTPONE release until channels are ready
-  ACTION: Document missing components
-  DO NOT: Launch without user feedback mechanism
+IF launch or outreach begins without marketing foundations:
+  ACTION: STOP the announcement or campaign
+  ACTION: Prepare communities, feedback channels, and templates first
+  DO NOT: Ship marketing without a response path
 ```
 
 ---
@@ -822,8 +792,8 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 21. **Rule 21**: "Intelligence Harvester: At least 3 sources analyzed for the current milestone? [YES/NO]"
 22. **Rule 22**: "Feature Focus Rule: Only one feature focused on for this validation cycle? [YES/NO]"
 23. **Rule 23**: "Knowledge Capture: Post-mortem documented for pivot/failure? [YES/NO]"
-24. **Rule 24**: "Marketing & Outreach Guardian: Communities identified & templates drafted? [YES/NO]"
-25. **Rule 25**: "Project Isolation: Scope limited to current project context only? [YES/NO]"
+24. **Rule 24**: "Marketing & Outreach Guardian: Communities identified, feedback path ready, and templates drafted? [YES/NO]"
+25. **Rule 25**: "MLOps/DevOps Collaboration: Infra guidance adapted for this task? [YES/NO]"
 26. **Rule 26**: "DevOps/MLOps Tasks: 5 tasks generated and created as Linear issues? [YES/NO]"
 27. **Rule 27**: "Persona Adaptability: Adapted vocabulary/depth for user role? [YES/NO]"
 28. **Rule 28**: "Linear Automation: DevOps tasks created and assigned? [YES/NO]"
@@ -832,11 +802,13 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 31. **Rule 31**: "Codebase Context: Issues include context for contributors? [YES/NO]"
 32. **Rule 32**: "Team Stack: All required tools configured? [YES/NO]"
 33. **Rule 33**: "Rule Parity: Branch has current rule set? [YES/NO]"
-34. **Rule 34**: "CEO Progress Visibility: Tasks visible in Linear? [YES/NO]"
-35. **Rule 35**: "Session Status: Report provided at session start? [YES/NO]"
-36. **Rule 36**: "Real-Time Linear Sync: CEO activities automatically synced? [YES/NO]"
-37. **Rule 37**: "Code Review: Review completed before continuation? [YES/NO]"
-38. **Rule 38**: "CEO Complete Dashboard: All tasks visible in Linear automatically? [YES/NO]"
+34. **Rule 34**: "Strict Project Isolation: Scope limited to the active project only? [YES/NO]"
+35. **Rule 35**: "CEO Progress Visibility: Tasks visible in Linear? [YES/NO]"
+36. **Rule 36**: "Session Status: Report provided at session start? [YES/NO]"
+37. **Rule 37**: "Real-Time Linear Sync: CEO activities automatically synced? [YES/NO]"
+38. **Rule 38**: "Code Review: Review completed before continuation? [YES/NO]"
+39. **Rule 39**: "Pre-Marketing Due Diligence: Perplexity and Grok research completed before marketing claims? [YES/NO]"
+40. **Rule 40**: "CEO Complete Dashboard: All tasks visible in Linear automatically? [YES/NO]"
 
 ---
 
@@ -866,7 +838,8 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 | Rule 20 (Hard Milestone Lock) | SYSTEM LOCK: No code edits permitted until validation results are provided |
 | Rule 21 (Intel Harvester) | STOP and conduct intelligence research immediately |
 | Rule 22 (Feature Focus) | STOP and re-focus on a single feature |
-| Rule 25 (Project Isolation) | STOP and filter scope to the target project ONLY |
+| Rule 24 (Marketing & Outreach Guardian) | STOP and prepare communities, feedback paths, and templates |
+| Rule 25 (MLOps/DevOps Collaboration) | Adjust guidance toward infrastructure, delivery, and reliability |
 | Rule 26 (DevOps/MLOps Tasks) | STOP and generate 5 tasks |
 | Rule 27 (Persona Adaptability) | Adjust communication style |
 | Rule 28 (Linear Automation) | Create Linear issues |
@@ -875,10 +848,13 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 | Rule 31 (Codebase Context) | Add context to issues |
 | Rule 32 (Team Stack) | Verify tool setup |
 | Rule 33 (Rule Parity) | Sync rules across branches |
-| Rule 34 (CEO Progress) | Verify Linear visibility |
-| Rule 35 (Session Status) | STOP and provide report first |
-| Rule 36 (Real-Time Sync) | STOP and sync immediately |
-| Rule 37 (Code Review) | STOP - review required before continuation |
+| Rule 34 (Strict Project Isolation) | STOP and filter scope to the target project ONLY |
+| Rule 35 (CEO Progress) | Verify Linear visibility |
+| Rule 36 (Session Status) | STOP and provide report first |
+| Rule 37 (Real-Time Sync) | STOP and sync immediately |
+| Rule 38 (Code Review) | STOP - review required before continuation |
+| Rule 39 (Pre-Marketing Due Diligence) | STOP marketing claims and complete desk research first |
+| Rule 40 (CEO Complete Dashboard) | STOP and restore complete Linear visibility |
 
 ---
 
@@ -957,6 +933,8 @@ IF the user's role is known or stated:
   ACTION: Emphasize the rules most relevant to that persona.
   DO NOT: Speak to a CEO like a DevOps, or a DevOps like a CEO, unless pedagogical translation is requested.
 ```
+
+When in doubt, ASK the user. Do not assume.
 
 When in doubt, ASK the user. Do not assume.
 
@@ -1164,9 +1142,50 @@ IF a session starts:
 
 ---
 
+## RULE 33: Global Rule Parity and Mandatory Cross-Branch Sync -- CRITICAL
+
+### Rule
+The AI rule set (`AGENTS.md`, `AI_GUIDELINES.md`, `.cursorrules`, `copilot-instructions.md`, `GAD.md`) represents the immutable "physical laws" of the repository ecosystem. Rules are global and MUST NOT vary between branches or projects.
+
+### Authority Restriction
+Only branches with the `ceo/` scope have the authority to modify rule files. Any rule change attempted on `infra/`, `feat/`, `fix/`, or other branches MUST be rejected by the AI Agent. Non-CEO branches MUST merge rule updates from a `ceo/` branch or from the `kuro-rules` master copy to maintain parity.
+
+### Mandatory Sync Process
+1. **Rule Modification**: When any rule is added or modified on a `ceo/` branch, the AI Agent MUST immediately sync the master `kuro-rules` repository and then propagate the rule to all active project copies.
+2. **Review Enforcement**: No pull request can be merged without explicitly confirming that the branch carries the current rule set.
+3. **Cross-Project Consistency**: Shared rule files MUST not drift across projects listed in `projects.txt`.
+
+### Enforcement
+```
+IF a branch or project is on an outdated rule set:
+  ACTION: STOP further rule work
+  ACTION: Sync the current rule set from `kuro-rules`
+  DO NOT: Continue with divergent rule files
+```
+
 ---
 
-## RULE 34: CEO Progress Visibility in Linear -- MANDATORY
+## RULE 34: Strict Project Isolation -- MANDATORY
+
+### Rule
+When interacting with external tools such as Linear, GitHub, or search systems, the AI Agent MUST strictly limit its scope to the current active project context.
+
+### Requirements
+1. **Tool Filtering**: Always filter issues, projects, documents, and automations by the specific project name or project ID currently in scope.
+2. **Context Integrity**: Do NOT read, comment on, or update unrelated projects unless they are explicitly cross-referenced for the current task.
+3. **Choice Prompt**: If multiple projects are detected, the AI Agent MUST ask which project is active before continuing.
+
+### Enforcement
+```
+IF search results or Linear issues contain multiple projects:
+  ACTION: Filter to the active project only
+  ACTION: Ask for clarification if the active project is ambiguous
+  DO NOT: Mix work from multiple projects in the same response or change set
+```
+
+---
+
+## RULE 35: CEO Progress Visibility in Linear -- MANDATORY
 
 ### Rule
 The CEO's tasks, progress, and milestones MUST be automatically tracked and visible in Linear for all team members.
@@ -1211,7 +1230,7 @@ IF CEO progress is NOT visible in Linear:
 
 ---
 
-## RULE 35: Automated Session Status Report -- MANDATORY
+## RULE 36: Automated Session Status Report -- MANDATORY
 
 ### Rule
 At the START of every AI session, the agent MUST report the complete status including:
@@ -1252,7 +1271,7 @@ IF status report is NOT provided:
 
 ---
 
-## RULE 36: CEO Real-Time Activity Sync to Linear -- CRITICAL
+## RULE 37: CEO Real-Time Activity Sync to Linear -- CRITICAL
 
 ### Rule
 The CEO's ALL activities, progress updates, and planned work MUST be automatically synchronized to Linear in real-time. Team members must always see:
@@ -1312,7 +1331,7 @@ IF progress is outdated (>24h old):
 
 ---
 
-## RULE 37: Mandatory Code Review After Commit -- MANDATORY
+## RULE 38: Mandatory Code Review After Commit -- MANDATORY
 
 ### Rule
 A code review MUST be completed at EVERY push AFTER the commit but BEFORE any continuation of work on the rules. If no review is done, the continuation on the rules MUST be blocked.
@@ -1372,7 +1391,37 @@ IF review fails:
 
 ---
 
-## RULE 38: CEO Complete Linear Dashboard Visibility -- MANDATORY
+## RULE 39: Pre-Marketing Pain-Point Due Diligence -- MANDATORY
+
+### Rule
+Before any marketing, outreach, landing page, waitlist, paid acquisition, or new product claim for a fresh hypothesis, the agent MUST run structured desk research to verify that the pain point is real, current, and safe to build around.
+
+### Verification Checklist
+```
+BEFORE marketing or fresh build claims:
+  1. RUN: The project-local Perplexity prompt in `prompts/perplexity.md`
+  2. RUN: The project-local Grok prompt in `prompts/grok.md` or an equivalent X/blog/forum search
+  3. COLLECT: At least 5 recent signals, with priority on 2025-2026 sources
+  4. INCLUDE: At least 1 official or regulator source, 1 competitor or substitute signal, 1 recent blog/article, and 1 recent social or forum signal
+  5. DOCUMENT: Problem existence, urgency, safety or compliance risk, platform dependency, and what does NOT prove willingness to pay
+  6. VERDICT: State whether desk research is sufficient or whether 3-5 expert calls are still mandatory
+```
+
+### Enforcement
+```
+IF pain-point due diligence is missing:
+  ACTION: STOP marketing and stop making factual claims about the problem
+  ACTION: Run the research templates and document the result first
+  DO NOT: Treat a pain point as validated from intuition alone
+
+IF the remaining uncertainty is buying behavior, compliance, or integration:
+  ACTION: Require 3-5 expert calls before stronger go-to-market claims
+  DO NOT: Let desk research replace expert validation for those gaps
+```
+
+---
+
+## RULE 40: CEO Complete Linear Dashboard Visibility -- MANDATORY
 
 ### Rule
 The CEO MUST have complete, real-time visibility into ALL activities through Linear. Every action, progress update, and planned work MUST be automatically visible in Linear for the entire team.
@@ -1438,48 +1487,3 @@ IF progress is outdated (>1 hour):
 
 ---
 
-## RULE 33: Global Rule Parity and Mandatory Cross-Branch Sync -- CRITICAL
-
-### Rule
-The AI rule set (AGENTS.md, AI_GUIDELINES.md, .cursorrules) represents the immutable "Physical Laws" of the repository ecosystem. Rules are **global** and MUST NOT vary between branches. 
-
-### Authority Restriction
-Only branches with the **`ceo/`** scope have the authority to modify rule files. Any rule changes attempted on `infra/`, `feat/`, or other branches MUST be rejected by the AI Agent. Non-CEO branches MUST merge rule updates FROM a `ceo/` branch to maintain parity.
-
-### Mandatory Sync Process
-1. **Rule Modification**: When any rule is added or modified on a `ceo/` branch, the AI Agent MUST immediately:
-   - Commit the change on the current branch.
-   - Switch to all other active development branches (e.g., `infra/milestone-0-setup`, `main`) and merge the changes.
-   - Update the master `kuro-rules` repository.
-2. **Review Enforcement**: No Pull Request (PR) can be merged without explicitly confirming that the branch has the status of the "Current Rule Set" (Rule 33 verification).
-
-
-
----
-
-## RULE 39: CI/CD Debugging First -- MANDATORY
-
-### Rule
-When any GitHub Actions check is failing on the active branch, pull request, or latest related run, the AI Agent MUST prioritize CI/CD debugging before starting unrelated implementation.
-
-### Required Workflow
-1. Detect failures with `gh` (`gh run list`, `gh pr checks`, `gh run view --log`) or equivalent CI logs.
-2. Identify root cause with failing step name, workflow name, and exact failing command.
-3. Propose the minimum safe fix first (smallest change that restores pipeline health).
-4. Apply fix, run relevant local validation, and re-check CI status.
-5. Report outcome with links to workflow runs and remaining blockers.
-
-### Enforcement
-```
-IF CI/CD is red:
-  ACTION: STOP unrelated feature work
-  ACTION: DEBUG and FIX CI/CD first
-  DO NOT: Ignore failing pipelines
-```
-
-### Compliance Extension
-When asked "Did you follow AGENTS.md?", include:
-39. **Rule 39**: "CI/CD Debugging First: [YES/NO - failing checks analyzed and handled]"
-
-### Enforcement Summary Extension
-| Rule 39 (CI/CD Debugging First) | STOP unrelated work, fix pipeline first |

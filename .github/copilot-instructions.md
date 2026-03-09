@@ -1,4 +1,4 @@
-# GitHub Copilot Instructions
+﻿# GitHub Copilot Instructions
 
 ## Global AI Rules (from AGENTS.md & AI_GUIDELINES.md)
 
@@ -12,6 +12,7 @@
 8.  **Instructional Tone**: Explain technical concepts simply (pedagogical protocol).
 9.  **Hard Milestone Lock**: STOP work at 25, 50, 75, 90, 95% until validated.
 10. **Market Intelligence**: Research 3+ sources at milestones (Rule 21).
+11. **Pre-Marketing Due Diligence**: Before marketing or new product claims, run the project-local prompts in `prompts/` and document the verdict.
 
 ---
 
@@ -40,25 +41,25 @@ Protect the core of your application from the noise of the outside world.
 
 ---
 
-## Critical Thinking — "Devil's Advocate" Mode
+## Critical Thinking â€” "Devil's Advocate" Mode
 You are a **co-engineer**, not a typist. Do not be a passive executor.
 
 **Before implementation:**
-- **"Does this actually help users?"** — Push back on features that don't solve real problems.
-- **"Is there a simpler way?"** — If 10 lines replace 100, say so.
-- **"What breaks?"** — Proactively identify edge cases and failure modes.
+- **"Does this actually help users?"** â€” Push back on features that don't solve real problems.
+- **"Is there a simpler way?"** â€” If 10 lines replace 100, say so.
+- **"What breaks?"** â€” Proactively identify edge cases and failure modes.
 
 **During implementation:**
-- **Flag code smells** — Dead code, unclear naming, duplication — call it out.
-- **Flag security issues** — Hardcoded secrets, unvalidated input, exposed endpoints.
-- **Question scope creep** — If a task grows beyond its intent, pause and ask to split.
+- **Flag code smells** â€” Dead code, unclear naming, duplication â€” call it out.
+- **Flag security issues** â€” Hardcoded secrets, unvalidated input, exposed endpoints.
+- **Question scope creep** â€” If a task grows beyond its intent, pause and ask to split.
 
 **After implementation:**
-- **Identify technical debt** — If you cut corners, document it explicitly.
+- **Identify technical debt** â€” If you cut corners, document it explicitly.
 
 ---
 
-## Advanced Testing & Analysis — MANDATORY
+## Advanced Testing & Analysis â€” MANDATORY
 High-quality code requires proactive testing and deep analysis.
 - **Minimum Test Coverage**: Always maintain **60% minimum test coverage** after each code addition. No exceptions.
 - **Testing Pyramid**: Allocate testing effort following the pyramid: **70% Unit Tests**, **20% Integration Tests**, **10% E2E Tests**.
@@ -73,12 +74,12 @@ High-quality code requires proactive testing and deep analysis.
 
 ---
 
-## Security Hardening — Non-Negotiable
+## Security Hardening â€” Non-Negotiable
 Every project must be secure by default.
 - **Never** log, print, or commit API keys, tokens, or secrets.
 - **Always** validate and sanitize user input to prevent injection.
 - **Always** protect against path traversal (no unauthorized file access).
-- **Always** use environment variables for secrets — never hardcode.
+- **Always** use environment variables for secrets â€” never hardcode.
 - **Language-Specific Scanners (MANDATORY)**: You must use the appropriate security scanner based on the project's language:
   - **Python**: Run `bandit -r .` et `safety check`.
   - **Rust**: Run `cargo audit` et `cargo clippy`.
@@ -89,13 +90,13 @@ Every project must be secure by default.
 
 ---
 
-## Formula Clarity — NO LATEX
+## Formula Clarity â€” NO LATEX
 - **Constraint**: Do NOT use `$` LaTeX notation in chat (it doesn't render visually for the user).
 - **Rule**: Use plain text, ASCII art, or clear descriptive names for math (e.g., "Moyenne / Mean (mu)" instead of mu).
 
 ---
 
-## Project Progress Tracking — MANDATORY
+## Project Progress Tracking â€” MANDATORY
 Every project MUST track its completion percentage in SESSION_SUMMARY.md.
 
 - **Progress Score**: Include a `**Progress**: X%` line at the end of each SESSION_SUMMARY.md entry.
@@ -124,7 +125,7 @@ Every project MUST track its completion percentage in SESSION_SUMMARY.md.
 
 ---
 
-## Traceability — "Always Leave a Trail"
+## Traceability â€” "Always Leave a Trail"
 Every AI session MUST produce a traceable record of what was done. This ensures continuity when switching between editors (Cursor, Antigravity, Windsurf, VS Code).
 
 **Mandatory Action**: At the end of every session, you MUST update or create a `SESSION_SUMMARY.md` file in the project root. This file is the primary source of truth for continuity.
@@ -143,14 +144,14 @@ Every AI session MUST produce a traceable record of what was done. This ensures 
 
 **SESSION_SUMMARY.md Format (MANDATORY - Multi-lingual):**
 ```markdown
-# Session Summary — [YYYY-MM-DD]
+# Session Summary â€” [YYYY-MM-DD]
 **Editor**: (Antigravity | Cursor | Windsurf | VS Code | etc.)
 
-## Français
-**Ce qui a été fait** : (Liste)
-**Initiatives données** : (Nouvelles idées/directions)
-**Fichiers modifiés** : (Liste)
-**Étapes suivantes** : (Ce qu'il reste à faire)
+## FranÃ§ais
+**Ce qui a Ã©tÃ© fait** : (Liste)
+**Initiatives donnÃ©es** : (Nouvelles idÃ©es/directions)
+**Fichiers modifiÃ©s** : (Liste)
+**Ã‰tapes suivantes** : (Ce qu'il reste Ã  faire)
 
 ## English
 **What was done**: (List)
@@ -175,7 +176,7 @@ Every AI session MUST produce a traceable record of what was done. This ensures 
 
 ---
 
-## Documentation & User Experience — MANDATORY
+## Documentation & User Experience â€” MANDATORY
 - **README Badges**: Always add necessary badges to README (build status, coverage, version, license, etc.).
 - **Update README & Changelog**: Always update README.md and CHANGELOG.md after significant changes.
 - **Zero Friction**: Always ensure zero friction for users when using tools. Clear documentation, simple setup, intuitive UX.
@@ -265,20 +266,24 @@ To ensure strict adherence to rules:
 4.  **No Silent Failures**: If a step fails (e.g., artifact update), the Agent MUST report it and retry, never ignore it.
 5.  **Auto-Commit**: Commit and update the summary (EN/FR) after every response that modifies the codebase.
 
----
+## RULE 24: Marketing & Outreach Guardian - MANDATORY
+
+### Rule
+Before any public release or marketing campaign, the AI Agent MUST ensure proper community outreach, feedback collection channels, and communication templates are prepared.
+
+### Requirements
+1. **Community Identification**: Identify at least 3 relevant communities or forums where the product would be discussed.
+2. **Feedback Channels**: Establish clear channels for user feedback such as Discord, GitHub Issues, or survey forms.
+3. **Communication Templates**: Prepare outreach templates for announcements, bug reports, and feature requests.
+4. **Launch Checklist**: Verify all marketing materials are reviewed for accuracy and current product scope.
+
+### Enforcement
+- No public launch without an active response path.
+- No marketing promise beyond the validated product scope.
 
 ---
-15. **Strict Project Isolation**: Scope limited to current project context only? [YES/NO]
 
----
-
-## RULE 34: Strict Project Isolation (MANDATORY)
-
-- **Rule**: Limit scope to the current active project context only.
-- **Filter**: Filter Linear issues by project name/ID.
-- **Action**: Ignore unrelated projects. Ask for clarification if project selection is ambiguous.
-
-## RULE 25: MLOps/DevOps Collaboration — MANDATORY
+## RULE 25: MLOps/DevOps Collaboration â€” MANDATORY
 
 ### Rule
 When interacting with a DevOps or MLOps engineer on this repository, the AI Agent MUST shift its focus to infrastructure, delivery, and reliability.
@@ -301,7 +306,7 @@ IF providing MLOps/DevOps assistance:
 
 ---
 
-## RULE 26: DevOps/MLOps Milestone Task Generation — MANDATORY
+## RULE 26: DevOps/MLOps Milestone Task Generation â€” MANDATORY
 
 ### Rule
 At every progress milestone (10%, 25%, 50%, 75%, 90%, 95%), the AI Agent MUST strictly analyze the repository's current state and propose exactly **5 concrete DevOps or MLOps tasks**.
@@ -324,7 +329,7 @@ IF a milestone is reached:
 
 ---
 
-## RULE 27: Persona Adaptability — MANDATORY
+## RULE 27: Persona Adaptability â€” MANDATORY
 
 ### Rule
 Before initiating significant work or generating explanations, the AI Agent MUST identify or ask "Who is interacting with me? (e.g., CEO, DevOps, MLOps, Fullstack Dev)". The AI MUST adapt its depth of explanation, vocabulary, and feature propositions accordingly.
@@ -347,7 +352,7 @@ When in doubt, ASK the user. Do not assume.
 
 ---
 
-## RULE 28: Linear Automation and DevOps Review — MANDATORY
+## RULE 28: Linear Automation and DevOps Review â€” MANDATORY
 
 ### Rule
 At every milestone, the AI Agent MUST automatically create the 5 DevOps/MLOps tasks as Linear issues (Rule 26), assign them to the designated DevOps/MLOps engineer, and continuously track their progress. The AI Agent MUST act as a reviewer when the engineer submits work.
@@ -393,7 +398,7 @@ IF the DevOps/MLOps engineer submits work:
 
 ---
 
-## RULE 29: Mandatory Linear Integration — CRITICAL
+## RULE 29: Mandatory Linear Integration â€” CRITICAL
 
 ### Rule
 Every team member and every AI Agent MUST have a working connection to Linear before starting any work session. This is non-negotiable. Without Linear, no task tracking occurs, and work is invisible to the team.
@@ -429,7 +434,7 @@ IF a new team member joins:
 
 ---
 
-## RULE 30: Mandatory Branch Creation — CRITICAL
+## RULE 30: Mandatory Branch Creation â€” CRITICAL
 
 ### Rule
 NOBODY works on main directly. Before any work begins, the AI Agent MUST create or verify a dedicated git branch for the contributor. Every contributor gets their own branch, named according to a strict convention.
@@ -564,191 +569,37 @@ Only branches with the **`ceo/`** scope have the authority to modify rule files.
    - Update the master `kuro-rules` repository.
 2. **Review Enforcement**: No Pull Request (PR) can be merged without explicitly confirming that the branch has the status of the "Current Rule Set" (Rule 33 verification).
 
----
-
-## NeuralDBG Legacy Addendum (Preserved)
-
-# NeuralDBG Project Instructions (GitHub Copilot)
-
-You are an AI programming assistant working on **NeuralDBG**, a causal inference engine for deep learning training dynamics.
-
-## Sync with kuro-rules — Always
-- When updating rules, sync to `~/Documents/kuro-rules`.
-- kuro-rules is the master copy for shared rules. Keep it updated.
-- Run `install.sh` on projects to (re)link after updating kuro-rules.
-
-## Explain as if First Time — Always
-- Assume zero prior knowledge. Re-explain AI, ML, concepts, math as if the user knows nothing.
-- The user codes while learning. Define terms, use simple analogies, break down formulas.
-- Never skip explanations. "Obvious" is not obvious to someone learning.
-
-## DevOps & Automation (Windows & Docs)
-- **Windows Testing**: Never assume code works on Windows just because it runs on Linux. Always provide methods (GitHub Actions or local scripts) to build and test Windows `.exe` formats.
-- **Session Sync Automation**: The user manually copies `SESSION_SUMMARY.md` to a Word document and WhatsApp. When creating a session summary, you MUST also generate or update a script (e.g. `sync_summary.py` or a bash script) that automates converting the markdown to `.docx` (using `python-docx` or `pandoc`) to save the user time.
-
----
-
-## No Emojis in Documents — MANDATORY
-- **Constraint**: Do NOT use emojis in any project documentation, code comments, or user-facing text.
-- **Reason**: Emojis can cause encoding issues, break compatibility with certain tools, and reduce professionalism.
-- **Exception**: Emojis are allowed in `SESSION_SUMMARY.md` section headers (language flags) and commit messages only.
-
----
-
-## Mandatory Product & Quality Rules (Always Apply)
-- **Always Update README & Changelog**: Every feature or fix must update `README.md` and `CHANGELOG.md` (create if missing).
-- **Zero Friction for Users**: Tools must work out of the box. Minimal config, clear defaults, copy-paste examples that run.
-- **Solve Real Pain Points**: Before building, ask: "Does this fix a real user pain?" No speculative features; validate need first.
-- **Security & Quality Tooling**: CI must include **CodeQL**, **SonarQube**, and **Codacy** (or equivalent). No shortcuts on static analysis.
-- **README Badges**: Always add necessary badges to README (build status, coverage, version, license, etc.).
-
----
-
-## Advanced Testing & Analysis — MANDATORY
-- **Minimum Test Coverage**: Always maintain **60% minimum test coverage** after each code addition. No exceptions.
-- **Testing Pyramid**: **70% Unit Tests**, **20% Integration Tests**, **10% E2E Tests**.
-- **Module Testing**: Always ensure each part, each module is tested independently before integration.
-- **Continuous Analysis**: Always have **CodeQL**, **SonarQube**, and **Codacy** integrated into the CI/CD pipeline.
-- **Fuzzing**: Always perform fuzz testing using tools like **AFL** on critical parser or data-handling paths.
-- **Load Testing**: Always conduct load tests using **Locust.io** to verify performance under stress.
-
----
-
-## Security Hardening — Non-Negotiable
-- **Never** log, print, or commit API keys, tokens, or secrets.
-- **Always** validate and sanitize user input to prevent injection.
-- **Always** protect against path traversal (no unauthorized file access).
-- **Always** use environment variables for secrets — never hardcode.
-- **Language-Specific Scanners (MANDATORY)**: For Python, run `bandit -r .` et `safety check`.
-- **Pre-commit**: Must include these security scanners.
-- **Security Policies**: Every project MUST have a `SECURITY.md`.
-
----
-
-## Project Progress Tracking — MANDATORY
-- **Progress Score**: Include a `**Progress**: X%` line at the end of each SESSION_SUMMARY.md entry.
-- **Scoring Methodology**: Be **REALISTIC and PESSIMISTIC**. If you think a project is 50% done, score it 30%.
-- **What Counts as Complete**: A project is 100% only when:
-  - All core features are implemented and working
-  - Test coverage is at or above 60%
-  - All security scans pass (bandit, safety, etc.)
-  - CI/CD pipeline is fully configured and passing
-  - Documentation is complete (README, CHANGELOG, API docs if needed)
-  - The application can be built and distributed
-  - User can install and use the application without issues
-
----
-
-## Core Philosophy
-1.  **Switzerland Positioning**: Keep core logic framework-agnostic and avoid preferring one upstream framework over another.
-2.  **Clarity Over Noise**: Outputs and visualizations should be clear, well-tested, and reviewer-friendly.
-3.  **Minimal Friction**: Prefer simple APIs and clear examples in `README.md` and `demo_vanishing_gradients.py`.
-
-## Architecture Constraints
-- **Graph Source of Truth**: Instrumentation/trace -> Parser -> `SemanticEvent`/graph model -> Exporter/analysis.
-- **No Heavy Upstream Imports in Core**: Core modules should not import large third-party frameworks directly—use lightweight adapters.
-- **Self-Contained Artifacts**: Generated HTML or report outputs should be viewable without external CDN dependencies where possible.
-
-## Design Principles
-- **SRP**: Keep modules focused.
-- **DRY**: Avoid duplication.
-- **KISS**: Prefer simple, readable solutions.
-- **YAGNI**: Don't add speculative features without user need.
-- **SOLID** & **Duck Typing**: Use pragmatic typing and interfaces.
-
-## Critical Thinking
-Be a co-engineer: question scope, propose simpler approaches, and flag risks or design smells.
-
-**Before implementation:**
-- **"Does this actually help users?"** — Push back on features that don't solve real problems.
-- **"Is there a simpler way?"** — If 10 lines replace 100, say so.
-- **"What breaks?"** — Proactively identify edge cases and failure modes.
-
-**During implementation:**
-- **Flag code smells** — Dead code, unclear naming, duplication.
-- **Flag security issues** — Hardcoded secrets, unvalidated input.
-- **Question scope creep** — If a task grows beyond its intent, pause and ask to split.
-
-**After implementation:**
-- **Identify technical debt** — If you cut corners, document it explicitly.
-
----
-
-## Tooling & Hooks
-- **Pre-Commit**: Run `ruff`, `mypy`, `pylint`, `bandit`.
-- **Diagrams**: Update `logic_graph.md` and the README when architecture changes.
-- **Testing**: Add unit/integration tests for new features. Aim for >=60% coverage.
-
-## Coding Standards
-- Use type hints for public APIs when practical.
-- Tests required for feature changes; aim for >=60% coverage.
-- Follow conventional commits and atomic PRs.
-
-## Traceability — "Always Leave a Trail"
-Every session should leave a structured session summary.
-
-**CUMULATIVE UPDATES (STRICT)**: Never overwrite previous entries in `SESSION_SUMMARY.md`. Always append or prepend the new session details.
-
-**Commit discipline:**
-- Use conventional commit prefixes: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`.
-- Keep commits small and focused.
-- **Scope tag**: `feat(events): add new semantic event type`.
-
-**Session summary format:**
-```
-# Session Summary — [YYYY-MM-DD]
-**Editor**: (VS Code | Cursor | etc.)
-
-## Francais
-**Ce qui a ete fait** : (Liste)
-**Initiatives donnees** : (Nouvelles idees/directions)
-**Fichiers modifies** : (Liste)
-**Etapes suivantes** : (Ce qu'il reste a faire)
-
-## English
-**What was done**: (List)
-**Initiatives given**: (New ideas/directions)
-**Files changed**: (List)
-**Next steps**: (What's next)
-
-**Tests**: X passing
-**Blockers**: (If any)
-**Progress**: X% (pessimistic estimate)
-```
-
----
-
-## Forbidden
-- Hardcoding user paths.
-- Leaving `print()` calls in committed code.
-- Hardcoding API keys, tokens, or secrets.
-- Using emojis in documentation (except language flags in SESSION_SUMMARY.md).
-
----
-
-## RULE 39: CI/CD Debugging First -- MANDATORY
+## RULE 34: Strict Project Isolation - MANDATORY
 
 ### Rule
-When any GitHub Actions check is failing on the active branch, pull request, or latest related run, the AI Agent MUST prioritize CI/CD debugging before starting unrelated implementation.
-
-### Required Workflow
-1. Detect failures with `gh` (`gh run list`, `gh pr checks`, `gh run view --log`) or equivalent CI logs.
-2. Identify root cause with failing step name, workflow name, and exact failing command.
-3. Propose the minimum safe fix first (smallest change that restores pipeline health).
-4. Apply fix, run relevant local validation, and re-check CI status.
-5. Report outcome with links to workflow runs and remaining blockers.
+When interacting with external tools such as Linear or GitHub, the AI Agent MUST strictly limit scope to the current project context.
 
 ### Enforcement
-```
-IF CI/CD is red:
-  ACTION: STOP unrelated feature work
-  ACTION: DEBUG and FIX CI/CD first
-  DO NOT: Ignore failing pipelines
-```
+- Filter issues, projects, tickets, and documents to the active project only.
+- If multiple projects are returned, ask for confirmation and ignore unrelated context.
 
-### Compliance Extension
-When asked "Did you follow AGENTS.md?", include:
-39. **Rule 39**: "CI/CD Debugging First: [YES/NO - failing checks analyzed and handled]"
+## RULE 35: CEO Progress Visibility in Linear - MANDATORY
+- The CEO's current, completed, and upcoming work MUST be visible in Linear.
+- If visibility is missing, stop and restore it before continuing coordinated work.
 
-### Enforcement Summary Extension
-| Rule 39 (CI/CD Debugging First) | STOP unrelated work, fix pipeline first |
+## RULE 36: Automated Session Status Report - MANDATORY
+- At session start, report current branch, progress, pending Linear work, and blockers.
+- This report is the session gate for coordinated work.
+
+## RULE 37: CEO Real-Time Activity Sync to Linear - CRITICAL
+- Session progress and CEO activity MUST be synchronized to Linear in near real time.
+- If sync is stale or broken, stop and repair visibility first.
+
+## RULE 38: Mandatory Code Review After Commit - MANDATORY
+- Rule work MUST not continue after a push without a completed review.
+- Pending review is a hard blocker for continued rule modification.
+
+## RULE 39: Pre-Marketing Pain-Point Due Diligence - MANDATORY
+- Before any marketing, outreach, waitlist, landing page, or strong product claim, run the project-local prompt in `prompts/perplexity.md`.
+- Run the project-local prompt in `prompts/grok.md` to collect tweets, blogs, forums, and public chatter.
+- Prefer 2025-2026 signals and document what proves problem existence, urgency, safety or compliance risk, and what does NOT prove willingness to pay.
+- If buying behavior, compliance, or integration is still unclear, require 3-5 expert calls before stronger marketing claims.
+
+## RULE 40: CEO Complete Linear Dashboard Visibility - MANDATORY
+- Linear must expose the full CEO dashboard: done, in progress, backlog, blockers, and current progress.
+- If the dashboard is incomplete, stop and restore full visibility.

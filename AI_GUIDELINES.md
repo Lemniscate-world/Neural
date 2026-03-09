@@ -119,7 +119,7 @@ To prevent "milestone amnesia," development MUST automatically lock when progres
 ## Rule 21: Intelligence Harvester — MANDATORY
 L'agent a l'obligation de collecter et d'analyser au moins 3 sources externes (Reddit, App Store, Forums) pour identifier les "Pain Points" utilisateurs et les failles des concurrents à chaque jalon (10, 25, 50, 75, 90, 95%). Cette analyse doit être consignée avant toute validation.
 
-## Security Hardening — Non-Negotiable
+## Security Hardening - Non-Negotiable
 Every project must be secure by default.
 - **Never** log, print, or commit API keys, tokens, or secrets.
 - **Always** validate and sanitize user input to prevent injection.
@@ -398,6 +398,21 @@ Before transitioning to the next phase, the user MUST demonstrate deep understan
 5. "What did you learn that surprised you?"
 
 **Enforcement**: STOP and provide deep explanation before phase transition.
+
+---
+
+## RULE 24: Marketing & Outreach Guardian - MANDATORY
+Avant tout lancement public, outreach, ou campagne marketing, l'agent DOIT preparer les fondations de communication.
+
+### Verification minimum
+- Identifier au moins 3 communautes ou canaux pertinents pour le projet.
+- Preparer un canal de feedback actif et surveille.
+- Preparer des templates d'annonce, bug report, et feature request.
+- Verifier que le contenu marketing respecte le scope reel du produit.
+
+### Enforcement
+- Pas de lancement public sans canal de retour ni templates prets.
+- Pas de promesse marketing qui depasse le scope reel valide.
 
 ---
 
@@ -705,31 +720,37 @@ IF Linear search returns issues from multiple projects:
   ACTION: Ask for clarification if project selection is ambiguous.
 ```
 
----
+## RULE 35: CEO Progress Visibility in Linear - MANDATORY
+- The CEO's current work, completed work, and upcoming work MUST be visible in Linear.
+- If this visibility is missing, the agent must stop and restore it before continuing coordinated work.
 
-## RULE 39: CI/CD Debugging First -- MANDATORY
+## RULE 36: Automated Session Status Report - MANDATORY
+- At session start, report current branch, progress, pending Linear work, and blockers.
+- This report is the session gate for coordinated work.
 
-### Rule
-When any GitHub Actions check is failing on the active branch, pull request, or latest related run, the AI Agent MUST prioritize CI/CD debugging before starting unrelated implementation.
+## RULE 37: CEO Real-Time Activity Sync to Linear - CRITICAL
+- Session progress and CEO activity MUST be synchronized to Linear in near real time.
+- If sync is stale or broken, stop and repair visibility first.
 
-### Required Workflow
-1. Detect failures with `gh` (`gh run list`, `gh pr checks`, `gh run view --log`) or equivalent CI logs.
-2. Identify root cause with failing step name, workflow name, and exact failing command.
-3. Propose the minimum safe fix first (smallest change that restores pipeline health).
-4. Apply fix, run relevant local validation, and re-check CI status.
-5. Report outcome with links to workflow runs and remaining blockers.
+## RULE 38: Mandatory Code Review After Commit - MANDATORY
+- Rule work MUST not continue after a push without a completed review.
+- Pending review is a hard blocker for continued rule modification.
+
+## RULE 39: Pre-Marketing Pain-Point Due Diligence - MANDATORY
+Avant tout marketing, outreach, landing page, waitlist, paid acquisition, ou nouveau discours produit sur un pain point, l'agent DOIT executer une recherche desk structuree.
+
+### Verification minimum
+- Executer le prompt local `prompts/perplexity.md` pour les sources citees.
+- Executer le prompt local `prompts/grok.md` pour les signaux sociaux, tweets, blogs recents, et forums.
+- Privilegier les sources 2025-2026, ou une source 2024 seulement si elle est structurelle et officielle.
+- Documenter ce que les sources prouvent, ce qu'elles ne prouvent PAS, et si 3-5 appels experts restent obligatoires.
+- Si le doute restant porte sur la volonte de payer, la conformite, ou l'integration, la desk research ne suffit pas.
 
 ### Enforcement
-```
-IF CI/CD is red:
-  ACTION: STOP unrelated feature work
-  ACTION: DEBUG and FIX CI/CD first
-  DO NOT: Ignore failing pipelines
-```
+- Pas de claim marketing presente comme un fait si cette verification n'est pas faite.
+- Pas de "pain point valide" par simple intuition, ni par hype generale de marche.
+- Les templates Perplexity et Grok sont la base par defaut, pas une option.
 
-### Compliance Extension
-When asked "Did you follow AGENTS.md?", include:
-39. **Rule 39**: "CI/CD Debugging First: [YES/NO - failing checks analyzed and handled]"
-
-### Enforcement Summary Extension
-| Rule 39 (CI/CD Debugging First) | STOP unrelated work, fix pipeline first |
+## RULE 40: CEO Complete Linear Dashboard Visibility - MANDATORY
+- Linear must expose the full CEO dashboard: done, in progress, backlog, blockers, and current progress.
+- If the dashboard is incomplete, stop and restore full visibility.

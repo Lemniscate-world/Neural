@@ -34,7 +34,16 @@ Maintain high standards. No emojis (Rule 9), 60% test coverage (Rule 5), and con
 | Milestone Lock | R20 | Hard stop at validation gates. |
 | Intel Harvester | R21 | 3 sources researched at milestones. |
 | Feature Focus | R22 | Focus on ONE feature per validation cycle. |
-| Project Isolation | R34 | Scope limited to CURRENT project context ONLY. |
+| Marketing & Outreach Guardian | R24 | Outreach channels and templates ready before public launch. |
+| MLOps/DevOps Collaboration | R25 | Shift guidance to infrastructure and delivery when relevant. |
+| Rule Parity | R33 | Shared rule files must stay synchronized everywhere. |
+| Strict Project Isolation | R34 | Scope limited to the active project only. |
+| CEO Progress Visibility | R35 | CEO work must stay visible in Linear. |
+| Session Status | R36 | Start sessions with branch, progress, and blockers. |
+| Real-Time Sync | R37 | Keep CEO activity synchronized to Linear. |
+| Code Review Gate | R38 | No continued rule work after push without review. |
+| Pre-Marketing Due Diligence | R39 | Run Perplexity + Grok pain-point research before marketing claims. |
+| CEO Dashboard Visibility | R40 | Linear must show the full CEO dashboard. |
 
 ---
 
@@ -44,7 +53,7 @@ To ensure the highest quality and depth of implementation, development MUST focu
 
 **Enforcement**: STOP development at each milestone until validation is complete.
 
-## Critical Thinking — "Devil's Advocate" Mode
+## Critical Thinking - "Devil's Advocate" Mode
 You are a **co-engineer**, not a typist. Do not be a passive executor.
 
 **Before implementation:**
@@ -241,11 +250,22 @@ Before transitioning to the next phase, the user MUST demonstrate deep understan
 
 ---
 
-## RULE 34: Strict Project Isolation (MANDATORY)
+## RULE 24: Marketing & Outreach Guardian — MANDATORY
 
-- **Directive**: Interaction scope strictly limited to current project context.
-- **Execution**: Apply project filters to all external tool searches.
-- **Constraint**: No context leakage from other projects. Ask user for project selection if ambiguous.
+### Rule
+Before any public release or marketing campaign, the AI Agent MUST ensure proper community outreach, feedback collection channels, and communication templates are prepared.
+
+### Requirements
+1. **Community Identification**: Identify at least 3 relevant communities or forums where the product would be discussed.
+2. **Feedback Channels**: Establish clear channels for user feedback such as Discord, GitHub Issues, or survey forms.
+3. **Communication Templates**: Prepare outreach templates for announcements, bug reports, and feature requests.
+4. **Launch Checklist**: Verify all marketing materials are reviewed for accuracy and current product scope.
+
+### Enforcement
+- No public launch without an active response path.
+- No marketing promise beyond the validated product scope.
+
+---
 
 ## RULE 25: MLOps/DevOps Collaboration — MANDATORY
 
@@ -533,33 +553,40 @@ Only branches with the **`ceo/`** scope have the authority to modify rule files.
    - Update the master `kuro-rules` repository.
 2. **Review Enforcement**: No Pull Request (PR) can be merged without explicitly confirming that the branch has the status of the "Current Rule Set" (Rule 33 verification).
 
+## RULE 34: Strict Project Isolation (MANDATORY)
+
+- **Directive**: Interaction scope strictly limited to the current project context.
+- **Execution**: Apply project filters to all external tool searches and Linear queries.
+- **Constraint**: No context leakage from other projects. Ask for project selection if ambiguous.
+
+## RULE 35: CEO Progress Visibility in Linear (MANDATORY)
+
+- CEO tasks and progress must be visible in Linear for the whole team.
+- Missing visibility is a blocker for coordinated work.
+
+## RULE 36: Automated Session Status Report (MANDATORY)
+
+- Start each session with current branch, progress, pending tasks, and blockers.
+- This report is the operational entrypoint for the session.
+
+## RULE 37: CEO Real-Time Activity Sync to Linear (CRITICAL)
+
+- Keep CEO actions and progress synchronized to Linear in near real time.
+- Stale sync is a blocker.
+
+## RULE 38: Mandatory Code Review After Commit (MANDATORY)
+
+- Rule work cannot continue after a push without a completed review.
+- Pending review blocks further rule changes.
+
+## RULE 39: Pre-Marketing Pain-Point Due Diligence (MANDATORY)
+
+- Before marketing, run the project-local due-diligence prompts in `prompts/perplexity.md` and `prompts/grok.md`.
+- Separate what is proven from what is still only inferred.
+
+## RULE 40: CEO Complete Linear Dashboard Visibility (MANDATORY)
+
+- Linear must expose done, in progress, backlog, blockers, and current progress for CEO work.
+- If the dashboard is incomplete, stop and restore visibility.
 
 
----
-
-## RULE 39: CI/CD Debugging First -- MANDATORY
-
-### Rule
-When any GitHub Actions check is failing on the active branch, pull request, or latest related run, the AI Agent MUST prioritize CI/CD debugging before starting unrelated implementation.
-
-### Required Workflow
-1. Detect failures with `gh` (`gh run list`, `gh pr checks`, `gh run view --log`) or equivalent CI logs.
-2. Identify root cause with failing step name, workflow name, and exact failing command.
-3. Propose the minimum safe fix first (smallest change that restores pipeline health).
-4. Apply fix, run relevant local validation, and re-check CI status.
-5. Report outcome with links to workflow runs and remaining blockers.
-
-### Enforcement
-```
-IF CI/CD is red:
-  ACTION: STOP unrelated feature work
-  ACTION: DEBUG and FIX CI/CD first
-  DO NOT: Ignore failing pipelines
-```
-
-### Compliance Extension
-When asked "Did you follow AGENTS.md?", include:
-39. **Rule 39**: "CI/CD Debugging First: [YES/NO - failing checks analyzed and handled]"
-
-### Enforcement Summary Extension
-| Rule 39 (CI/CD Debugging First) | STOP unrelated work, fix pipeline first |
