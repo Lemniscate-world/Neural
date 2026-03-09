@@ -52,10 +52,24 @@ docker-compose up -d
 docker-compose exec neuraldbg-dev bash
 ```
 
+Equivalent shortcuts via `Makefile`:
+
+```bash
+make build
+make up
+make shell
+```
+
 Run tests inside Docker:
 
 ```bash
 docker-compose run --rm neuraldbg-dev bash -lc "pytest"
+```
+
+Or:
+
+```bash
+make test-docker
 ```
 
 Persistent volumes are mounted to:
