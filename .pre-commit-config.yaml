@@ -3,6 +3,17 @@
 # Run manually: pre-commit run --all-files
 
 repos:
+  # Dependency security audit (aligned with CI). Manual stage to avoid slowing down every commit.
+  - repo: local
+    hooks:
+      - id: safety-check
+        name: safety check
+        entry: python -m safety check --full-report
+        language: system
+        pass_filenames: false
+        stages: [manual]
+        always_run: true
+
   # Security scanner for Python
   - repo: https://github.com/PyCQA/bandit
     rev: '1.7.5'

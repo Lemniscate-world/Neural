@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-and-security:
+    name: Test and Security (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        python-version:
+          - "3.11"
+          - "3.12"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Verify Python tooling
+        run: |
+          python --version
+          python -m pip --version
+
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Install build backend tools
+        run: |
+          python -m pip install setuptools wheel
+
+      - name: Install torch (CPU index)
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple torch
+
+      - name: Install QA tools
+        run: |
+          python -m pip install numpy pytest coverage bandit safety
+
+      - name: Run tests with coverage gate (>=60%)
+        run: |
+          # Keep the script running after failures so we can emit a useful summary.
+          set +e
+          # Limit coverage to project source to avoid external library artifacts.
+          python -m coverage run --source=neuraldbg -m pytest 2>&1 | tee /tmp/pytest-ci.log
+          # In a pipeline, capture the command status (not tee's status).
+          test_rc=${PIPESTATUS[0]}
+          python -m coverage report --show-missing --fail-under=60 2>&1 | tee /tmp/coverage-ci.log
+          cov_rc=${PIPESTATUS[0]}
+          if [ "$test_rc" -ne 0 ] || [ "$cov_rc" -ne 0 ]; then
+            # Prefer compact signal lines; if none, fallback to recent output.
+            summary="$(grep -E -m 10 'FAILED|ERROR|Required test coverage|fail-under|No module named|Traceback|AssertionError' /tmp/pytest-ci.log /tmp/coverage-ci.log | tr '\n' ' ' || true)"
+            if [ -z "$summary" ]; then
+              summary="$(tail -n 40 /tmp/pytest-ci.log /tmp/coverage-ci.log | tr '\n' ' ')"
+            fi
+            # Escape annotation control token for GitHub Actions commands.
+            summary="${summary//::/%3A%3A}"
+            echo "::error title=CI test failure::${summary}"
+            if [ "$test_rc" -ne 0 ]; then
+              exit "$test_rc"
+            fi
+            exit "$cov_rc"
+          fi
+
+
+      - name: Run Bandit
+        run: |
+          python -m bandit -r . -ll -x tests,*/tests/*,.venv,venv,__pycache__
+
+      - name: Run Safety
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          python -m safety check --full-report
