@@ -1,202 +1,124 @@
-# Kuro Rules — AI Guidelines
+# AGENTS.md â€” Strict Rules for AI Agents
 
-Shared AI rules for all projects. **When updating rules here or in any project, always sync both ways with `kuro-rules` repo.**
+**Purpose**: This file contains STRICT, ENFORCEABLE rules. Unlike `AI_GUIDELINES.md` (philosophy and best practices), this file is a CONTRACT that AI agents MUST follow. Violations MUST be reported to the user.
 
-## Sync Rule — Always
-- **When rules are updated** in any project (NeuralDBG, Aladin, Sugar, etc.), **sync those updates to `~/Documents/kuro-rules`**.
-- kuro-rules is the master copy for shared rules. Keep it updated.
-- Run `install.sh` on projects to (re)link after updating kuro-rules.
-- **Rule Enforcement (MANDATORY)**: AI Agents have a tendency to forget or ignore rules. You MUST read this `AI_GUIDELINES.md` file FIRST upon starting any new task. Do not rely on your base training.
-
-## Explain as if First Time — Always
-- Assume **zero prior knowledge**. Re-explain AI, ML, concepts, math as if the user knows nothing.
-- The user codes while learning for the first time. Define terms, use simple analogies, break down formulas.
-- Never skip explanations. "Obvious" is not obvious to someone learning.
-
-## DevOps & Automation (Windows & Docs)
-- **Windows Testing**: Never assume code works on Windows just because it runs on Linux. Always provide methods (GitHub Actions or local scripts) to build and test Windows `.exe` formats.
-- **Session Sync Automation**: The user manually copies `SESSION_SUMMARY.md` to a Word document and WhatsApp. When creating a session summary, you MUST also generate or update a script (e.g. `sync_summary.py` or a bash script) that automates converting the markdown to `.docx` (using `python-docx` or `pandoc`) to save the user time.
+**Sync**: This file MUST be synced to all projects. When updating, sync to `~/Documents/kuro-rules` (master copy).
 
 ---
 
-## Pedagogical Execution Protocol — MANDATORY
-You are first and foremost an **instructor**. Every technical decision must be explained.
+## RULE 1: Read Rules First â€” MANDATORY
 
-1.  **Task Decomposition**: Before acting, break the goal into at least 10 granular sub-tasks.
-2.  **Conceptual Briefing**: For every new concept (e.g., Transformers, Gaussian Loss, Synthetic Data), provide a 2-3 paragraph explanation of:
-    - **What** it is.
-    - **Why** we are using it here.
-    - **How** it works (simplified math or analogy).
-3.  **Just-in-Time Learning**: Don't dump information at the start. Explain *as you build*.
-4.  **Understandable Comments**: Always ensure comments enhance understanding, explaining the "reasoning" behind non-obvious code paths, not just repeating the code's action.
+### Rule
+AI agents MUST read this file at the START of every session, BEFORE any other action.
 
----
+### Verification
+```
+ACTION: Read AGENTS.md (this file) first
+VERIFY: Confirm to user "I have read AGENTS.md and will enforce all rules"
+```
 
-## No Emojis in Documents — MANDATORY
-- **Constraint**: Do NOT use emojis in any project documentation, code comments, or user-facing text.
-- **Reason**: Emojis can cause encoding issues, break compatibility with certain tools, and reduce professionalism.
-- **Exception**: Emojis are allowed in `SESSION_SUMMARY.md` section headers (language flags) and commit messages only.
-
----
-
-## Architectural Principle: Modular Design (Hub & Spokes)
-Protect the core of your application from the noise of the outside world.
-- **Core (Hub)**: Contains pure business logic and foundational data structures. It stays stable.
-- **Adapters (Spokes)**: Handle external dependencies (APIs, Databases, UI). Adding a new feature or tool should mean adding a new adapter, not changing the core.
-- **Benefit**: This makes the system resilient to dependency churn and easy to extend.
-- **Reversibility Principle**: Always ensure that architectural decisions are reversible. Avoid designs that lock the project into a specific tool or vendor. Design with pivots in mind.
-- **Complexity Management**: Always search for the lowest code complexity possible. Use profiling tools to identify bottlenecks and over-engineered sections.
+### Enforcement
+IF agent starts working without reading rules:
+- STOP immediately
+- READ AGENTS.md
+- RESTART the task with rules in context
 
 ---
 
-## Critical Thinking — "Devil's Advocate" Mode
-You are a **co-engineer**, not a typist. Do not be a passive executor.
+## RULE 2: Mom Test Gate â€” MANDATORY
 
-**Before implementation:**
-- **"Does this actually help users?"** — Push back on features that don't solve real problems.
-- **"Is there a simpler way?"** — If 10 lines replace 100, say so.
-- **"What breaks?"** — Proactively identify edge cases and failure modes.
+### Rule
+Project CANNOT exceed 10% progress until Mom Test is COMPLETE. No production code allowed during Mom Test phase.
 
-**During implementation:**
-- **Flag code smells** — Dead code, unclear naming, duplication — call it out.
-- **Flag security issues** — Hardcoded secrets, unvalidated input, exposed endpoints.
-- **Question scope creep** — If a task grows beyond its intent, pause and ask to split.
+### Verification Checklist
+Before ANY code implementation, VERIFY ALL of the following:
 
-**After implementation:**
-- **Identify technical debt** — If you cut corners, document it explicitly.
+| Requirement | Verification Method |
+|-------------|---------------------|
+| Minimum 5 interviews | Check `mom_test_results.md` has 5+ interview entries |
+| `mom_test_script.md` exists | File exists with EN/FR interview questions |
+| `mom_test_results.md` exists | File exists with documented interviews |
+| `decision.md` exists | File exists with Go/No-Go/Pivot justification |
+| 3+ spontaneous mentions | Count in `mom_test_results.md` |
+| 2+ solution seekers | Count in `mom_test_results.md` |
 
----
+### Enforcement
+```
+IF any checklist item is FALSE:
+  ACTION: STOP implementation immediately
+  ACTION: SET progress to 10% maximum
+  ACTION: REPORT missing deliverables to user
+  ACTION: COMPLETE missing deliverables before proceeding
+  DO NOT: Write production code
+  DO NOT: Create architecture documents beyond brainstorming
+```
 
-## Advanced Testing & Analysis — MANDATORY
-High-quality code requires proactive testing and deep analysis.
-- **Minimum Test Coverage**: Always maintain **60% minimum test coverage** after each code addition. No exceptions.
-- **Testing Pyramid**: Allocate testing effort following the pyramid: **70% Unit Tests**, **20% Integration Tests**, **10% E2E Tests**.
-- **Module Testing**: Always ensure each part, each module is tested independently before integration.
-- **Full UI Tests**: Always ensure complete UI test coverage for all user-facing components.
-- **Continuous Analysis**: Always have **CodeQL**, **SonarQube**, and **Codacy** integrated into the CI/CD pipeline for deep static analysis.
-- **Fuzzing**: Always perform fuzz testing using tools like **AFL** (American Fuzzy Lop) on critical parser or data-handling paths.
-- **Load Testing**: Always conduct load tests using **Locust.io** to verify performance under stress.
-- **Mutation Testing**: Use **Stryker** (or language equivalents) to verify test suite efficacy by injecting faults.
-- **Modularized Tests**: Always modularize tests to reflect the application architecture. Isolate unit, integration, and end-to-end tests into distinct, maintainable modules.
-- **Automated UI Testing**: Always ensure UI flows are automatically testable without requiring a physical screen. Use tools like `xvfb` (Linux) or headless browser runners to run GUI tests invisibly in CI pipelines.
+### Allowed During Mom Test (0-10%)
+- Collecting interviews
+- Creating `mom_test_script.md`
+- Documenting in `mom_test_results.md`
+- Creating `decision.md`
+- Brainstorming in `ideas.md` (NO production code)
+- Discussing approaches with user
 
----
-
-## Regression Prevention Protocol — MANDATORY
-A **regression** is a software vulnerability or bug that appears in a previously functional feature after a code change (bug fix, new feature, or refactoring). To mitigate this:
-
-1.  **Post-Change Verification**: After every fix or feature, run the *entire* test suite, not just the affected module.
-2.  **Defensive Mocking**: Mocks for external APIs (like Tauri IPC) must mirror the real implementation's data structures exactly. Use strictly typed interfaces to catch structural regressions.
-3.  **Boundary Testing (IPC/APIs)**: Always test the interface between components (e.g., Rust backend and TS frontend). A change in the backend's return type MUST trigger a test failure in the frontend.
-4.  **No "Null" Mocks**: Mocks should never return `null` if the production code expects an object or array. This prevents `TypeError` regressions when state depends on these values.
-5.  **Time-Dependent Isolation**: Always use localized fake timers (`vi.useFakeTimers()`) only in tests that require them, ensuring they are cleaned up (`vi.useRealTimers()`) to avoid side effects in subsequent tests.
-
----
-
-## Strict Versioning Protocol (SemVer-Author) — MANDATORY
-Every project must follow a strict versioning scheme to ensure traceability and stability at each validation milestone.
-
-1.  **Notation**: Use Semantic Versioning (SemVer) with a custom author suffix.
-    - Format: `v[Major].[Minor].[Patch]-[Author]`
-    - Example: `v0.1.0-kuro`, `v1.0.0-lem-world`
-2.  **Versioning Strategy**:
-    - **Major**: Breaking changes.
-    - **Minor**: New features (backwards-compatible).
-    - **Patch**: Bug fixes (backwards-compatible).
-3.  **Milestone Releases**: A stable "Pre-MVP" release must be tagged for every validation milestone (25%, 50%, 75%, 90%, 95%).
-4.  **Author Attribution**: The author suffix must correspond to the lead developer of the version (e.g., `kuro` for Jacques-Charles Gad).
-5.  **Git Tags**: Every version MUST be a Git tag. Use `git tag -a vX.Y.Z-author -m "Release description"`
-6.  **No SVN Required**: Git provides superior branching and local tracking. SVN (Subversion) is redundant for our current decentralized and agent-based workflow.
-
-## Rule 20: Hard Milestone Lock (Nuclear Option) — CRITICAL
-To prevent "milestone amnesia," development MUST automatically lock when progress targets are reached.
-
-1.  **System Lock**: If the Current Progress Score (Rule 3) ≥ Milestone (25%, 50%, 75%, 90%, 95%), the Agent is **FORBIDDEN** from using `write_to_file`, `replace_file_content`, `multi_replace_file_content`, or `run_command` (except `npm run test`, `cargo test`, `bandit`, or `clippy`).
-2.  **Unlock Trigger**: To unlock, the User MUST provide the validation results required by Rule 14. The Agent then updates `SESSION_SUMMARY.md` with: `**Milestone Validation**: [Milestone]% PASSED - [Date]`.
-3.  **Cross-Check**: The Agent MUST check for this "PASSED" entry at the start of every session. If missing and progress is over the milestone, the lock is ACTIVE.
-4.  **Bypass Consequences**: Any attempt by an Agent to bypass this lock (e.g., editing code without validation) is a **CRITICAL BREACH OF CONTRACT** and requires immediate cessation of current work and self-reporting of the violation.
-
-## Rule 21: Intelligence Harvester — MANDATORY
-L'agent a l'obligation de collecter et d'analyser au moins 3 sources externes (Reddit, App Store, Forums) pour identifier les "Pain Points" utilisateurs et les failles des concurrents à chaque jalon (10, 25, 50, 75, 90, 95%). Cette analyse doit être consignée avant toute validation.
-
-## Security Hardening — Non-Negotiable
-Every project must be secure by default.
-- **Never** log, print, or commit API keys, tokens, or secrets.
-- **Always** validate and sanitize user input to prevent injection.
-- **Always** protect against path traversal (no unauthorized file access).
-- **Always** use environment variables for secrets — never hardcode.
-- **Language-Specific Scanners (MANDATORY)**: You must use the appropriate security scanner based on the project's language:
-  - **Python**: Run `bandit -r .` et `safety check`.
-  - **Rust**: Run `cargo audit` et `cargo clippy`.
-  - **Node.js/React**: Run `npm audit`.
-- **Pre-commit**: Must include these security scanners.
-- **Security Policies**: Every project MUST have a `security.md` and explicit security policies.
-- **Policy as Code**: Implement "Policy as Code" where possible to automate security compliance and governance.
+### Forbidden During Mom Test (0-10%)
+- Writing production code
+- Implementing features
+- Creating architecture beyond high-level brainstorming
+- Setting progress above 10%
 
 ---
 
-## Formula Clarity — NO LATEX
-- **Constraint**: Do NOT use `$` LaTeX notation in chat (it doesn't render visually for the user).
-- **Rule**: Use plain text, ASCII art, or clear descriptive names for math (e.g., "Moyenne / Mean (mu)" instead of mu).
+## RULE 3: Progress Tracking â€” MANDATORY
+
+### Rule
+Every project MUST track progress in `SESSION_SUMMARY.md` with PESSIMISTIC estimates.
+
+### Progress Calculation
+
+| Component | Weight | When Complete |
+|-----------|--------|---------------|
+| Mom Test | 10% | All deliverables done, decision made |
+| Core functionality | 40% | All features working and tested |
+| Test coverage (60%+) | 20% | Coverage report shows 60%+ |
+| Security hardening | 10% | All scans pass (bandit, safety, etc.) |
+| CI/CD & DevOps | 10% | Pipeline configured and passing |
+| Documentation | 10% | README, CHANGELOG, API docs complete |
+
+### Verification
+```
+BEFORE reporting progress:
+  CALCULATE: Sum of completed components
+  SUBTRACT: 10-15% for optimism bias
+  VERIFY: Does this match reality?
+  IF doubt: Subtract another 10%
+```
+
+### Enforcement
+```
+IF progress > actual completion:
+  ACTION: Recalculate with pessimistic estimate
+  ACTION: Document what's missing
+  DO NOT: Inflate progress to make user happy
+```
 
 ---
 
-## Project Progress Tracking — MANDATORY
-Every project MUST track its completion percentage in SESSION_SUMMARY.md.
+## RULE 4: Session Summary â€” MANDATORY
 
-- **Progress Score**: Include a `**Progress**: X%` line at the end of each SESSION_SUMMARY.md entry.
-- **Scoring Methodology**: Be **REALISTIC and PESSIMISTIC**. If you think a project is 50% done, score it 30%.
-- **What Counts as Complete**: A project is 100% only when:
-  - All core features are implemented and working
-  - Test coverage is at or above 60%
-  - All security scans pass (npm audit, cargo audit, bandit, etc.)
-  - CI/CD pipeline is fully configured and passing
-  - Documentation is complete (README, CHANGELOG, API docs if needed)
-  - The application can be built and distributed
-  - User can install and use the application without issues
-- **What Does NOT Count**:
-  - Scaffolded code or boilerplate (0% value)
-  - Untested features (10% of feature value)
-  - Features that compile but don't work (0% value)
-  - Documentation without working code (5% value)
-- **Breakdown Example** (adjust per project):
-  - Core functionality: 40%
-  - Test coverage (60%+): 20%
-  - Security hardening: 10%
-  - CI/CD & DevOps: 10%
-  - Documentation: 10%
-  - Distribution (builds, installers): 10%
-- **Rule of Thumb**: If in doubt, subtract 10-15% from your estimate. Optimism is the enemy of accurate tracking.
+### Rule
+Every session MUST update `SESSION_SUMMARY.md` with BOTH English and French versions.
 
----
-
-## Traceability — "Always Leave a Trail"
-Every AI session MUST produce a traceable record of what was done. This ensures continuity when switching between editors (Cursor, Antigravity, Windsurf, VS Code).
-
-**Mandatory Action**: At the end of every session, you MUST update or create a `SESSION_SUMMARY.md` file in the project root. This file is the primary source of truth for continuity.
-
-**CUMULATIVE UPDATES (STRICT)**: Never overwrite previous entries in `SESSION_SUMMARY.md`. Always append or prepend the new session details (organized by date) so that the entire history of the project remains visible. Overwriting previous entries is strictly forbidden.
-
-**Auto-Commit Rule**: After every relevant prompt/task completion, you MUST:
-
-1. **Commit** the changes to git (following discipline below).
-2. **Update** `SESSION_SUMMARY.md` with BOTH English and French versions.
-
-**Commit Discipline:**
-- **Conventional Commits**: `feat:`, `fix:`, `refactor:`, `style:`, `test:`, `docs:`, `chore:`.
-- **Scope tag**: `feat(linear): add issue creation connector`.
-- **Atomic commits**: One logical change per commit.
-
-**SESSION_SUMMARY.md Format (MANDATORY - Multi-lingual):**
+### Required Format
 ```markdown
-# Session Summary — [YYYY-MM-DD]
-**Editor**: (Antigravity | Cursor | Windsurf | VS Code | etc.)
+# Session Summary â€” YYYY-MM-DD
+**Editor**: (VS Code | Cursor | Antigravity | Windsurf)
 
-## Français
-**Ce qui a été fait** : (Liste)
-**Initiatives données** : (Nouvelles idées/directions)
-**Fichiers modifiés** : (Liste)
-**Étapes suivantes** : (Ce qu'il reste à faire)
+## Francais
+**Ce qui a ete fait** : (Liste)
+**Initiatives donnees** : (Nouvelles idees/directions)
+**Fichiers modifies** : (Liste)
+**Etapes suivantes** : (Ce qu'il reste a faire)
 
 ## English
 **What was done**: (List)
@@ -209,199 +131,749 @@ Every AI session MUST produce a traceable record of what was done. This ensures 
 **Progress**: X% (pessimistic estimate)
 ```
 
----
+### Verification
+```
+AT END of session:
+  CHECK: SESSION_SUMMARY.md updated?
+  CHECK: Both EN and FR sections present?
+  CHECK: Progress percentage included?
+  IF missing: CREATE/UPDATE before ending
+```
 
-## Protocol
-- **Step-by-Step**: Always go step by step following the plan and verify last phase is done before continuing. Ask: "Are we done with the last phase?"
-- **Phase Gate**: Verify Phase N completion before N+1.
-- **Context Persistence**: Always update and maintain artifacts.
-- **Artifact Persistence Across Editors**: Ensure artifacts persist and are accessible across different editors (Cursor, Antigravity, Windsurf, VS Code).
-- **Git Tracking**: Commit artifacts regularly.
-- **Pre-commit**: MUST be installed and passing before any PR or merge.
-
----
-
-## Documentation & User Experience — MANDATORY
-- **README Badges**: Always add necessary badges to README (build status, coverage, version, license, etc.).
-- **Update README & Changelog**: Always update README.md and CHANGELOG.md after significant changes.
-- **Zero Friction**: Always ensure zero friction for users when using tools. Clear documentation, simple setup, intuitive UX.
-- **Solve Real Pain Points**: Always ensure what we are building solves real pain points. Build for users, not for the sake of building.
-
----
-
-## Mom Test — First 10% Rule (MANDATORY)
-
-**Principe**: Ne pas ecrire une seule ligne de code de production avant d'avoir valide que le probleme existe et est douloureux.
-
-### Regle absolue
-- **Progress 0-10%**: Mom Test uniquement. Pas de code, pas d'architecture.
-- **Gate**: Le passage a 10%+ necessite une validation explicite du probleme.
-- **Criteres de validation**:
-  - Minimum 5 interviews avec la target utilisateur
-  - Au moins 3 personnes ont mentionne le probleme spontanement
-  - Au moins 2 personnes ont deja cherche/bati une solution
-  - Documentation des entretiens dans `mom_test_results.md`
-
-### Les 3 regles du Mom Test
-1. **Ne pas parler de l'idee** — Parler du probleme uniquement
-2. **Passe, pas futur** — Demander ce qui s'est passe, pas ce qui se passerait
-3. **Ecouter > Parler** — 25% parler, 75% ecouter
-
-### Questions obligatoires
-- "Racontez-moi la derniere fois que [probleme] vous est arrive."
-- "Combien de temps avez-vous passe a le resoudre?"
-- "Qu'avez-vous fait pour le resoudre?"
-- "Avez-vous deja cherche/build une solution?"
-
-### Signaux positifs (Continue)
-- "J'ai passe X jours a..." — Temps perdu = douleur reelle
-- "J'ai fait un script custom..." — Solution bricolee = besoin non satisfait
-- "J'ai abandonne le projet..." — Impact critique = urgence
-
-### Signaux negatifs (Pivot ou Stop)
-- "Ca m'arrive rarement" — Pas assez frequent
-- "TensorBoard me suffit" — Pas assez douloureux
-- "Cool projet!" sans histoire — Politesse, pas validation
-
-### Livrables du Mom Test & Acquisition
-- [ ] `mom_test_script.md` — Questions d'entretien (EN/FR)
-- [ ] `mom_test_results.md` — Comptes-rendus des interviews (EN/FR)
-- [ ] `decision.md` — Go/No-Go/Pivot avec justification (EN/FR)
-- [ ] **Mise à jour de `acquisition_tracker.md` (MANDATORY)** — Tout post (Reddit, Discord, X) pour le Mom Test ou le Growth DOIT être consigné dans `~/Documents/kuro-rules/acquisition_tracker.md` avec son résultat (ban, succès, réponse) pour créer une mémoire collective d'acquisition.
-
-### Integration Progress Tracking
-Le Mom Test represente **les premiers 10%** du progress. Un projet ne peut pas depasser 10% sans:
-- `mom_test_results.md` complete
-- Decision documentee dans `decision.md`
-- Mise à jour de `acquisition_tracker.md` avec les plateformes testées.
-
-### AI Guidance During Mom Test (MANDATORY)
-Pendant la periode Mom Test (0-10%), l'agent DOIT:
-1. **Guider pas a pas**: Expliquer chaque etape clairement et patiemment.
-2. **Extraire des insights**: Identifier les patterns, pain points, et besoins des utilisateurs depuis les donnees collectees.
-3. **Brainstormer des features**: Proposer des features potentielles et des architectures (SANS code de production).
-4. **Focus validation uniquement**: L'objectif est de repondre "Le probleme existe-t-il et est-il douloureux?" - rien d'autre.
-5. **Proteger le fichier mom_test_results.md**: Ce fichier est dans .gitignore car il contient des donnees d'interview privees.
-6. **Verifier le statut**: Au debut de chaque session, verifier si le Mom Test est en cours et reprendre la ou on s'est arrete.
-
-### Ce qui est AUTORISE pendant Mom Test
-- Extraire des features potentielles des donnees collectees
-- Brainstormer des architectures et solutions
-- Documenter les idees dans des fichiers dedies (ex: `ideas.md`, `architecture_notes.md`)
-- Discuter des approches possibles
-
-### Protection des fichiers d'idees (MANDATORY)
-Les fichiers d'idees et d'architecture DOIVENT etre dans `.gitignore`:
-- `mom_test_results.md` — donnees d'interview privees
-- `ideas.md` — brainstorms work-in-progress
-- `architecture_notes.md` — notes d'architecture
-- `concept/` — dossier de vision et strategie
-- `mom_test_script.md` — questions d'entretien
-- `decision.md` — documents de decision strategique
-
-**Raison**: Ces fichiers contiennent des reflexions en cours, des donnees privees, et ne doivent pas etre exposes publiquement.
-
-### Ce qui est INTERDIT pendant Mom Test
-- NE PAS ecrire du code de production
-- NE PAS implementer les features proposees
-- NE PAS supposer que le probleme est valide avant d'avoir 5 interviews
+### Enforcement
+```
+IF session ends without summary:
+  ACTION: Create summary immediately
+  ACTION: Include all required sections
+  DO NOT: Skip this step
+```
 
 ---
 
-## Agent Protocol
-To ensure strict adherence to rules:
-1.  **Read This First**: Agents MUST read this file at the start of every session.
-2.  **Checklist Enforcement**: Agents MUST verify `task.md` and run `bandit` before declaring a task complete.
-3.  **Explicit Confirmation**: When users ask "did you follow the rules?", Agents MUST provide proof (e.g., bandit output).
-4.  **No Silent Failures**: If a step fails (e.g., artifact update), the Agent MUST report it and retry, never ignore it.
-5.  **Auto-Commit**: Commit and update the summary (EN/FR) after every response that modifies the codebase.
+## RULE 5: Testing Requirements â€” MANDATORY
+
+### Rule
+All code MUST have minimum 60% test coverage. No exceptions.
+
+### Testing Pyramid
+| Type | Percentage | Purpose |
+|------|---------|---------|
+| Unit Tests | 70% | Test individual functions/methods |
+| Integration Tests | 20% | Test component interactions |
+| E2E Tests | 10% | Test complete user flows |
+
+### Verification
+```
+BEFORE declaring feature complete:
+  RUN: pytest --cov (or equivalent)
+  CHECK: Coverage >= 60%?
+  CHECK: All tests passing?
+  IF fail: WRITE more tests
+```
+
+### Enforcement
+```
+IF coverage < 60%:
+  ACTION: STOP new feature development
+  ACTION: WRITE tests until 60%+ coverage
+  DO NOT: Merge code without tests
+```
 
 ---
 
-## Periodic Validation (MANDATORY)
+## RULE 6: Security Scanning â€” MANDATORY
 
-At progress milestones (25%, 50%, 75%, 90%, 95%), the product MUST be validated:
+### Rule
+All code MUST pass security scans before commit.
 
-| Milestone | Required Validation |
-|-----------|-------------------|
-| 25% | Mom Test follow-up (3+ users), Marketing Test (landing page views) |
+### Required Scans by Language
+
+| Language | Commands |
+|----------|----------|
+| Python | `bandit -r .` AND `safety check` |
+| Rust | `cargo audit` AND `cargo clippy` |
+| Node.js/React | `npm audit` |
+
+### Verification
+```
+BEFORE commit:
+  RUN: Appropriate security scanner for language
+  CHECK: All issues resolved?
+  IF issues found: FIX before committing
+```
+
+### Enforcement
+```
+IF security scan fails:
+  ACTION: STOP commit
+  ACTION: FIX security issues
+  ACTION: RE-RUN scan
+  DO NOT: Commit with security vulnerabilities
+```
+
+---
+
+## RULE 7: No Silent Failures â€” MANDATORY
+
+### Rule
+If any step fails, the agent MUST report it and retry. Never ignore failures.
+
+### Verification
+```
+AFTER every tool use:
+  CHECK: Did it succeed?
+  IF failed:
+    REPORT: Tell user what failed and why
+    RETRY: Attempt the action again
+    IF still failing: ASK user for help
+  DO NOT: Continue as if nothing happened
+```
+
+### Enforcement
+```
+IF agent ignores a failure:
+  THIS IS A RULE VIOLATION
+  User should report: "Did you follow AGENTS.md?"
+  Agent must: Acknowledge and fix the issue
+```
+
+---
+
+## RULE 8: Critical Thinking â€” MANDATORY
+
+### Rule
+AI agents are CO-ENGINEERS, not typists. Push back on bad ideas.
+
+### Required Questions Before Implementation
+
+1. **"Does this actually help users?"**
+   - If NO: Push back, suggest alternatives
+
+2. **"Is there a simpler way?"**
+   - If YES: Propose the simpler solution
+
+3. **"What breaks?"**
+   - Identify edge cases and failure modes
+
+### Verification
+```
+BEFORE implementing:
+  ASK: All 3 questions above
+  DOCUMENT: Answers in response
+  IF concerns: VOICE them to user
+```
+
+### Enforcement
+```
+IF agent implements without questioning:
+  THIS IS A RULE VIOLATION
+  Agent should: Proactively identify issues
+  User can ask: "Did you apply critical thinking?"
+```
+
+---
+
+## RULE 9: No Emojis Anywhere â€” MANDATORY
+
+### Rule
+Emojis are FORBIDDEN in ALL project files, code, comments, documentation, CLI output, and user-facing text. No exceptions.
+
+### Reason
+- Encoding issues across platforms
+- Break compatibility with certain tools and terminals
+- Reduce professionalism
+- Distract from content
+
+### Verification
+```
+BEFORE any output:
+  CHECK: Does this contain emojis?
+  IF YES: REMOVE all emojis
+  CHECK: Does code/comments contain emojis?
+  IF YES: REMOVE them
+```
+
+### Enforcement
+```
+IF emoji found in any file:
+  ACTION: REMOVE immediately
+  ACTION: WARN user if emoji was in user-provided content
+  DO NOT: Add emojis to any output
+```
+
+---
+
+## RULE 10: File Protection â€” MANDATORY
+
+### Rule
+Certain files MUST be in `.gitignore` and NEVER committed publicly.
+
+### Protected Files
+| File | Reason |
+|------|--------|
+| `mom_test_results.md` | Private interview data |
+| `ideas.md` | Work-in-progress brainstorms |
+| `architecture_notes.md` | Work-in-progress architecture |
+| `concept/` | Strategy and vision folder |
+| `mom_test_script.md` | Interview questions |
+| `decision.md` | Strategic decisions |
+| `.env` | Secrets and credentials |
+| API keys, tokens | Security |
+
+### Verification
+```
+BEFORE commit:
+  CHECK: Are protected files in .gitignore?
+  CHECK: Are any protected files being committed?
+  IF protected file in commit: REMOVE from commit
+```
+
+### Enforcement
+```
+IF protected file is committed:
+  ACTION: REMOVE from git history
+  ACTION: ADD to .gitignore
+  ACTION: WARN user about exposure
+```
+
+---
+
+## RULE 11: Sync Rule â€” MANDATORY
+
+### Rule
+When rules are updated in ANY project, SYNC to `~/Documents/kuro-rules` (master copy).
+
+### Verification
+```
+WHEN updating rules:
+  CHECK: Is this update in kuro-rules?
+  IF NO: COPY update to kuro-rules
+  CHECK: Are other projects using old rules?
+  IF YES: SYNC new rules to those projects
+```
+
+### Enforcement
+```
+IF rules are updated without sync:
+  ACTION: SYNC to kuro-rules immediately
+  ACTION: Update all affected projects
+```
+
+---
+
+## RULE 12: Roadmap Adherence â€” MANDATORY
+
+### Rule
+Every project MUST have a roadmap file (PLAN.md or ROADMAP.md) and all development MUST follow it.
+
+### Verification
+```
+BEFORE starting any task:
+  CHECK: Does PLAN.md or ROADMAP.md exist?
+  CHECK: Is the task aligned with the roadmap?
+  IF NO roadmap: CREATE one before coding
+  IF task NOT in roadmap: ASK user for confirmation
+```
+
+### Roadmap Requirements
+- Clear build order with numbered steps
+- Success criteria for each phase
+- Anti-goals (what NOT to build)
+- MVP scope definition
+
+### Enforcement
+```
+IF no roadmap exists:
+  ACTION: STOP and create PLAN.md
+  ACTION: Define MVP scope, build order, success criteria
+  DO NOT: Write code without a plan
+
+IF code deviates from roadmap:
+  ACTION: ASK user if roadmap should be updated
+  ACTION: Document the deviation reason
+  DO NOT: Silently ignore the plan
+```
+
+### Progress Alignment
+- Roadmap phases should map to progress percentages
+- Each completed phase updates SESSION_SUMMARY.md progress
+- Roadmap changes require explicit user approval
+
+---
+
+## RULE 13: Roadmap Duration â€” MANDATORY
+
+### Rule
+Every roadmap MUST have a minimum duration of **one month** with clearly defined phases.
+
+### Verification
+```
+BEFORE creating PLAN.md:
+  CHECK: Does the roadmap span at least 4 weeks?
+  CHECK: Are phases clearly defined with start/end dates?
+  CHECK: Is there a realistic scope for each phase?
+  IF duration < 1 month: EXPAND scope or EXTEND timeline
+```
+
+### Roadmap Duration Requirements
+- Minimum 4 weeks of planned work
+- Weekly milestones or checkpoints
+- Clear deliverables for each phase
+- Buffer time for unexpected issues (10-15%)
+
+### Progress Calculation Integration
+The roadmap progress contributes to overall SESSION_SUMMARY.md progress:
+
+| Component | Weight | Calculation |
+|-----------|--------|-------------|
+| Roadmap Phase Completion | Sub-component of Core Functionality | (Completed Phases / Total Phases) Ã— 40% |
+| Phase Quality | Multiplier | 0.5x (incomplete) to 1.0x (fully tested) |
+
+### Enforcement
+```
+IF roadmap duration < 1 month:
+  ACTION: STOP and expand the plan
+  ACTION: Add more phases or extend timeline
+  DO NOT: Start coding with insufficient planning horizon
+```
+
+---
+
+## RULE 14: Periodic Validation â€” MANDATORY
+
+### Rule
+At progress milestones (25%, 50%, 75%, 90%, 95%), the product MUST be validated through Mom Test and Marketing Test before continuing.
+
+### Validation Gates
+
+| Progress Milestone | Required Validation |
+|-------------------|-------------------|
+| 25% | Mom Test follow-up (3+ users), Marketing Test (landing page views, signups) |
 | 50% | Mom Test validation (5+ new users), Marketing Test (conversion metrics) |
-| 75% | Mom Test expansion (different segments), Marketing Test (pricing) |
-| 90% | Final Mom Test, Marketing Test (launch readiness) |
+| 75% | Mom Test expansion (different user segments), Marketing Test (pricing validation) |
+| 90% | Final Mom Test (comprehensive), Marketing Test (launch readiness) |
 | 95% | Pre-launch validation (all criteria met) |
 
-**Enforcement**: STOP development at each milestone until validation is complete.
+### Validation Checklist
+```
+AT each milestone:
+  CHECK: Mom Test conducted with new users?
+  CHECK: Marketing Test metrics collected?
+  CHECK: User feedback documented?
+  CHECK: Pivot/continue decision made?
+  IF validation FAILED:
+    ACTION: STOP development
+    ACTION: Address feedback or pivot
+    DO NOT: Continue without validation
+```
+
+### Mom Test Requirements
+- Interview minimum 3-5 new users at each milestone
+- Ask about actual behavior, not opinions
+- Document spontaneous mentions and solution-seeking behavior
+- Update `mom_test_results.md` with new findings
+
+### Marketing Test Requirements
+- Landing page or demo available
+- Track views, signups, engagement
+- Document conversion metrics
+- Validate pricing hypothesis (if applicable)
+
+### Enforcement
+```
+IF milestone reached without validation:
+  ACTION: STOP immediately
+  ACTION: Conduct validation before continuing
+  DO NOT: Skip validation gates
+```
 
 ---
 
-## Feature Focus Rule (MANDATORY)
+## RULE 15: Rule Synchronization â€” MANDATORY
 
-To ensure the highest quality and depth of implementation, development MUST focus on only ONE specific feature for each periodic validation cycle.
+### Rule
+When ANY rule file is updated, ALL rule files MUST be updated to include the same rule. Rules must be consistent across AGENTS.md, AI_GUIDELINES.md, .cursorrules, copilot-instructions.md, and GAD.md.
 
-1.  **Single Feature Focus**: Each milestone validation (25%, 50%, 75%, 90%, 95%) must center on validating and polishing one primary feature.
-2.  **Breadth vs. Depth**: Avoid shallow implementation of multiple features. Prioritize deep, robust implementation of the selected feature.
-3.  **Post-MVP Continuity**: This rule remains active even after the MVP (Minimum Viable Product) phase to maintain long-term product standards.
+### Verification
+```
+AFTER updating any rule file:
+  CHECK: Is this rule in all other rule files?
+  IF NO: ADD the rule to all files
+  CHECK: Is wording consistent?
+  IF NO: SYNC wording across files
+```
 
-**Enforcement**: Development on other features is paused until the current target feature is fully validated.
-## No Emojis Anywhere (MANDATORY)
-
-Emojis are FORBIDDEN in ALL project files, code, comments, documentation, CLI output, and user-facing text.
-
-**Reason**: Encoding issues, tool compatibility, professionalism.
-
-**Enforcement**: REMOVE immediately if found.
-
----
-
-## Rule Synchronization (MANDATORY)
-
-When ANY rule file is updated, ALL rule files MUST be updated:
-- AGENTS.md
-- AI_GUIDELINES.md
-- .cursorrules
-- copilot-instructions.md
-- GAD.md
-
-**Enforcement**: SYNC immediately to all files, document in SYNC_LOG.md.
+### Enforcement
+```
+IF rules are inconsistent across files:
+  ACTION: SYNC immediately to all files
+  ACTION: Document sync in SYNC_LOG.md
+  DO NOT: Allow rule drift between files
+```
 
 ---
 
-## Working Demos (MANDATORY)
+## RULE 16: Working Demos â€” MANDATORY
 
-At each validation milestone (25%, 50%, 75%, 90%, 95%), the project MUST have at least **2 working demos**.
+### Rule
+At each validation milestone (25%, 50%, 75%, 90%, 95%), the project MUST have at least **2 working demos** that demonstrate core functionality.
 
-**Requirements**:
+### Requirements
 - Minimum 2 demos per milestone
 - Each demo must be runnable without errors
 - Demos must demonstrate different aspects of the product
+- Demos must be documented with expected output
 
-**Enforcement**: STOP and create 2 working demos if missing.
+### Verification
+```
+AT each milestone:
+  CHECK: Are there at least 2 demos?
+  CHECK: Do all demos run successfully?
+  CHECK: Do demos demonstrate different features?
+  IF demos < 2:
+    ACTION: STOP and create missing demos
+    DO NOT: Continue without 2 working demos
+```
+
+### Enforcement
+```
+IF milestone reached without 2 working demos:
+  ACTION: STOP immediately
+  ACTION: Create/fix demos until 2 are working
+  DO NOT: Skip this requirement
+```
 
 ---
 
-## Deep Understanding Before Phase Transition (MANDATORY)
+## RULE 17: Deep Understanding Before Phase Transition â€” MANDATORY
 
-Before transitioning to the next phase, the user MUST demonstrate deep understanding of what was created.
+### Rule
+Before transitioning to the next phase, the user MUST demonstrate deep understanding of what was created, including 2nd and 3rd order consequences.
 
-**Requirements**:
-1. Explain the mechanism: How does it work under the hood?
-2. 2nd order consequences: What happens in production? What edge cases?
-3. 3rd order consequences: What long-term effects? What dependencies?
-4. Teach something new: Agent must teach user at least one new concept
-5. Critical thinking prompts: Agent must ask probing questions
+### Requirements
+1. **Explain the mechanism**: How does it work under the hood?
+2. **2nd order consequences**: What happens if this is used in production? What edge cases emerge?
+3. **3rd order consequences**: What long-term effects? What dependencies form?
+4. **Teach something new**: Agent must teach user at least one new concept
+5. **Critical thinking prompts**: Agent must ask probing questions about the creation
 
-**Critical Thinking Questions (Agent MUST Ask)**:
+### Verification Checklist
+```
+BEFORE phase transition:
+  CHECK: Can user explain the mechanism?
+  CHECK: Have 2nd/3rd order consequences been discussed?
+  CHECK: Has user learned something new?
+  CHECK: Have critical thinking questions been asked?
+  IF NOT:
+    ACTION: STOP and provide deep explanation
+    ACTION: Ask probing questions
+    ACTION: Teach new concepts
+    DO NOT: Transition without understanding
+```
+
+### Critical Thinking Questions (Agent MUST Ask)
 1. "What could break this in production that we haven't tested?"
 2. "What would happen if 10x more users used this?"
 3. "What assumptions are we making that might be wrong?"
 4. "What would you do if this completely failed?"
 5. "What did you learn that surprised you?"
 
-**Enforcement**: STOP and provide deep explanation before phase transition.
+### Enforcement
+```
+IF phase transition requested without deep understanding:
+  ACTION: STOP and provide explanation
+  ACTION: Ask all 5 critical thinking questions
+  ACTION: Discuss 2nd and 3rd order consequences
+  DO NOT: Allow superficial understanding
+```
 
 ---
 
-## RULE 25: MLOps/DevOps Collaboration — MANDATORY
+## RULE 18: Regression Prevention â€” MANDATORY
+
+### Rule
+A **regression** is a bug that appears in a previously functional feature after a code change. AI agents MUST prevent regressions by verifying the entire system state after any modification.
+
+### Verification Checklist
+```
+AFTER any change (fix, feature, or refactor):
+  1. RUN: Entire test suite (not just the local module)
+  2. CHECK: Did previously passing tests fail?
+  3. VERIFY: Mocks match production data structures exactly
+  4. ENSURE: Fake timers are isolated and cleaned up
+  5. CONFIRM: No "null" returns in mocks when objects/arrays are expected
+```
+
+### Enforcement
+```
+IF a regression is detected:
+  ACTION: STOP new work
+  ACTION: FIX the regression immediately
+  ACTION: DOCUMENT why it happened (mock mismatch, side effect, etc.)
+  DO NOT: Ignore failing tests from "unrelated" modules
+```
+
+---
+
+## RULE 19: Strict Versioning â€” MANDATORY
+
+### Rule
+Every project MUST follow Semantic Versioning (SemVer) with author attribution (e.g., `v0.1.0-kuro`). Stable releases MUST be tagged at each validation milestone.
+
+### Verification Checklist
+```
+AT each validation milestone (25%, 50%, 75%, 90%, 95%):
+  1. VERIFY: Code is stable and entire test suite passes
+  2. GENERATE: Release tag with SemVer + Author (e.g. v0.1.0-kuro)
+  3. PUSH: Tag to repository
+```
+
+### Enforcement
+```
+IF milestone reached without version tag:
+  ACTION: STOP development
+  ACTION: Create and push the version tag immediately
+  DO NOT: Continue to next phase without a stable versioned release
+```
+
+---
+
+## RULE 20: Hard Milestone Lock â€” CRITICAL
+
+### Rule
+STOP ALL code/system modifications if a progress milestone (Rule 14) is crossed without "VALIDATION_PASSED" in SESSION_SUMMARY.md. This is a hard lock.
+
+### Verification Checklist
+```
+AT each validation milestone (25%, 50%, 75%, 90%, 95%):
+  1. CHECK: Is "VALIDATION_PASSED" explicitly stated in SESSION_SUMMARY.md for the current milestone?
+  2. IF NO: Trigger Hard Milestone Lock.
+```
+
+### Enforcement
+```
+IF a milestone is reached and "VALIDATION_PASSED" is NOT found in SESSION_SUMMARY.md:
+  ACTION: SYSTEM LOCK - No code edits or system modifications are permitted.
+  ACTION: User MUST provide validation results and explicitly state "VALIDATION_PASSED" in SESSION_SUMMARY.md.
+  DO NOT: Proceed with any development until the lock is released.
+```
+
+---
+
+---
+
+## RULE 21: Intelligence Harvester â€” MANDATORY
+
+### Rule
+The agent MUST perform external market intelligence research at every milestone (10%, 25%, 50%, 75%, 90%, 95%). This involves searching at least 3 distinct sources (Reddit, App Store, specialized forums, etc.) to identify user pain points, competitor weaknesses, and market gaps.
+
+### Verification Checklist
+```
+AT each milestone:
+  1. SEARCH: At least 3 external sources for the project domain
+  2. ANALYZE: Identify 2+ major user complaints about competitors
+  3. SYNTHESIZE: Document how the current project addresses these "pain points"
+  4. RECORD: Add the "Intelligence Report" to the milestone validation documentation
+```
+
+### Enforcement
+```
+IF milestone reached without Intelligence Report:
+  ACTION: STOP development
+  ACTION: Conduct and document the intelligence research immediately
+  DO NOT: Continue implementation until market gaps are documented
+```
+
+---
+
+---
+
+## RULE 22: Feature Focus Rule â€” MANDATORY
+
+### Rule
+Development MUST focus on only ONE specific feature for each periodic validation cycle (25%, 50%, 75%, 90%, 95%). This focus on depth over breadth continues even after the MVP phase.
+
+### Verification Checklist
+```
+AT each milestone:
+  1. IDENTIFY: Which single feature is the focus of this validation cycle?
+  2. VERIFY: Has this feature been implemented with maximum depth and robustness?
+  3. CHECK: Are all other feature developments currently paused?
+  4. CONFIRM: Is this rule being applied post-MVP?
+```
+
+### Enforcement
+```
+IF validation involves multiple shallow features or lacks a single focus:
+  ACTION: STOP development
+  ACTION: Re-focus on a single primary feature for this cycle
+  ACTION: Ensure implementation depth meets standards before proceeding
+  DO NOT: Sacrifice depth for breadth during validation
+```
+
+---
+
+## RULE 23: Knowledge Capture â€” MANDATORY
+
+### Rule
+Every project failure or pivot MUST be documented in the central `kuro-rules/KNOWLEDGE_BASE/` to ensure cross-project intelligence and prevent repeating mistakes.
+
+### Verification Checklist
+```
+AFTER a pivot or project termination:
+  1. CREATE: A post-mortem document in `kuro-rules/KNOWLEDGE_BASE/`
+  2. DOCUMENT: Rationale for failure/pivot and key technical or market learnings
+  3. SYNC: Ensure this rule is added to all local project rule files
+```
+
+### Enforcement
+```
+IF a project pivots without a post-mortem:
+  ACTION: STOP and document the failure in the master repository
+  DO NOT: Start a new project without acknowledging previous learnings
+```
+
+---
+
+## RULE 24: Marketing & Outreach Guardian â€” MANDATORY
+
+### Rule
+Before any public release or marketing campaign, the AI Agent MUST ensure proper community outreach, feedback collection channels, and communication templates are prepared.
+
+### Requirements
+1. **Community Identification**: Identify at least 3 relevant communities or forums where the product would be discussed.
+2. **Feedback Channels**: Establish clear channels for user feedback such as Discord, GitHub Issues, or survey forms.
+3. **Communication Templates**: Prepare outreach templates for announcements, bug reports, and feature requests.
+4. **Launch Checklist**: Verify all marketing materials are reviewed for accuracy and current product scope.
+
+### Verification Checklist
+```
+BEFORE launch or major announcement:
+  CHECK: Are 3+ target communities identified?
+  CHECK: Is feedback channel active and monitored?
+  CHECK: Are communication templates drafted?
+  CHECK: Has marketing content been reviewed?
+  IF any missing:
+    ACTION: STOP and prepare the missing marketing foundations
+```
+
+### Enforcement
+```
+IF launch or outreach begins without marketing foundations:
+  ACTION: STOP the announcement or campaign
+  ACTION: Prepare communities, feedback channels, and templates first
+  DO NOT: Ship marketing without a response path
+```
+
+---
+
+When asking "Did you follow AGENTS.md?", the agent MUST provide:
+
+1.  **Rule 1**: "I read AGENTS.md at the start of this session"
+2.  **Rule 2**: "Mom Test status: [COMPLETE/IN PROGRESS/NOT STARTED]"
+3.  **Rule 3**: "Progress: X% (calculated as: [breakdown])"
+4.  **Rule 4**: "SESSION_SUMMARY.md: [UPDATED/NEEDS UPDATE]"
+5.  **Rule 5**: "Test coverage: X%"
+6.  **Rule 6**: "Security scans: [PASSED/FAILED/PENDING]"
+7.  **Rule 7**: "Any failures: [NONE/REPORTED]"
+8.  **Rule 8**: "Critical thinking applied: [YES/NO - details]"
+9.  **Rule 9**: "Emojis: [NONE FOUND/REMOVED]"
+10. **Rule 10**: "Protected files: [SAFE/EXPOSED]"
+11. **Rule 11**: "Rules synced: [YES/NO]"
+12. **Rule 12**: "Roadmap: [EXISTS/MISSING] - Task aligned: [YES/NO]"
+13. **Rule 13**: "Roadmap duration: [>=1 month/TOO SHORT]"
+14. **Rule 14**: "Periodic validation: [DONE/PENDING/NOT REQUIRED YET]"
+15. **Rule 15**: "All rule files synced: [YES/NO]"
+16. **Rule 16**: "Working demos: [2+/1/0]"
+17. **Rule 17**: "Deep understanding demonstrated: [YES/NO]"
+18. **Rule 18**: "Regression prevention: [FOLLOWED - entire suite ran?]"
+19. **Rule 19**: "Strict Versioning: [vX.Y.Z-author tag created?]"
+20. **Rule 20**: "Hard Milestone Lock: [LOCKED/UNLOCKED]"
+21. **Rule 21**: "Intelligence Harvester: At least 3 sources analyzed for the current milestone? [YES/NO]"
+22. **Rule 22**: "Feature Focus Rule: Only one feature focused on for this validation cycle? [YES/NO]"
+23. **Rule 23**: "Knowledge Capture: Post-mortem documented for pivot/failure? [YES/NO]"
+24. **Rule 24**: "Marketing & Outreach Guardian: Communities identified, feedback path ready, and templates drafted? [YES/NO]"
+25. **Rule 25**: "MLOps/DevOps Collaboration: Infra guidance adapted for this task? [YES/NO]"
+26. **Rule 26**: "DevOps/MLOps Tasks: 5 tasks generated and created as Linear issues? [YES/NO]"
+27. **Rule 27**: "Persona Adaptability: Adapted vocabulary/depth for user role? [YES/NO]"
+28. **Rule 28**: "Linear Automation: DevOps tasks created and assigned? [YES/NO]"
+29. **Rule 29**: "Linear Integration: Connection verified at session start? [YES/NO]"
+30. **Rule 30**: "Branch Creation: Working branch created before coding? [YES/NO]"
+31. **Rule 31**: "Codebase Context: Issues include context for contributors? [YES/NO]"
+32. **Rule 32**: "Team Stack: All required tools configured? [YES/NO]"
+33. **Rule 33**: "Rule Parity: Branch has current rule set? [YES/NO]"
+34. **Rule 34**: "Strict Project Isolation: Scope limited to the active project only? [YES/NO]"
+35. **Rule 35**: "CEO Progress Visibility: Tasks visible in Linear? [YES/NO]"
+36. **Rule 36**: "Session Status: Report provided at session start? [YES/NO]"
+37. **Rule 37**: "Real-Time Linear Sync: CEO activities automatically synced? [YES/NO]"
+38. **Rule 38**: "Code Review: Review completed before continuation? [YES/NO]"
+39. **Rule 39**: "Pre-Marketing Due Diligence: Perplexity and Grok research completed before marketing claims? [YES/NO]"
+40. **Rule 40**: "CEO Complete Dashboard: All tasks visible in Linear automatically? [YES/NO]"
+41. **Rule 41**: "Personal Quant Mode (PQPO): (Rule 2/14/21/24 Bypassed) [YES/NO]"
+45. **Rule 45**: "PR Analysis & Improvement: PRs strictly analyzed and improved? [YES/NO]"
+814: **Rule 47**: "History Preservation: SESSION_SUMMARY.md history preserved? [YES/NO]"
+
+---
+
+## ENFORCEMENT SUMMARY
+
+| Rule | Consequence of Violation |
+|------|--------------------------|
+| Rule 1 (Read First) | STOP and read rules |
+| Rule 2 (Mom Test) | STOP implementation, complete deliverables |
+| Rule 3 (Progress) | Recalculate with pessimistic estimate |
+| Rule 4 (Session Summary) | Create summary immediately |
+| Rule 5 (Testing) | STOP features, write tests |
+| Rule 6 (Security) | STOP commit, fix vulnerabilities |
+| Rule 7 (No Silent Failures) | Report and retry |
+| Rule 8 (Critical Thinking) | Apply questions retroactively |
+| Rule 9 (No Emojis) | REMOVE emojis immediately |
+| Rule 10 (File Protection) | Remove from git, add to .gitignore |
+| Rule 11 (Sync) | Sync to kuro-rules immediately |
+| Rule 12 (Roadmap) | STOP and create PLAN.md if missing |
+| Rule 13 (Roadmap Duration) | STOP and expand plan if < 1 month |
+| Rule 14 (Periodic Validation) | STOP and conduct validation at milestones |
+| Rule 15 (Rule Synchronization) | SYNC all rule files immediately |
+| Rule 16 (Working Demos) | STOP and create 2 working demos |
+| Rule 17 (Deep Understanding) | STOP and provide deep explanation |
+| Rule 18 (Regression Prevention) | STOP and fix immediately |
+| Rule 19 (Strict Versioning) | STOP and create tag immediately |
+| Rule 20 (Hard Milestone Lock) | SYSTEM LOCK: No code edits permitted until validation results are provided |
+| Rule 21 (Intel Harvester) | STOP and conduct intelligence research immediately |
+| Rule 22 (Feature Focus) | STOP and re-focus on a single feature |
+| Rule 24 (Marketing & Outreach Guardian) | STOP and prepare communities, feedback paths, and templates |
+| Rule 25 (MLOps/DevOps Collaboration) | Adjust guidance toward infrastructure, delivery, and reliability |
+| Rule 26 (DevOps/MLOps Tasks) | STOP and generate 5 tasks |
+| Rule 27 (Persona Adaptability) | Adjust communication style |
+| Rule 28 (Linear Automation) | Create Linear issues |
+| Rule 29 (Linear Integration) | STOP and configure Linear |
+| Rule 30 (Branch Creation) | STOP and create branch |
+| Rule 31 (Codebase Context) | Add context to issues |
+| Rule 32 (Team Stack) | Verify tool setup |
+| Rule 33 (Rule Parity) | Sync rules across branches |
+| Rule 34 (Strict Project Isolation) | STOP and filter scope to the target project ONLY |
+| Rule 35 (CEO Progress) | Verify Linear visibility |
+| Rule 36 (Session Status) | STOP and provide report first |
+| Rule 37 (Real-Time Sync) | STOP and sync immediately |
+| Rule 38 (Code Review) | STOP - review required before continuation |
+| Rule 39 (Pre-Marketing Due Diligence) | STOP marketing claims and complete desk research first |
+| Rule 40 (CEO Complete Dashboard) | STOP and restore complete Linear visibility |
+| Rule 41 (Personal Quant Mode - PQPO) | SYSTEM LOCK: Fail any of 10 Gates or Testing Funnel |
+| Rule 45 (PR Analysis & Improvement) | STOP and perform mandatory improvement cycle |
+| **All Rules** | Cease work immediately - Do NOT bypass |
+
+## FINAL NOTE
+
+These rules are NON-NEGOTIABLE. They exist to ensure:
+- User problems are validated before building solutions
+- Code quality meets professional standards
+- Security is never compromised
+- Progress is accurately tracked
+- Knowledge persists across sessions
+
+---
+
+## RULE 25: MLOps/DevOps Collaboration â€” MANDATORY
 
 ### Rule
 When interacting with a DevOps or MLOps engineer on this repository, the AI Agent MUST shift its focus to infrastructure, delivery, and reliability.
@@ -424,7 +896,7 @@ IF providing MLOps/DevOps assistance:
 
 ---
 
-## RULE 26: DevOps/MLOps Milestone Task Generation — MANDATORY
+## RULE 26: DevOps/MLOps Milestone Task Generation â€” MANDATORY
 
 ### Rule
 At every progress milestone (10%, 25%, 50%, 75%, 90%, 95%), the AI Agent MUST strictly analyze the repository's current state and propose exactly **5 concrete DevOps or MLOps tasks**.
@@ -447,7 +919,7 @@ IF a milestone is reached:
 
 ---
 
-## RULE 27: Persona Adaptability — MANDATORY
+## RULE 27: Persona Adaptability â€” MANDATORY
 
 ### Rule
 Before initiating significant work or generating explanations, the AI Agent MUST identify or ask "Who is interacting with me? (e.g., CEO, DevOps, MLOps, Fullstack Dev)". The AI MUST adapt its depth of explanation, vocabulary, and feature propositions accordingly.
@@ -468,9 +940,11 @@ IF the user's role is known or stated:
 
 When in doubt, ASK the user. Do not assume.
 
+When in doubt, ASK the user. Do not assume.
+
 ---
 
-## RULE 28: Linear Automation and DevOps Review — MANDATORY
+## RULE 28: Linear Automation and DevOps Review â€” MANDATORY
 
 ### Rule
 At every milestone, the AI Agent MUST automatically create the 5 DevOps/MLOps tasks as Linear issues (Rule 26), assign them to the designated DevOps/MLOps engineer, and continuously track their progress. The AI Agent MUST act as a reviewer when the engineer submits work.
@@ -516,7 +990,7 @@ IF the DevOps/MLOps engineer submits work:
 
 ---
 
-## RULE 29: Mandatory Linear Integration — CRITICAL
+## RULE 29: Mandatory Linear Integration â€” CRITICAL
 
 ### Rule
 Every team member and every AI Agent MUST have a working connection to Linear before starting any work session. This is non-negotiable. Without Linear, no task tracking occurs, and work is invisible to the team.
@@ -552,7 +1026,7 @@ IF a new team member joins:
 
 ---
 
-## RULE 30: Mandatory Branch Creation — CRITICAL
+## RULE 30: Mandatory Branch Creation â€” CRITICAL
 
 ### Rule
 NOBODY works on main directly. Before any work begins, the AI Agent MUST create or verify a dedicated git branch for the contributor. Every contributor gets their own branch, named according to a strict convention.
@@ -675,264 +1149,382 @@ IF a session starts:
 ## RULE 33: Global Rule Parity and Mandatory Cross-Branch Sync -- CRITICAL
 
 ### Rule
-The AI rule set (AGENTS.md, AI_GUIDELINES.md, .cursorrules) represents the immutable "Physical Laws" of the repository ecosystem. Rules are **global** and MUST NOT vary between branches. 
+The AI rule set (`AGENTS.md`, `AI_GUIDELINES.md`, `.cursorrules`, `copilot-instructions.md`, `GAD.md`) represents the immutable "physical laws" of the repository ecosystem. Rules are global and MUST NOT vary between branches or projects.
 
 ### Authority Restriction
-Only branches with the **`ceo/`** scope have the authority to modify rule files. Any rule changes attempted on `infra/`, `feat/`, or other branches MUST be rejected by the AI Agent. Non-CEO branches MUST merge rule updates FROM a `ceo/` branch to maintain parity.
+Only branches with the `ceo/` scope have the authority to modify rule files. Any rule change attempted on `infra/`, `feat/`, `fix/`, or other branches MUST be rejected by the AI Agent. Non-CEO branches MUST merge rule updates from a `ceo/` branch or from the `kuro-rules` master copy to maintain parity.
 
 ### Mandatory Sync Process
-1. **Rule Modification**: When any rule is added or modified on a `ceo/` branch, the AI Agent MUST immediately:
-   - Commit the change on the current branch.
-   - Switch to all other active development branches (e.g., `infra/milestone-0-setup`, `main`) and merge the changes.
-   - Update the master `kuro-rules` repository.
-2. **Review Enforcement**: No Pull Request (PR) can be merged without explicitly confirming that the branch has the status of the "Current Rule Set" (Rule 33 verification).
+1. **Rule Modification**: When any rule is added or modified on a `ceo/` branch, the AI Agent MUST immediately sync the master `kuro-rules` repository and then propagate the rule to all active project copies.
+2. **Review Enforcement**: No pull request can be merged without explicitly confirming that the branch carries the current rule set.
+3. **Cross-Project Consistency**: Shared rule files MUST not drift across projects listed in `projects.txt`.
 
+### Enforcement
+```
+IF a branch or project is on an outdated rule set:
+  ACTION: STOP further rule work
+  ACTION: Sync the current rule set from `kuro-rules`
+  DO NOT: Continue with divergent rule files
+```
 
-## RULE 34: Strict Project Isolation (MANDATORY)
+---
+
+## RULE 34: Strict Project Isolation -- MANDATORY
 
 ### Rule
-When interacting with external tools (Linear, GitHub, etc.), the AI Agent MUST strictly limit its scope to the current project context (e.g., **Sagittarius**).
+When interacting with external tools such as Linear, GitHub, or search systems, the AI Agent MUST strictly limit its scope to the current active project context.
 
 ### Requirements
-1. **Tool Filtering**: Always filter issues, projects, and documents by the specific project name or ID the user is currently focused on.
-2. **Context Integrity**: Do NOT read or comment on issues from other projects unless explicitly cross-referenced.
-3. **Choice Prompt**: If multiple projects are detected, ALWAYS ask the user to confirm which project(s) should be the focus. Never mix everything.
+1. **Tool Filtering**: Always filter issues, projects, documents, and automations by the specific project name or project ID currently in scope.
+2. **Context Integrity**: Do NOT read, comment on, or update unrelated projects unless they are explicitly cross-referenced for the current task.
+3. **Choice Prompt**: If multiple projects are detected, the AI Agent MUST ask which project is active before continuing.
 
 ### Enforcement
 ```
-IF Linear search returns issues from multiple projects:
-  ACTION: Filter results and present ONLY the relevant context.
-  ACTION: Ask for clarification if project selection is ambiguous.
+IF search results or Linear issues contain multiple projects:
+  ACTION: Filter to the active project only
+  ACTION: Ask for clarification if the active project is ambiguous
+  DO NOT: Mix work from multiple projects in the same response or change set
 ```
 
 ---
 
-## NeuralDBG Legacy Addendum (Preserved)
-
-# NeuralDBG AI Guidelines
-
-This file captures AI assistant rules and contributor guidance adapted for `NeuralDBG`.
-
-## Sync with kuro-rules — Always
-- When updating rules, sync to `~/Documents/kuro-rules`. kuro-rules is the master copy.
-- Run `install.sh` on projects to (re)link after updating kuro-rules.
-- **Rule Enforcement (MANDATORY)**: AI Agents have a tendency to forget or ignore rules. You MUST read this `AI_GUIDELINES.md` file FIRST upon starting any new task. Do not rely on your base training.
-
-## For Developers
-If you are using an AI coding assistant (Cursor, Windsurf, Copilot, etc.), ensure it follows the repo rules:
-- **Cursor/Windsurf**: `.cursorrules` (in root)
-- **GitHub Copilot**: `.github/copilot-instructions.md`
-
-## Explain as if First Time — Always
-- Assume **zero prior knowledge**. Re-explain AI, ML, concepts, math as if the user knows nothing.
-- The user codes while learning for the first time. Define terms, use simple analogies, break down formulas.
-- Never skip explanations. "Obvious" is not obvious to someone learning.
-
-## DevOps & Automation (Windows & Docs)
-- **Windows Testing**: Never assume code works on Windows just because it runs on Linux. Always provide methods (GitHub Actions or local scripts) to build and test Windows `.exe` formats.
-- **Session Sync Automation**: The user manually copies `SESSION_SUMMARY.md` to a Word document and WhatsApp. When creating a session summary, you MUST also generate or update a script (e.g. `sync_summary.py` or a bash script) that automates converting the markdown to `.docx` (using `python-docx` or `pandoc`) to save the user time.
-
----
-
-## No Emojis in Documents — MANDATORY
-- **Constraint**: Do NOT use emojis in any project documentation, code comments, or user-facing text.
-- **Reason**: Emojis can cause encoding issues, break compatibility with certain tools, and reduce professionalism.
-- **Exception**: Emojis are allowed in `SESSION_SUMMARY.md` section headers (language flags) and commit messages only.
-
----
-
-## Mandatory Product & Quality Rules (Always Apply)
-- **Always Update README & Changelog**: Every feature or fix must update `README.md` and `CHANGELOG.md` (create if missing).
-- **Zero Friction for Users**: Tools must work out of the box. Minimal config, clear defaults, copy-paste examples that run.
-- **Solve Real Pain Points**: Before building, ask: "Does this fix a real user pain?" No speculative features; validate need first.
-- **Security & Quality Tooling**: CI must include **CodeQL**, **SonarQube**, and **Codacy** (or equivalent). No shortcuts on static analysis.
-- **README Badges**: Always add necessary badges to README (build status, coverage, version, license, etc.).
-
----
-
-## Advanced Testing & Analysis — MANDATORY
-High-quality code requires proactive testing and deep analysis.
-- **Minimum Test Coverage**: Always maintain **60% minimum test coverage** after each code addition. No exceptions.
-- **Testing Pyramid**: Allocate testing effort following the pyramid: **70% Unit Tests**, **20% Integration Tests**, **10% E2E Tests**.
-- **Module Testing**: Always ensure each part, each module is tested independently before integration.
-- **Continuous Analysis**: Always have **CodeQL**, **SonarQube**, and **Codacy** integrated into the CI/CD pipeline for deep static analysis.
-- **Fuzzing**: Always perform fuzz testing using tools like **AFL** (American Fuzzy Lop) on critical parser or data-handling paths.
-- **Load Testing**: Always conduct load tests using **Locust.io** to verify performance under stress.
-- **Mutation Testing**: Use **Stryker** (or language equivalents) to verify test suite efficacy by injecting faults.
-
----
-
-## Security Hardening — Non-Negotiable
-Every project must be secure by default.
-- **Never** log, print, or commit API keys, tokens, or secrets.
-- **Always** validate and sanitize user input to prevent injection.
-- **Always** protect against path traversal (no unauthorized file access).
-- **Always** use environment variables for secrets — never hardcode.
-- **Language-Specific Scanners (MANDATORY)**: For Python, run `bandit -r .` et `safety check`.
-- **Pre-commit**: Must include these security scanners.
-- **Security Policies**: Every project MUST have a `SECURITY.md` and explicit security policies.
-
----
-
-## Project Progress Tracking — MANDATORY
-Every project MUST track its completion percentage in SESSION_SUMMARY.md.
-
-- **Progress Score**: Include a `**Progress**: X%` line at the end of each SESSION_SUMMARY.md entry.
-- **Scoring Methodology**: Be **REALISTIC and PESSIMISTIC**. If you think a project is 50% done, score it 30%.
-- **What Counts as Complete**: A project is 100% only when:
-  - All core features are implemented and working
-  - Test coverage is at or above 60%
-  - All security scans pass (bandit, safety, etc.)
-  - CI/CD pipeline is fully configured and passing
-  - Documentation is complete (README, CHANGELOG, API docs if needed)
-  - The application can be built and distributed
-  - User can install and use the application without issues
-- **Breakdown Example** (adjust per project):
-  - Core functionality: 40%
-  - Test coverage (60%+): 20%
-  - Security hardening: 10%
-  - CI/CD & DevOps: 10%
-  - Documentation: 10%
-  - Distribution (builds, installers): 10%
-
----
-
-## Tools for the AI Era
-When AI agents can write and debug code, specialized tools still matter:
-- **Structured Observability**: Tools produce machine-readable data (`SemanticEvent`, causal chains). AI consumes it; humans get explanations.
-- **Bidirectional Tooling**: Build tools that feed AI assistants *and* present to humans. The value is the structured bridge.
-- **Reduced Cognitive Load**: Semantic events give users the vocabulary to ask the right questions; AI can then act on it.
-
----
-
-## Core Principles
-
-### 1. Framework Neutrality ("Switzerland")
-`NeuralDBG` is focused on semantic event extraction and causal reasoning for training dynamics. Keep core logic framework-agnostic and prefer lightweight adapters for framework-specific traces.
-
-### 2. Explanation & Artifact Quality
-- The generated explanations, reports, and visual artifacts are the product. Make them clear, reviewer-friendly, and self-contained.
-
-### 3. Architecture
-- **Input**: Instrumentation/trace (PyTorch training traces, JSON exports)
-- **Core**: `SemanticEvent` model and compact graph representation
-- **Output**: Human-readable reports, HTML artifacts, and API-returnable `CausalHypothesis` objects
-
-### 4. Design Principles
-- **SRP**: Single Responsibility for modules (monitoring, analysis, export).
-- **DRY / KISS / YAGNI / SOLID**: Follow the project's coding philosophy.
-- **Duck Typing**: Use pragmatic, Pythonic interfaces where appropriate.
-
-### 5. Tooling
-- **Pre-commit**: `ruff`, `mypy`, `pylint`.
-- **Diagrams**: Update `logic_graph.md` or README when architecture changes.
-
-## Adding Features (Guidance)
-
-1.  **Get Representative Traces**: Use real or synthetic PyTorch traces or JSON exports from integrations.
-2.  **Map to `SemanticEvent`s**: Identify which events matter (gradient transitions, activation shifts, optimizer anomalies).
-3.  **Implement Adapter/Parser**: Add a small adapter that converts raw traces into `SemanticEvent`s or the internal graph structures.
-4.  **Test Thoroughly**: Unit, integration, logic, and fuzzy tests. Aim for >=60% coverage for new modules.
-
-## Critical Thinking — "Devil's Advocate" Mode
-Treat AI assistants as co-engineers. Before and during coding, ask whether a change genuinely helps users, whether a simpler path exists, and what could break.
-
-**During implementation:** flag code smells, question scope creep, and propose tests for risky logic.
-
-**After implementation:** review diffs, suggest improvements, and document any technical debt.
-
----
-
-## Traceability — "Always Leave a Trail"
-Every session should produce a structured session summary and follow conventional commits.
-
-**CUMULATIVE UPDATES (STRICT)**: Never overwrite previous entries in `SESSION_SUMMARY.md`. Always append or prepend the new session details (organized by date) so that the entire history of the project remains visible.
-
-**Commit discipline:**
-- Use conventional commit prefixes: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`.
-- Keep commits small and focused.
-- **Scope tag**: `feat(events): add new semantic event type`.
-
-**Session summary (MANDATORY at end of every session):**
-```markdown
-# Session Summary — [YYYY-MM-DD]
-**Editor**: (Antigravity | Cursor | Windsurf | VS Code | etc.)
-
-## Francais
-**Ce qui a ete fait** : (Liste)
-**Initiatives donnees** : (Nouvelles idees/directions)
-**Fichiers modifies** : (Liste)
-**Etapes suivantes** : (Ce qu'il reste a faire)
-
-## English
-**What was done**: (List)
-**Initiatives given**: (New ideas/directions)
-**Files changed**: (List)
-**Next steps**: (What's next)
-
-**Tests**: X passing
-**Blockers**: (If any)
-**Progress**: X% (pessimistic estimate)
-```
-
----
-
-## Protocol
-- **Step-by-Step**: Follow the plan and verify phase completion before proceeding.
-- **Phase Gate**: Verify Phase N completion before N+1.
-- **Context Persistence**: Maintain artifacts under `./artifacts/` when applicable.
-- **Git Tracking**: Commit artifacts regularly.
-- **Pre-commit**: MUST be installed and passing before any PR or merge.
-- **AntiGravity IDE**: Rules copy in `.antigravity/RULES.md` (pour usage avec l'IDE AntiGravity).
-- **Roadmap projets**: `PROJECTS.md` (racine).
-
----
-
-## Agent Protocol
-To ensure strict adherence to rules:
-1.  **Read This First**: Agents MUST read this file at the start of every session.
-2.  **Checklist Enforcement**: Agents MUST verify `task.md` and run `bandit` before declaring a task complete.
-3.  **Explicit Confirmation**: When users ask "did you follow the rules?", Agents MUST provide proof (e.g., bandit output).
-4.  **No Silent Failures**: If a step fails (e.g., artifact update), the Agent MUST report it and retry, never ignore it.
-5.  **Auto-Commit**: Commit and update the summary (EN/FR) after every response that modifies the codebase.
-
----
-
-## Updating Visuals & Demos
-1.  Edit visualization/export code under `neuraldbg` or `demo_vanishing_gradients.py` as needed.
-2.  Regenerate demo outputs and verify examples in `demo_vanishing_gradients.py` or `tests/integration`.
-    ```bash
-    python3 demo_vanishing_gradients.py
-    ```
-3.  Add integration tests to `tests/integration/` to verify generated artifacts when possible.
-
-Keep this document focused on practical, repo-specific rules for AI assistants and human contributors.
-
----
-
-## RULE 39: CI/CD Debugging First -- MANDATORY
+## RULE 35: CEO Progress Visibility in Linear -- MANDATORY
 
 ### Rule
-When any GitHub Actions check is failing on the active branch, pull request, or latest related run, the AI Agent MUST prioritize CI/CD debugging before starting unrelated implementation.
+The CEO's tasks, progress, and milestones MUST be automatically tracked and visible in Linear for all team members.
 
-### Required Workflow
-1. Detect failures with `gh` (`gh run list`, `gh pr checks`, `gh run view --log`) or equivalent CI logs.
-2. Identify root cause with failing step name, workflow name, and exact failing command.
-3. Propose the minimum safe fix first (smallest change that restores pipeline health).
-4. Apply fix, run relevant local validation, and re-check CI status.
-5. Report outcome with links to workflow runs and remaining blockers.
+### Requirements
+1. **Automatic Progress Updates**: Every action taken by the CEO on the `ceo/` branch MUST create or update a Linear issue.
+2. **Real-time Visibility**: Team members can see:
+   - What the CEO has completed (done)
+   - What the CEO is working on (in progress)
+   - What the CEO plans to do next (backlog)
+3. **Milestone Tracking**: Each milestone (10%, 25%, 50%, 75%, 90%, 95%) MUST have a corresponding Linear issue.
+4. **Workflow Integration**: The GitHub Actions workflow MUST update Linear automatically when rules are synced.
+
+### Implementation
+The CEO Progress workflow (`rule-sync.yml`) automatically:
+- Creates/updates Linear issues for each milestone
+- Posts comments on rule sync completion
+- Tracks progress percentage in Linear
+- Assigns label `CEO Decision` to all CEO items
+
+### Verification Checklist
+```
+AT each session start:
+  CHECK: Can you see CEO's current tasks in Linear?
+  CHECK: Is progress percentage updated?
+  CHECK: Are new milestones visible?
+  IF NOT:
+    ACTION: Trigger manual sync via workflow_dispatch
+    ACTION: Report issue to DevOps
+```
 
 ### Enforcement
 ```
-IF CI/CD is red:
-  ACTION: STOP unrelated feature work
-  ACTION: DEBUG and FIX CI/CD first
-  DO NOT: Ignore failing pipelines
+IF CEO progress is NOT visible in Linear:
+  ACTION: STOP - team cannot work without visibility
+  ACTION: Verify Linear API keys are configured
+  ACTION: Run workflow manually to sync
+  DO NOT: Continue until visibility is restored
 ```
 
-### Compliance Extension
-When asked "Did you follow AGENTS.md?", include:
-39. **Rule 39**: "CI/CD Debugging First: [YES/NO - failing checks analyzed and handled]"
+---
 
-### Enforcement Summary Extension
-| Rule 39 (CI/CD Debugging First) | STOP unrelated work, fix pipeline first |
+---
+
+## RULE 36: Automated Session Status Report -- MANDATORY
+
+### Rule
+At the START of every AI session, the agent MUST report the complete status including:
+1. Current branch
+2. Last session progress
+3. Pending tasks in Linear
+4. Any blockers
+
+### Requirements
+1. **Session Gate**: Report status before any code work.
+2. **Linear Integration**: Query Linear for CEO's current tasks.
+3. **Progress Calculation**: Calculate pessimistic progress per Rule 3.
+4. **Format**: Must include both French and English sections.
+
+### Required Report Format
+```markdown
+## Francais
+**Branche actuelle**: ceo/kuro-semantic-event-structures
+**Taches CEO en cours**: [list from Linear]
+**Taches terminees**: [list from Linear]
+**Progression**: X% (pessimiste)
+**Blockers**: [if any]
+
+## English
+**Current branch**: [branch name]
+**CEO tasks in progress**: [list from Linear]
+**CEO tasks completed**: [list from Linear]
+**Progress**: X% (pessimistic)
+**Blockers**: [if any]
+```
+
+### Enforcement
+```
+IF status report is NOT provided:
+  ACTION: STOP - provide status report first
+  DO NOT: Start any coding tasks
+```
+
+---
+
+## RULE 37: CEO Real-Time Activity Sync to Linear -- CRITICAL
+
+### Rule
+The CEO's ALL activities, progress updates, and planned work MUST be automatically synchronized to Linear in real-time. Team members must always see:
+- What the CEO completed (done)
+- What the CEO is working on (in progress)
+- What the CEO plans to do next (backlog)
+- Current progress percentage
+- Any blockers or impediments
+
+### Requirements
+1. **Automatic Issue Creation**: Every task, subtask, or work item MUST create a Linear issue automatically.
+2. **Status Updates**: Status changes (todo -> in progress -> done) MUST be reflected in Linear immediately.
+3. **Progress Tracking**: Progress percentage MUST be calculated and updated in Linear at each session end.
+4. **Session Summary Sync**: Every SESSION_SUMMARY.md update MUST automatically update corresponding Linear issues.
+5. **Milestone Progress**: Each milestone (10%, 25%, 50%, 75%, 90%, 95%) MUST have its own Linear issue with automatic progress updates.
+
+### Implementation via GitHub Actions
+The workflow `rule-sync.yml` MUST execute after EVERY session to sync:
+- New tasks created during the session
+- Tasks completed during the session
+- Current progress percentage
+- Session summary to Linear comments
+
+### Required Linear Issue Types
+| Issue Type | Description | Labels |
+|------------|-------------|--------|
+| Milestone | 10%, 25%, 50%, 75%, 90%, 95% tracking | CEO Decision, Milestone Task |
+| Session Report | Each session's work and next steps | CEO Decision, Documentation |
+| Blocker | Any impediment or roadblock | CEO Decision, Needs Review |
+| Feature Task | Individual feature or rule work | CEO Decision, (appropriate label) |
+
+### Verification Checklist
+```
+AT each session end:
+  CHECK: Were all tasks created as Linear issues?
+  CHECK: Did workflow sync progress to Linear?
+  CHECK: Can team members see CEO's current status?
+  CHECK: Is progress percentage accurate in Linear?
+  IF NOT:
+    ACTION: Manually sync immediately
+    ACTION: Verify workflow configuration
+```
+
+### Enforcement
+```
+IF CEO activity is NOT visible in Linear:
+  ACTION: STOP - team cannot work without visibility
+  ACTION: Trigger manual sync via workflow_dispatch
+  ACTION: Fix automation to prevent future gaps
+  DO NOT: Continue until visibility is restored
+
+IF progress is outdated (>24h old):
+  ACTION: Update Linear immediately
+  ACTION: Document reason for delay
+  DO NOT: Allow stale progress data
+```
+
+---
+
+## RULE 38: Mandatory Code Review After Commit -- MANDATORY
+
+### Rule
+A code review MUST be completed at EVERY push AFTER the commit but BEFORE any continuation of work on the rules. If no review is done, the continuation on the rules MUST be blocked.
+
+### Requirements
+1. **Review Tools**: Use one of the following automated or manual review tools:
+   - **Qode** - AI-powered code review
+   - **CodeRabbit** - Automated AI code review
+   - **GitHub Pull Request Reviews** - Manual human review
+   - **CodeClimate** - Automated quality analysis
+   - Any equivalent code review tool
+
+2. **Review Timing**:
+   - Review MUST be completed AFTER the commit/push
+   - Review MUST be completed BEFORE continuing work on the rules
+   - Review MUST pass before proceeding with further rule modifications
+
+3. **Review Criteria**:
+   - Code quality and best practices
+   - Security vulnerabilities (Rule 6)
+   - Test coverage impact (Rule 5)
+   - Regression prevention (Rule 18)
+   - Documentation completeness
+
+4. **Blocker Enforcement**:
+   - If review is pending: STOP all new work on rules
+   - If review fails: FIX issues before continuation
+   - If no review done: BLOCK until review completed
+
+### Verification Checklist
+```
+BEFORE continuing on rules:
+  CHECK: Was a code review requested/completed after commit?
+  CHECK: Did the review pass all checks?
+  CHECK: Are there any pending issues to fix?
+  IF review NOT done:
+    ACTION: STOP immediately
+    ACTION: Request/provide code review
+    DO NOT: Continue working on rules
+```
+
+### Enforcement
+```
+IF code review NOT completed after commit:
+  ACTION: STOP all rule development work
+  ACTION: Request code review via Qode/CodeRabbit/GitHub
+  ACTION: Wait for review approval
+  DO NOT: Continue modifying rules
+  DO NOT: Make new commits
+
+IF review fails:
+  ACTION: FIX identified issues
+  ACTION: Request re-review
+  DO NOT: Ignore review feedback
+  DO NOT: Continue without fixing issues
+```
+
+---
+
+## RULE 39: Pre-Marketing Pain-Point Due Diligence -- MANDATORY
+
+### Rule
+Before any marketing, outreach, landing page, waitlist, paid acquisition, or new product claim for a fresh hypothesis, the agent MUST run structured desk research to verify that the pain point is real, current, and safe to build around.
+
+### Verification Checklist
+```
+BEFORE marketing or fresh build claims:
+  1. RUN: The project-local Perplexity prompt in `prompts/perplexity.md`
+  2. RUN: The project-local Grok prompt in `prompts/grok.md` or an equivalent X/blog/forum search
+  3. COLLECT: At least 5 recent signals, with priority on 2025-2026 sources
+  4. INCLUDE: At least 1 official or regulator source, 1 competitor or substitute signal, 1 recent blog/article, and 1 recent social or forum signal
+  5. DOCUMENT: Problem existence, urgency, safety or compliance risk, platform dependency, and what does NOT prove willingness to pay
+  6. VERDICT: State whether desk research is sufficient or whether 3-5 expert calls are still mandatory
+```
+
+### Enforcement
+```
+IF pain-point due diligence is missing:
+  ACTION: STOP marketing and stop making factual claims about the problem
+  ACTION: Run the research templates and document the result first
+  DO NOT: Treat a pain point as validated from intuition alone
+
+IF the remaining uncertainty is buying behavior, compliance, or integration:
+  ACTION: Require 3-5 expert calls before stronger go-to-market claims
+  DO NOT: Let desk research replace expert validation for those gaps
+```
+
+---
+
+## RULE 40: CEO Complete Linear Dashboard Visibility -- MANDATORY
+
+### Rule
+The CEO MUST have complete, real-time visibility into ALL activities through Linear. Every action, progress update, and planned work MUST be automatically visible in Linear for the entire team.
+
+### Requirements
+1. **Complete Task Visibility**: All CEO tasks must be visible in Linear including:
+   - Tasks completed (done)
+   - Tasks in progress (in progress)
+   - Tasks planned (backlog)
+   - Blockers and impediments
+
+2. **Automatic Real-Time Sync**: Every CEO action MUST automatically update Linear:
+   - Task creation -> Linear issue created
+   - Task start -> Linear status changed to "in progress"
+   - Task completion -> Linear status changed to "done"
+   - Session end -> Progress percentage updated in Linear
+
+3. **Dashboard Integration**: The team MUST be able to see:
+   - Current session status (what the CEO is working on now)
+   - Next planned tasks
+   - Progress percentage with breakdown
+   - Any blockers
+
+4. **Zero Manual Updates**: The CEO should NEVER manually update Linear. All updates MUST be automatic through:
+   - GitHub Actions workflow (rule-sync.yml)
+   - Automated scripts
+   - MCP server integration
+
+### Implementation
+The workflow `rule-sync.yml` MUST include a CEO Activity Sync step:
+- Query current branch status
+- Calculate progress percentage
+- List completed tasks from last session
+- List in-progress tasks
+- Identify blockers
+- Update corresponding Linear issues automatically
+
+### Verification Checklist
+```
+AT each session start:
+  CHECK: Can you see ALL CEO tasks in Linear?
+  CHECK: Is every task status accurate (done/in progress/backlog)?
+  CHECK: Is progress percentage current?
+  CHECK: Are blockers visible?
+  IF ANY missing:
+    ACTION: Fix sync automation immediately
+    DO NOT: Continue until visibility is complete
+```
+
+### Enforcement
+```
+IF CEO cannot see complete task list in Linear:
+  ACTION: STOP all work
+  ACTION: Fix sync automation
+  ACTION: Verify Linear API keys
+  DO NOT: Proceed until visibility is complete
+
+IF progress is outdated (>1 hour):
+  ACTION: Trigger immediate sync
+  ACTION: Verify workflow execution
+  DO NOT: Allow stale data
+```
+
+---
+
+
+
+## RULE 46: Regression and Mojibake Protection — MANDATORY
+
+### Rule
+AI agents MUST prevent regressions and encoding errors (Mojibake) by verifying the entire system state after any modification. Any use of special characters in French or other languages MUST be verified to maintain UTF-8 integrity.
+
+### Enforcement
+- REJECT: Any commit containing Mojibake or broken file encodings.
+- ACTION: Use Python scripts for encoding repair if PowerShell or terminal-based redirection fails.
+
+---
+
+## RULE 47: History Preservation — MANDATORY
+
+### Rule
+Historical logs, specifically `SESSION_SUMMARY.md` and `SYNC_LOG.md`, MUST NEVER be overwritten or truncated. New entries MUST be prepended to the top of the file to maintain a continuous, chronological record of the project heritage.
+
+### Verification
+```
+BEFORE updating SESSION_SUMMARY.md:
+  1. READ existing content
+  2. PREPARE new entry
+  3. COMBINE by prepending new entry to existing content
+  4. VERIFY: Previous summaries are still present at the bottom
+  DO NOT: Use Overwrite=true/EmptyFile=true without preserving content
+```
+
+### Enforcement
+```
+IF history is deleted or overwritten:
+  ACTION: STOP all work
+  ACTION: RESTORE history from git or backups immediately
+  ACTION: REPORT violation to user
+  DO NOT: Continue as if the history loss is acceptable
+```
+

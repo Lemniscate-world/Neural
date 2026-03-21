@@ -87,6 +87,16 @@ class NeuralDbg:
         self.threshold_vanishing = threshold_vanishing
         self.threshold_exploding = threshold_exploding
 
+        # Verify if model is already compiled
+        if hasattr(torch, "_dynamo") and isinstance(model, torch._dynamo.eval_frame.OptimizedModule):
+            import warnings
+            warnings.warn(
+                "NeuralDbg: Model is already compiled. Hooks installed after compilation "
+                "might not fire in the optimized graph. For best results, wrap the model "
+                "with NeuralDbg BEFORE calling torch.compile().",
+                UserWarning
+            )
+
         # Semantic event storage (not tensors!)
         self.events: List[SemanticEvent] = []
 
@@ -104,6 +114,14 @@ class NeuralDbg:
         # Training state
         self.step = 0
         self.is_monitoring = False
+
+    def step_iteration(self):
+        """Increment the internal step counter."""
+        self.step += 1
+
+    def get_events(self) -> List[SemanticEvent]:
+        """Return all captured semantic events."""
+        return self.events
 
     def __enter__(self):
         """Start monitoring the training loop."""
@@ -155,6 +173,20 @@ class NeuralDbg:
                             }
                         )
                         self.events.append(event)
+                else:
+                    # Capture baseline activation state on first encounter
+                    event = SemanticEvent(
+                        event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                        layer_name=layer_name,
+                        step=self.step,
+                        from_state="NONE",
+                        to_state=current_health.value,
+                        confidence=1.0,
+                        metadata=activation_stats
+                    )
+                    self.events.append(event)
+                    if current_health != ActivationHealth.NORMAL:
+                        self._track_first_occurrence(f"activation_{current_health.value}", layer_name)
 
                 self.previous_activation_stats[layer_name] = activation_stats
 
@@ -194,11 +226,34 @@ class NeuralDbg:
                             }
                         )
                         self.events.append(event)
+                else:
+                    # Capture baseline gradient state on first encounter
+                    current_health = self._classify_gradient_health(grad_norm)
+                    event = SemanticEvent(
+                        event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                        layer_name=layer_name,
+                        step=self.step,
+                        from_state="NONE",
+                        to_state=current_health.value,
+                        confidence=1.0,
+                        metadata={
+                            'current_norm': grad_norm,
+                            'transition_type': 'baseline'
+                        }
+                    )
+                    self.events.append(event)
+                    if current_health != GradientHealth.HEALTHY:
+                        self._track_first_occurrence(f"gradient_{current_health.value}", layer_name)
 
                 self.previous_gradient_norms[layer_name] = grad_norm
 
         # Install hooks on all modules (including root for full coverage)
+        # Install hooks on leaf modules to ensure maximum compatibility with torch.compile
         for name, module in self.model.named_modules():
+            # Skip root and modules with children to avoid redundant captures and root-bypass issues
+            if len(list(module.children())) > 0 and name != "":
+                continue
+                
             self.hooks.append(module.register_forward_hook(forward_hook))
             # Use register_full_backward_hook if available (PyTorch 1.9+)
             if hasattr(module, "register_full_backward_hook"):
@@ -206,6 +261,16 @@ class NeuralDbg:
             else:
                 # Fallback for older versions (though we expect >=1.9)
                 self.hooks.append(module.register_backward_hook(full_backward_hook))
+
+        # Check for DataParallel/DDP and warn/handle
+        if isinstance(self.model, (nn.DataParallel, nn.parallel.DistributedDataParallel)):
+            import warnings
+            warnings.warn(
+                f"NeuralDbg: Model is wrapped in {type(self.model).__name__}. "
+                "Hooks might not persist correctly during replication. Consider wrapping "
+                "the inner module (.module) instead.",
+                UserWarning
+            )
 
     def _remove_hooks(self):
         """Remove all installed hooks."""
@@ -218,7 +283,11 @@ class NeuralDbg:
         for name, mod in self.model.named_modules():
             if mod is module:
                 return name or "root"
-        return "unknown"
+        
+        # Fallback for Dynamo-wrapped modules or internal replicas
+        if hasattr(module, "_get_name"):
+            return module._get_name()
+        return type(module).__name__
 
     def _compute_activation_stats(self, tensor: torch.Tensor) -> Dict[str, float]:
         """Compute statistical summary of activation tensor."""

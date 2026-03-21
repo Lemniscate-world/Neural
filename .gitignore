@@ -26,6 +26,7 @@ htmlcov/
 
 # Virtual environment
 venv/
+venv_312_fixed/
 
 # Generated artifacts
 artifacts/*
