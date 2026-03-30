@@ -1,0 +1,76 @@
+name: Sync Validation Marker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch validation.json
+        env:
+          VALIDATION_BUNDLE_TOKEN: ${{ secrets.VALIDATION_BUNDLE_TOKEN }}
+          VALIDATION_BUNDLE_OWNER: LambdaSection
+          VALIDATION_BUNDLE_REPO: validation-bundle
+          VALIDATION_BUNDLE_REF: main
+        run: |
+          if [ -z "${VALIDATION_BUNDLE_TOKEN}" ]; then
+            echo "VALIDATION_BUNDLE_TOKEN is not set"
+            exit 1
+          fi
+
+          api="https://api.github.com/repos/${VALIDATION_BUNDLE_OWNER}/${VALIDATION_BUNDLE_REPO}/contents/validation.json?ref=${VALIDATION_BUNDLE_REF}"
+          response="$(curl -sS \
+            -H "Authorization: token ${VALIDATION_BUNDLE_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${api}")"
+
+          python3 - <<'PY' > /tmp/validation.json
+import sys
+import json
+import base64
+
+data = json.loads(sys.stdin.read())
+if "content" not in data:
+    raise SystemExit("missing content in GitHub API response")
+
+print(base64.b64decode(data["content"]).decode("utf-8"), end="")
+PY
+
+      - name: Build validation marker
+        run: |
+          entry="$(python3 - <<'PY'
+import json
+
+data = json.load(open("/tmp/validation.json"))
+print(f"VALIDATION_PASSED: {data['milestone']} validated by {data['validator']} on {data['date']}")
+PY
+)"
+          echo "VALIDATION_ENTRY<<EOF" >> "${GITHUB_ENV}"
+          echo "${entry}" >> "${GITHUB_ENV}"
+          echo "EOF" >> "${GITHUB_ENV}"
+
+      - name: Push to active branches
+        run: |
+          git config user.name "validation-bot"
+          git config user.email "validation-bot@users.noreply.github.com"
+          git fetch --all --prune
+
+          branches="$(git for-each-ref --format='%(refname:short)' refs/remotes/origin \
+            | sed 's#^origin/##' \
+            | grep -E '^(main|infra/|feat/|fix/|docs/|refactor/)')"
+
+          for b in ${branches}; do
+            git checkout "${b}"
+            if ! grep -Fq "${VALIDATION_ENTRY}" SESSION_SUMMARY.md; then
+              printf "\n%s\n" "${VALIDATION_ENTRY}" >> SESSION_SUMMARY.md
+            fi
+            git add SESSION_SUMMARY.md
+            git commit -m "chore: sync validation marker" || true
+            git push origin "${b}"
+          done

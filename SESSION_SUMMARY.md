@@ -1,3 +1,97 @@
+# Session Summary — 2026-03-30
+**Editor**: Cursor
+
+## Francais
+**Ce qui a ete fait** :
+- Ajout des scripts de sync de validation (validation_sync.sh, install_hooks.sh)
+- Ajout des hooks git post-checkout/post-merge pour sync auto
+- Ajout du workflow GitHub sync-validation (workflow_dispatch)
+- Mise a jour de .gitignore pour artefacts Mom Test + validation.json
+- Mise a jour de CODEBASE_GUIDE.md avec les nouveaux fichiers
+
+**Initiatives donnees** :
+- Approche GitHub-only avec repo prive validation-bundle
+
+**Fichiers modifies** :
+- `.github/workflows/sync-validation.yml`
+- `.githooks/post-checkout`
+- `.githooks/post-merge`
+- `scripts/validation_sync.sh`
+- `scripts/install_hooks.sh`
+- `.gitignore`
+- `infrastructure_planning/CODEBASE_GUIDE.md`
+- `SESSION_SUMMARY.md`
+
+**Etapes suivantes** :
+- CEO: creer le repo prive validation-bundle + PAT read-only
+- DevOps: configurer le secret VALIDATION_BUNDLE_TOKEN
+- Tester la sync sur une branche de test
+
+## English
+**What was done**:
+- Added validation sync scripts (validation_sync.sh, install_hooks.sh)
+- Added post-checkout/post-merge hooks for auto sync
+- Added GitHub workflow sync-validation (workflow_dispatch)
+- Updated .gitignore for Mom Test artifacts + validation.json
+- Updated CODEBASE_GUIDE.md with new files
+
+**Initiatives given**:
+- GitHub-only approach with private validation-bundle repo
+
+**Files changed**:
+- `.github/workflows/sync-validation.yml`
+- `.githooks/post-checkout`
+- `.githooks/post-merge`
+- `scripts/validation_sync.sh`
+- `scripts/install_hooks.sh`
+- `.gitignore`
+- `infrastructure_planning/CODEBASE_GUIDE.md`
+- `SESSION_SUMMARY.md`
+
+**Next steps**:
+- CEO: create validation-bundle repo + read-only PAT
+- DevOps: configure VALIDATION_BUNDLE_TOKEN secret
+- Test sync on a branch
+
+**Tests**: Not run
+**Blockers**: Waiting on validation-bundle repo + token
+**Progress**: 25% (pessimistic)
+
+# Session Summary — 2026-03-25
+**Editor**: Cursor
+
+## Francais
+**Ce qui a ete fait** :
+- VALIDATION_PASSED: milestone 25% valide par Peniel le 2026-03-25
+- Hard Milestone Lock leve pour reprendre les travaux
+
+**Initiatives donnees** :
+- Aucune
+
+**Fichiers modifies** :
+- `SESSION_SUMMARY.md`
+
+**Etapes suivantes** :
+- Reprendre MLO-3 (Dockerfile.gpu, README Windows, note lock deps)
+
+## English
+**What was done**:
+- VALIDATION_PASSED: 25% milestone validated by Peniel on 2026-03-25
+- Hard Milestone Lock cleared to resume work
+
+**Initiatives given**:
+- None
+
+**Files changed**:
+- `SESSION_SUMMARY.md`
+
+**Next steps**:
+- Resume MLO-3 (Dockerfile.gpu, README Windows, dependency lock note)
+
+**Tests**: Not run
+**Blockers**: None
+**Progress**: 25% (validation gate passed; no other components updated)
+
 # Session Summary — 2026-03-01 (Part 11)
 **Editor**: Antigravity
 

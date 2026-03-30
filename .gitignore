@@ -2,7 +2,10 @@
 PLAN.md
 
 # Mom Test results (private interview data)
+mom_test_script.md
 mom_test_results.md
+decision.md
+validation.json
 
 # Ideas and architecture notes (work-in-progress brainstorms)
 ideas.md
