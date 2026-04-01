@@ -28,8 +28,16 @@
 - `.githooks/post-merge`
 - `.github/workflows/sync-validation.yml` (automatisation)
 
-**Branches supprimees** :
-- `ceo/phase-2-compiler-aware-hardening` (corrompue - supprimait l'infrastructure)
+**Branches supprimees (corrompues - supprimaient infrastructure)** :
+- `ceo/phase-2-compiler-aware-hardening` (186k+ lignes supprimees)
+- `feat/kuro-semantic-event-structures` (supprimait workflows, scripts)
+- `infra/MLO-3-hermetic-workspaces-docker` (supprimait validation-bundle)
+- `ceo/kuro-semantic-event-structures` (locale)
+
+**Branches supprimees (obsoletes)** :
+- `infra/MLO-15-validation-sync` (deja mergee)
+- `ceo/phase-3-demo-docs` (behind 40 commits)
+- `infra/milestone-0-setup` (obsolete)
 
 **Etapes suivantes** :
 - Merger branches saines: feat/kuro-semantic-event-structures, infra/MLO-3-docker
@@ -63,12 +71,20 @@
 - `.githooks/post-merge`
 - `.github/workflows/sync-validation.yml` (automation)
 
-**Deleted branches**:
-- `ceo/phase-2-compiler-aware-hardening` (corrupted - was deleting infrastructure)
+**Deleted branches (corrupted - were deleting infrastructure)**:
+- `ceo/phase-2-compiler-aware-hardening` (186k+ lines deleted)
+- `feat/kuro-semantic-event-structures` (was deleting workflows, scripts)
+- `infra/MLO-3-hermetic-workspaces-docker` (was deleting validation-bundle)
+- `ceo/kuro-semantic-event-structures` (local)
+
+**Deleted branches (obsolete)**:
+- `infra/MLO-15-validation-sync` (already merged)
+- `ceo/phase-3-demo-docs` (behind 40 commits)
+- `infra/milestone-0-setup` (obsolete)
 
 **Next steps**:
-- Merge healthy branches: feat/kuro-semantic-event-structures, infra/MLO-3-docker
-- Clean remaining obsolete branches
+- ~~Merge healthy branches~~ (ALL BRANCHES CORRUPTED - investigation needed)
+- ~~Clean remaining obsolete branches~~ (DONE)
 - Test automatic sync after next push
 
 **Tests**: Not run
