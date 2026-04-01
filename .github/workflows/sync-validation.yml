@@ -6,12 +6,23 @@
 name: Sync Validation Bundle
 
 on:
+  # Trigger on push to main (automatic sync)
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/sync-validation.yml'
+      - 'scripts/**'
+  # Manual trigger (for testing or specific branches)
   workflow_dispatch:
     inputs:
       branch:
         description: 'Branch to sync from validation-bundle repo'
         required: false
         default: 'main'
+
+env:
+  # Ensure these are available to all steps
+  VALIDATION_BUNDLE_REPO: ${{ vars.VALIDATION_BUNDLE_REPO || 'LambdaSection/Validation-Bundle' }}
 
 # Only run on main branch or when manually triggered
 permissions:
@@ -26,10 +37,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Sync validation bundle
+      - name: Sync validation bundle (DOWNLOAD)
         env:
           VALIDATION_BUNDLE_TOKEN: ${{ secrets.VALIDATION_BUNDLE_TOKEN }}
-          VALIDATION_BUNDLE_REPO: ${{ vars.VALIDATION_BUNDLE_REPO || 'LambdaSection/Validation-Bundle' }}
+          VALIDATION_BUNDLE_REPO: ${{ env.VALIDATION_BUNDLE_REPO }}
           VALIDATION_BUNDLE_BRANCH: ${{ github.event.inputs.branch || 'main' }}
         run: |
           if [ -z "$VALIDATION_BUNDLE_TOKEN" ]; then
