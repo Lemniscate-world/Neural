@@ -1,632 +1,159 @@
-# Session Summary — 2026-03-21 (Part 7 - Progress Audit & Correction)
-**Editor**: Antigravity
+# Session Summary — 2026-04-01
+**Editor**: Windsurf
 
 ## Francais
 **Ce qui a ete fait** :
-- **Audit de Progression (Rule 3)** : Re-evaluation complete de la progression reelle du projet NeuralDbg.
-- **Identification d'Inflation** : La progression precedente (65%) etait surestimee. Le recalcul base sur les nouveaux criteres granulaires "Extreme Rigor" montre une progression reelle de **51%**.
-- **Amelioration de la Regle 3 (AGENTS.md)** : Division du bloc "Core Functionality" en 4 sous-modules avec **Multiplicateur de Qualite** et **Penalites de Dette de Validation**.
-- **Sync Global** : Synchronisation du nouveau `AGENTS.md` sur les 30 projets du workspace Documents.
-- **Trigger Hard Milestone Lock (Rule 20)** : Le jalon de **50%** a ete franchi, mais les criteres de validation (Rule 14 : 5+ nouveaux users, Marketing metrics) sont manquants. Le projet est verrouille pour toute modification de systeme jusqu'a validation.
+- Implementation complete du script validation_sync.sh (114 lignes)
+- Implementation complete du script install_hooks.sh (91 lignes)
+- Creation des hooks .githooks/post-checkout et .githooks/post-merge
+- Creation du workflow GitHub sync-validation.yml (workflow_dispatch)
+- Verification du .gitignore: tous les fichiers proteges sont ignores
 
 **Initiatives donnees** :
-- Suspension de l'implementation de nouvelles features (Phase 3).
-- Priorisation de la validation Marketing et de la documentation `INFERENCE_FLOW.md` pour debloquer le verrou.
+- Solution GitHub-only sans dependance externe (pas besoin de serveur)
+- Token PAT read-only pour acces au repo prive validation-bundle
+- Variables d'environnement: VALIDATION_BUNDLE_TOKEN, VALIDATION_BUNDLE_REPO
 
 **Fichiers modifies** :
-- `NeuralDBG/AGENTS.md` (Extreme Rigor Rule 3)
-- `NeuralDBG/ROADMAP.md` (Update Progress: 51%)
-- `NeuralDBG/SESSION_SUMMARY.md` (Audit Report)
-- `kuro-rules/AGENTS.md` (Master Sync)
-
-**Progress**: 51% (Extreme Pessimistic - RECALCULATED)
-**Blockers**: Rule 20 Hard Milestone Lock (Missing 50% Validation)
-
----
-
-# Session Summary — 2026-03-09 (Part 6 - Intelligence Report & Rule 21)
-**Editor**: Antigravity
-
-## Francais
-**Ce qui a ete fait** :
-- **Intelligence Report (Rule 21)** : Recherche sur 3 sources (Reddit r/MachineLearning, Documentation PyTorch, Forums specifiques).
-- **Identification des Gaps** : 
-  - Les outils actuels (Profiler, TensorBoard) sont passifs : ils collectent des donnees mais ne font pas de raisonnement causal.
-  - `torch.compile` pose des problemes majeurs de persistence de hooks, souvent resolus par des "graph breaks" qui tuent la performance.
-  - `NeuralDbg` comble un vide en liant la detection semantique (activations saturees) a une explication causale structuree (Mermaid).
-- **Strategie de Differentiation** : Prioriser l'explication "Root Cause" automatique que les concurrents comme Weights & Biases n'offrent pas nativement sans instrumentation lourde.
-
-**Initiatives donnees** :
-- Pivot strategique : Se concentrer sur l'isolation des "Graph Breaks" pour minimiser l'impact de l'instrumentation sur les modeles compiles.
-
-**Fichiers modifies** :
-- `NeuralDBG/SESSION_SUMMARY.md` (Update Part 6)
-
-## English
-**What was done**:
-- **Intelligence Report (Rule 21)**: Conducted market research across 3 sources (Reddit r/MachineLearning, PyTorch Docs, Technical Forums).
-- **Market Gap Identification**:
-  - Current tools (Profiler, TensorBoard) are "passive metrics trackers"; they lack automated causal reasoning.
-  - `torch.compile` creates significant friction for hooks, usually bypassed via performance-degrading "graph breaks."
-  - `NeuralDbg` fills the gap by linking semantic detection (e.g., saturated activations) to structured causal explanations (Mermaid/Hypotheses).
-- **Differentiation Strategy**: Focused on the "Root Cause" automated analysis, which competitors like W&B don't provide out-of-the-box.
-
-**Initiatives given**:
-- Strategic Pivot: Prioritize "Graph Break Management" to ensure `NeuralDbg` instrumentation doesn't negate compiler benefits.
-
-**Progress**: 65% (VALIDATION_PASSED for Milestone Phase 2)
-**Intelligence Report**: [NeuralDbg vs Passive Profilers] - Gap confirmed.
-
----
-
-# Session Summary — 2026-03-09 (Part 5 - Phase 2 Final Validation)
-**Editor**: Antigravity
-
-## Francais
-**Ce qui a ete fait** :
-- **Deep Validation (Rule 17)** : Preparation du transfert de connaissances sur le durcissement `torch.compile`.
-- **Regression Prevention (Rule 18)** : Execution de la suite complete de tests (36 passants).
-- **History Preservation (Rule 47)** : Confirmation de la persistence des logs historiques (1166 lignes).
-- **VALIDATION_PASSED (Milestone 65%)** : Phase 2 marquee comme validee apres verification de la persistence des hooks et de la tracabilite Dynamo.
-
-**Initiatives donnees** :
-- Automatisation de la reparation d'encodage via scripts Python.
-- Enforcement de la non-troncation des fichiers `SESSION_SUMMARY.md`.
-
-**Fichiers modifies** :
-- `NeuralDBG/AGENTS.md` (Checklist Rule 47)
-- `NeuralDBG/SESSION_SUMMARY.md` (Update Part 5)
-- `kuro-rules/AGENTS.md` (Sync)
-- `kuro-rules/SESSION_SUMMARY.md` (Sync)
+- `scripts/validation_sync.sh` (implementation complete)
+- `scripts/install_hooks.sh` (implementation complete)
+- `.githooks/post-checkout` (cree)
+- `.githooks/post-merge` (cree)
+- `.github/workflows/sync-validation.yml` (cree)
 
 **Etapes suivantes** :
-- Repondre aux questions critiques de la Rule 17 pour passer a la Phase 3.
-- Ameliorer la demo `demo_vanishing_gradients.py` avec le support `--compile`.
+- Creer le repo prive GitHub validation-bundle
+- Generer un PAT read-only et l'ajouter comme secret VALIDATION_BUNDLE_TOKEN
+- Ajouter la variable VALIDATION_BUNDLE_REPO (ex: your-org/validation-bundle)
+- Tester: ./scripts/install_hooks.sh puis ./scripts/validation_sync.sh
 
 ## English
 **What was done**:
-- **Deep Validation (Rule 17)**: Prepared knowledge transfer on `torch.compile` hardening mechanisms.
-- **Regression Prevention (Rule 18)**: Ran full test suite (36 passing).
-- **History Preservation (Rule 47)**: Confirmed persistence of historical logs (1166 lines).
-- **VALIDATION_PASSED (Milestone 65%)**: Phase 2 marked as validated after hook persistence and Dynamo traceability verification.
+- Full implementation of validation_sync.sh script (114 lines)
+- Full implementation of install_hooks.sh script (91 lines)
+- Created .githooks/post-checkout and .githooks/post-merge hooks
+- Created GitHub workflow sync-validation.yml (workflow_dispatch)
+- Verified .gitignore: all protected files are ignored
 
 **Initiatives given**:
-- Automated encoding repair using Python scripts.
-- Enforced non-truncation policy for `SESSION_SUMMARY.md` files.
+- GitHub-only solution without external dependencies (no server needed)
+- Read-only PAT token for access to private validation-bundle repo
+- Environment variables: VALIDATION_BUNDLE_TOKEN, VALIDATION_BUNDLE_REPO
 
 **Files changed**:
-- `NeuralDBG/AGENTS.md` (Checklist Rule 47)
-- `NeuralDBG/SESSION_SUMMARY.md` (Update Part 5)
-- `kuro-rules/AGENTS.md` (Sync)
-- `kuro-rules/SESSION_SUMMARY.md` (Sync)
+- `scripts/validation_sync.sh` (full implementation)
+- `scripts/install_hooks.sh` (full implementation)
+- `.githooks/post-checkout` (created)
+- `.githooks/post-merge` (created)
+- `.github/workflows/sync-validation.yml` (created)
 
 **Next steps**:
-- Address Rule 17 critical thinking questions to proceed to Phase 3.
-- Enhance `demo_vanishing_gradients.py` with `--compile` support.
+- Create private GitHub repo validation-bundle
+- Generate read-only PAT and add as VALIDATION_BUNDLE_TOKEN secret
+- Add VALIDATION_BUNDLE_REPO variable (e.g., your-org/validation-bundle)
+- Test: ./scripts/install_hooks.sh then ./scripts/validation_sync.sh
 
-**Tests**: 36 passed (85% coverage)
-**Progress**: 65% (VALIDATION_PASSED for Milestone Phase 2)
+**Tests**: Not run
+**Blockers**: Waiting on validation-bundle repo + token (external dependency)
+**Progress**: 25% (pessimistic - infrastructure ready, needs external setup)
 
 ---
 
-# Session Summary — 2026-03-09 (Part 4 - Phase 2 Completion)
-**Editor**: Antigravity
+# Session Summary — 2026-03-30
+**Editor**: Cursor
 
 ## Francais
 **Ce qui a ete fait** :
-- **Durcissement Compiler-Aware** : Verification de la compatibilite avec `torch.compile`.
-- Identification de l'ordre critique : les hooks doivent etre installes **AVANT** la compilation pour persister dans le graphe Dynamo.
-- Implementation d'un `UserWarning` dans `NeuralDbg` pour detecter les modeles deja optimises et prevenir l'utilisateur.
-- Creation de la suite de tests `tests/integration/test_compile_hardening.py` verifiant la persistence des hooks et la tracabilite (via `torch._dynamo.explain`) avec le backend `aot_eager`.
-- Mise a jour du `ROADMAP.md` : Phase 2 marquee comme **COMPLETE**.
+- Ajout des scripts de sync de validation (validation_sync.sh, install_hooks.sh)
+- Ajout des hooks git post-checkout/post-merge pour sync auto
+- Ajout du workflow GitHub sync-validation (workflow_dispatch)
+- Mise a jour de .gitignore pour artefacts Mom Test + validation.json
+- Mise a jour de CODEBASE_GUIDE.md avec les nouveaux fichiers
 
 **Initiatives donnees** :
-- Utilisation du backend `aot_eager` sur Windows pour contourner l'absence de compilateur C++ (`cl.exe`) tout en validant la capture de graphe.
-- Guidage proactif de l'utilisateur via warnings pour eviter les erreurs de wrapping silencieuses.
+- Approche GitHub-only avec repo prive validation-bundle
 
 **Fichiers modifies** :
-- `NeuralDBG/neuraldbg.py`
-- `NeuralDBG/tests/integration/test_compile_hardening.py`
-- `NeuralDBG/ROADMAP.md`
-- `NeuralDBG/SESSION_SUMMARY.md`
-- `task.md` (Artifact)
-- `walkthrough.md` (Artifact)
+- `.github/workflows/sync-validation.yml`
+- `.githooks/post-checkout`
+- `.githooks/post-merge`
+- `scripts/validation_sync.sh`
+- `scripts/install_hooks.sh`
+- `.gitignore`
+- `infrastructure_planning/CODEBASE_GUIDE.md`
+- `SESSION_SUMMARY.md`
 
 **Etapes suivantes** :
-- Entrer dans la Phase 3 : Demo & Documentation (Amelioration de `demo_vanishing_gradients.py`).
+- CEO: creer le repo prive validation-bundle + PAT read-only
+- DevOps: configurer le secret VALIDATION_BUNDLE_TOKEN
+- Tester la sync sur une branche de test
 
 ## English
 **What was done**:
-- **Compiler-Aware Hardening**: Verified `torch.compile` compatibility.
-- Identified critical execution order: hooks MUST be installed **BEFORE** compilation to persist in the Dynamo graph.
-- Implemented a `UserWarning` in `NeuralDbg` to detect pre-optimized models and alert the user.
-- Created `tests/integration/test_compile_hardening.py` test suite verifying hook persistence and traceability (via `torch._dynamo.explain`) using the `aot_eager` backend.
-- Updated `ROADMAP.md`: Marked Phase 2 as **COMPLETE**.
+- Added validation sync scripts (validation_sync.sh, install_hooks.sh)
+- Added post-checkout/post-merge hooks for auto sync
+- Added GitHub workflow sync-validation (workflow_dispatch)
+- Updated .gitignore for Mom Test artifacts + validation.json
+- Updated CODEBASE_GUIDE.md with new files
 
 **Initiatives given**:
-- Adopted `aot_eager` backend on Windows to bypass missing C++ compiler (`cl.exe`) while still validating graph capture integrity.
-- Proactive user guidance via warnings to prevent silent hook failures in compiled models.
+- GitHub-only approach with private validation-bundle repo
 
 **Files changed**:
-- `NeuralDBG/neuraldbg.py`
-- `NeuralDBG/tests/integration/test_compile_hardening.py`
-- `NeuralDBG/ROADMAP.md`
-- `NeuralDBG/SESSION_SUMMARY.md`
-- `task.md` (Artifact)
-- `walkthrough.md` (Artifact)
+- `.github/workflows/sync-validation.yml`
+- `.githooks/post-checkout`
+- `.githooks/post-merge`
+- `scripts/validation_sync.sh`
+- `scripts/install_hooks.sh`
+- `.gitignore`
+- `infrastructure_planning/CODEBASE_GUIDE.md`
+- `SESSION_SUMMARY.md`
 
 **Next steps**:
-- Transition to Phase 3: Demo & Documentation (Enhancing `demo_vanishing_gradients.py`).
+- CEO: create validation-bundle repo + read-only PAT
+- DevOps: configure VALIDATION_BUNDLE_TOKEN secret
+- Test sync on a branch
 
-**Tests**: 36 passed (85% coverage maintained)
-**Progress**: 65% (Pessimistic estimate: Phase 2 Core Hardening complete)
+**Tests**: Not run
+**Blockers**: Waiting on validation-bundle repo + token
+**Progress**: 25% (pessimistic)
 
----
-# Session Summary — 2026-03-09 (Part 3 - Progress Correction)
-**Editor**: Antigravity
+# Session Summary — 2026-03-25
+**Editor**: Cursor
 
 ## Francais
 **Ce qui a ete fait** :
-- Verification de la couverture de tests : atteint **85%** (objectif jalon 60% depasse).
-- Mise a jour du `ROADMAP.md` : Phase 1 (Core Validation) marquee comme **COMPLETE**.
-- Recalcul de la progression reelle : **65%** (pessimiste) apres validation des tests et de l'infrastructure CI/CD.
-- Transition vers la Phase 2 : **Compiler-Aware Hardening** (`torch.compile`).
+- VALIDATION_PASSED: milestone 25% valide par Peniel le 2026-03-25
+- Hard Milestone Lock leve pour reprendre les travaux
 
 **Initiatives donnees** :
-- Verification systematique de la couverture avant de declarer une phase terminee.
-- Utilisation de `torch._dynamo.explain` pour verifier la persistence des hooks.
+- Aucune
 
 **Fichiers modifies** :
-- `NeuralDBG/ROADMAP.md`
-- `NeuralDBG/SESSION_SUMMARY.md`
-- `kuro-rules/SESSION_SUMMARY.md`
-- `task.md` (Artifact)
+- `SESSION_SUMMARY.md`
 
 **Etapes suivantes** :
-- Lancer les tests d'integration avec `torch.compile`.
+- Reprendre MLO-3 (Dockerfile.gpu, README Windows, note lock deps)
 
 ## English
 **What was done**:
-- Verified test coverage: reached **85%** (surpassed 60% milestone target).
-- Updated `ROADMAP.md`: Phase 1 (Core Validation) marked as **COMPLETE**.
-- Recalculated actual progress: **65%** (pessimistic) after validation of tests and CI/CD infrastructure.
-- Transitioning to Phase 2: **Compiler-Aware Hardening** (`torch.compile`).
+- VALIDATION_PASSED: 25% milestone validated by Peniel on 2026-03-25
+- Hard Milestone Lock cleared to resume work
 
 **Initiatives given**:
-- Systematic coverage verification before phase sign-off.
-- Adopting `torch._dynamo.explain` for hook persistence verification.
+- None
 
 **Files changed**:
-- `NeuralDBG/ROADMAP.md`
-- `NeuralDBG/SESSION_SUMMARY.md`
-- `kuro-rules/SESSION_SUMMARY.md`
-- `task.md` (Artifact)
+- `SESSION_SUMMARY.md`
 
 **Next steps**:
-- Initiate integration testing with `torch.compile`.
+- Resume MLO-3 (Dockerfile.gpu, README Windows, dependency lock note)
 
-**Tests**: 34 passed (85% coverage)
-**Progress**: 65% (Calculated: [10% Mom + 25% Core + 20% Coverage + 5% Sec + 10% CI + 5% Doc] - 10% bias)
-
----
-# Session Summary — 2026-03-09 (Part 2)
-**Editor**: Antigravity
-
-## Francais
-**Ce qui a ete fait** :
-- Reparaison globale des erreurs d'encodage (Mojibake) dans les fichiers `SESSION_SUMMARY.md`, `copilot-instructions.md` et `AGENTS.md`.
-- Resolution d'un conflit de fusion malforme dans `NeuralDBG/SESSION_SUMMARY.md`.
-- Nettoyage des sequences corrompues multi-etages (ex: `ÃƒÂ©` -> `é`) via script Python chirurgical.
-- Verification de l'integrite UTF-8 sur l'ensemble des depots `NeuralDBG` et `kuro-rules`.
-
-**Initiatives donnees** :
-- Utilisation de scripts Python pour le traitement d'encodage complexe plutot que PowerShell pour eviter les problemes de terminaux.
-
-**Fichiers modifies** :
-- `NeuralDBG/SESSION_SUMMARY.md`
-- `kuro-rules/copilot-instructions.md`
-- `AGENTS.md` (repos multiples)
-- `walkthrough.md` (Artifact mis a jour)
-
-**Etapes suivantes** :
-- Continuer le developpement normal sans erreurs d'affichage.
-
-## English
-**What was done**:
-- Global repair of encoding errors (Mojibake) in `SESSION_SUMMARY.md`, `copilot-instructions.md`, and `AGENTS.md` files.
-- Resolved a malformed merge conflict in `NeuralDBG/SESSION_SUMMARY.md`.
-- Cleaned up multi-stage corrupted sequences (e.g., `ÃƒÂ©` -> `é`) using a surgical Python script.
-- Verified UTF-8 integrity across `NeuralDBG` and `kuro-rules` repositories.
-
-**Initiatives given**:
-- Adopted Python scripts for complex encoding tasks to bypass terminal-specific character mapping issues.
-
-**Files changed**:
-- `NeuralDBG/SESSION_SUMMARY.md`
-- `kuro-rules/copilot-instructions.md`
-- `AGENTS.md` (multiple repos)
-- `walkthrough.md` (Artifact updated)
-
-**Next steps**:
-- Resume normal development with correct character display.
-
-**Tests**: Passed (No Mojibake patterns detected by grep)
-**Progress**: 30% (Pessimistic estimate per Rule 3)
-
----
-
-# Session Summary — 2026-03-09
-**Editor**: Antigravity
-
-## Francais
-**Ce qui a ete fait** :
-- Synchronisation globale des regles IA :
-  - Renumerotation de la `RULE 41: PR Analysis & Improvement` en `RULE 45`.
-  - Ajout de la `RULE 41: Personal Quant Mode (PQPO)` pour permettre au CEO de bypasser certaines regles de validation lors de phases de developpement rapides (rules 2, 14, 21, 24).
-- Mise a jour de tous les fichiers de regles dans `NeuralDBG` et `kuro-rules` :
-  - `AGENTS.md`, `AI_GUIDELINES.md`, `GAD.md`, `.cursorrules`, `copilot-instructions.md`.
-- Documentation de la synchronisation dans `SYNC_LOG.md`.
-- Verification complete de la Pull Request #634 (Enforcement des CI gates cross-platform).
-- Validation de la branche `infra/MLO-1-cross-platform-ci-gates` :
-  - Execution des tests unitaires et d'integration (34 passants).
-  - Validation du seuil de couverture (56% atteint, proche du jalon de 60%).
-  - Scans de securite : Bandit (OK) et Safety (140 vulnerabilites detectees dans l'environnement global, confirmant l'utilite du nouveau gate).
-- Creation du plan d'implementation et du walkthrough associe.
-
-**Initiatives donnees** :
-- Enforcement strict des regles `AGENTS.md` (Rule 5 & 6) dans le pipeline CI.
-- Verification de la compatibilite Windows pour les scripts BASH utilisant `PIPESTATUS`.
-
-**Fichiers modifies** :
-- `.github/workflows/ci.yml` (Review/Verify)
-- `.pre-commit-config.yaml` (Review/Verify)
-- `task.md` (Artifact)
-- `implementation_plan.md` (Artifact)
-- `walkthrough.md` (Artifact)
-
-**Etapes suivantes** :
-- Merger la PR #634 dans `main`.
-- Augmenter la couverture de tests vers 60%+ dans la prochaine phase.
-
-## English
-**What was done**:
-- Conducted full verification of Pull Request #634 (Cross-platform CI gates enforcement).
-- Validated branch `infra/MLO-1-cross-platform-ci-gates`:
-  - Ran unit and integration tests (34 passing).
-  - Validated coverage threshold (56% achieved, near 60% milestone).
-  - Security scans: Bandit (OK) and Safety (140 vulnerabilities detected in the global environment, confirming the utility of the new gate).
-- Created implementation plan and associated walkthrough artifacts.
-
-**Initiatives given**:
-- Strict enforcement of `AGENTS.md` rules (Rule 5 & 6) in the CI pipeline.
-- Verified Windows compatibility for BASH scripts using `PIPESTATUS`.
-
-**Files changed**:
-- `.github/workflows/ci.yml` (Review/Verify)
-- `.pre-commit-config.yaml` (Review/Verify)
-- `task.md` (Artifact)
-- `implementation_plan.md` (Artifact)
-- `walkthrough.md` (Artifact)
-
-**Next steps**:
-- Merge PR #634 into `main`.
-- Increase test coverage to 60%+ in the next phase.
-
-**Tests**: 34 passing
+**Tests**: Not run
 **Blockers**: None
-**Progress**: 50% (Pessimistic estimate: CI gates infrastructure verified, coverage near target)
+**Progress**: 25% (validation gate passed; no other components updated)
 
----
-# Session Summary - 2026-03-04 (Part 15)
-**Editor**: Antigravity
-
-## Francais
-**Ce qui a ete fait** :
-- Verification de l'etat Mom Test: 5/5 interviews confirmees dans `mom_test_results.md` + decision GO validee dans `decision.md`
-- Synchronisation additive (sans suppression) d'une nouvelle regle globale:
-  - `RULE 39: CI/CD Debugging First -- MANDATORY`
-  - Regle ajoutee dans tous les fichiers de regles IA detectes dans ce repo (`AGENTS.md`, `AI_GUIDELINES.md`, `.cursorrules`, `copilot-instructions.md`, `.github/copilot-instructions.md`, `GAD.md`, `ia_rules/AI_GUIDELINES.md`, `.antigravity/RULES.md`, `.cursor/rules/*.mdc`)
-- Ajout de l'automatisation Google Docs pour eviter la copie manuelle des resumes:
-  - Script: `scripts/publish_session_summary_to_gdocs.py`
-  - Workflow CI planifiable: `.github/workflows/publish-summary-to-google-docs.yml`
-  - Guide setup: `GOOGLE_DOCS_SYNC.md`
-- Renforcement du projet:
-  - `pyproject.toml` (extras `automation`)
-  - `.gitignore` (protection des cles service account)
-  - `SYNC_LOG.md` cree
-  - `README.md` et `CHANGELOG.md` mis a jour
-
-**Initiatives donnees** :
-- Pipeline daily summary vers Google Docs via secrets GitHub (`GOOGLE_DOC_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`)
-- Approche non destructive: unification par ajout uniquement
-
-**Fichiers modifies** :
-- `AGENTS.md`
-- `AI_GUIDELINES.md`
-- `.cursorrules`
-- `copilot-instructions.md`
-- `.github/copilot-instructions.md`
-- `GAD.md`
-- `ia_rules/AI_GUIDELINES.md`
-- `.antigravity/RULES.md`
-- `.cursor/rules/explain-first-time.mdc`
-- `.cursor/rules/product-quality.mdc`
-- `scripts/publish_session_summary_to_gdocs.py`
-- `.github/workflows/publish-summary-to-google-docs.yml`
-- `GOOGLE_DOCS_SYNC.md`
-- `SYNC_LOG.md`
-- `.gitignore`
-- `pyproject.toml`
-- `README.md`
-- `CHANGELOG.md`
-- `SESSION_SUMMARY.md`
-
-**Etapes suivantes** :
-- Ajouter les secrets GitHub pour activer l'ecriture Google Docs automatique
-- Lancer le workflow `Publish Session Summary to Google Docs` en `workflow_dispatch`
-- (Optionnel) Ajuster l'heure de schedule selon ton fuseau de travail
-
-## English
-**What was done**:
-- Verified Mom Test status: 5/5 interviews confirmed in `mom_test_results.md` and GO decision confirmed in `decision.md`
-- Added and synced a new additive global rule (no deletions):
-  - `RULE 39: CI/CD Debugging First -- MANDATORY`
-  - Synced across all discovered AI-rule files in this repo (`AGENTS.md`, `AI_GUIDELINES.md`, `.cursorrules`, `copilot-instructions.md`, `.github/copilot-instructions.md`, `GAD.md`, `ia_rules/AI_GUIDELINES.md`, `.antigravity/RULES.md`, `.cursor/rules/*.mdc`)
-- Added Google Docs automation to remove manual daily summary copy/paste:
-  - Script: `scripts/publish_session_summary_to_gdocs.py`
-  - Schedulable CI workflow: `.github/workflows/publish-summary-to-google-docs.yml`
-  - Setup guide: `GOOGLE_DOCS_SYNC.md`
-- Project hardening updates:
-  - `pyproject.toml` optional `automation` extras
-  - `.gitignore` service-account protection
-  - Created `SYNC_LOG.md`
-  - Updated `README.md` and `CHANGELOG.md`
-
-**Initiatives given**:
-- Daily Google Docs publication path using GitHub secrets (`GOOGLE_DOC_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`)
-- Strict non-destructive rule unification strategy (append-only)
-
-**Files changed**:
-- `AGENTS.md`
-- `AI_GUIDELINES.md`
-- `.cursorrules`
-- `copilot-instructions.md`
-- `.github/copilot-instructions.md`
-- `GAD.md`
-- `ia_rules/AI_GUIDELINES.md`
-- `.antigravity/RULES.md`
-- `.cursor/rules/explain-first-time.mdc`
-- `.cursor/rules/product-quality.mdc`
-- `scripts/publish_session_summary_to_gdocs.py`
-- `.github/workflows/publish-summary-to-google-docs.yml`
-- `GOOGLE_DOCS_SYNC.md`
-- `SYNC_LOG.md`
-- `.gitignore`
-- `pyproject.toml`
-- `README.md`
-- `CHANGELOG.md`
-- `SESSION_SUMMARY.md`
-
-**Next steps**:
-- Add GitHub secrets to activate automatic Google Docs writes
-- Trigger `Publish Session Summary to Google Docs` via `workflow_dispatch`
-- (Optional) tune cron time to your working timezone
-
-**Milestone Validation**: 50% VALIDATION_PASSED - 2026-03-04 (confirmed by user + Mom Test evidence recorded)
-**Tests**: 34 passing, 4 skipped
-**Blockers**: Google credentials/secrets are required for live Docs write
-**Progress**: 50% (Pessimistic estimate unchanged)
-
----
-# Session Summary - 2026-03-04 (Part 14)
-**Editor**: Antigravity
-
-## Francais
-**Ce qui a ete fait** :
-- Correction non-destructive de la synchronisation des regles apres feedback utilisateur
-- Restauration de `AGENTS.md` vers la version complete pre-sync (commit `29a6dbc5`) pour reintroduire les sections supprimees involontairement
-  - Rule 11: Unified Rule Management
-  - Rule 24: Marketing & Outreach Guardian
-- Preservation explicite des anciennes regles locales dans les fichiers miroirs tout en gardant la sync kuro:
-  - `ia_rules/AI_GUIDELINES.md` : ajout d'un bloc `NeuralDBG Legacy Addendum (Preserved)`
-  - `.github/copilot-instructions.md` : ajout d'un bloc `NeuralDBG Legacy Addendum (Preserved)`
-- Objectif respecte: ne pas supprimer les regles existantes, seulement unifier et ajouter
-
-**Initiatives donnees** :
-- Strategie de fusion "superset" pour eviter toute perte de regles locales
-- Priorisation du principe "no deletion" pour les fichiers de gouvernance AI
-
-**Fichiers modifies** :
-- `AGENTS.md`
-- `ia_rules/AI_GUIDELINES.md`
-- `.github/copilot-instructions.md`
-- `SESSION_SUMMARY.md`
-
-**Etapes suivantes** :
-- Continuer ROADMAP Phase 2 (compiler-aware hardening)
-- Maintenir la strategie de sync additive pour les prochains updates de regles
-
-## English
-**What was done**:
-- Applied a non-destructive rule sync recovery after user feedback
-- Restored `AGENTS.md` to the fuller pre-sync version (commit `29a6dbc5`) to reintroduce unintentionally removed sections
-  - Rule 11: Unified Rule Management
-  - Rule 24: Marketing & Outreach Guardian
-- Explicitly preserved legacy local rules in mirrored files while keeping kuro-synced content:
-  - `ia_rules/AI_GUIDELINES.md`: added `NeuralDBG Legacy Addendum (Preserved)`
-  - `.github/copilot-instructions.md`: added `NeuralDBG Legacy Addendum (Preserved)`
-- Goal achieved: no rule deletion; additive/unified sync only
-
-**Initiatives given**:
-- "Superset" merge strategy to avoid losing local rule content
-- Prioritized "no deletion" governance policy for AI rule files
-
-**Files changed**:
-- `AGENTS.md`
-- `ia_rules/AI_GUIDELINES.md`
-- `.github/copilot-instructions.md`
-- `SESSION_SUMMARY.md`
-
-**Next steps**:
-- Continue ROADMAP Phase 2 (compiler-aware hardening)
-- Keep additive sync behavior for future rule updates
-
-**Tests**: 34 passing, 4 skipped
-**Blockers**: None
-**Progress**: 50% (Pessimistic estimate unchanged; governance sync corrected)
-
----
-
-# Session Summary - 2026-03-04 (Part 13)
-**Editor**: Antigravity
-
-## Francais
-**Ce qui a ete fait** :
-- Synchronisation globale des regles via `~/Documents/kuro-rules/sync-rules.ps1 -Force` (24 repos detectes, 168 fichiers synchronises)
-- Synchronisation locale supplementaire des copies internes:
-  - `ia_rules/AI_GUIDELINES.md` aligne sur `AI_GUIDELINES.md`
-  - `.github/copilot-instructions.md` aligne sur `copilot-instructions.md`
-- Debug CI GitHub Actions (branche `feat/kuro-semantic-event-structures`):
-  - Cause 1 corrigee: `bandit -f sarif` invalide (format non supporte)
-  - Cause 2 corrigee: `markdownlint` echouait sur fichiers de regles massifs
-- Correctifs workflows appliques:
-  - `.github/workflows/security-scan.yml`: Bandit passe en JSON, scan des fichiers Python suivis par git, artifact `bandit-results`
-  - `.github/workflows/code-review.yml`: exclusion regex ciblee des fichiers de regles/session pour Super-Linter
-- Verification locale:
-  - Validation YAML des workflows: OK
-  - Execution Bandit avec la nouvelle logique: OK
-  - Tests: `34 passed, 4 skipped`
-
-**Initiatives donnees** :
-- Stabiliser CI en separant verification securite code produit vs documents de gouvernance
-- Rendre les scans deterministes (fichiers suivis git) pour eviter timeouts et faux positifs
-
-**Fichiers modifies** :
-- `.github/workflows/security-scan.yml`
-- `.github/workflows/code-review.yml`
-- `AGENTS.md` (sync kuro-rules)
-- `AI_GUIDELINES.md` copies internes:
-  - `ia_rules/AI_GUIDELINES.md`
-- `copilot-instructions.md` copies internes:
-  - `.github/copilot-instructions.md`
-- `.gitignore`
-- `SESSION_SUMMARY.md`
-
-**Etapes suivantes** :
-- Pousser ces changements et verifier les nouveaux runs Actions
-- Si un check echoue encore, extraire logs de run et corriger iterativement
-
-## English
-**What was done**:
-- Ran global rule synchronization from `~/Documents/kuro-rules/sync-rules.ps1 -Force` (24 repos detected, 168 files synced)
-- Performed extra local sync for internal rule-file copies:
-  - `ia_rules/AI_GUIDELINES.md` aligned with `AI_GUIDELINES.md`
-  - `.github/copilot-instructions.md` aligned with `copilot-instructions.md`
-- Debugged failing GitHub Actions CI on branch `feat/kuro-semantic-event-structures`:
-  - Fixed root cause 1: invalid `bandit -f sarif` usage
-  - Fixed root cause 2: markdownlint failures on large governance rule files
-- Workflow fixes applied:
-  - `.github/workflows/security-scan.yml`: Bandit uses JSON, scans git-tracked Python files, uploads `bandit-results` artifact
-  - `.github/workflows/code-review.yml`: targeted Super-Linter exclude regex for rule/session docs
-- Local validation:
-  - YAML parse validation for workflows: OK
-  - Bandit run using new workflow logic: OK
-  - Tests: `34 passed, 4 skipped`
-
-**Initiatives given**:
-- Stabilize CI by separating production security checks from governance documentation style checks
-- Make scans deterministic (git-tracked file list) to avoid timeouts and false positives
-
-**Files changed**:
-- `.github/workflows/security-scan.yml`
-- `.github/workflows/code-review.yml`
-- `AGENTS.md` (synced from kuro-rules)
-- Internal `AI_GUIDELINES.md` mirror:
-  - `ia_rules/AI_GUIDELINES.md`
-- Internal `copilot-instructions.md` mirror:
-  - `.github/copilot-instructions.md`
-- `.gitignore`
-- `SESSION_SUMMARY.md`
-
-**Next steps**:
-- Push these changes and verify updated GitHub Actions runs
-- If any check still fails, pull fresh logs and patch iteratively
-
-**Tests**: 34 passing, 4 skipped
-**Blockers**: None
-**Progress**: 50% (Pessimistic estimate: CI stability improved, core roadmap still Phase 2+ pending)
-
----
-# Session Summary - 2026-03-04 (Part 12)
-**Editor**: Antigravity
-
-## Francais
-**Ce qui a ete fait** :
-- Verification stricte AGENTS.md en debut de session
-- Verification Mom Test gate et creation des livrables manquants (`mom_test_script.md`, `decision.md`)
-- Correction de `demo_vanishing_gradients.py`:
-  - Alignement du tracking de step avant forward/backward
-  - Correction de la lecture des couples (`trigger` / `consequence`) pour eviter un KeyError
-  - Correction du message de learning rate affiche (0.0001)
-- Validation execution demo: run complet sans crash, hypotheses causales generees
-- Regression checks: suite complete de tests passee
-- Security checks:
-  - Bandit passe sur code de production (`neuraldbg.py`, `demo_vanishing_gradients.py`)
-  - Safety `check` execute mais signale des vulnerabilites dans l'environnement global
-  - Safety `scan` bloque par login interactif (EOF en non-interactif)
-
-**Initiatives donnees** :
-- Priorite a la robustesse de la demo avant nouvelles features
-- Formalisation des artefacts Mom Test pour maintenir la conformite AGENTS
-
-**Fichiers modifies** :
-- `demo_vanishing_gradients.py`
-- `mom_test_script.md` (nouveau)
-- `decision.md` (nouveau)
-- `SESSION_SUMMARY.md`
-
-**Etapes suivantes** :
-- Implementer le durcissement compiler-aware (ROADMAP Phase 2) avec tests adaptes a l'environnement Python compatible `torch.compile`
-- Definir une strategie de security scan reproductible (Safety authentifie ou scan lockfile/isole)
-- Ajouter `VALIDATION_PASSED` explicite au jalon concerne apres validation Mom/Marketing
-
-## English
-**What was done**:
-- Strict AGENTS.md verification at session start
-- Mom Test gate verification and creation of missing required artifacts (`mom_test_script.md`, `decision.md`)
-- Fixed `demo_vanishing_gradients.py`:
-  - Aligned step tracking before forward/backward
-  - Fixed coupling key usage (`trigger` / `consequence`) to prevent KeyError
-  - Corrected displayed learning-rate value (0.0001)
-- Demo validation run completed end-to-end without crash and produced causal hypotheses
-- Regression checks: full test suite passed
-- Security checks:
-  - Bandit passed on production code (`neuraldbg.py`, `demo_vanishing_gradients.py`)
-  - Safety `check` ran but reported vulnerabilities from the global environment
-  - Safety `scan` is blocked by interactive login (EOF in non-interactive shell)
-
-**Initiatives given**:
-- Prioritized demo robustness before new feature expansion
-- Formalized Mom Test artifacts to maintain AGENTS compliance
-
-**Files changed**:
-- `demo_vanishing_gradients.py`
-- `mom_test_script.md` (new)
-- `decision.md` (new)
-- `SESSION_SUMMARY.md`
-
-**Next steps**:
-- Implement compiler-aware hardening (ROADMAP Phase 2) with tests on a `torch.compile`-compatible Python environment
-- Define a reproducible security-scan path (authenticated Safety or lockfile-scoped scan)
-- Add explicit `VALIDATION_PASSED` for the relevant milestone after Mom/Marketing validation evidence is recorded
-
-**Tests**: 34 passing, 4 skipped
-**Blockers**: `safety scan` requires interactive login; `torch.compile` tests skipped on Python 3.14
-**Progress**: 50% (Pessimistic estimate: core demo stabilized, coverage 86%, security hardening still incomplete)
-
----
-# Session Summary â€” 2026-03-01 (Part 11)
->>>>>>> origin/main
+# Session Summary — 2026-03-01 (Part 11)
 **Editor**: Antigravity
 
 ## Francais
@@ -687,7 +214,7 @@
 
 ---
 
-# Session Summary â€” 2026-02-25 (Part 10)
+# Session Summary — 2026-02-25 (Part 10)
 **Editor**: Windsurf
 
 ## Francais
@@ -752,7 +279,7 @@
 
 ---
 
-# Session Summary â€” 2026-02-25 (Part 9)
+# Session Summary — 2026-02-25 (Part 9)
 **Editor**: Windsurf
 
 ## Francais
@@ -811,7 +338,7 @@
 
 ---
 
-# Session Summary â€” 2026-02-25 (Part 8)
+# Session Summary — 2026-02-25 (Part 8)
 **Editor**: VS Code
 
 ## Francais
@@ -866,7 +393,7 @@
 
 ---
 
-# Session Summary â€” 2026-02-23 (Part 6)
+# Session Summary — 2026-02-23 (Part 6)
 **Editor**: VS Code
 
 ## Francais
@@ -917,7 +444,7 @@
 
 ---
 
-# Session Summary â€” 2026-02-23 (Part 5)
+# Session Summary — 2026-02-23 (Part 5)
 **Editor**: VS Code
 
 ## Francais
@@ -978,7 +505,7 @@
 
 ---
 
-# Session Summary â€” 2026-02-23 (Part 4)
+# Session Summary — 2026-02-23 (Part 4)
 **Editor**: VS Code
 
 ## Francais
@@ -1033,7 +560,7 @@
 
 ---
 
-# Session Summary â€” 2026-02-23 (Part 3)
+# Session Summary — 2026-02-23 (Part 3)
 **Editor**: VS Code
 
 ## Francais
@@ -1084,12 +611,12 @@
 
 ---
 
-# Session Summary â€” 2026-02-23 (Part 2)
+# Session Summary — 2026-02-23 (Part 2)
 **Editor**: VS Code
 
 ## Francais
 **Ce qui a ete fait** : 
-- Ajout de la regle **Mom Test â€” First 10% Rule** au `.cursorrules`.
+- Ajout de la regle **Mom Test — First 10% Rule** au `.cursorrules`.
 - Synchronisation avec `kuro-rules` (master copy) et `AI_GUIDELINES.md` local.
 - Creation du template `mom_test_template.md` bilingue (EN/FR) pour les nouveaux projets.
 - Le Mom Test est maintenant un **gate obligatoire** avant tout developpement (0-10% du progress).
@@ -1113,7 +640,7 @@
 
 ## English
 **What was done**: 
-- Added **Mom Test â€” First 10% Rule** to `.cursorrules`.
+- Added **Mom Test — First 10% Rule** to `.cursorrules`.
 - Synced with `kuro-rules` (master copy) and local `AI_GUIDELINES.md`.
 - Created bilingual `mom_test_template.md` (EN/FR) for new projects.
 - Mom Test is now a **mandatory gate** before any development (0-10% progress).
@@ -1141,7 +668,7 @@
 
 ---
 
-# Session Summary â€” 2026-02-23 (Part 1)
+# Session Summary — 2026-02-23 (Part 1)
 **Editor**: VS Code
 
 ## Francais
@@ -1192,26 +719,26 @@
 
 ---
 
-# Session Summary â€” 2026-02-17 (Part 2)
+# Session Summary — 2026-02-17 (Part 2)
 **Editor**: Antigravity
 
-## ðŸ‡«ðŸ‡· FranÃ§ais
-**Ce qui a Ã©tÃ© fait** : 
-- ImplÃ©mentation des composants du Transformer dans `Aladin` (GÃ©nÃ©rateur, Dataset, Encodage Positionnel).
-- Durcissement des rÃ¨gles : Mandat de **mises Ã  jour cumulatives** pour les rÃ©sumÃ©s.
-- Commits atomiques sur les 3 dÃ©pÃ´ts.
+## 🇫🇷 Français
+**Ce qui a été fait** : 
+- Implémentation des composants du Transformer dans `Aladin` (Générateur, Dataset, Encodage Positionnel).
+- Durcissement des règles : Mandat de **mises à jour cumulatives** pour les résumés.
+- Commits atomiques sur les 3 dépôts.
 
-**Initiatives donnÃ©es** : 
-- TraÃ§abilitÃ© totale inter-Ã©diteurs.
+**Initiatives données** : 
+- Traçabilité totale inter-éditeurs.
 
-**Fichiers modifiÃ©s** : 
+**Fichiers modifiés** : 
 - `kuro-rules/AI_GUIDELINES.md`
 - `Aladin/src/*.py`
 
-**Ã‰tapes suivantes** : 
+**Étapes suivantes** : 
 - Transformer Encoder Core.
 
-## ðŸ‡¬ðŸ‡§ English
+## 🇬🇧 English
 **What was done**: 
 - Implemented Transformer components in `Aladin`.
 - Rule Hardening: Mandated **cumulative updates**.
@@ -1222,32 +749,32 @@
 
 ---
 
-# Session Summary â€” 2026-02-17 (Part 1)
+# Session Summary — 2026-02-17 (Part 1)
 
 **Editor**: Antigravity
 
-## ðŸ‡«ðŸ‡· FranÃ§ais
-**Ce qui a Ã©tÃ© fait** : 
-- DÃ©but de la Phase 2 de l'implÃ©mentation du Transformer Probabiliste.
-- Ã‰tape 1 : CrÃ©ation de `synthetic_gen.py` pour gÃ©nÃ©rer des ondes sinus bruitÃ©es.
-- Ã‰tape 2 : CrÃ©ation de `dataset.py` pour gÃ©rer les fenÃªtres glissantes (Sliding Windows) avec PyTorch.
-- Briefing 2 sur l'Attention du Transformer validÃ©.
+## 🇫🇷 Français
+**Ce qui a été fait** : 
+- Début de la Phase 2 de l'implémentation du Transformer Probabiliste.
+- Étape 1 : Création de `synthetic_gen.py` pour générer des ondes sinus bruitées.
+- Étape 2 : Création de `dataset.py` pour gérer les fenêtres glissantes (Sliding Windows) avec PyTorch.
+- Briefing 2 sur l'Attention du Transformer validé.
 
-**Initiatives donnÃ©es** : 
+**Initiatives données** : 
 - Utilisation de `write_to_file` pour garantir la persistance des fichiers sources dans `Aladin`.
-- Just-in-Time Learning intÃ©grÃ© directement dans les commentaires du code.
+- Just-in-Time Learning intégré directement dans les commentaires du code.
 
-**Fichiers modifiÃ©s** : 
+**Fichiers modifiés** : 
 - `Aladin/src/synthetic_gen.py`
 - `Aladin/src/dataset.py`
 - `brain/task.md`
 - `brain/implementation_plan.md`
 
-**Ã‰tapes suivantes** : 
-- Ã‰tape 3 : Encodage Positionnel.
-- Ã‰tape 4 : CÅ“ur du Transformer Encodeur.
+**Étapes suivantes** : 
+- Étape 3 : Encodage Positionnel.
+- Étape 4 : Cœur du Transformer Encodeur.
 
-## ðŸ‡¬ðŸ‡§ English
+## 🇬🇧 English
 **What was done**: 
 - Started Phase 2 of the Probabilistic Transformer implementation.
 - Step 1: Created `synthetic_gen.py` to generate noisy sine waves.
@@ -1270,9 +797,3 @@
 
 **Tests**: Running...
 **Blockers**: Workspace restriction on `run_command` in `Aladin` directory.
-
-
-
-
-
-

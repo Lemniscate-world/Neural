@@ -1,5 +1,5 @@
 # NeuralDBG — Codebase Guide for Contributors
-*Last updated: 2026-03-01*
+*Last updated: 2026-03-30*
 
 This document is the entry point for anyone new to the NeuralDBG repository. Read this BEFORE touching any code.
 
@@ -22,9 +22,11 @@ NeuralDBG/
 |-- demo_vanishing_gradients.py  [DEMO] Shows the engine in action (152 lines)
 |-- tests/                       [TESTS] Unit and integration tests
 |-- infrastructure_planning/     [DEVOPS] Tasks and guides for infra work
+|-- scripts/                     [DEVOPS] Automation scripts (validation sync, hooks)
+|-- .githooks/                   [DEVOPS] Local git hooks for validation sync
 |-- pyproject.toml               [CONFIG] Python project configuration
 |-- requirements.txt             [DEPS] Python dependencies (if present)
-|-- .github/workflows/           [CI/CD] GitHub Actions (to be created)
+|-- .github/workflows/           [CI/CD] GitHub Actions workflows
 |-- PLAN.md                      [ROADMAP] MVP plan and build order
 |-- AGENTS.md                    [RULES] AI agent contract (30+ rules)
 |-- SESSION_SUMMARY.md           [LOG] Session history (EN/FR)

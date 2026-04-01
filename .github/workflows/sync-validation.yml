@@ -1,0 +1,92 @@
+# sync-validation.yml - GitHub workflow for validation bundle sync
+#
+# This workflow syncs protected validation files from a private GitHub repo.
+# It can be triggered manually (workflow_dispatch) or after other workflows.
+
+name: Sync Validation Bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to sync from validation-bundle repo'
+        required: false
+        default: 'main'
+
+# Only run on main branch or when manually triggered
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync validation bundle
+        env:
+          VALIDATION_BUNDLE_TOKEN: ${{ secrets.VALIDATION_BUNDLE_TOKEN }}
+          VALIDATION_BUNDLE_REPO: ${{ vars.VALIDATION_BUNDLE_REPO || 'LambdaSection/Validation-Bundle' }}
+          VALIDATION_BUNDLE_BRANCH: ${{ github.event.inputs.branch || 'main' }}
+        run: |
+          if [ -z "$VALIDATION_BUNDLE_TOKEN" ]; then
+            echo "::warning::VALIDATION_BUNDLE_TOKEN secret not configured"
+            echo "To enable sync, add VALIDATION_BUNDLE_TOKEN as a repository secret"
+            echo "The token should have read access to the validation-bundle repo"
+            exit 0
+          fi
+          
+          if [ -z "$VALIDATION_BUNDLE_REPO" ]; then
+            echo "::warning::VALIDATION_BUNDLE_REPO variable not configured"
+            echo "To enable sync, add VALIDATION_BUNDLE_REPO as a repository variable"
+            echo "Example: your-org/validation-bundle"
+            exit 0
+          fi
+          
+          chmod +x scripts/validation_sync.sh
+          ./scripts/validation_sync.sh
+
+      - name: Verify .gitignore protection
+        run: |
+          PROTECTED_FILES=(
+            "mom_test_results.md"
+            "decision.md"
+            "mom_test_script.md"
+            "ideas.md"
+            "architecture_notes.md"
+            "validation.json"
+          )
+          
+          MISSING=0
+          for file in "${PROTECTED_FILES[@]}"; do
+            if [ -f "./${file}" ]; then
+              if git ls-files --error-unmatch "./${file}" 2>/dev/null; then
+                echo "::error::${file} is tracked by git but should be in .gitignore"
+                MISSING=1
+              fi
+            fi
+          done
+          
+          if [ $MISSING -eq 1 ]; then
+            echo "::error::Protected files are tracked by git. Remove them with:"
+            echo "git rm --cached <file>"
+            exit 1
+          fi
+          
+          echo "All protected files are properly ignored"
+
+      - name: Commit synced files (if any)
+        run: |
+          # Only commit if there are changes to .gitignore
+          if git diff --quiet .gitignore; then
+            echo "No changes to commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .gitignore
+            git commit -m "chore: update .gitignore for validation protection"
+            echo "Committed .gitignore update"
+          fi

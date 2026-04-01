@@ -2,9 +2,10 @@
 PLAN.md
 
 # Mom Test results (private interview data)
-mom_test_results.md
 mom_test_script.md
+mom_test_results.md
 decision.md
+validation.json
 concept/
 
 # Ideas and architecture notes (work-in-progress brainstorms)
@@ -31,6 +32,12 @@ venv_312_fixed/
 # Generated artifacts
 artifacts/*
 !artifacts/.gitkeep
+data/*
+!data/.gitkeep
+models/*
+!models/.gitkeep
+outputs/*
+!outputs/.gitkeep
 
 # Private logs and tracking
 SESSION_SUMMARY.md
