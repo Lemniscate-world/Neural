@@ -67,6 +67,22 @@ def train_with_monitoring(model, dataloader, num_steps=100):
                 print(f"Step {step}: Loss = {loss.item():.6f}")
 
     print()
+    print("[COMPARISON] NeuralDBG vs Traditional Tools:")
+    print("=" * 50)
+    print()
+    print("Traditional Approach (TensorBoard/WandB):")
+    print("  - Stores full tensor histograms (memory heavy)")
+    print("  - Shows gradient norms over time (passive monitoring)")
+    print("  - Requires manual inspection to find patterns")
+    print("  - No causal reasoning - just raw data visualization")
+    print()
+    print("NeuralDBG Approach:")
+    print("  - Semantic events only (lightweight)")
+    print("  - Automatic causal hypothesis generation")
+    print("  - Root cause identification without debugging")
+    print("  - Structured explanations with confidence scores")
+    print()
+
     print("[ANALYSIS] Post-mortem Causal Analysis:")
     print("=" * 50)
 
