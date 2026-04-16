@@ -2552,6 +2552,164 @@ IF a PR needs corrections:
 
 ---
 
+## RULE 56: Core Engine Priority -- MANDATORY
+
+### Rule
+At least **60% of each session's effort** MUST be spent on core functional code (engine logic, tests, demos). Meta-work (rule writing, Linear automation, branch management, infrastructure sync) is capped at **40%**. If the ratio is inverted, STOP meta-work immediately and refocus on the core engine.
+
+### Reason
+- The product's value comes from the engine, not from governance text.
+- Governance overhead must serve the code, not replace it.
+- Prevents sessions from becoming pure process management with zero product advancement.
+
+### Verification Checklist
+```
+AT END of each session:
+  1. ESTIMATE: What percentage of effort went to core code vs. meta-work?
+  2. CHECK: Is the ratio >= 60% core / <= 40% meta?
+  IF inverted:
+    ACTION: Document the imbalance in SESSION_SUMMARY.md
+    ACTION: Next session MUST prioritize core engine exclusively
+```
+
+### Enforcement
+```
+IF meta-work exceeds 40% of session effort:
+  ACTION: STOP meta-work immediately
+  ACTION: Redirect remaining session time to core engine
+  DO NOT: Continue writing rules, syncing branches, or managing infrastructure
+```
+
+---
+
+## RULE 57: Technical Depth and Algorithm Benchmarking -- MANDATORY
+
+### Rule
+The core reasoning engine MUST be validated against known failure scenarios with ground-truth outcomes. Pattern matching and template-based explanations are acceptable for MVP but MUST be supplemented with measurable accuracy metrics before each major milestone.
+
+### Requirements
+1. **Benchmark Scenarios**: Maintain a suite of at least 5 known training failure scenarios with documented expected root causes.
+2. **Accuracy Measurement**: Track the percentage of scenarios where the engine correctly identifies the root cause.
+3. **No Stubs in Production**: Any stub method (e.g., `_collapse_events` returning raw events) MUST be implemented before claiming milestone completion.
+4. **Algorithm Evolution**: Document the reasoning algorithm's limitations and planned improvements in INFERENCE_FLOW.md.
+
+### Verification Checklist
+```
+BEFORE claiming a milestone:
+  1. CHECK: Are all stub methods implemented?
+  2. CHECK: Are there >= 5 benchmark scenarios with expected outcomes?
+  3. CHECK: What is the root-cause accuracy on these benchmarks?
+  IF accuracy < 60%:
+    ACTION: Improve the reasoning algorithm before proceeding
+```
+
+### Enforcement
+```
+IF a stub method exists in production code:
+  ACTION: STOP and implement it
+  DO NOT: Claim milestone completion with unimplemented methods
+```
+
+---
+
+## RULE 58: Dogfooding -- MANDATORY
+
+### Rule
+NeuralDBG MUST be used on at least one real training scenario (internal or from Project A / Aladin) before each validation milestone. The demo script alone is insufficient validation.
+
+### Requirements
+1. **Real Model Testing**: Run NeuralDBG on a model with > 1M parameters at least once per milestone.
+2. **Failure Reproduction**: Verify that the engine detects at least one real (not synthetic) training failure.
+3. **Feedback Loop**: Document any limitations discovered during dogfooding and add them to the backlog.
+
+### Verification Checklist
+```
+BEFORE each milestone:
+  1. CHECK: Has NeuralDBG been run on a real model (not just the demo)?
+  2. CHECK: Did it detect a real training issue?
+  3. CHECK: Are discovered limitations documented?
+  IF NOT:
+    ACTION: Run dogfooding session before claiming milestone
+```
+
+### Enforcement
+```
+IF milestone reached without dogfooding:
+  ACTION: STOP and run NeuralDBG on a real training scenario
+  DO NOT: Claim milestone with only synthetic demo validation
+```
+
+---
+
+## RULE 59: API Stability and Backward Compatibility -- MANDATORY
+
+### Rule
+Public API methods (those documented in README.md) MUST NOT have breaking signature changes without a deprecation period of at least one minor version.
+
+### Requirements
+1. **Deprecation Warnings**: Before removing or changing a public method, add a `DeprecationWarning` for at least one release.
+2. **Changelog Documentation**: All API changes MUST be documented in CHANGELOG.md with migration instructions.
+3. **Semantic Versioning**: Breaking changes require a major version bump.
+
+### Enforcement
+```
+IF a public API method signature changes:
+  ACTION: Add DeprecationWarning to the old method
+  ACTION: Document migration path in CHANGELOG.md
+  DO NOT: Remove or break public methods without warning
+```
+
+---
+
+## RULE 60: Packaging and Distribution -- MANDATORY
+
+### Rule
+The project MUST be installable via `pip install` at all times. The `pyproject.toml` MUST be kept in sync with actual dependencies and entry points.
+
+### Requirements
+1. **Install Verification**: `pip install -e .` MUST succeed without errors.
+2. **Dependency Accuracy**: All runtime imports MUST be listed in pyproject.toml dependencies.
+3. **Version Bump Process**: Version numbers in pyproject.toml MUST match git tags.
+4. **Release Notes**: Each tagged version MUST have corresponding CHANGELOG.md entries.
+
+### Enforcement
+```
+IF pip install -e . fails:
+  ACTION: STOP and fix pyproject.toml immediately
+  DO NOT: Merge code that breaks installability
+```
+
+---
+
+## RULE 61: Performance Overhead Budget -- MANDATORY
+
+### Rule
+NeuralDBG hooks MUST NOT add more than **10% overhead** to a standard forward+backward pass on a model with > 100K parameters. Performance MUST be measured and documented.
+
+### Requirements
+1. **Benchmark Test**: Maintain a performance benchmark test that measures hook overhead.
+2. **Overhead Threshold**: If overhead exceeds 10%, optimize or add a warning.
+3. **Documentation**: Document measured overhead in README.md or INFERENCE_FLOW.md.
+
+### Verification Checklist
+```
+BEFORE each milestone:
+  1. RUN: Performance benchmark test
+  2. CHECK: Is overhead <= 10%?
+  IF overhead > 10%:
+    ACTION: Optimize hooks or document the limitation
+```
+
+### Enforcement
+```
+IF overhead > 10%:
+  ACTION: Profile and optimize the hot path
+  ACTION: If unavoidable, document clearly and add a user-facing warning
+  DO NOT: Ignore performance regressions
+```
+
+---
+
 When asking "Did you follow AGENTS.md?", the agent MUST provide:
 
 1. **Rule 1**: "I read AGENTS.md at the start of this session"
@@ -2608,6 +2766,12 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 52. **Rule 52**: "Skills Tracking: Skill percentages updated in Profile README? [YES/NO]"
 54. **Rule 54**: "PR Analysis Feedback: Corrections list and guideline generated after PR review? [YES/NO]"
 55. **Rule 55**: "PR Ownership: Author required to fix their own PR (no reviewer override)? [YES/NO]"
+56. **Rule 56**: "Core Engine Priority: >= 60% of session effort on core code? [YES/NO]"
+57. **Rule 57**: "Technical Depth: Benchmark scenarios validated? [YES/NO]"
+58. **Rule 58**: "Dogfooding: NeuralDBG tested on real model? [YES/NO]"
+59. **Rule 59**: "API Stability: No breaking changes without deprecation? [YES/NO]"
+60. **Rule 60**: "Packaging: pip install -e . succeeds? [YES/NO]"
+61. **Rule 61**: "Performance Budget: Hook overhead <= 10%? [YES/NO]"
 
 ---
 
@@ -2669,6 +2833,12 @@ When asking "Did you follow AGENTS.md?", the agent MUST provide:
 | Rule 52 (Skills Tracking) | Update skill percentages in README |
 | Rule 54 (PR Analysis Feedback) | STOP and generate corrections list and guideline |
 | Rule 55 (PR Ownership) | Deposit feedback; DO NOT fix code on author behalf |
+| Rule 56 (Core Engine Priority) | STOP meta-work, redirect to core engine |
+| Rule 57 (Technical Depth) | STOP and implement stubs / validate benchmarks |
+| Rule 58 (Dogfooding) | STOP and run on real training scenario |
+| Rule 59 (API Stability) | Add deprecation warning before breaking changes |
+| Rule 60 (Packaging) | STOP and fix pyproject.toml |
+| Rule 61 (Performance Budget) | Profile and optimize if overhead > 10% |
 | **All Rules** | Cease work immediately - Do NOT bypass |
 
 ---

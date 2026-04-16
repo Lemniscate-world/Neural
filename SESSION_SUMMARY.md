@@ -1,4 +1,95 @@
-# Session Summary — 2026-04-01 (Complete Analysis)
+# Session Summary -- 2026-04-16 (Core Engine Expansion + Gap Fix)
+**Editor**: Devin (Cognition AI)
+
+## Francais
+**Ce qui a ete fait** :
+- **Moteur causal** : Implementation complete de 2 nouveaux types d'evenements :
+  - `OPTIMIZER_INSTABILITY` : detection plateaux de loss, spikes, divergence (NaN/Inf)
+  - `DATA_ANOMALY` : detection NaN, Inf, et distribution shifts dans les inputs
+- **Optimisation performance** : `_get_layer_name()` passe de O(n) a O(1) via dictionnaire pre-calcule `id(module) -> name`
+- **Event collapsing** : Implementation de `_collapse_events()` (auparavant un stub) -- fusionne les chaines sequentielles dans la meme couche
+- **Cross-domain correlation** : Les hypotheses d'instabilite optimiseur croisent les evenements d'explosion de gradient
+- **Demo enrichie** : `demo_vanishing_gradients.py` inclut maintenant le tracking d'instabilite optimiseur et la detection d'anomalies
+- **Documentation** : `INFERENCE_FLOW.md` reecrit completement (150+ lignes), couvre les 4 types d'evenements, l'algorithme de raisonnement, et la compression
+- **README** : Ajout d'exemples d'utilisation pour optimizer instability, data anomaly, et event collapsing
+- **Tests** : 27 nouveaux tests (72 total, 100% passing) pour les nouvelles fonctionnalites
+- **Securite** : `bandit -r .` = 0 issues sur le code engine
+- **Regles IA** : Ajout de 6 nouvelles regles (Rules 56-61) : Core Engine Priority, Technical Depth, Dogfooding, API Stability, Packaging, Performance Budget
+- **ROADMAP** : Phases 3 et 4 marquees COMPLETE, progression mise a jour a 62%
+
+**Initiatives donnees** :
+- Rule 56 (Core Engine Priority) : plafonne le meta-travail a 40% pour forcer l'avancement du moteur
+- Rule 58 (Dogfooding) : oblige a tester NeuralDBG sur un vrai modele avant chaque milestone
+- Rule 61 (Performance Budget) : overhead des hooks <= 10%
+- Cross-domain correlation entre gradient explosion et loss spike/divergence
+
+**Fichiers modifies** :
+- `neuraldbg.py` (moteur principal -- +350 lignes)
+- `demo_vanishing_gradients.py`
+- `INFERENCE_FLOW.md` (reecrit)
+- `README.md`
+- `ROADMAP.md`
+- `AGENTS.md` (Rules 56-61)
+- `tests/unit/test_optimizer_instability.py` (NOUVEAU)
+- `tests/unit/test_data_anomaly.py` (NOUVEAU)
+- `tests/unit/test_collapse_events.py` (NOUVEAU)
+- `SESSION_SUMMARY.md`
+
+**Etapes suivantes** :
+- Dogfooding : tester NeuralDBG sur un vrai modele (Rule 58)
+- Creer le tag v0.1.0-kuro (Rule 19)
+- Sync le Profile README (Rule 51)
+- Robustness testing sur gros modeles
+- Ameliorer le raisonnement causal (Granger causality, Bayesian graphs)
+
+## English
+**What was done**:
+- **Causal engine**: Full implementation of 2 new event types:
+  - `OPTIMIZER_INSTABILITY`: loss plateau, spike, divergence (NaN/Inf) detection
+  - `DATA_ANOMALY`: NaN, Inf, and distribution shift detection in inputs
+- **Performance optimization**: `_get_layer_name()` from O(n) to O(1) via pre-computed `id(module) -> name` dict
+- **Event collapsing**: Implemented `_collapse_events()` (previously a stub) -- merges sequential chains in the same layer
+- **Cross-domain correlation**: Optimizer instability hypotheses cross-reference gradient explosion events
+- **Enhanced demo**: `demo_vanishing_gradients.py` now includes optimizer instability tracking and anomaly detection
+- **Documentation**: `INFERENCE_FLOW.md` fully rewritten (150+ lines), covers all 4 event types, reasoning algorithm, and compression
+- **README**: Added usage examples for optimizer instability, data anomaly, and event collapsing
+- **Tests**: 27 new tests (72 total, 100% passing) for new features
+- **Security**: `bandit -r .` = 0 issues on engine code
+- **AI Rules**: Added 6 new rules (Rules 56-61): Core Engine Priority, Technical Depth, Dogfooding, API Stability, Packaging, Performance Budget
+- **ROADMAP**: Phases 3 and 4 marked COMPLETE, progress updated to 62%
+
+**Initiatives given**:
+- Rule 56 (Core Engine Priority): caps meta-work at 40% to force engine advancement
+- Rule 58 (Dogfooding): requires testing NeuralDBG on a real model before each milestone
+- Rule 61 (Performance Budget): hook overhead <= 10%
+- Cross-domain correlation between gradient explosion and loss spike/divergence
+
+**Files changed**:
+- `neuraldbg.py` (core engine -- +350 lines)
+- `demo_vanishing_gradients.py`
+- `INFERENCE_FLOW.md` (rewritten)
+- `README.md`
+- `ROADMAP.md`
+- `AGENTS.md` (Rules 56-61)
+- `tests/unit/test_optimizer_instability.py` (NEW)
+- `tests/unit/test_data_anomaly.py` (NEW)
+- `tests/unit/test_collapse_events.py` (NEW)
+- `SESSION_SUMMARY.md`
+
+**Next steps**:
+- Dogfooding: test NeuralDBG on a real model (Rule 58)
+- Create version tag v0.1.0-kuro (Rule 19)
+- Sync Profile README (Rule 51)
+- Robustness testing on large models
+- Improve causal reasoning (Granger causality, Bayesian graphs)
+
+**Tests**: 72 passing
+**Blockers**: None
+**Progress**: 62% (pessimistic estimate)
+
+---
+
+# Session Summary -- 2026-04-01 (Complete Analysis)
 **Editor**: Windsurf
 
 ## Francais
