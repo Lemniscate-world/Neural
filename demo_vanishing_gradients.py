@@ -39,7 +39,10 @@ def train_with_monitoring(model, dataloader, num_steps=100):
     """
     Train the model while monitoring with NeuralDBG.
 
-    This demonstrates the causal inference approach.
+    This demonstrates the causal inference approach:
+    1. Semantic events are extracted automatically via hooks.
+    2. Loss values are recorded for optimizer instability detection.
+    3. After training, the engine generates ranked causal hypotheses.
     """
     optimizer = optim.SGD(model.parameters(), lr=0.0001)  # Even smaller LR
     criterion = nn.MSELoss()
@@ -60,6 +63,9 @@ def train_with_monitoring(model, dataloader, num_steps=100):
                 loss = criterion(output, batch_y)
                 loss.backward()
 
+                # Record loss for optimizer instability detection
+                dbg.record_loss(loss.item())
+
                 optimizer.step()
                 break  # Just one batch per step for demo
 
@@ -75,12 +81,15 @@ def train_with_monitoring(model, dataloader, num_steps=100):
     print("  - Shows gradient norms over time (passive monitoring)")
     print("  - Requires manual inspection to find patterns")
     print("  - No causal reasoning - just raw data visualization")
+    print("  - No data anomaly detection (NaN/Inf silently propagate)")
     print()
     print("NeuralDBG Approach:")
     print("  - Semantic events only (lightweight)")
     print("  - Automatic causal hypothesis generation")
     print("  - Root cause identification without debugging")
     print("  - Structured explanations with confidence scores")
+    print("  - Data anomaly detection (NaN, Inf, distribution shifts)")
+    print("  - Optimizer instability tracking (plateaus, spikes, divergence)")
     print()
 
     print("[ANALYSIS] Post-mortem Causal Analysis:")
@@ -120,6 +129,25 @@ def train_with_monitoring(model, dataloader, num_steps=100):
 
     for event_type, count in event_counts.items():
         print(f"   - {event_type}: {count} events")
+
+    # Show optimizer instability analysis
+    opt_hypotheses = dbg.explain_failure("optimizer_instability")
+    if opt_hypotheses:
+        print(f"\n[OPTIMIZER] Found {len(opt_hypotheses)} optimizer hypotheses:")
+        for i, hyp in enumerate(opt_hypotheses, 1):
+            print(f"   {i}. {hyp.description} (confidence: {hyp.confidence:.2f})")
+
+    # Show data anomaly analysis
+    data_hypotheses = dbg.explain_failure("data_anomaly")
+    if data_hypotheses:
+        print(f"\n[DATA] Found {len(data_hypotheses)} data anomaly hypotheses:")
+        for i, hyp in enumerate(data_hypotheses, 1):
+            print(f"   {i}. {hyp.description} (confidence: {hyp.confidence:.2f})")
+
+    # Show collapsed events (compressed timeline)
+    collapsed = dbg._collapse_events()
+    print(f"\n[COLLAPSED] {len(dbg.events)} raw events -> "
+          f"{len(collapsed)} collapsed events")
 
     # Show Mermaid graph
     print("\n[GRAPH] Causal Graph (Mermaid):")
