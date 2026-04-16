@@ -79,7 +79,7 @@ Predefined templates (e.g., "Exploding Gradients", "Vanish via Saturation", "Los
 
 The `_collapse_events()` method merges sequential events in the same layer into summary traces:
 
-```
+```text
 Before: HEALTHY -> SATURATED (step 10) + SATURATED -> VANISHING (step 20)
 After:  HEALTHY -> VANISHING (step 10, collapsed_count=2, step_range="10-20")
 ```

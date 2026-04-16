@@ -32,17 +32,17 @@
 **Dates**: Mar 11 - Mar 17
 **Progress**: 25% → 35% (COMPLETE)
 
-### Objectives
+### Phase 2 Objectives
 - Ensure engine survives torch.compile optimization
 - Validate semantic extraction at module boundaries
 
-### Tasks
+### Phase 2 Tasks
 - [x] Create test suite with torch.compile enabled
 - [x] Verify hooks persist after compilation
 - [x] Document compiler-safe operation points (neuraldbg.py warning added)
 - [x] Add integration tests with compiled models
 
-### Success Criteria
+### Phase 2 Success Criteria
 - All tests pass with torch.compile
 - No tensor inspection in hot paths
 - Semantic events extracted correctly
@@ -53,11 +53,11 @@
 **Dates**: Mar 18 - Mar 24 (Completed Apr 16)
 **Progress**: 35% → 45% (COMPLETE)
 
-### Objectives
+### Phase 3 Objectives
 - [x] Create compelling demo scenario
 - [x] Document inference flow
 
-### Tasks
+### Phase 3 Tasks
 - [x] Enhance `demo_vanishing_gradients.py` with:
   - Clear failure scenario
   - Ranked causal output
@@ -71,7 +71,7 @@
   - All 4 event types and health classifications
 - [x] Add usage examples in README
 
-### Success Criteria
+### Phase 3 Success Criteria
 - [x] Demo proves epistemic value
 - [x] Documentation complete
 - [x] README has clear usage examples
@@ -82,19 +82,19 @@
 **Dates**: Mar 25 - Mar 31 (Completed Apr 16)
 **Progress**: 45% → 50% (COMPLETE)
 
-### Objectives
+### Phase 4 Objectives
 - [x] Security hardening
 - [x] CI/CD pipeline validation
 - [x] Pre-commit hooks active
 
-### Tasks
+### Phase 4 Tasks
 - [x] Run bandit -r . and fix issues (0 issues on engine code)
 - [x] Run safety check
 - [x] Verify all GitHub Actions pass
 - [x] Ensure pre-commit runs on all commits
 - [x] Add security.md if missing
 
-### Success Criteria
+### Phase 4 Success Criteria
 - [x] bandit: 0 issues
 - [x] safety: 0 vulnerabilities
 - [x] All CI checks green
