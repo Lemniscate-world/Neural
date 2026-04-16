@@ -719,25 +719,33 @@ class NeuralDbg:
         current_health, health_metadata = self._classify_data_health(tensor)
 
         # Distribution shift detection (only when current health is NORMAL)
-        t = tensor.detach().float()
-        current_mean = t.mean().item()
-        current_std = t.std().item()
+        # Skip mean/std computation for NaN/Inf tensors to avoid poisoning stats
+        if current_health not in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED):
+            t = tensor.detach().float()
+            current_mean = t.mean().item()
+            current_std = t.std().item()
 
-        if current_health == DataHealth.NORMAL and layer_name in self.previous_input_stats:
-            prev = self.previous_input_stats[layer_name]
-            prev_std = prev.get("std", 1.0)
-            if prev_std > 1e-9:
-                mean_shift = abs(current_mean - prev.get("mean", 0.0)) / prev_std
-                std_ratio = current_std / prev_std if prev_std > 0 else 1.0
-                if mean_shift > 3.0 or std_ratio > 5.0 or std_ratio < 0.2:
-                    current_health = DataHealth.DISTRIBUTION_SHIFT
-                    health_metadata = {
-                        "prev_mean": prev.get("mean", 0.0),
-                        "current_mean": current_mean,
-                        "prev_std": prev_std,
-                        "current_std": current_std,
-                        "mean_shift_sigma": mean_shift,
-                    }
+            if layer_name in self.previous_input_stats:
+                prev = self.previous_input_stats[layer_name]
+                prev_std = prev.get("std", 1.0)
+                if prev_std > 1e-9:
+                    mean_shift = abs(current_mean - prev.get("mean", 0.0)) / prev_std
+                    std_ratio = current_std / prev_std if prev_std > 0 else 1.0
+                    if mean_shift > 3.0 or std_ratio > 5.0 or std_ratio < 0.2:
+                        current_health = DataHealth.DISTRIBUTION_SHIFT
+                        health_metadata = {
+                            "prev_mean": prev.get("mean", 0.0),
+                            "current_mean": current_mean,
+                            "prev_std": prev_std,
+                            "current_std": current_std,
+                            "mean_shift_sigma": mean_shift,
+                        }
+
+            # Only update stats with clean values (not NaN/Inf)
+            self.previous_input_stats[layer_name] = {
+                "mean": current_mean,
+                "std": current_std,
+            }
 
         # Transition detection: only emit event when health state changes
         prev_health = self.previous_data_health.get(layer_name, DataHealth.NORMAL)
@@ -762,10 +770,6 @@ class NeuralDbg:
             ))
 
         self.previous_data_health[layer_name] = current_health
-        self.previous_input_stats[layer_name] = {
-            "mean": current_mean,
-            "std": current_std,
-        }
 
     def _explain_optimizer_instability(self) -> List[CausalHypothesis]:
         """Generate hypotheses for optimizer instability failures."""
