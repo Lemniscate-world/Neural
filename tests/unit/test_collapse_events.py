@@ -153,6 +153,78 @@ class TestCollapseEvents:
         collapsed = dbg._collapse_events()
         assert len(collapsed) == 2
 
+    def test_baseline_events_never_collapsed(self):
+        """Baseline events (from_state='NONE') should always be kept individually."""
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        # Baseline event (initial state capture)
+        dbg.events.append(SemanticEvent(
+            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+            layer_name="linear1",
+            step=0,
+            from_state="NONE",
+            to_state=GradientHealth.HEALTHY.value,
+            confidence=1.0,
+            metadata={},
+        ))
+        # Transition event in same layer
+        dbg.events.append(SemanticEvent(
+            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+            layer_name="linear1",
+            step=10,
+            from_state=GradientHealth.HEALTHY.value,
+            to_state=GradientHealth.VANISHING.value,
+            confidence=0.9,
+            metadata={},
+        ))
+
+        collapsed = dbg._collapse_events()
+        # Baseline kept individually + transition kept individually = 2 events
+        assert len(collapsed) == 2
+        baseline = [e for e in collapsed if e.from_state == "NONE"]
+        assert len(baseline) == 1
+
+    def test_baseline_does_not_break_revert_detection(self):
+        """Baseline events should not interfere with revert detection on transitions."""
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        # Baseline
+        dbg.events.append(SemanticEvent(
+            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+            layer_name="linear1",
+            step=0,
+            from_state="NONE",
+            to_state=GradientHealth.HEALTHY.value,
+            confidence=1.0,
+            metadata={},
+        ))
+        # A -> B
+        dbg.events.append(SemanticEvent(
+            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+            layer_name="linear1",
+            step=10,
+            from_state=GradientHealth.HEALTHY.value,
+            to_state=GradientHealth.SATURATED.value,
+            confidence=0.7,
+            metadata={},
+        ))
+        # B -> A (reversion)
+        dbg.events.append(SemanticEvent(
+            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+            layer_name="linear1",
+            step=20,
+            from_state=GradientHealth.SATURATED.value,
+            to_state=GradientHealth.HEALTHY.value,
+            confidence=0.8,
+            metadata={},
+        ))
+
+        collapsed = dbg._collapse_events()
+        # Baseline (1) + 2 reverted transitions kept individually = 3
+        assert len(collapsed) == 3
+
     def test_collapsed_uses_max_confidence(self):
         """Collapsed event should use the maximum confidence from the chain."""
         model = nn.Linear(10, 5)

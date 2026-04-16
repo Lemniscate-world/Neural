@@ -126,6 +126,7 @@ class NeuralDbg:
 
         # Data anomaly tracking
         self.previous_input_stats: Dict[str, Dict[str, float]] = {}
+        self.previous_data_health: Dict[str, DataHealth] = {}
 
         # Pre-computed module-to-name mapping for O(1) lookup
         self._module_names: Dict[int, str] = {}
@@ -691,72 +692,77 @@ class NeuralDbg:
             ))
         return hypotheses
 
-    def _check_data_anomaly(self, tensor: torch.Tensor, layer_name: str):
-        """Detect data anomalies (NaN, Inf, distribution shifts) in input tensors."""
+    def _classify_data_health(self, tensor: torch.Tensor) -> Tuple[DataHealth, Dict[str, Any]]:
+        """Classify data health and return state + metadata.
+
+        Returns a tuple of (health_state, metadata_dict) based on the tensor contents.
+        NaN takes priority over Inf, which takes priority over distribution shift.
+        """
         t = tensor.detach().float()
 
         has_nan = torch.isnan(t).any().item()
-        has_inf = torch.isinf(t).any().item()
-
         if has_nan:
-            self._track_first_occurrence("data_nan_detected", layer_name)
-            self.events.append(SemanticEvent(
-                event_type=EventType.DATA_ANOMALY,
-                layer_name=layer_name,
-                step=self.step,
-                from_state=DataHealth.NORMAL.value,
-                to_state=DataHealth.NAN_DETECTED.value,
-                confidence=1.0,
-                metadata={"nan_count": int(torch.isnan(t).sum().item())},
-            ))
-            return
+            return DataHealth.NAN_DETECTED, {"nan_count": int(torch.isnan(t).sum().item())}
 
+        has_inf = torch.isinf(t).any().item()
         if has_inf:
-            self._track_first_occurrence("data_inf_detected", layer_name)
-            self.events.append(SemanticEvent(
-                event_type=EventType.DATA_ANOMALY,
-                layer_name=layer_name,
-                step=self.step,
-                from_state=DataHealth.NORMAL.value,
-                to_state=DataHealth.INF_DETECTED.value,
-                confidence=1.0,
-                metadata={"inf_count": int(torch.isinf(t).sum().item())},
-            ))
-            return
+            return DataHealth.INF_DETECTED, {"inf_count": int(torch.isinf(t).sum().item())}
 
-        # Distribution shift detection: compare current input stats to previous
+        return DataHealth.NORMAL, {}
+
+    def _check_data_anomaly(self, tensor: torch.Tensor, layer_name: str):
+        """Detect data anomalies (NaN, Inf, distribution shifts) in input tensors.
+
+        Uses transition-based tracking like gradient and activation health:
+        only emits events when the data health state changes for a given layer.
+        """
+        current_health, health_metadata = self._classify_data_health(tensor)
+
+        # Distribution shift detection (only when current health is NORMAL)
+        t = tensor.detach().float()
         current_mean = t.mean().item()
         current_std = t.std().item()
-        stats_key = layer_name
 
-        if stats_key in self.previous_input_stats:
-            prev = self.previous_input_stats[stats_key]
+        if current_health == DataHealth.NORMAL and layer_name in self.previous_input_stats:
+            prev = self.previous_input_stats[layer_name]
             prev_std = prev.get("std", 1.0)
             if prev_std > 1e-9:
                 mean_shift = abs(current_mean - prev.get("mean", 0.0)) / prev_std
                 std_ratio = current_std / prev_std if prev_std > 0 else 1.0
-                # Flag if mean shifted by more than 3 sigma or std changed by 5x
                 if mean_shift > 3.0 or std_ratio > 5.0 or std_ratio < 0.2:
-                    self._track_first_occurrence(
-                        "data_distribution_shift", layer_name
-                    )
-                    self.events.append(SemanticEvent(
-                        event_type=EventType.DATA_ANOMALY,
-                        layer_name=layer_name,
-                        step=self.step,
-                        from_state=DataHealth.NORMAL.value,
-                        to_state=DataHealth.DISTRIBUTION_SHIFT.value,
-                        confidence=min(mean_shift * 0.2, 1.0),
-                        metadata={
-                            "prev_mean": prev.get("mean", 0.0),
-                            "current_mean": current_mean,
-                            "prev_std": prev_std,
-                            "current_std": current_std,
-                            "mean_shift_sigma": mean_shift,
-                        },
-                    ))
+                    current_health = DataHealth.DISTRIBUTION_SHIFT
+                    health_metadata = {
+                        "prev_mean": prev.get("mean", 0.0),
+                        "current_mean": current_mean,
+                        "prev_std": prev_std,
+                        "current_std": current_std,
+                        "mean_shift_sigma": mean_shift,
+                    }
 
-        self.previous_input_stats[stats_key] = {
+        # Transition detection: only emit event when health state changes
+        prev_health = self.previous_data_health.get(layer_name, DataHealth.NORMAL)
+
+        if current_health != prev_health:
+            if current_health != DataHealth.NORMAL:
+                self._track_first_occurrence(f"data_{current_health.value}", layer_name)
+
+            confidence = 1.0
+            if current_health == DataHealth.DISTRIBUTION_SHIFT:
+                mean_shift_val = health_metadata.get("mean_shift_sigma", 3.0)
+                confidence = min(mean_shift_val * 0.2, 1.0)
+
+            self.events.append(SemanticEvent(
+                event_type=EventType.DATA_ANOMALY,
+                layer_name=layer_name,
+                step=self.step,
+                from_state=prev_health.value,
+                to_state=current_health.value,
+                confidence=confidence,
+                metadata=health_metadata,
+            ))
+
+        self.previous_data_health[layer_name] = current_health
+        self.previous_input_stats[layer_name] = {
             "mean": current_mean,
             "std": current_std,
         }
@@ -899,19 +905,31 @@ class NeuralDbg:
         Merges chains like HEALTHY->SATURATED followed by SATURATED->VANISHING
         in the same layer into a single HEALTHY->VANISHING summary event,
         preserving the step range and combining metadata.
+
+        Baseline events (from_state="NONE") are always kept individually since
+        they represent initial state capture, not transitions.
         """
         if not self.events:
             return []
 
-        # Group events by (layer_name, event_type)
-        groups: Dict[Tuple[str, str], List[SemanticEvent]] = {}
+        # Separate baseline events from transition events
+        baseline_events: List[SemanticEvent] = []
+        transition_events: List[SemanticEvent] = []
         for event in self.events:
+            if event.from_state == "NONE":
+                baseline_events.append(event)
+            else:
+                transition_events.append(event)
+
+        # Group transition events by (layer_name, event_type)
+        groups: Dict[Tuple[str, str], List[SemanticEvent]] = {}
+        for event in transition_events:
             key = (event.layer_name, event.event_type.value)
             if key not in groups:
                 groups[key] = []
             groups[key].append(event)
 
-        collapsed: List[SemanticEvent] = []
+        collapsed: List[SemanticEvent] = list(baseline_events)
         for key, group in groups.items():
             sorted_group = sorted(group, key=lambda e: e.step)
 
@@ -919,15 +937,23 @@ class NeuralDbg:
                 collapsed.extend(sorted_group)
                 continue
 
-            # Merge chain: keep first from_state and last to_state
-            first = sorted_group[0]
-            last = sorted_group[-1]
+            # Check for ANY reversion within the chain (not just first vs last)
+            # A reversion means a state appeared as to_state and later as from_state
+            has_reversion = False
+            seen_to_states = set()
+            for event in sorted_group:
+                if event.to_state in seen_to_states:
+                    # A state we transitioned away from has reappeared
+                    has_reversion = True
+                    break
+                seen_to_states.add(event.from_state)
 
-            # Only collapse if there is a genuine chain
-            if first.from_state == last.to_state:
-                # States reverted, keep all individual events
+            if has_reversion:
+                # States reverted at some point, keep all individual events
                 collapsed.extend(sorted_group)
             else:
+                first = sorted_group[0]
+                last = sorted_group[-1]
                 merged_metadata = dict(first.metadata)
                 merged_metadata["collapsed_count"] = len(sorted_group)
                 merged_metadata["step_range"] = (

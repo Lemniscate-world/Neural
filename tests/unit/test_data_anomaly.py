@@ -113,6 +113,79 @@ class TestCheckDataAnomaly:
         assert len(nan_events) >= 1
 
 
+    def test_repeated_nan_emits_single_event(self):
+        """Calling _check_data_anomaly with NaN multiple times should emit only one event.
+
+        The transition tracking should detect that the health state is already
+        NAN_DETECTED and not emit duplicate events on subsequent calls.
+        """
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        nan_tensor = torch.tensor([[1.0, float("nan"), 3.0]])
+
+        dbg.step = 1
+        dbg._check_data_anomaly(nan_tensor, "layer1")
+        dbg.step = 2
+        dbg._check_data_anomaly(nan_tensor, "layer1")
+        dbg.step = 3
+        dbg._check_data_anomaly(nan_tensor, "layer1")
+
+        anomaly_events = [
+            e for e in dbg.events
+            if e.event_type == EventType.DATA_ANOMALY
+        ]
+        # Only one transition: NORMAL -> NAN_DETECTED (step 1)
+        assert len(anomaly_events) == 1
+        assert anomaly_events[0].from_state == DataHealth.NORMAL.value
+        assert anomaly_events[0].to_state == DataHealth.NAN_DETECTED.value
+
+    def test_recovery_emits_transition_back(self):
+        """When data recovers from NaN to normal, a transition event should fire."""
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        # Step 1: NaN detected (NORMAL -> NAN_DETECTED)
+        dbg.step = 1
+        dbg._check_data_anomaly(torch.tensor([[float("nan")]]), "layer1")
+
+        # Step 2: Normal data (NAN_DETECTED -> NORMAL)
+        dbg.step = 2
+        dbg._check_data_anomaly(torch.randn(1, 10), "layer1")
+
+        anomaly_events = [
+            e for e in dbg.events
+            if e.event_type == EventType.DATA_ANOMALY
+        ]
+        assert len(anomaly_events) == 2
+        assert anomaly_events[0].from_state == DataHealth.NORMAL.value
+        assert anomaly_events[0].to_state == DataHealth.NAN_DETECTED.value
+        assert anomaly_events[1].from_state == DataHealth.NAN_DETECTED.value
+        assert anomaly_events[1].to_state == DataHealth.NORMAL.value
+
+    def test_from_state_reflects_previous_health(self):
+        """from_state should reflect the actual previous health, not hardcoded NORMAL."""
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        # Step 1: NaN (NORMAL -> NAN_DETECTED)
+        dbg.step = 1
+        dbg._check_data_anomaly(torch.tensor([[float("nan")]]), "layer1")
+
+        # Step 2: Inf (NAN_DETECTED -> INF_DETECTED)
+        dbg.step = 2
+        dbg._check_data_anomaly(torch.tensor([[float("inf")]]), "layer1")
+
+        anomaly_events = [
+            e for e in dbg.events
+            if e.event_type == EventType.DATA_ANOMALY
+        ]
+        assert len(anomaly_events) == 2
+        # Second event should transition FROM nan TO inf
+        assert anomaly_events[1].from_state == DataHealth.NAN_DETECTED.value
+        assert anomaly_events[1].to_state == DataHealth.INF_DETECTED.value
+
+
 class TestExplainDataAnomaly:
     """Unit tests for _explain_data_anomaly method."""
 
