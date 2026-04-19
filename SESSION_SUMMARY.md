@@ -1,3 +1,69 @@
+# Session Summary -- 2026-04-19 (Dogfooding + Inplace Fix + 2nd Demo)
+**Editor**: Devin (Cognition AI)
+
+## Francais
+**Ce qui a ete fait** :
+- **Dogfooding (Rule 58)** : NeuralDBG teste avec succes sur ResNet-18 (11M params, 30 steps d'entrainement)
+  - Injection de NaN au step 15, LR intentionnellement elevee (0.5)
+  - 561 evenements semantiques captures (gradient, activation, data anomaly, optimizer)
+  - Toutes les defaillances injectees detectees automatiquement
+- **Bug fix critique** : Correction du crash `register_full_backward_hook` sur les modeles avec operations inplace
+  - Cause racine : PyTorch wrappe les outputs des modules hookes dans un `BackwardHookFunction` (une vue).
+    Toute operation inplace en aval (`out += identity` dans les connexions residuelles ResNet,
+    `ReLU(inplace=True)`) entre en conflit avec cette vue et declenche RuntimeError.
+  - Solution : utiliser `register_backward_hook` (ancienne API) qui ne wrappe PAS les outputs.
+    Trade-off : ne fire pas pour les modules sans input necessitant un gradient, mais
+    ces modules ne sont pas pertinents pour le monitoring de sante des gradients.
+- **2eme demo (Rule 16)** : `demo_data_anomaly.py` avec 4 scenarios :
+  1. Injection NaN dans les donnees d'entrainement
+  2. Shift de distribution (concept drift)
+  3. Instabilite optimiseur (LR extreme)
+  4. Raisonnement causal cross-domaine (Inf -> gradient explosion -> divergence)
+- **Nouveau test** : `test_inplace_ops_backward_hook_compatibility` -- valide la compatibilite
+  avec les blocs residuels style ResNet (ReLU inplace + `out += identity`)
+- **79 tests passent** (1 nouveau), bandit 0 issues medium/high
+
+**Initiatives donnees** :
+- Identification et correction d'un bug fondamental dans l'interaction PyTorch hooks + inplace ops
+- Le fix rend NeuralDBG compatible avec ResNet, EfficientNet, DenseNet et toute architecture utilisant des ops inplace
+
+**Fichiers modifies** :
+- `neuraldbg.py` (fix backward hook : register_backward_hook au lieu de register_full_backward_hook)
+- `dogfooding_resnet.py` (NOUVEAU -- validation Rule 58)
+- `demo_data_anomaly.py` (NOUVEAU -- 2eme demo Rule 16)
+- `tests/integration/test_critical_scenarios.py` (nouveau test inplace)
+- `ROADMAP.md` (Phase 5 ajoutee, progression 72%)
+- `SESSION_SUMMARY.md`
+
+**Etapes suivantes** :
+- Robustness/scale testing sur modeles plus grands (EfficientNet, ViT)
+- Memory leak profiling sur entrainement prolonge
+- Ameliorer le raisonnement causal (Granger causality, Bayesian graphs)
+
+## English
+**What was done**:
+- **Dogfooding (Rule 58)**: Successfully tested NeuralDBG on ResNet-18 (11M params, 30 training steps)
+  - Injected NaN at step 15, intentionally high LR (0.5)
+  - 561 semantic events captured (gradient, activation, data anomaly, optimizer)
+  - All injected failures automatically detected
+- **Critical bug fix**: Fixed `register_full_backward_hook` crash on models with inplace operations
+  - Root cause: PyTorch wraps hooked module outputs in a `BackwardHookFunction` (a view).
+    Any downstream inplace operation (`out += identity` in ResNet residual connections,
+    `ReLU(inplace=True)`) conflicts with this view and triggers RuntimeError.
+  - Fix: use `register_backward_hook` (older API) which does NOT wrap outputs.
+    Trade-off: won't fire for modules whose inputs don't require grad, but
+    those modules are irrelevant for gradient health monitoring anyway.
+- **2nd demo (Rule 16)**: `demo_data_anomaly.py` with 4 scenarios:
+  1. NaN injection in training data
+  2. Distribution shift (concept drift)
+  3. Optimizer instability (extreme LR)
+  4. Cross-domain causal reasoning (Inf -> gradient explosion -> divergence)
+- **New test**: `test_inplace_ops_backward_hook_compatibility` -- validates compatibility
+  with ResNet-style residual blocks (inplace ReLU + `out += identity`)
+- **79 tests passing** (1 new), bandit 0 medium/high issues
+
+---
+
 # Session Summary -- 2026-04-16 (Core Engine Expansion + Gap Fix)
 **Editor**: Devin (Cognition AI)
 

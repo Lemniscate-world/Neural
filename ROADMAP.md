@@ -2,7 +2,7 @@
 
 **Duration**: 5 weeks (Feb 25 - Mar 31, 2026)
 **Progress Start**: 10% (Mom Test Complete)
-**Progress Current**: 62% (Pessimistic - Updated 2026-04-16)
+**Progress Current**: 72% (Pessimistic - Updated 2026-04-19)
 
 ---
 
@@ -113,30 +113,59 @@
 
 ---
 
+## Phase 5: Dogfooding & Robustness (Post-MVP Week 1)
+**Dates**: Apr 16 - Apr 19 (In Progress)
+**Progress**: 62% -> 72%
+
+### Phase 5 Objectives
+- [x] Dogfooding on real model >1M params (Rule 58)
+- [x] Fix backward hook compatibility with inplace ops
+- [x] Create 2nd demo (Rule 16)
+- [ ] Robustness/scale testing on larger architectures
+
+### Phase 5 Tasks
+- [x] Create `dogfooding_resnet.py` -- validates NeuralDBG on ResNet-18 (11M params)
+- [x] Fix `register_full_backward_hook` crash on models with inplace operations
+  - Root cause: PyTorch wraps hooked outputs in BackwardHookFunction view;
+    downstream inplace ops (`out += identity`, `ReLU(inplace=True)`) conflict
+  - Fix: use `register_backward_hook` which does not wrap outputs
+- [x] Create `demo_data_anomaly.py` -- 4 failure scenarios (NaN, distribution shift, optimizer instability, cross-domain)
+- [x] Add `test_inplace_ops_backward_hook_compatibility` integration test
+- [ ] Test on EfficientNet, Vision Transformer (scale validation)
+- [ ] Memory leak profiling on extended training runs
+
+### Phase 5 Success Criteria
+- [x] Dogfooding passes on ResNet-18 (561 events captured across 30 steps)
+- [x] No RuntimeError on models with inplace operations
+- [x] 2 working demos (Rule 16)
+- [x] 79 tests passing, bandit 0 medium/high issues
+
+---
+
 ## Progress Calculation
 
 | Component | Weight | Status |
 |-----------|--------|--------|
 | Mom Test | 10% | Complete (10%) |
-| Core functionality | 40% | 4 event types implemented, collapse done (32%) |
-| Test coverage (60%+) | 20% | Complete -- 72 tests, 85%+ coverage (20%) |
-| Security hardening | 10% | bandit 0 issues (8%) |
+| Core functionality | 40% | 4 event types, collapse, dogfooding done (36%) |
+| Test coverage (60%+) | 20% | Complete -- 79 tests, 85%+ coverage (20%) |
+| Security hardening | 10% | bandit 0 medium/high issues (8%) |
 | CI/CD & DevOps | 10% | Pipelines configured (8%) |
-| Documentation | 10% | README, INFERENCE_FLOW, CODEBASE_GUIDE done (8%) |
+| Documentation | 10% | README, INFERENCE_FLOW, CODEBASE_GUIDE, 2 demos done (9%) |
 
-**Current Progress**: 10 + 32 + 20 + 8 + 8 + 8 = **86%** raw, pessimistic multiplier 0.72 = **62%**
+**Current Progress**: 10 + 36 + 20 + 8 + 8 + 9 = **91%** raw, pessimistic multiplier 0.79 = **72%**
 
 Pessimistic deductions:
-- Dogfooding not done yet on a real model (Rule 58)
-- No version tag created yet (Rule 19)
+- Robustness/scale testing on larger models still TODO
 - Profile README not synced (Rule 51)
-- Robustness/scale testing still TODO
+- Causal reasoning still pattern-matching based (no Granger/Bayesian)
 
 ---
 
-## Next Phase (Post-MVP)
+## Next Phase (Post-MVP Phase 2)
 *Only plan after MVP truth is established*
 - Research feedback integration
 - Formalize inference semantics
 - Expand causal question types
 - Explanation visualization (not tensor visualization)
+- Granger causality / Bayesian graph integration
