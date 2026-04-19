@@ -253,7 +253,7 @@ def run_dogfooding():
 
         # Specific failure type analysis
         for failure_type in ["vanishing_gradients", "exploding_gradients",
-                             "activation_saturation", "optimizer_instability",
+                             "saturated_activations", "optimizer_instability",
                              "data_anomaly"]:
             specific = dbg.explain_failure(failure_type)
             if specific:
