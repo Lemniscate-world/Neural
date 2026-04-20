@@ -284,6 +284,9 @@ class NeuralDbg:
 
                 self.previous_activation_stats[layer_name] = activation_stats
 
+        # Track modules where backward hooks fail so we warn only once
+        _backward_hook_failures: Dict[str, bool] = {}
+
         @dynamo_disable
         def full_backward_hook(module: nn.Module, grad_input: Tuple[torch.Tensor], grad_output: Tuple[torch.Tensor]):
             """Extract semantic events from backward pass using full_backward_hook."""
@@ -341,20 +344,50 @@ class NeuralDbg:
 
                 self.previous_gradient_norms[layer_name] = grad_norm
 
-        # Install hooks on all modules (including root for full coverage)
-        # Install hooks on leaf modules to ensure maximum compatibility with torch.compile
+        def safe_backward_hook(module: nn.Module, grad_input: Tuple[torch.Tensor], grad_output: Tuple[torch.Tensor]):
+            """Wrapper that catches inplace-operation errors from full_backward_hook.
+
+            Models with inplace operations (e.g., ReLU(inplace=True) in
+            ResNet/BatchNorm) raise RuntimeError when full_backward_hook
+            interacts with views modified inplace. This wrapper degrades
+            gracefully: forward hooks still capture activation and data
+            anomaly events, only gradient tracking is lost for affected
+            modules.
+            """
+            try:
+                return full_backward_hook(module, grad_input, grad_output)
+            except RuntimeError:
+                layer_name = self._get_layer_name(module)
+                if layer_name not in _backward_hook_failures:
+                    _backward_hook_failures[layer_name] = True
+                    import warnings
+                    warnings.warn(
+                        f"NeuralDbg: Backward hook failed for '{layer_name}' "
+                        f"(likely inplace operation). Gradient tracking disabled "
+                        f"for this module. Forward hooks still active.",
+                        UserWarning,
+                    )
+                return None
+
+        # Install hooks on leaf modules for maximum compatibility with
+        # torch.compile. We use register_backward_hook (not
+        # register_full_backward_hook) because the "full" variant wraps
+        # module outputs in a BackwardHookFunction view. Any downstream
+        # inplace operation on that view (e.g., `out += identity` in ResNet
+        # residual connections, or ReLU(inplace=True)) triggers a
+        # RuntimeError from PyTorch's autograd engine. The older
+        # register_backward_hook does NOT wrap outputs, so it is compatible
+        # with all model architectures including ResNet, EfficientNet, etc.
+        # Trade-off: register_backward_hook may not fire for modules whose
+        # inputs don't require grad, but those modules are irrelevant for
+        # gradient health monitoring anyway.
         for name, module in self.model.named_modules():
-            # Skip root and modules with children to avoid redundant captures and root-bypass issues
+            # Skip non-leaf modules (except root) to avoid redundant captures
             if len(list(module.children())) > 0 and name != "":
                 continue
                 
             self.hooks.append(module.register_forward_hook(forward_hook))
-            # Use register_full_backward_hook if available (PyTorch 1.9+)
-            if hasattr(module, "register_full_backward_hook"):
-                self.hooks.append(module.register_full_backward_hook(full_backward_hook))
-            else:
-                # Fallback for older versions (though we expect >=1.9)
-                self.hooks.append(module.register_backward_hook(full_backward_hook))
+            self.hooks.append(module.register_backward_hook(safe_backward_hook))
 
         # Check for DataParallel/DDP and warn/handle
         if isinstance(self.model, (nn.DataParallel, nn.parallel.DistributedDataParallel)):

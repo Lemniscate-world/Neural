@@ -154,3 +154,82 @@ def test_dataparallel_wrapping():
         
         events = dbg.get_events()
         assert len(events) > 0, "Should capture events inside DataParallel wrapper"
+
+
+# 6. Inplace Operation Compatibility (ResNet-style residual connections)
+def test_inplace_ops_backward_hook_compatibility():
+    """Verify NeuralDBG works with models that use inplace operations.
+
+    ResNet-style architectures use two patterns that conflict with
+    register_full_backward_hook:
+      1. ReLU(inplace=True) -- modifies activation tensors inplace
+      2. out += identity   -- inplace add in residual connections
+
+    This test builds a minimal residual block that reproduces both
+    patterns and verifies that NeuralDBG captures events without
+    RuntimeError.
+    """
+    class ResidualBlock(nn.Module):
+        """Minimal residual block with inplace ReLU and inplace add."""
+        def __init__(self, channels):
+            super().__init__()
+            self.conv1 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+            self.bn1 = nn.BatchNorm2d(channels)
+            self.relu = nn.ReLU(inplace=True)
+            self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+            self.bn2 = nn.BatchNorm2d(channels)
+
+        def forward(self, x):
+            identity = x
+            out = self.conv1(x)
+            out = self.bn1(out)
+            out = self.relu(out)
+            out = self.conv2(out)
+            out = self.bn2(out)
+            out += identity  # inplace add (the key conflict point)
+            out = self.relu(out)
+            return out
+
+    class SmallResNet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv1 = nn.Conv2d(3, 16, 3, padding=1, bias=False)
+            self.bn1 = nn.BatchNorm2d(16)
+            self.relu = nn.ReLU(inplace=True)
+            self.block1 = ResidualBlock(16)
+            self.block2 = ResidualBlock(16)
+            self.pool = nn.AdaptiveAvgPool2d(1)
+            self.fc = nn.Linear(16, 10)
+
+        def forward(self, x):
+            x = self.relu(self.bn1(self.conv1(x)))
+            x = self.block1(x)
+            x = self.block2(x)
+            x = self.pool(x).flatten(1)
+            return self.fc(x)
+
+    model = SmallResNet()
+    x = torch.randn(4, 3, 8, 8)
+    labels = torch.randint(0, 10, (4,))
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+    # Run 3 training steps with NeuralDBG -- should NOT raise RuntimeError
+    with NeuralDbg(model) as dbg:
+        for step in range(3):
+            optimizer.zero_grad()
+            output = model(x)
+            loss = criterion(output, labels)
+            loss.backward()
+            optimizer.step()
+            dbg.step_iteration()
+
+        events = dbg.get_events()
+        # Should capture activation events from the residual blocks
+        assert len(events) > 0, "Should capture events from ResNet-style model"
+
+        # Verify we got events from inside the residual blocks
+        block_events = [e for e in events if 'block' in e.layer_name]
+        assert len(block_events) > 0, (
+            "Should capture events from inside residual blocks"
+        )
