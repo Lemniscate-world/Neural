@@ -1,5 +1,6 @@
 
 PLAN.md
+.mcp.json
 
 # Mom Test results (private interview data)
 mom_test_script.md
@@ -26,6 +27,7 @@ htmlcov/
 
 # Virtual environment
 venv/
+.venv/
 
 # Generated artifacts
 artifacts/*
@@ -48,3 +50,6 @@ secrets/
 *.log
 .antigravity/
 .cursor/
+
+# MLflow local tracking store
+mlruns/

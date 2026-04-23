@@ -4,3 +4,7 @@ set -euo pipefail
 if [ -x scripts/validation_sync.sh ]; then
   scripts/validation_sync.sh || true
 fi
+
+if [ -x scripts/ensure_venv.sh ]; then
+  scripts/ensure_venv.sh || true
+fi
