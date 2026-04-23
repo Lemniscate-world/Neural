@@ -9,11 +9,17 @@ import torch.nn as nn
 import pytest
 from neuraldbg import NeuralDbg
 
-# Skip tests if torch.compile not available
-# Note: torch.compile requires Python < 3.14
+# Skip tests if torch.compile not available or C++ headers missing (python3.x-dev)
 try:
     import sys
-    compiled_available = hasattr(torch, 'compile') and sys.version_info < (3, 14)
+    import sysconfig
+    import os
+    _python_h = os.path.join(sysconfig.get_path("include"), "Python.h")
+    compiled_available = (
+        hasattr(torch, 'compile')
+        and sys.version_info < (3, 14)
+        and os.path.exists(_python_h)
+    )
 except Exception:
     compiled_available = False
 
