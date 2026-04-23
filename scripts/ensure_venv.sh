@@ -8,15 +8,14 @@ _pip_works() {
 if ! _pip_works; then
     echo "[ensure_venv] .venv missing or broken. Recreating..."
     rm -rf .venv
-    python3 -m venv .venv
 
-    # ensurepip absent sur certains Debian/Ubuntu — bootstrap via get-pip.py
-    if ! .venv/bin/python -c "import pip" &>/dev/null; then
-        echo "[ensure_venv] pip absent du nouveau venv, bootstrap via get-pip.py..."
-        curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
-        .venv/bin/python /tmp/get-pip.py --quiet
-        rm /tmp/get-pip.py
-    fi
+    # python3-venv peut être absent sur Debian/Ubuntu — --without-pip contourne
+    python3 -m venv --without-pip .venv
+
+    echo "[ensure_venv] Bootstrap pip via get-pip.py..."
+    curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+    .venv/bin/python /tmp/get-pip.py --quiet
+    rm /tmp/get-pip.py
 
     .venv/bin/pip install --upgrade pip --quiet
     .venv/bin/pip install \
