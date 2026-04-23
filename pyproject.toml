@@ -28,6 +28,11 @@ dependencies = [
 Homepage = "https://github.com/Lemniscate-world/Neural"
 Repository = "https://github.com/Lemniscate-world/Neural.git"
 
+[project.optional-dependencies]
+mlops = [
+    "mlflow>=2.13.0,<3.0.0",
+]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["neuraldbg*"]
