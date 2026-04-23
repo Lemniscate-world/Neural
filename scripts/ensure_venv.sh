@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SYSTEM_PY="$(python3 --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)"
-VENV_PY=""
-if [ -f ".venv/bin/python3" ]; then
-    VENV_PY="$(.venv/bin/python3 --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)"
-fi
+_pip_works() {
+    [ -x ".venv/bin/python" ] && .venv/bin/python -c "import pip" &>/dev/null
+}
 
-if [ "${SYSTEM_PY}" != "${VENV_PY}" ]; then
-    echo "[ensure_venv] Python mismatch (venv=${VENV_PY:-none}, system=${SYSTEM_PY}). Recreating .venv..."
+if ! _pip_works; then
+    echo "[ensure_venv] .venv missing or broken. Recreating..."
     rm -rf .venv
     python3 -m venv .venv
+
+    # ensurepip absent sur certains Debian/Ubuntu — bootstrap via get-pip.py
+    if ! .venv/bin/python -c "import pip" &>/dev/null; then
+        echo "[ensure_venv] pip absent du nouveau venv, bootstrap via get-pip.py..."
+        curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+        .venv/bin/python /tmp/get-pip.py --quiet
+        rm /tmp/get-pip.py
+    fi
+
     .venv/bin/pip install --upgrade pip --quiet
     .venv/bin/pip install \
         --index-url https://download.pytorch.org/whl/cpu \
@@ -18,5 +25,7 @@ if [ "${SYSTEM_PY}" != "${VENV_PY}" ]; then
         torch --quiet
     .venv/bin/pip install -r requirements.txt --quiet
     .venv/bin/pip install -r requirements-dev.txt --quiet
-    echo "[ensure_venv] Done — .venv now uses Python ${SYSTEM_PY}."
+
+    VENV_PY="$(.venv/bin/python --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)"
+    echo "[ensure_venv] Done — .venv now uses Python ${VENV_PY}."
 fi
