@@ -81,3 +81,7 @@ notes-private.md
 contacts.csv
 leads.csv
 prospects.csv
+
+# MLflow local tracking store
+mlruns/
+/synthetic_data_sample.png

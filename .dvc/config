@@ -1,0 +1,4 @@
+[core]
+    remote = local-storage
+['remote "local-storage"']
+    url = /home/kami/dvc-store/neuraldbg

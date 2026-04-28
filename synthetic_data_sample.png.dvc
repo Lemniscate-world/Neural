@@ -1,0 +1,5 @@
+outs:
+- md5: b297b195bb8a701be3c87433845f5035
+  size: 41472
+  hash: md5
+  path: synthetic_data_sample.png

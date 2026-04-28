@@ -33,11 +33,13 @@ automation = [
 ]
 mlops = [
     "mlflow>=2.13.0,<3.0.0",
+    "dvc>=3.0.0,<4.0.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/Lemniscate-world/Neural"
 Repository = "https://github.com/Lemniscate-world/Neural.git"
+
 
 [tool.setuptools.packages.find]
 where = ["."]

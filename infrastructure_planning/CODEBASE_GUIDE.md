@@ -115,6 +115,56 @@ This is a self-contained script that:
 
 ---
 
+## Data Versioning — DVC (MLO-4)
+
+Binary artifacts (images, datasets, model weights) are tracked with **DVC**, not Git.
+
+### Quick start
+
+```bash
+# Install (included in mlops extras)
+pip install -e ".[mlops]"
+
+# Download all tracked artifacts
+dvc pull
+
+# Track a new binary file
+dvc add path/to/file.png
+git add path/to/file.png.dvc .gitignore
+git commit -m "chore: track file.png with DVC"
+dvc push
+```
+
+### Currently tracked files
+
+| File | DVC pointer |
+|------|-------------|
+| `synthetic_data_sample.png` | `synthetic_data_sample.png.dvc` |
+
+### Remote storage
+
+| Name | Type | Path |
+|------|------|------|
+| `local-storage` (default) | Local filesystem | `~/dvc-store/neuraldbg` |
+
+To upgrade to S3 or GCS:
+```bash
+dvc remote add -d s3-remote s3://your-bucket/neuraldbg
+dvc remote modify s3-remote region eu-west-1
+dvc push  # re-push all artifacts to S3
+```
+
+### Adding new artifacts (data/, models/, outputs/)
+
+Files in `data/`, `models/`, and `outputs/` are gitignored by default (only `.gitkeep` is tracked). Use DVC for any binary that belongs there:
+
+```bash
+dvc add data/my_dataset.npz
+dvc add models/weights_v1.pt
+```
+
+---
+
 ## Developer Tooling — MCP Linear (Claude Code)
 
 Linear est intégré dans Claude Code via le **MCP HTTP officiel de Linear**, défini au scope projet dans `.mcp.json`.
