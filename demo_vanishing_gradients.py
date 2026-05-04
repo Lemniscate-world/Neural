@@ -64,9 +64,8 @@ def create_failing_model():
 
 def create_problematic_data():
     """Create data that exacerbates vanishing gradients."""
-    # Small learning rate with saturating activations
     X = torch.randn(1000, 10) * 0.1
-    X.requires_grad_(True)  # Ensure hooks fire properly
+    X.requires_grad_(True)
     y = torch.randn(1000, 1) * 0.01
     dataset = TensorDataset(X, y)
     return DataLoader(dataset, batch_size=32, shuffle=True)
@@ -75,7 +74,10 @@ def train_with_monitoring(model, dataloader, num_steps=100):
     """
     Train the model while monitoring with NeuralDBG.
 
-    This demonstrates the causal inference approach.
+    This demonstrates the causal inference approach:
+    1. Semantic events are extracted automatically via hooks.
+    2. Loss values are recorded for optimizer instability detection.
+    3. After training, the engine generates ranked causal hypotheses.
     """
     LR = 0.0001
     optimizer = optim.SGD(model.parameters(), lr=LR)
@@ -108,7 +110,7 @@ def train_with_monitoring(model, dataloader, num_steps=100):
         print("   MLflow unavailable: install mlflow to persist metrics and artifacts")
     print()
 
-    with NeuralDbg(model, threshold_vanishing=1e-3) as dbg:  # More sensitive threshold for demo
+    with NeuralDbg(model, threshold_vanishing=1e-3) as dbg:
         for step in range(num_steps):
             for batch_x, batch_y in dataloader:
                 optimizer.zero_grad()
@@ -127,17 +129,36 @@ def train_with_monitoring(model, dataloader, num_steps=100):
                             step=step,
                         )
 
+                dbg.record_loss(loss.item())
                 optimizer.step()
-                break  # Just one batch per step for demo
+                break
 
             if step % 20 == 0:
                 print(f"Step {step}: Loss = {loss.item():.6f}")
 
     print()
+    print("[COMPARISON] NeuralDBG vs Traditional Tools:")
+    print("=" * 50)
+    print()
+    print("Traditional Approach (TensorBoard/WandB):")
+    print("  - Stores full tensor histograms (memory heavy)")
+    print("  - Shows gradient norms over time (passive monitoring)")
+    print("  - Requires manual inspection to find patterns")
+    print("  - No causal reasoning - just raw data visualization")
+    print("  - No data anomaly detection (NaN/Inf silently propagate)")
+    print()
+    print("NeuralDBG Approach:")
+    print("  - Semantic events only (lightweight)")
+    print("  - Automatic causal hypothesis generation")
+    print("  - Root cause identification without debugging")
+    print("  - Structured explanations with confidence scores")
+    print("  - Data anomaly detection (NaN, Inf, distribution shifts)")
+    print("  - Optimizer instability tracking (plateaus, spikes, divergence)")
+    print()
+
     print("[ANALYSIS] Post-mortem Causal Analysis:")
     print("=" * 50)
 
-    # Get causal explanations
     hypotheses = dbg.explain_failure("vanishing_gradients")
 
     if hypotheses:
@@ -148,22 +169,19 @@ def train_with_monitoring(model, dataloader, num_steps=100):
             print(f"   Evidence: {len(hyp.evidence)} events")
             if hyp.causal_chain:
                 print("   Chain:")
-                for step in hyp.causal_chain:
-                    print(f"     - {step}")
+                for s in hyp.causal_chain:
+                    print(f"     - {s}")
     else:
         print("[WARNING] No vanishing gradient events detected")
 
-    # Show detected coupled failures
     couplings = dbg.detect_coupled_failures()
     if couplings:
         print(f"\n[COUPLING] Detected {len(couplings)} coupled failure patterns:")
         for coupling in couplings:
-            print(
-                f"   {coupling['trigger']} ↔ {coupling['consequence']} "
-                f"(confidence: {coupling['confidence']:.2f})"
-            )
+            trigger = coupling.get("trigger", coupling.get("event1", "unknown"))
+            consequence = coupling.get("consequence", coupling.get("event2", "unknown"))
+            print(f"   {trigger} <-> {consequence} (confidence: {coupling['confidence']:.2f})")
 
-    # Show all semantic events detected
     print(f"\n[STATS] Total semantic events captured: {len(dbg.events)}")
     event_counts = {}
     for event in dbg.events:
@@ -173,7 +191,22 @@ def train_with_monitoring(model, dataloader, num_steps=100):
     for event_type, count in event_counts.items():
         print(f"   - {event_type}: {count} events")
 
-    # Show Mermaid graph
+    opt_hypotheses = dbg.explain_failure("optimizer_instability")
+    if opt_hypotheses:
+        print(f"\n[OPTIMIZER] Found {len(opt_hypotheses)} optimizer hypotheses:")
+        for i, hyp in enumerate(opt_hypotheses, 1):
+            print(f"   {i}. {hyp.description} (confidence: {hyp.confidence:.2f})")
+
+    data_hypotheses = dbg.explain_failure("data_anomaly")
+    if data_hypotheses:
+        print(f"\n[DATA] Found {len(data_hypotheses)} data anomaly hypotheses:")
+        for i, hyp in enumerate(data_hypotheses, 1):
+            print(f"   {i}. {hyp.description} (confidence: {hyp.confidence:.2f})")
+
+    collapsed = dbg._collapse_events()
+    print(f"\n[COLLAPSED] {len(dbg.events)} raw events -> "
+          f"{len(collapsed)} collapsed events")
+
     print("\n[GRAPH] Causal Graph (Mermaid):")
     print("-" * 50)
     print(dbg.export_mermaid_causal_graph())
@@ -214,10 +247,8 @@ def main():
     print("=" * 50)
     print()
 
-    # Set random seed for reproducible failure
     torch.manual_seed(42)
 
-    # Create the failing scenario
     model = create_failing_model()
     dataloader = create_problematic_data()
 
@@ -228,7 +259,6 @@ def main():
     print("   - Expected outcome: Vanishing gradients from LR x saturation mismatch")
     print()
 
-    # Train and analyze
     hypotheses = train_with_monitoring(model, dataloader)
 
     print()

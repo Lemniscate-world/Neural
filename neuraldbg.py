@@ -6,11 +6,22 @@ It extracts semantic events from training, compresses them into causal patterns,
 post-mortem reasoning about training failures.
 """
 
+import math
+
 import torch
 import torch.nn as nn
 from typing import Dict, List, Tuple, Optional, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
+
+# Try to import dynamo for torch.compile suppression
+try:
+    import torch._dynamo as dynamo
+    dynamo_disable = dynamo.disable
+except ImportError:
+    # Fallback for PyTorch < 2.0 or if dynamo is unavailable
+    def dynamo_disable(fn):
+        return fn
 
 class EventType(Enum):
     """Types of semantic events that can occur during training."""
@@ -32,6 +43,20 @@ class ActivationHealth(Enum):
     SATURATED = "saturated"
     DEAD = "dead"
     ANOMALOUS = "anomalous"
+
+class OptimizerHealth(Enum):
+    """Optimizer stability states."""
+    STABLE = "stable"
+    LOSS_PLATEAU = "loss_plateau"
+    LOSS_SPIKE = "loss_spike"
+    DIVERGING = "diverging"
+
+class DataHealth(Enum):
+    """Data quality states for anomaly detection."""
+    NORMAL = "normal"
+    NAN_DETECTED = "nan_detected"
+    INF_DETECTED = "inf_detected"
+    DISTRIBUTION_SHIFT = "distribution_shift"
 
 @dataclass
 class SemanticEvent:
@@ -78,16 +103,39 @@ class NeuralDbg:
         self.threshold_vanishing = threshold_vanishing
         self.threshold_exploding = threshold_exploding
 
+        # Verify if model is already compiled
+        if hasattr(torch, "_dynamo") and isinstance(model, torch._dynamo.eval_frame.OptimizedModule):
+            import warnings
+            warnings.warn(
+                "NeuralDbg: Model is already compiled. Hooks installed after compilation "
+                "might not fire in the optimized graph. For best results, wrap the model "
+                "with NeuralDbg BEFORE calling torch.compile().",
+                UserWarning
+            )
+
         # Semantic event storage (not tensors!)
         self.events: List[SemanticEvent] = []
 
         # Previous state tracking for transition detection
         self.previous_gradient_norms: Dict[str, float] = {}
         self.previous_activation_stats: Dict[str, Dict[str, float]] = {}
-        
+
+        # Optimizer instability tracking
+        self.loss_history: List[float] = []
+        self.previous_optimizer_health: OptimizerHealth = OptimizerHealth.STABLE
+
+        # Data anomaly tracking
+        self.previous_input_stats: Dict[str, Dict[str, float]] = {}
+        self.previous_data_health: Dict[str, DataHealth] = {}
+
+        # Pre-computed module-to-name mapping for O(1) lookup
+        self._module_names: Dict[int, str] = {}
+        for name, mod in self.model.named_modules():
+            self._module_names[id(mod)] = name or "root"
+
         # Causal tracking: First layer to fail in a specific way
-        self.first_failure_step: Dict[str, int] = {} # failure_key -> step
-        self.first_failure_layer: Dict[str, str] = {} # failure_key -> layer_name
+        self.first_failure_step: Dict[str, int] = {}  # failure_key -> step
+        self.first_failure_layer: Dict[str, str] = {}  # failure_key -> layer_name
 
         # Hook storage for automatic monitoring
         self.hooks: List[torch.utils.hooks.RemovableHandle] = []
@@ -95,6 +143,14 @@ class NeuralDbg:
         # Training state
         self.step = 0
         self.is_monitoring = False
+
+    def step_iteration(self):
+        """Increment the internal step counter."""
+        self.step += 1
+
+    def get_events(self) -> List[SemanticEvent]:
+        """Return all captured semantic events."""
+        return self.events
 
     def __enter__(self):
         """Start monitoring the training loop."""
@@ -107,14 +163,80 @@ class NeuralDbg:
         self._remove_hooks()
         self.is_monitoring = False
 
+    def record_loss(self, loss_value: float):
+        """Record a loss value for optimizer instability detection.
+
+        Call this after each training step so the engine can track
+        loss plateaus, spikes, and divergence.
+
+        Args:
+            loss_value: The scalar loss value for the current step.
+        """
+        self.loss_history.append(loss_value)
+        current_health = self._classify_optimizer_health()
+
+        if current_health != self.previous_optimizer_health:
+            if current_health != OptimizerHealth.STABLE:
+                self._track_first_occurrence(
+                    f"optimizer_{current_health.value}", "optimizer"
+                )
+
+            event = SemanticEvent(
+                event_type=EventType.OPTIMIZER_INSTABILITY,
+                layer_name="optimizer",
+                step=self.step,
+                from_state=self.previous_optimizer_health.value,
+                to_state=current_health.value,
+                confidence=0.85,
+                metadata={
+                    "recent_losses": self.loss_history[-10:],
+                    "current_loss": loss_value,
+                },
+            )
+            self.events.append(event)
+            self.previous_optimizer_health = current_health
+
+    def _classify_optimizer_health(self) -> OptimizerHealth:
+        """Classify optimizer stability from loss history."""
+        history = self.loss_history
+        if len(history) < 3:
+            return OptimizerHealth.STABLE
+
+        recent = history[-5:] if len(history) >= 5 else history
+
+        # Check for NaN/Inf (divergence)
+        if any(math.isnan(v) or math.isinf(v) for v in recent):
+            return OptimizerHealth.DIVERGING
+
+        # Check for loss spike: latest loss > 10x the mean of previous values
+        if len(history) >= 5:
+            prev_mean = sum(history[-6:-1]) / len(history[-6:-1])
+            if prev_mean > 0 and recent[-1] > prev_mean * 10:
+                return OptimizerHealth.LOSS_SPIKE
+
+        # Check for plateau: std of recent losses is near zero relative to mean
+        if len(recent) >= 3:
+            mean_val = sum(recent) / len(recent)
+            variance = sum((v - mean_val) ** 2 for v in recent) / len(recent)
+            std_val = math.sqrt(variance)
+            if mean_val != 0 and std_val / abs(mean_val) < 1e-4:
+                return OptimizerHealth.LOSS_PLATEAU
+
+        return OptimizerHealth.STABLE
+
     def _install_hooks(self):
         """Install forward and backward hooks to extract semantic events."""
+        @dynamo_disable
         def forward_hook(module: nn.Module, input: Tuple[torch.Tensor], output: torch.Tensor):
             """Extract semantic events from forward pass."""
             if not self.is_monitoring:
                 return
 
             layer_name = self._get_layer_name(module)
+
+            # --- Data anomaly detection on inputs ---
+            if input and len(input) > 0 and isinstance(input[0], torch.Tensor):
+                self._check_data_anomaly(input[0], layer_name)
 
             # Extract activation regime information
             if isinstance(output, torch.Tensor):
@@ -145,9 +267,27 @@ class NeuralDbg:
                             }
                         )
                         self.events.append(event)
+                else:
+                    # Capture baseline activation state on first encounter
+                    event = SemanticEvent(
+                        event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                        layer_name=layer_name,
+                        step=self.step,
+                        from_state="NONE",
+                        to_state=current_health.value,
+                        confidence=1.0,
+                        metadata=activation_stats
+                    )
+                    self.events.append(event)
+                    if current_health != ActivationHealth.NORMAL:
+                        self._track_first_occurrence(f"activation_{current_health.value}", layer_name)
 
                 self.previous_activation_stats[layer_name] = activation_stats
 
+        # Track modules where backward hooks fail so we warn only once
+        _backward_hook_failures: Dict[str, bool] = {}
+
+        @dynamo_disable
         def full_backward_hook(module: nn.Module, grad_input: Tuple[torch.Tensor], grad_output: Tuple[torch.Tensor]):
             """Extract semantic events from backward pass using full_backward_hook."""
             if not self.is_monitoring:
@@ -183,18 +323,81 @@ class NeuralDbg:
                             }
                         )
                         self.events.append(event)
+                else:
+                    # Capture baseline gradient state on first encounter
+                    current_health = self._classify_gradient_health(grad_norm)
+                    event = SemanticEvent(
+                        event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                        layer_name=layer_name,
+                        step=self.step,
+                        from_state="NONE",
+                        to_state=current_health.value,
+                        confidence=1.0,
+                        metadata={
+                            'current_norm': grad_norm,
+                            'transition_type': 'baseline'
+                        }
+                    )
+                    self.events.append(event)
+                    if current_health != GradientHealth.HEALTHY:
+                        self._track_first_occurrence(f"gradient_{current_health.value}", layer_name)
 
                 self.previous_gradient_norms[layer_name] = grad_norm
 
-        # Install hooks on all modules (including root for full coverage)
+        def safe_backward_hook(module: nn.Module, grad_input: Tuple[torch.Tensor], grad_output: Tuple[torch.Tensor]):
+            """Wrapper that catches inplace-operation errors from full_backward_hook.
+
+            Models with inplace operations (e.g., ReLU(inplace=True) in
+            ResNet/BatchNorm) raise RuntimeError when full_backward_hook
+            interacts with views modified inplace. This wrapper degrades
+            gracefully: forward hooks still capture activation and data
+            anomaly events, only gradient tracking is lost for affected
+            modules.
+            """
+            try:
+                return full_backward_hook(module, grad_input, grad_output)
+            except RuntimeError:
+                layer_name = self._get_layer_name(module)
+                if layer_name not in _backward_hook_failures:
+                    _backward_hook_failures[layer_name] = True
+                    import warnings
+                    warnings.warn(
+                        f"NeuralDbg: Backward hook failed for '{layer_name}' "
+                        f"(likely inplace operation). Gradient tracking disabled "
+                        f"for this module. Forward hooks still active.",
+                        UserWarning,
+                    )
+                return None
+
+        # Install hooks on leaf modules for maximum compatibility with
+        # torch.compile. We use register_backward_hook (not
+        # register_full_backward_hook) because the "full" variant wraps
+        # module outputs in a BackwardHookFunction view. Any downstream
+        # inplace operation on that view (e.g., `out += identity` in ResNet
+        # residual connections, or ReLU(inplace=True)) triggers a
+        # RuntimeError from PyTorch's autograd engine. The older
+        # register_backward_hook does NOT wrap outputs, so it is compatible
+        # with all model architectures including ResNet, EfficientNet, etc.
+        # Trade-off: register_backward_hook may not fire for modules whose
+        # inputs don't require grad, but those modules are irrelevant for
+        # gradient health monitoring anyway.
         for name, module in self.model.named_modules():
+            # Skip non-leaf modules (except root) to avoid redundant captures
+            if len(list(module.children())) > 0 and name != "":
+                continue
+                
             self.hooks.append(module.register_forward_hook(forward_hook))
-            # Use register_full_backward_hook if available (PyTorch 1.9+)
-            if hasattr(module, "register_full_backward_hook"):
-                self.hooks.append(module.register_full_backward_hook(full_backward_hook))
-            else:
-                # Fallback for older versions (though we expect >=1.9)
-                self.hooks.append(module.register_backward_hook(full_backward_hook))
+            self.hooks.append(module.register_backward_hook(safe_backward_hook))
+
+        # Check for DataParallel/DDP and warn/handle
+        if isinstance(self.model, (nn.DataParallel, nn.parallel.DistributedDataParallel)):
+            import warnings
+            warnings.warn(
+                f"NeuralDbg: Model is wrapped in {type(self.model).__name__}. "
+                "Hooks might not persist correctly during replication. Consider wrapping "
+                "the inner module (.module) instead.",
+                UserWarning
+            )
 
     def _remove_hooks(self):
         """Remove all installed hooks."""
@@ -203,11 +406,15 @@ class NeuralDbg:
         self.hooks.clear()
 
     def _get_layer_name(self, module: nn.Module) -> str:
-        """Get the name of a module from the model."""
-        for name, mod in self.model.named_modules():
-            if mod is module:
-                return name or "root"
-        return "unknown"
+        """Get the name of a module from the pre-computed mapping (O(1) lookup)."""
+        name = self._module_names.get(id(module))
+        if name is not None:
+            return name
+
+        # Fallback for Dynamo-wrapped modules or internal replicas
+        if hasattr(module, "_get_name"):
+            return module._get_name()
+        return type(module).__name__
 
     def _compute_activation_stats(self, tensor: torch.Tensor) -> Dict[str, float]:
         """Compute statistical summary of activation tensor."""
@@ -323,6 +530,10 @@ class NeuralDbg:
             hypotheses.extend(self._explain_dead_neurons())
         elif failure_type == "saturated_activations":
             hypotheses.extend(self._explain_saturated_activations())
+        elif failure_type == "optimizer_instability":
+            hypotheses.extend(self._explain_optimizer_instability())
+        elif failure_type == "data_anomaly":
+            hypotheses.extend(self._explain_data_anomaly())
 
         # Filter out duplicates (based on description)
         seen = set()
@@ -514,11 +725,291 @@ class NeuralDbg:
             ))
         return hypotheses
 
+    def _classify_data_health(self, tensor: torch.Tensor) -> Tuple[DataHealth, Dict[str, Any]]:
+        """Classify data health and return state + metadata.
+
+        Returns a tuple of (health_state, metadata_dict) based on the tensor contents.
+        NaN takes priority over Inf, which takes priority over distribution shift.
+        """
+        t = tensor.detach().float()
+
+        has_nan = torch.isnan(t).any().item()
+        if has_nan:
+            return DataHealth.NAN_DETECTED, {"nan_count": int(torch.isnan(t).sum().item())}
+
+        has_inf = torch.isinf(t).any().item()
+        if has_inf:
+            return DataHealth.INF_DETECTED, {"inf_count": int(torch.isinf(t).sum().item())}
+
+        return DataHealth.NORMAL, {}
+
+    def _check_data_anomaly(self, tensor: torch.Tensor, layer_name: str):
+        """Detect data anomalies (NaN, Inf, distribution shifts) in input tensors.
+
+        Uses transition-based tracking like gradient and activation health:
+        only emits events when the data health state changes for a given layer.
+        """
+        current_health, health_metadata = self._classify_data_health(tensor)
+
+        # Distribution shift detection (only when current health is NORMAL)
+        # Skip mean/std computation for NaN/Inf tensors to avoid poisoning stats
+        if current_health not in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED):
+            t = tensor.detach().float()
+            current_mean = t.mean().item()
+            current_std = t.std().item()
+
+            if layer_name in self.previous_input_stats:
+                prev = self.previous_input_stats[layer_name]
+                prev_std = prev.get("std", 1.0)
+                if prev_std > 1e-9:
+                    mean_shift = abs(current_mean - prev.get("mean", 0.0)) / prev_std
+                    std_ratio = current_std / prev_std if prev_std > 0 else 1.0
+                    if mean_shift > 3.0 or std_ratio > 5.0 or std_ratio < 0.2:
+                        current_health = DataHealth.DISTRIBUTION_SHIFT
+                        health_metadata = {
+                            "prev_mean": prev.get("mean", 0.0),
+                            "current_mean": current_mean,
+                            "prev_std": prev_std,
+                            "current_std": current_std,
+                            "mean_shift_sigma": mean_shift,
+                        }
+
+            # Only update stats with clean values (not NaN/Inf)
+            self.previous_input_stats[layer_name] = {
+                "mean": current_mean,
+                "std": current_std,
+            }
+
+        # Transition detection: only emit event when health state changes
+        prev_health = self.previous_data_health.get(layer_name, DataHealth.NORMAL)
+
+        if current_health != prev_health:
+            if current_health != DataHealth.NORMAL:
+                self._track_first_occurrence(f"data_{current_health.value}", layer_name)
+
+            confidence = 1.0
+            if current_health == DataHealth.DISTRIBUTION_SHIFT:
+                mean_shift_val = health_metadata.get("mean_shift_sigma", 3.0)
+                confidence = min(mean_shift_val * 0.2, 1.0)
+
+            self.events.append(SemanticEvent(
+                event_type=EventType.DATA_ANOMALY,
+                layer_name=layer_name,
+                step=self.step,
+                from_state=prev_health.value,
+                to_state=current_health.value,
+                confidence=confidence,
+                metadata=health_metadata,
+            ))
+
+        self.previous_data_health[layer_name] = current_health
+
+    def _explain_optimizer_instability(self) -> List[CausalHypothesis]:
+        """Generate hypotheses for optimizer instability failures."""
+        hypotheses: List[CausalHypothesis] = []
+
+        instability_events = [
+            e for e in self.events
+            if e.event_type == EventType.OPTIMIZER_INSTABILITY
+        ]
+
+        if not instability_events:
+            return hypotheses
+
+        first_event = min(instability_events, key=lambda e: e.step)
+
+        description_map = {
+            OptimizerHealth.LOSS_SPIKE.value: (
+                f"Loss spike detected at step {first_event.step}. "
+                "Possible causes: learning rate too high, corrupted batch, or "
+                "gradient explosion propagating to the loss."
+            ),
+            OptimizerHealth.LOSS_PLATEAU.value: (
+                f"Loss plateau detected at step {first_event.step}. "
+                "Training may be stuck in a local minimum or the learning rate "
+                "is too small to make progress."
+            ),
+            OptimizerHealth.DIVERGING.value: (
+                f"Training divergence (NaN/Inf loss) detected at step "
+                f"{first_event.step}. Check for numerical instability, "
+                "learning rate explosion, or corrupted data."
+            ),
+        }
+
+        desc = description_map.get(
+            first_event.to_state,
+            f"Optimizer instability detected at step {first_event.step}",
+        )
+
+        hypotheses.append(CausalHypothesis(
+            description=desc,
+            confidence=first_event.confidence,
+            evidence=[first_event],
+            causal_chain=[
+                f"Optimizer transitioned from {first_event.from_state} to "
+                f"{first_event.to_state} at step {first_event.step}"
+            ],
+        ))
+
+        # Cross-reference: if gradient explosion preceded the spike
+        if first_event.to_state in (
+            OptimizerHealth.LOSS_SPIKE.value,
+            OptimizerHealth.DIVERGING.value,
+        ):
+            exploding_before = [
+                e for e in self.events
+                if e.event_type == EventType.GRADIENT_HEALTH_TRANSITION
+                and e.to_state == GradientHealth.EXPLODING.value
+                and e.step <= first_event.step
+            ]
+            if exploding_before:
+                grad_event = max(exploding_before, key=lambda e: e.step)
+                hypotheses.append(CausalHypothesis(
+                    description=(
+                        f"Loss {first_event.to_state} at step "
+                        f"{first_event.step} was likely caused by gradient "
+                        f"explosion in '{grad_event.layer_name}' at step "
+                        f"{grad_event.step}."
+                    ),
+                    confidence=min(
+                        first_event.confidence + 0.1, 1.0
+                    ),
+                    evidence=[first_event, grad_event],
+                    causal_chain=[
+                        f"Gradient explosion in {grad_event.layer_name} "
+                        f"at step {grad_event.step}",
+                        f"Led to {first_event.to_state} at step "
+                        f"{first_event.step}",
+                    ],
+                ))
+
+        return hypotheses
+
+    def _explain_data_anomaly(self) -> List[CausalHypothesis]:
+        """Generate hypotheses for data anomaly failures."""
+        hypotheses: List[CausalHypothesis] = []
+
+        anomaly_events = [
+            e for e in self.events
+            if e.event_type == EventType.DATA_ANOMALY
+        ]
+
+        if not anomaly_events:
+            return hypotheses
+
+        first_event = min(anomaly_events, key=lambda e: e.step)
+
+        description_map = {
+            DataHealth.NAN_DETECTED.value: (
+                f"NaN values detected in input to layer "
+                f"'{first_event.layer_name}' at step {first_event.step}. "
+                "This indicates corrupted data or upstream numerical overflow."
+            ),
+            DataHealth.INF_DETECTED.value: (
+                f"Inf values detected in input to layer "
+                f"'{first_event.layer_name}' at step {first_event.step}. "
+                "Check for division by zero or unbounded feature values."
+            ),
+            DataHealth.DISTRIBUTION_SHIFT.value: (
+                f"Input distribution shift detected at layer "
+                f"'{first_event.layer_name}' at step {first_event.step}. "
+                "The input statistics changed significantly, which may "
+                "destabilize training."
+            ),
+        }
+
+        desc = description_map.get(
+            first_event.to_state,
+            f"Data anomaly detected at layer '{first_event.layer_name}' "
+            f"at step {first_event.step}",
+        )
+
+        hypotheses.append(CausalHypothesis(
+            description=desc,
+            confidence=first_event.confidence,
+            evidence=[first_event],
+            causal_chain=[
+                f"Data anomaly ({first_event.to_state}) in "
+                f"{first_event.layer_name} at step {first_event.step}"
+            ],
+        ))
+
+        return hypotheses
+
     def _collapse_events(self) -> List[SemanticEvent]:
-        """Collapse multiple sequential events in the same layer into a summary trace."""
-        # For now, just return all events, but in a production system, 
-        # this would merge e.g. HEALTHY->SATURATED and SATURATED->VANISHING
-        return self.events
+        """Collapse sequential events in the same layer into summary traces.
+
+        Merges chains like HEALTHY->SATURATED followed by SATURATED->VANISHING
+        in the same layer into a single HEALTHY->VANISHING summary event,
+        preserving the step range and combining metadata.
+
+        Baseline events (from_state="NONE") are always kept individually since
+        they represent initial state capture, not transitions.
+        """
+        if not self.events:
+            return []
+
+        # Separate baseline events from transition events
+        baseline_events: List[SemanticEvent] = []
+        transition_events: List[SemanticEvent] = []
+        for event in self.events:
+            if event.from_state == "NONE":
+                baseline_events.append(event)
+            else:
+                transition_events.append(event)
+
+        # Group transition events by (layer_name, event_type)
+        groups: Dict[Tuple[str, str], List[SemanticEvent]] = {}
+        for event in transition_events:
+            key = (event.layer_name, event.event_type.value)
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(event)
+
+        collapsed: List[SemanticEvent] = list(baseline_events)
+        for key, group in groups.items():
+            sorted_group = sorted(group, key=lambda e: e.step)
+
+            if len(sorted_group) <= 1:
+                collapsed.extend(sorted_group)
+                continue
+
+            # Check for ANY reversion within the chain (not just first vs last)
+            # A reversion means a state appeared as to_state and later as from_state
+            has_reversion = False
+            seen_to_states = set()
+            for event in sorted_group:
+                if event.to_state in seen_to_states:
+                    # A state we transitioned away from has reappeared
+                    has_reversion = True
+                    break
+                seen_to_states.add(event.from_state)
+
+            if has_reversion:
+                # States reverted at some point, keep all individual events
+                collapsed.extend(sorted_group)
+            else:
+                first = sorted_group[0]
+                last = sorted_group[-1]
+                merged_metadata = dict(first.metadata)
+                merged_metadata["collapsed_count"] = len(sorted_group)
+                merged_metadata["step_range"] = (
+                    f"{first.step}-{last.step}"
+                )
+
+                collapsed.append(SemanticEvent(
+                    event_type=first.event_type,
+                    layer_name=first.layer_name,
+                    step=first.step,
+                    from_state=first.from_state,
+                    to_state=last.to_state,
+                    confidence=max(e.confidence for e in sorted_group),
+                    metadata=merged_metadata,
+                ))
+
+        # Sort by step for consistent ordering
+        collapsed.sort(key=lambda e: e.step)
+        return collapsed
 
     def export_mermaid_causal_graph(self) -> str:
         """

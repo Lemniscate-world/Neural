@@ -8,5 +8,5 @@
     "editor.renderControlCharacters": true,
     "editor.unicodeHighlight.invisibleCharacters": true,
     "editor.unicodeHighlight.ambiguousCharacters": true,
-    "editor.unicodeHighlight.nonBasicASCII": false
+    "editor.unicodeHighlight.nonBasicASCII": true
 }

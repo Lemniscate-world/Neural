@@ -14,3 +14,8 @@ alwaysApply: true
 - Utiliser des analogies simples
 - Décortiquer les formules étape par étape
 - Ne jamais sauter d'explication sous prétexte que "c'est évident"
+
+## CI/CD Debugging First (MANDATORY)
+- If GitHub Actions is red on the active branch/PR, stop unrelated work.
+- Inspect failing checks/logs first (`gh run list`, `gh run view --log`, `gh pr checks`).
+- Apply minimal safe fix, re-run relevant validations, then continue feature work.

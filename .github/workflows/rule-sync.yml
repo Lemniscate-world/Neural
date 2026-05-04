@@ -1,0 +1,162 @@
+name: Rule Synchronization
+
+on:
+  push:
+    branches:
+      - 'ceo/**'
+    paths:
+      - 'AGENTS.md'
+      - 'AI_GUIDELINES.md'
+      - '.cursorrules'
+      - 'copilot-instructions.md'
+      - 'GAD.md'
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Target branch to sync rules to'
+        required: false
+        default: ''
+
+jobs:
+  detect-rule-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.detect.outputs.has_changes }}
+      changed_files: ${{ steps.detect.outputs.changed_files }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect rule file changes
+        id: detect
+        run: |
+          # Detect which rule files changed
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD -- "AGENTS.md" "AI_GUIDELINES.md" ".cursorrules" "copilot-instructions.md" "GAD.md" 2>/dev/null || echo "")
+          
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+            echo "Rule files changed: $CHANGED_FILES"
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "changed_files=" >> $GITHUB_OUTPUT
+          fi
+
+  sync-to-branches:
+    needs: detect-rule-changes
+    if: needs.detect-rule-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: [main, infra/milestone-0-setup]
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "ceo@neuraldbg.ai"
+          git config --local user.name "CEO Rule Sync"
+
+      - name: Merge rule changes from CEO branch
+        run: |
+          # Get the latest CEO branch
+          CEO_BRANCH=$(git branch -r --format="%(refname:short)" | grep "origin/ceo/" | head -1)
+          echo "Merging from: $CEO_BRANCH"
+          
+          # Merge the rule files
+          git merge --no-edit "$CEO_BRANCH" --strategy-option ours -- "AGENTS.md" "AI_GUIDELINES.md" ".cursorrules" "copilot-instructions.md" "GAD.md" || true
+          
+          # Check if there are changes to commit
+          if git diff --quiet HEAD; then
+            echo "No changes to merge"
+          else
+            git commit -m "chore: sync rules from CEO branch - $(date '+%Y-%m-%d')"
+            git push origin ${{ matrix.branch }}
+          fi
+
+  sync-to-kuro-rules:
+    needs: detect-rule-changes
+    if: needs.detect-rule-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kuro-rules repository
+        uses: actions/checkout@v4
+        with:
+          repository: kuro-ai/kuro-rules
+          token: ${{ secrets.KURO_RULES_TOKEN }}
+          path: kuro-rules
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "ceo@neuraldbg.ai"
+          git config --local user.name "CEO Rule Sync"
+
+      - name: Copy updated rules
+        run: |
+          # Copy rule files from source
+          SOURCE_DIR=${{ github.workspace }}
+          cp "$SOURCE_DIR/AGENTS.md" "kuro-rules/AGENTS.md"
+          cp "$SOURCE_DIR/AI_GUIDELINES.md" "kuro-rules/AI_GUIDELINES.md"
+          cp "$SOURCE_DIR/.cursorrules" "kuro-rules/.cursorrules"
+          cp "$SOURCE_DIR/copilot-instructions.md" "kuro-rules/copilot-instructions.md"
+          cp "$SOURCE_DIR/GAD.md" "kuro-rules/GAD.md"
+
+      - name: Commit and push to kuro-rules
+        working-directory: kuro-rules
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to push to kuro-rules"
+          else
+            git commit -m "chore: sync rules from NeuralDBG - $(date '+%Y-%m-%d')"
+            git push
+          fi
+
+  create-sync-pr:
+    needs: [detect-rule-changes, sync-to-branches]
+    if: needs.detect-rule-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Pull Request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = '${{ github.ref_name }}';
+            const changedFiles = `${{ needs.detect-rule-changes.outputs.changed_files }}`;
+            const body = [
+              '## Rule Synchronization PR',
+              '',
+              'This PR was automatically created by the Rule Synchronization workflow.',
+              '',
+              '### Changes Detected',
+              'The following rule files were modified on the CEO branch and synced to all development branches:',
+              `- ${changedFiles}`,
+              '',
+              '### Rule 33 Compliance',
+              '- Rules were modified on a CEO branch',
+              '- All active development branches have been updated',
+              '- kuro-rules master copy has been updated',
+              '',
+              '### Required Actions',
+              '- Review the rule changes',
+              '- Ensure all team members pull the latest rules',
+              '- Update local AI agent rules if necessary',
+              '',
+              '---',
+              '*This PR was automatically generated by GitHub Actions*'
+            ].join('\n');
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[RULE SYNC] Automatic rule synchronization - ${new Date().toISOString().split('T')[0]}`,
+              body,
+              head: branch,
+              base: 'main'
+            });
+            core.info(`PR created: ${pr.data.html_url}`);

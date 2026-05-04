@@ -1,4 +1,3 @@
-
 PLAN.md
 .mcp.json
 
@@ -7,6 +6,7 @@ mom_test_script.md
 mom_test_results.md
 decision.md
 validation.json
+concept/
 
 # Ideas and architecture notes (work-in-progress brainstorms)
 ideas.md
@@ -26,8 +26,11 @@ htmlcov/
 .coverage.*
 
 # Virtual environment
-venv/
 .venv/
+venv_312_fixed/
+
+# MLflow local tracking store
+mlruns/
 
 # Generated artifacts
 artifacts/*
@@ -37,19 +40,39 @@ data/*
 models/*
 !models/.gitkeep
 outputs/*
-!outputs/.gitkeep
+!outputs/.keep
+logs/
 
 # Private logs and tracking
 SESSION_SUMMARY.md
 SESSION_SUMMARY.md.bak
 acquisition_tracker.md
 sync_summary.py
+bandit-report.json
+bandit-project-report.json
+safety-report.json
 .env
 .env.*
+google-service-account.json
+*.service-account.json
 secrets/
 *.log
 .antigravity/
 .cursor/
+.windsurfrules
 
-# MLflow local tracking store
-mlruns/
+# --- kuro-rules private research ---
+mom_test_results.md
+mom_test_script.md
+decision.md
+ideas.md
+architecture_notes.md
+concept/
+research/private/
+research/raw/
+research/interviews/
+research/contact-lists/
+notes-private.md
+contacts.csv
+leads.csv
+prospects.csv
