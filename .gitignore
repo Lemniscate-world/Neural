@@ -1,5 +1,5 @@
-
 PLAN.md
+.mcp.json
 
 # Mom Test results (private interview data)
 mom_test_script.md
@@ -26,8 +26,11 @@ htmlcov/
 .coverage.*
 
 # Virtual environment
-venv/
+.venv/
 venv_312_fixed/
+
+# MLflow local tracking store
+mlruns/
 
 # Generated artifacts
 artifacts/*
@@ -37,7 +40,8 @@ data/*
 models/*
 !models/.gitkeep
 outputs/*
-!outputs/.gitkeep
+!outputs/.keep
+logs/
 
 # Private logs and tracking
 SESSION_SUMMARY.md
@@ -45,6 +49,8 @@ SESSION_SUMMARY.md.bak
 acquisition_tracker.md
 sync_summary.py
 bandit-report.json
+bandit-project-report.json
+safety-report.json
 .env
 .env.*
 google-service-account.json
@@ -53,6 +59,7 @@ secrets/
 *.log
 .antigravity/
 .cursor/
+.windsurfrules
 
 # --- kuro-rules private research ---
 mom_test_results.md
@@ -69,4 +76,3 @@ notes-private.md
 contacts.csv
 leads.csv
 prospects.csv
-# --- end kuro-rules private research ---

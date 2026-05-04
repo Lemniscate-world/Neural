@@ -112,3 +112,51 @@ This is a self-contained script that:
 4. Run the demo: `python demo_vanishing_gradients.py`
 5. Run tests: `pytest tests/`
 6. Check your Linear issues for assigned tasks
+
+---
+
+## Developer Tooling — MCP Linear (Claude Code)
+
+Linear est intégré dans Claude Code via le **MCP HTTP officiel de Linear**, défini au scope projet dans `.mcp.json`.
+
+### Config active (`.mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp",
+      "headers": {
+        "Authorization": "Bearer ${LINEAR_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+La variable `LINEAR_API_KEY` doit être définie dans l'environnement shell (ou dans `.env` local, non versionné).
+
+### Règle de précédence importante
+
+La config **scope projet** (`.mcp.json`) a priorité sur la config **scope user** (`~/.claude/settings.json`). Si tu définis un serveur `linear` dans les deux, seule la config projet sera utilisée. Ne pas dupliquer la config dans `settings.json`.
+
+### Vérification
+
+```bash
+# Via le binaire Claude Code embarqué dans l'extension VS Code
+/home/kami/.vscode/extensions/anthropic.claude-code-2.1.116-linux-x64/resources/native-binary/claude mcp list
+# → linear: https://mcp.linear.app/mcp (HTTP) ✓ Connected
+
+claude mcp get linear
+# → Scope: Project config | Type: http | Status: ✓ Connected
+```
+
+### Recréer la config via CLI
+
+```bash
+claude mcp add --scope project --transport http linear https://mcp.linear.app/mcp \
+  --header "Authorization: Bearer lin_api_..."
+```
+
+> **Note :** `linear-mcp-server` (package npx local) ne fonctionne pas avec Claude Code — utiliser uniquement l'endpoint HTTP officiel.

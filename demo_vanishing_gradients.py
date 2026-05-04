@@ -6,11 +6,47 @@ This script creates a training scenario that leads to vanishing gradients and
 demonstrates how the reframed NeuralDBG provides structured explanations.
 """
 
+import os
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from neuraldbg import NeuralDbg
+
+try:
+    import mlflow
+    MLFLOW_AVAILABLE = True
+except ImportError:
+    MLFLOW_AVAILABLE = False
+
+
+def _model_arch_str(model):
+    """Return a compact representation of the model architecture."""
+    return " -> ".join(type(module).__name__ for module in model.children()) or type(model).__name__
+
+
+def _serialize_semantic_event(event):
+    """Convert a SemanticEvent into an MLflow-friendly dictionary."""
+    return {
+        "event_type": event.event_type.value,
+        "layer_name": event.layer_name,
+        "step": event.step,
+        "from_state": str(event.from_state),
+        "to_state": str(event.to_state),
+        "confidence": event.confidence,
+        "metadata": event.metadata,
+    }
+
+
+def _serialize_causal_hypothesis(hypothesis):
+    """Convert a CausalHypothesis into an MLflow-friendly dictionary."""
+    return {
+        "description": hypothesis.description,
+        "confidence": hypothesis.confidence,
+        "causal_chain": hypothesis.causal_chain,
+        "evidence": [_serialize_semantic_event(event) for event in hypothesis.evidence],
+    }
 
 def create_failing_model():
     """Create a model prone to vanishing gradients."""
@@ -28,9 +64,8 @@ def create_failing_model():
 
 def create_problematic_data():
     """Create data that exacerbates vanishing gradients."""
-    # Small learning rate with saturating activations
     X = torch.randn(1000, 10) * 0.1
-    X.requires_grad_(True)  # Ensure hooks fire properly
+    X.requires_grad_(True)
     y = torch.randn(1000, 1) * 0.01
     dataset = TensorDataset(X, y)
     return DataLoader(dataset, batch_size=32, shuffle=True)
@@ -44,30 +79,59 @@ def train_with_monitoring(model, dataloader, num_steps=100):
     2. Loss values are recorded for optimizer instability detection.
     3. After training, the engine generates ranked causal hypotheses.
     """
-    optimizer = optim.SGD(model.parameters(), lr=0.0001)  # Even smaller LR
+    LR = 0.0001
+    optimizer = optim.SGD(model.parameters(), lr=LR)
     criterion = nn.MSELoss()
+    mlflow_active = False
+    mlflow_created_run = False
+    tracking_uri = None
+
+    if MLFLOW_AVAILABLE:
+        tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "mlruns")
+        mlflow.set_tracking_uri(tracking_uri)
+        mlflow.set_experiment("neuraldbg-vanishing-gradients")
+        if mlflow.active_run() is None:
+            mlflow.start_run(run_name="demo_run")
+            mlflow_created_run = True
+        mlflow.log_params({
+            "lr": LR,
+            "batch_size": 32,
+            "num_steps": num_steps,
+            "threshold_vanishing": 1e-3,
+            "model_arch": _model_arch_str(model),
+            "seed": 42,
+        })
+        mlflow_active = True
 
     print("[TRAINING] NeuralDBG monitoring active...")
     print("   Model: Deep Tanh network with small LR")
     print("   Expected: Vanishing gradients due to saturation + small LR")
+    if not MLFLOW_AVAILABLE:
+        print("   MLflow unavailable: install mlflow to persist metrics and artifacts")
     print()
 
-    with NeuralDbg(model, threshold_vanishing=1e-3) as dbg:  # More sensitive threshold for demo
+    with NeuralDbg(model, threshold_vanishing=1e-3) as dbg:
         for step in range(num_steps):
             for batch_x, batch_y in dataloader:
                 optimizer.zero_grad()
-                # Keep semantic event timestamps aligned with this training step.
                 dbg.step = step
 
                 output = model(batch_x)
                 loss = criterion(output, batch_y)
                 loss.backward()
 
-                # Record loss for optimizer instability detection
-                dbg.record_loss(loss.item())
+                if mlflow_active:
+                    mlflow.log_metric("loss", loss.item(), step=step)
+                    for layer_name, grad_norm in dbg.previous_gradient_norms.items():
+                        mlflow.log_metric(
+                            "grad_norm/" + layer_name.replace(".", "_"),
+                            grad_norm,
+                            step=step,
+                        )
 
+                dbg.record_loss(loss.item())
                 optimizer.step()
-                break  # Just one batch per step for demo
+                break
 
             if step % 20 == 0:
                 print(f"Step {step}: Loss = {loss.item():.6f}")
@@ -95,7 +159,6 @@ def train_with_monitoring(model, dataloader, num_steps=100):
     print("[ANALYSIS] Post-mortem Causal Analysis:")
     print("=" * 50)
 
-    # Get causal explanations
     hypotheses = dbg.explain_failure("vanishing_gradients")
 
     if hypotheses:
@@ -106,12 +169,11 @@ def train_with_monitoring(model, dataloader, num_steps=100):
             print(f"   Evidence: {len(hyp.evidence)} events")
             if hyp.causal_chain:
                 print("   Chain:")
-                for step in hyp.causal_chain:
-                    print(f"     - {step}")
+                for s in hyp.causal_chain:
+                    print(f"     - {s}")
     else:
         print("[WARNING] No vanishing gradient events detected")
 
-    # Show detected coupled failures
     couplings = dbg.detect_coupled_failures()
     if couplings:
         print(f"\n[COUPLING] Detected {len(couplings)} coupled failure patterns:")
@@ -120,7 +182,6 @@ def train_with_monitoring(model, dataloader, num_steps=100):
             consequence = coupling.get("consequence", coupling.get("event2", "unknown"))
             print(f"   {trigger} <-> {consequence} (confidence: {coupling['confidence']:.2f})")
 
-    # Show all semantic events detected
     print(f"\n[STATS] Total semantic events captured: {len(dbg.events)}")
     event_counts = {}
     for event in dbg.events:
@@ -130,30 +191,53 @@ def train_with_monitoring(model, dataloader, num_steps=100):
     for event_type, count in event_counts.items():
         print(f"   - {event_type}: {count} events")
 
-    # Show optimizer instability analysis
     opt_hypotheses = dbg.explain_failure("optimizer_instability")
     if opt_hypotheses:
         print(f"\n[OPTIMIZER] Found {len(opt_hypotheses)} optimizer hypotheses:")
         for i, hyp in enumerate(opt_hypotheses, 1):
             print(f"   {i}. {hyp.description} (confidence: {hyp.confidence:.2f})")
 
-    # Show data anomaly analysis
     data_hypotheses = dbg.explain_failure("data_anomaly")
     if data_hypotheses:
         print(f"\n[DATA] Found {len(data_hypotheses)} data anomaly hypotheses:")
         for i, hyp in enumerate(data_hypotheses, 1):
             print(f"   {i}. {hyp.description} (confidence: {hyp.confidence:.2f})")
 
-    # Show collapsed events (compressed timeline)
     collapsed = dbg._collapse_events()
     print(f"\n[COLLAPSED] {len(dbg.events)} raw events -> "
           f"{len(collapsed)} collapsed events")
 
-    # Show Mermaid graph
     print("\n[GRAPH] Causal Graph (Mermaid):")
     print("-" * 50)
     print(dbg.export_mermaid_causal_graph())
     print("-" * 50)
+
+    if mlflow_active:
+        mlflow.log_dict(
+            [_serialize_semantic_event(event) for event in dbg.events],
+            "artifacts/semantic_events.json",
+        )
+        mlflow.log_dict(
+            [_serialize_causal_hypothesis(hypothesis) for hypothesis in hypotheses],
+            "artifacts/causal_hypotheses.json",
+        )
+        mlflow.log_text(dbg.export_mermaid_causal_graph(), "artifacts/causal_graph.mmd")
+        mlflow.log_metrics({
+            "total_events": float(len(dbg.events)),
+            "unique_event_types": float(len({event.event_type.value for event in dbg.events})),
+            "top_hypothesis_confidence": hypotheses[0].confidence if hypotheses else 0.0,
+        })
+        if mlflow_created_run:
+            mlflow.end_run()
+
+        tracking_uri = mlflow.get_tracking_uri()
+        if tracking_uri.startswith("http"):
+            print(f"\n[MLFLOW] Dashboard: {tracking_uri}")
+        else:
+            print(
+                f"\n[MLFLOW] Run logged. View: mlflow ui "
+                f"--backend-store-uri {tracking_uri} --port 5001"
+            )
 
     return hypotheses
 
@@ -163,10 +247,8 @@ def main():
     print("=" * 50)
     print()
 
-    # Set random seed for reproducible failure
     torch.manual_seed(42)
 
-    # Create the failing scenario
     model = create_failing_model()
     dataloader = create_problematic_data()
 
@@ -177,7 +259,6 @@ def main():
     print("   - Expected outcome: Vanishing gradients from LR x saturation mismatch")
     print()
 
-    # Train and analyze
     hypotheses = train_with_monitoring(model, dataloader)
 
     print()

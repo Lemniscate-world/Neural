@@ -8,11 +8,10 @@
 
 set -e
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
@@ -26,16 +25,13 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if we're in a git repo
 if [ ! -d ".git" ]; then
     log_error "Not in a git repository. Please run from the repo root."
     exit 1
 fi
 
-# Create .githooks directory if it doesn't exist
 mkdir -p .githooks
 
-# Create post-checkout hook
 log_info "Creating post-checkout hook..."
 cat > .githooks/post-checkout << 'EOF'
 #!/bin/bash
@@ -43,14 +39,13 @@ cat > .githooks/post-checkout << 'EOF'
 #
 # This hook runs after git checkout to ensure validation files are synced.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 
 echo "[post-checkout] Syncing validation bundle..."
 cd "$SCRIPT_DIR"
 ./scripts/validation_sync.sh 2>/dev/null || true
 EOF
 
-# Create post-merge hook
 log_info "Creating post-merge hook..."
 cat > .githooks/post-merge << 'EOF'
 #!/bin/bash
@@ -58,21 +53,18 @@ cat > .githooks/post-merge << 'EOF'
 #
 # This hook runs after git pull to ensure validation files are synced.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 
 echo "[post-merge] Syncing validation bundle..."
 cd "$SCRIPT_DIR"
 ./scripts/validation_sync.sh 2>/dev/null || true
 EOF
 
-# Make hooks executable
 chmod +x .githooks/post-checkout
 chmod +x .githooks/post-merge
-
-# Make sync script executable
 chmod +x scripts/validation_sync.sh
+chmod +x scripts/ensure_venv.sh
 
-# Configure git to use .githooks directory
 log_info "Configuring git to use .githooks..."
 git config core.hooksPath .githooks
 
@@ -89,5 +81,9 @@ log_info "Repo configured: LambdaSection/Validation-Bundle"
 log_info "To change: export VALIDATION_BUNDLE_REPO=other-org/validation-bundle"
 log_info ""
 log_info "Or add them to your shell profile (~/.bashrc, ~/.zshrc, etc.)"
+
+echo "[install_hooks] Git hooks activés depuis .githooks/"
+bash scripts/ensure_venv.sh
+echo "[install_hooks] Environnement prêt. Pense à définir VALIDATION_BUNDLE_TOKEN pour le sync MLO-15."
 
 exit 0
