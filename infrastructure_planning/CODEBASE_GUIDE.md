@@ -160,3 +160,62 @@ claude mcp add --scope project --transport http linear https://mcp.linear.app/mc
 ```
 
 > **Note :** `linear-mcp-server` (package npx local) ne fonctionne pas avec Claude Code — utiliser uniquement l'endpoint HTTP officiel.
+
+---
+
+## Team Linear Workflow (Editor-Agnostic)
+
+Pour le travail en équipe sans dépendre d'un éditeur spécifique (Cursor, Trae, Claude Code), utilisez le script Python `linear_sync.py` qui utilise l'API REST Linear.
+
+### Configuration
+
+```bash
+# 1. Récupérer ta clé API Linear
+# Linear -> Settings -> API -> Personal API keys
+
+# 2. Définir les variables d'environnement
+export LINEAR_API_KEY="lin_api_xxxx"
+export LINEAR_TEAM_ID="MLO"  # ou votre team identifier
+
+# 3. Optionnel: ajouter dans ~/.bashrc ou ~/.profile pour persistance
+```
+
+### Utilisation
+
+```bash
+# Lister les issues ouvertes
+python scripts/linear_sync.py list --state open
+
+# Voir le statut d'une issue
+python scripts/linear_sync.py status MLO-1
+
+# Mettre à jour une issue
+python scripts/linear_sync.py update MLO-1 --state done
+
+# Vue d'équipe (rapport complet)
+python scripts/linear_sync.py sync
+
+# Créer une nouvelle issue
+python scripts/linear_sync.py create "Nouvelle fonctionnalité" --priority 1
+```
+
+### CI/CD Integration
+
+Le workflow GitHub `linear-sync.yml` permet une synchronisation automatique:
+
+- **Schedule** (cron): Rapport hebdomadaire automatique
+- **Manual** (workflow_dispatch): Déclenchement à la demande
+- **Secrets requis**: `LINEAR_API_KEY`, `LINEAR_TEAM_ID`
+
+Pour l'activer, ajouter les secrets dans GitHub:
+`Settings -> Secrets and variables -> Actions -> New repository secret`
+
+### Comparaison des approaches
+
+| Méthode | Avantages | Inconvénients |
+|---------|----------|---------------|
+| **MCP Cursor/Claude** | Intégration UI | Dépendant éditeur |
+| **linear_sync.py** | Éditeur-agnostic, CI | Pas de UI interactive |
+| **GitHub Action** | Automatisation, rapports | Lecture seule mostly |
+
+> **Règle R40**: "Zero manual Linear updates. All via automation." — Utilisez `linear_sync.py` ou le workflow CI pour les mises à jour.
