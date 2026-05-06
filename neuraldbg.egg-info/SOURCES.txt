@@ -1,8 +1,0 @@
-LICENSE.md
-README.md
-pyproject.toml
-neuraldbg.egg-info/PKG-INFO
-neuraldbg.egg-info/SOURCES.txt
-neuraldbg.egg-info/dependency_links.txt
-neuraldbg.egg-info/requires.txt
-neuraldbg.egg-info/top_level.txt

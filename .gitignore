@@ -29,10 +29,12 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+*.whl
 
 # Virtual environment
 .venv/
-venv_312_fixed/
+venv/
+venv_*/
 
 # MLflow local tracking store
 mlruns/
@@ -53,9 +55,12 @@ SESSION_SUMMARY.md
 SESSION_SUMMARY.md.bak
 acquisition_tracker.md
 sync_summary.py
-bandit-report.json
-bandit-project-report.json
+sync_agents.py
+SYNC_LOG.md
+bandit*.json
+bandit*.txt
 safety-report.json
+ci_*.log
 .env
 .env.*
 google-service-account.json
@@ -81,3 +86,19 @@ notes-private.md
 contacts.csv
 leads.csv
 prospects.csv
+
+# Temporary test/demo files
+demo_*.py
+dogfooding_*.py
+scale_test_*.py
+test_compile_hooks*.py
+visualize_*.py
+synthetic_data_*.png
+
+# Non-essential docs
+GOOGLE_DOCS_SYNC.md
+COURSE_FOR_PARTNER.md
+marketing_test_plan.md
+sonar-project.properties
+opencode.json
+neuraldbg.py
