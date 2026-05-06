@@ -3,9 +3,17 @@ import torch
 import torch.nn as nn
 import pytest
 import time
+import sys
 from neuraldbg import NeuralDbg
 
+COMPILE_AVAILABLE = hasattr(torch, "compile") and sys.version_info < (3, 14)
+requires_compile = pytest.mark.skipif(
+    not COMPILE_AVAILABLE,
+    reason="torch.compile is not supported in this Python/PyTorch environment",
+)
+
 # 1. Output-Only Gradients Scenario (UserWarning Test)
+@requires_compile
 def test_output_only_gradients():
     model = nn.Linear(10, 1)
     # Input does NOT require grad
@@ -38,6 +46,7 @@ def test_output_only_gradients():
         assert len(events) > 0, "Should capture events even if only outputs have gradients"
 
 # 2. High-Density Hooks (Performance Benchmark)
+@requires_compile
 def test_high_density_hook_performance():
     class DeepModel(nn.Module):
         def __init__(self, layers=20):
@@ -72,6 +81,7 @@ def test_high_density_hook_performance():
     assert hooked_time < baseline * 20, "Overhead too high (>20x)"
 
 # 3. Compiler Disable Workaround
+@requires_compile
 def test_compiler_disable_persistence():
     class SubModule(nn.Module):
         def __init__(self):
@@ -110,6 +120,7 @@ def test_compiler_disable_persistence():
         assert len(last_events) > 0, "Should capture events in compiled regions"
 
 # 4. Backend Parity Mock (AOT_Eager vs Inductor imitation)
+@requires_compile
 def test_graph_break_recovery():
     class GraphBreakModel(nn.Module):
         def __init__(self):

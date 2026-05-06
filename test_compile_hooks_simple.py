@@ -1,6 +1,14 @@
 
 import torch
 import torch.nn as nn
+import pytest
+import sys
+
+if sys.version_info >= (3, 14) or not hasattr(torch, "compile"):
+    pytest.skip(
+        "torch.compile is not supported in this Python/PyTorch environment",
+        allow_module_level=True,
+    )
 
 class SimpleModel(nn.Module):
     def __init__(self):

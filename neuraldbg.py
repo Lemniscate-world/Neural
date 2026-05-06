@@ -7,6 +7,8 @@ post-mortem reasoning about training failures.
 """
 
 import math
+import json
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -611,7 +613,11 @@ class NeuralDbg:
             description=f"Activation saturation detected in layer '{first_sat.layer_name}' at step {first_sat.step}",
             confidence=first_sat.confidence,
             evidence=[first_sat],
-            causal_chain=[f"High saturation_ratio ({first_sat.metadata.get('current_saturation', 1.0):.2f}) in {first_sat.layer_name}"]
+            causal_chain=[
+                "High saturation_ratio "
+                f"({first_sat.metadata.get('current_saturation', first_sat.metadata.get('saturation_ratio', 1.0)):.2f}) "
+                f"in {first_sat.layer_name}"
+            ]
         ))
 
         return hypotheses
@@ -641,6 +647,7 @@ class NeuralDbg:
         # Hypothesis 2: Check for activation saturation coupling
         saturation_events = [e for e in self.events
                            if e.event_type == EventType.ACTIVATION_REGIME_SHIFT
+                           and e.to_state == ActivationHealth.SATURATED.value
                            and e.step <= first_vanishing.step + 10]  # Nearby in time
 
         if saturation_events:
@@ -714,7 +721,17 @@ class NeuralDbg:
         for failure_key, layer_name in self.first_failure_layer.items():
             step = self.first_failure_step[failure_key]
             # Find the actual event object
-            matching_events = [e for e in self.events if e.layer_name == layer_name and e.step == step]
+            matching_events = [
+                e for e in self.events
+                if e.layer_name == layer_name
+                and e.step == step
+                and self._event_matches_failure_key(e, failure_key)
+            ]
+            if not matching_events:
+                matching_events = [
+                    e for e in self.events
+                    if e.layer_name == layer_name and e.step == step
+                ]
             evidence = matching_events[:1]
             
             hypotheses.append(CausalHypothesis(
@@ -724,6 +741,38 @@ class NeuralDbg:
                 causal_chain=[f"First instance of {failure_key} detected in layer {layer_name}"]
             ))
         return hypotheses
+
+    def _event_matches_failure_key(
+        self,
+        event: SemanticEvent,
+        failure_key: str,
+    ) -> bool:
+        """Return whether an event is the evidence for a tracked failure key."""
+        if "_" not in failure_key:
+            return False
+
+        domain, state = failure_key.split("_", 1)
+        if domain == "gradient":
+            return (
+                event.event_type == EventType.GRADIENT_HEALTH_TRANSITION
+                and event.to_state == state
+            )
+        if domain == "activation":
+            return (
+                event.event_type == EventType.ACTIVATION_REGIME_SHIFT
+                and event.to_state == state
+            )
+        if domain == "optimizer":
+            return (
+                event.event_type == EventType.OPTIMIZER_INSTABILITY
+                and event.to_state == state
+            )
+        if domain == "data":
+            return (
+                event.event_type == EventType.DATA_ANOMALY
+                and event.to_state == state
+            )
+        return False
 
     def _classify_data_health(self, tensor: torch.Tensor) -> Tuple[DataHealth, Dict[str, Any]]:
         """Classify data health and return state + metadata.
@@ -1010,6 +1059,70 @@ class NeuralDbg:
         # Sort by step for consistent ordering
         collapsed.sort(key=lambda e: e.step)
         return collapsed
+
+    @staticmethod
+    def _json_safe(value: Any) -> Any:
+        """Convert internal values into JSON-serializable primitives."""
+        if isinstance(value, Enum):
+            return value.value
+        if isinstance(value, torch.Tensor):
+            if value.numel() == 1:
+                return value.detach().cpu().item()
+            return value.detach().cpu().tolist()
+        if isinstance(value, dict):
+            return {str(k): NeuralDbg._json_safe(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [NeuralDbg._json_safe(v) for v in value]
+        return value
+
+    @classmethod
+    def _event_to_dict(cls, event: SemanticEvent) -> Dict[str, Any]:
+        """Serialize a semantic event for external tools."""
+        return {
+            "event_type": cls._json_safe(event.event_type),
+            "layer_name": event.layer_name,
+            "step": event.step,
+            "from_state": str(cls._json_safe(event.from_state)),
+            "to_state": str(cls._json_safe(event.to_state)),
+            "confidence": event.confidence,
+            "metadata": cls._json_safe(event.metadata),
+        }
+
+    @classmethod
+    def _hypothesis_to_dict(cls, hypothesis: CausalHypothesis) -> Dict[str, Any]:
+        """Serialize a causal hypothesis for external tools."""
+        return {
+            "description": hypothesis.description,
+            "confidence": hypothesis.confidence,
+            "evidence": [cls._event_to_dict(event) for event in hypothesis.evidence],
+            "causal_chain": cls._json_safe(hypothesis.causal_chain),
+        }
+
+    def export_aquarium_package(self, package_path: str) -> str:
+        """Export a compact JSON package for Aquarium-style IDE consumers."""
+        output_dir = Path(package_path)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        hypotheses = self.get_causal_hypotheses()
+        root_causes = self.get_root_causes()
+        package = {
+            "step": self.step,
+            "events": [self._event_to_dict(event) for event in self.events],
+            "hypotheses": [
+                self._hypothesis_to_dict(hypothesis)
+                for hypothesis in hypotheses
+            ],
+            "root_causes": [
+                self._hypothesis_to_dict(hypothesis)
+                for hypothesis in root_causes
+            ],
+            "couplings": self._json_safe(self.detect_coupled_failures()),
+        }
+
+        output_file = output_dir / "events.json"
+        with output_file.open("w", encoding="utf-8") as f:
+            json.dump(package, f, indent=2)
+        return str(output_file)
 
     def export_mermaid_causal_graph(self) -> str:
         """

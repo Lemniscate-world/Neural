@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aquarium IDE | NeuralDBG Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="brutalist-theme">
+    <header class="main-header">
+        <div class="logo-area">
+            <h1>AQUARIUM_IDE <span class="version">v0.1-alfa</span></h1>
+            <p class="tagline">CAUSAL_BRIDGE_NEURAL_DBG</p>
+        </div>
+        <div class="status-bar">
+            <span class="pulse"></span>
+            <span class="status-text">LISTENING_FOR_EVENTS...</span>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+        <!-- Telemetry Sidebar -->
+        <aside class="telemetry-panel">
+            <div class="panel-header">TELEMETRY_STREAM</div>
+            <div id="telemetry-log" class="log-content">
+                <div class="log-entry system">[SYSTEM]: INITIALIZING BRIDGE...</div>
+            </div>
+        </aside>
+
+        <!-- Main Visualization (Causal Graph) -->
+        <section class="viewport-panel">
+            <div class="panel-header">CAUSAL_TRACE_GRAPH</div>
+            <div id="graph-container" class="preview-area">
+                <!-- Placeholder for D3/Mermaid graph -->
+                <div class="debug-overlay">
+                    <p>STEP: <span id="current-step">0</span></p>
+                    <p>MODEL: <span id="model-type">N/A</span></p>
+                </div>
+                <div id="graph-viz"></div>
+            </div>
+        </section>
+
+        <!-- Insights sidebar -->
+        <aside class="insights-panel">
+            <div class="panel-header">DIAGNOSTIC_INSIGHTS</div>
+            <div id="insights-content" class="insights-list">
+                <div class="insight-card empty">
+                    <p>NO_FAILURE_DETECTED</p>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <footer class="main-footer">
+        <div class="footer-stat">AUTH: NEURAL_USER</div>
+        <div class="footer-stat">MD: BRUTAL_DS_V1</div>
+        <div class="footer-stat" id="timestamp"></div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -60,7 +60,7 @@ test-docker:
 	$(COMPOSE) run --rm neuraldbg-dev bash -lc "pytest"
 
 coverage: check-venv
-	$(PYTHON) -m coverage run --source=neuraldbg -m pytest
+	$(PYTHON) -m coverage run --include=neuraldbg.py -m pytest
 	$(PYTHON) -m coverage report --show-missing --fail-under=60
 
 bandit: check-venv

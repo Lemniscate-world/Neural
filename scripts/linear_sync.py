@@ -20,12 +20,12 @@ import os
 import sys
 import json
 import argparse
+from http.client import HTTPSConnection, HTTPException
 from dataclasses import dataclass
 from typing import Optional
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
 
-LINEAR_API_URL = "https://api.linear.app/graphql"
+LINEAR_API_HOST = "api.linear.app"
+LINEAR_API_PATH = "/graphql"
 LINEAR_API_KEY = os.environ.get("LINEAR_API_KEY", "")
 LINEAR_TEAM_ID = os.environ.get("LINEAR_TEAM_ID", "")
 
@@ -54,27 +54,29 @@ def linear_request(query: str, variables: dict = None) -> dict:
 
     data = json.dumps(payload).encode("utf-8")
 
-    request = Request(
-        LINEAR_API_URL,
-        data=data,
-        headers={
-            "Authorization": LINEAR_API_KEY,
-            "Content-Type": "application/json",
-            "User-Agent": "NeuralDBG-linear-sync/1.0",
-        },
-        method="POST",
-    )
+    headers = {
+        "Authorization": LINEAR_API_KEY,
+        "Content-Type": "application/json",
+        "User-Agent": "NeuralDBG-linear-sync/1.0",
+    }
+    connection = HTTPSConnection(LINEAR_API_HOST, timeout=30)
 
     try:
-        with urlopen(request, timeout=30) as response:
-            result = json.loads(response.read().decode("utf-8"))
-    except HTTPError as e:
-        error_body = e.read().decode("utf-8") if e.fp else ""
-        print(f"ERROR: Linear API returned {e.code}: {error_body}")
+        connection.request("POST", LINEAR_API_PATH, body=data, headers=headers)
+        response = connection.getresponse()
+        response_body = response.read().decode("utf-8")
+        if response.status >= 400:
+            print(f"ERROR: Linear API returned {response.status}: {response_body}")
+            sys.exit(1)
+        result = json.loads(response_body)
+    except (HTTPException, OSError) as e:
+        print(f"ERROR: Cannot reach Linear API: {e}")
         sys.exit(1)
-    except URLError as e:
-        print(f"ERROR: Cannot reach Linear API: {e.reason}")
+    except json.JSONDecodeError as e:
+        print(f"ERROR: Linear API returned invalid JSON: {e}")
         sys.exit(1)
+    finally:
+        connection.close()
 
     if "errors" in result:
         print(f"ERROR: GraphQL errors: {result['errors']}")
@@ -160,10 +162,10 @@ def get_issue(issue_id: str) -> LinearIssue:
 def update_issue_state(issue_id: str, new_state: str) -> dict:
     """Update issue state (e.g., 'Done', 'In Progress')."""
     state_mapping = {
-        "done": {"name": "Done"},
-        "in_progress": {"name": "In Progress"},
-        "canceled": {"name": "Canceled"},
-        "backlog": {"name": "Backlog"},
+        "done": "Done",
+        "in_progress": "In Progress",
+        "canceled": "Canceled",
+        "backlog": "Backlog",
     }
 
     if new_state not in state_mapping:
@@ -179,11 +181,15 @@ def update_issue_state(issue_id: str, new_state: str) -> dict:
     }
     """
 
-    data = linear_request(mutation, {"identifier": issue_id, "state": new_state})
+    linear_state_name = state_mapping[new_state]
+    data = linear_request(
+        mutation,
+        {"identifier": issue_id, "state": linear_state_name},
+    )
     result = data.get("issueUpdate", {})
 
     if result.get("success"):
-        print(f"[OK] {issue_id} -> {new_state}")
+        print(f"[OK] {issue_id} -> {linear_state_name}")
         return result
     else:
         print(f"ERROR: Failed to update {issue_id}")
@@ -238,10 +244,13 @@ def create_issue(
 
 def print_issue(issue: LinearIssue, verbose: bool = False):
     """Print an issue in a formatted way."""
-    priority_icon = {0: "—", 1: "🔴", 2: "🟠", 3: "🟡", 4: "⚪"}.get(issue.priority, "?")
+    priority_label = {0: "P0", 1: "P1", 2: "P2", 3: "P3", 4: "P4"}.get(
+        issue.priority,
+        "P?",
+    )
 
     print(f"\n{'=' * 60}")
-    print(f"  {issue.identifier} {priority_icon}")
+    print(f"  {issue.identifier} {priority_label}")
     print(f"{'=' * 60}")
     print(f"  Title:    {issue.title}")
     print(f"  State:    {issue.state}")

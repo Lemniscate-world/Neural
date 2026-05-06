@@ -1,4 +1,4 @@
-name: Security Scans (Bandit & Safety)
+name: Security Scans (Bandit, Safety & Trivy)
 
 on:
   pull_request:
@@ -91,3 +91,62 @@ jobs:
           else
             echo "- Safety results not generated or artifact upload disabled for this event" >> $GITHUB_STEP_SUMMARY
           fi
+
+  trivy-iac:
+    name: Trivy IaC & Container Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'json'
+          output: 'trivy-fs-results.json'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+
+      - name: Run Trivy config scanner (IaC)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'json'
+          output: 'trivy-config-results.json'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: |
+            trivy-fs-results.json
+            trivy-config-results.json
+          retention-days: 3
+
+      - name: Post Trivy Summary
+        if: always()
+        run: |
+          echo "## Trivy Security Summary" >> $GITHUB_STEP_SUMMARY
+          if [ -f "trivy-fs-results.json" ]; then
+            echo "- Trivy filesystem scan completed" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "trivy-config-results.json" ]; then
+            echo "- Trivy IaC config scan completed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail on Critical vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        if: github.event_name != 'pull_request'
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'json'
+          exit-code: '1'
+          severity: 'CRITICAL'
+          ignore-unfixed: true

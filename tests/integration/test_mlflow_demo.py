@@ -17,16 +17,17 @@ from demo_vanishing_gradients import (
 def test_demo_logs_metrics_and_artifacts_to_mlflow(tmp_path, monkeypatch):
     """Verify the demo writes a run, metrics, params, and artifacts to MLflow."""
     tracking_dir = tmp_path / "mlruns"
-    monkeypatch.setenv("MLFLOW_TRACKING_URI", str(tracking_dir))
+    tracking_uri = tracking_dir.as_uri()
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", tracking_uri)
     mlflow.end_run()
 
-    mlflow.set_tracking_uri(str(tracking_dir))
+    mlflow.set_tracking_uri(tracking_uri)
     model = create_failing_model()
     dataloader = create_problematic_data()
 
     train_with_monitoring(model, dataloader, num_steps=5)
 
-    client = MlflowClient(tracking_uri=str(tracking_dir))
+    client = MlflowClient(tracking_uri=tracking_uri)
     experiment = client.get_experiment_by_name("neuraldbg-vanishing-gradients")
 
     assert experiment is not None

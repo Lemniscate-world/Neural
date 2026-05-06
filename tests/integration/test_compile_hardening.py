@@ -1,10 +1,16 @@
 import torch
 import torch.nn as nn
 import pytest
+import sys
 from neuraldbg import NeuralDbg, EventType
 
 # Note: We use aot_eager to avoid needing a C++ compiler on Windows
 BACKEND = "aot_eager"
+COMPILE_AVAILABLE = hasattr(torch, "compile") and sys.version_info < (3, 14)
+requires_compile = pytest.mark.skipif(
+    not COMPILE_AVAILABLE,
+    reason="torch.compile is not supported in this Python/PyTorch environment",
+)
 
 class SimpleModel(nn.Module):
     def __init__(self):
@@ -18,6 +24,7 @@ class SimpleModel(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+@requires_compile
 def test_compile_hook_persistence():
     """Verify that hooks remain active and events are captured if installed BEFORE compile."""
     model = SimpleModel()
@@ -59,6 +66,7 @@ def test_compile_hook_persistence():
     finally:
         dbg._remove_hooks()
 
+@requires_compile
 def test_dynamo_graph_breaks():
     """Use torch._dynamo.explain to ensure no unexpected graph breaks in monitoring code."""
     try:

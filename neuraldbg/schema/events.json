@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NeuralDbg Aquarium Bridge Schema",
+  "description": "Schema for exporting semantic events and causal hypotheses to the Aquarium IDE.",
+  "type": "object",
+  "properties": {
+    "step": {
+      "type": "integer",
+      "description": "The current training step at time of export."
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/SemanticEvent"
+      }
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/CausalHypothesis"
+      }
+    },
+    "root_causes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/CausalHypothesis"
+      }
+    },
+    "couplings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "trigger": { "type": "string" },
+          "consequence": { "type": "string" },
+          "step_difference": { "type": "integer" },
+          "confidence": { "type": "number" },
+          "is_causal_candidate": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "SemanticEvent": {
+      "type": "object",
+      "required": ["event_type", "layer_name", "step", "from_state", "to_state", "confidence"],
+      "properties": {
+        "event_type": { "type": "string" },
+        "layer_name": { "type": "string" },
+        "step": { "type": "integer" },
+        "from_state": { "type": "string" },
+        "to_state": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "metadata": { "type": "object" }
+      }
+    },
+    "CausalHypothesis": {
+      "type": "object",
+      "required": ["description", "confidence", "evidence", "causal_chain"],
+      "properties": {
+        "description": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/SemanticEvent" }
+        },
+        "causal_chain": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

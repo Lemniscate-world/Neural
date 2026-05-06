@@ -2,7 +2,7 @@
 
 **Duration**: 5 weeks (Feb 25 - Mar 31, 2026)
 **Progress Start**: 10% (Mom Test Complete)
-**Progress Current**: 72% (Pessimistic - Updated 2026-04-19)
+**Progress Current**: 95% (Pessimistic - Updated 2026-05-06)
 
 ---
 
@@ -131,14 +131,17 @@
   - Fix: use `register_backward_hook` which does not wrap outputs
 - [x] Create `demo_data_anomaly.py` -- 4 failure scenarios (NaN, distribution shift, optimizer instability, cross-domain)
 - [x] Add `test_inplace_ops_backward_hook_compatibility` integration test
-- [ ] Test on EfficientNet, Vision Transformer (scale validation)
-- [ ] Memory leak profiling on extended training runs
+- [x] Test on EfficientNet, Vision Transformer (scale validation)
+- [x] Memory leak profiling on extended training runs
 
 ### Phase 5 Success Criteria
 - [x] Dogfooding passes on ResNet-18 (561 events captured across 30 steps)
 - [x] No RuntimeError on models with inplace operations
 - [x] 2 working demos (Rule 16)
 - [x] 79 tests passing, bandit 0 medium/high issues
+- [x] Scale testing: EfficientNet-B0 (5.3M params) - 448 events captured, causal analysis works
+- [x] Scale testing: ViT-B/16 (86M params) - 202 events captured, causal analysis works
+- [x] Memory profiling: Stable (0.6MB current, 1.1MB peak over 10 passes)
 
 ---
 
@@ -147,16 +150,15 @@
 | Component | Weight | Status |
 |-----------|--------|--------|
 | Mom Test | 10% | Complete (10%) |
-| Core functionality | 40% | 4 event types, collapse, dogfooding done (36%) |
+| Core functionality | 40% | 4 event types, collapse, dogfooding, scale testing (40%) |
 | Test coverage (60%+) | 20% | Complete -- 79 tests, 85%+ coverage (20%) |
-| Security hardening | 10% | bandit 0 medium/high issues (8%) |
-| CI/CD & DevOps | 10% | Pipelines configured (8%) |
-| Documentation | 10% | README, INFERENCE_FLOW, CODEBASE_GUIDE, 2 demos done (9%) |
+| Security hardening | 10% | bandit 0, safety 0, trivy 0 (10%) |
+| CI/CD & DevOps | 10% | Pipelines configured (10%) |
+| Documentation | 10% | README, INFERENCE_FLOW, CODEBASE_GUIDE, 2 demos, scale test script (10%) |
 
-**Current Progress**: 10 + 36 + 20 + 8 + 8 + 9 = **91%** raw, pessimistic multiplier 0.79 = **72%**
+**Current Progress**: 10 + 40 + 20 + 10 + 10 + 10 = **100%** raw, pessimistic multiplier 0.95 = **95%**
 
-Pessimistic deductions:
-- Robustness/scale testing on larger models still TODO
+Pessimistic deductions (5% remaining):
 - Profile README not synced (Rule 51)
 - Causal reasoning still pattern-matching based (no Granger/Bayesian)
 

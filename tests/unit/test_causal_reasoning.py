@@ -164,6 +164,26 @@ class TestSaturatedActivations:
         assert "saturation" in hypotheses[0].description.lower()
         assert hypotheses[0].confidence == 0.92
 
+    def test_explain_saturated_uses_baseline_saturation_ratio(self):
+        """Test saturation explanation reports baseline metadata accurately."""
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        event = SemanticEvent(
+            event_type=EventType.ACTIVATION_REGIME_SHIFT,
+            layer_name='sigmoid1',
+            step=0,
+            from_state="NONE",
+            to_state=ActivationHealth.SATURATED.value,
+            confidence=1.0,
+            metadata={"saturation_ratio": 0.84}
+        )
+        dbg.events.append(event)
+
+        hypotheses = dbg._explain_saturated_activations()
+
+        assert "0.84" in hypotheses[0].causal_chain[0]
+
     def test_explain_saturated_low_ratio_ignored(self):
         """Test that events with low saturation_ratio are ignored."""
         model = nn.Linear(10, 5)
@@ -205,6 +225,37 @@ class TestExplainFailure:
         hypotheses = dbg.explain_failure("vanishing_gradients")
         assert len(hypotheses) >= 1
         assert hypotheses[0].confidence == 0.9
+
+    def test_vanishing_coupling_uses_only_saturated_activation(self):
+        """Vanishing explanations should not cite normal activations as saturation."""
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        dbg.events.extend([
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name="relu1",
+                step=0,
+                from_state="NONE",
+                to_state=ActivationHealth.NORMAL.value,
+                confidence=1.0,
+                metadata={},
+            ),
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=0,
+                from_state="NONE",
+                to_state=GradientHealth.VANISHING.value,
+                confidence=1.0,
+                metadata={},
+            ),
+        ])
+
+        hypotheses = dbg._explain_vanishing_gradients()
+
+        assert len(hypotheses) == 1
+        assert "activation mismatch" not in hypotheses[0].description
 
     def test_explain_failure_exploding(self):
         """Test explain_failure with exploding_gradients type."""
@@ -432,3 +483,39 @@ class TestGetCausalHypotheses:
 
         hypotheses = dbg.get_causal_hypotheses()
         assert len(hypotheses) >= 1
+
+
+class TestRootCauseEvidence:
+    """Unit tests for first-occurrence root cause evidence selection."""
+
+    def test_root_cause_uses_event_matching_failure_type(self):
+        """Root causes should not attach unrelated same-layer same-step evidence."""
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        activation_event = SemanticEvent(
+            event_type=EventType.ACTIVATION_REGIME_SHIFT,
+            layer_name="linear1",
+            step=0,
+            from_state="NONE",
+            to_state=ActivationHealth.NORMAL.value,
+            confidence=1.0,
+            metadata={},
+        )
+        gradient_event = SemanticEvent(
+            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+            layer_name="linear1",
+            step=0,
+            from_state="NONE",
+            to_state=GradientHealth.VANISHING.value,
+            confidence=1.0,
+            metadata={},
+        )
+        dbg.events.extend([activation_event, gradient_event])
+        dbg.first_failure_layer["gradient_vanishing"] = "linear1"
+        dbg.first_failure_step["gradient_vanishing"] = 0
+
+        hypotheses = dbg.get_root_causes()
+
+        assert len(hypotheses) == 1
+        assert hypotheses[0].evidence == [gradient_event]

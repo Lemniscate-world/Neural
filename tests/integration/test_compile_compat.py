@@ -83,9 +83,8 @@ class TestCompileCompatibility:
             output = compiled_model(x)
             loss = nn.MSELoss()(output, y)
             loss.backward()
-            
-            # Should not crash
-            assert True
+
+            assert len(dbg.events) > 0
 
     def test_explain_failure_with_compiled_model(self):
         """Test that explain_failure works after training with compiled model."""
@@ -132,6 +131,5 @@ class TestNonCompiledModel:
             output = model(x)
             loss = output.sum()
             loss.backward()
-            
-            # Should have captured some events
-            assert len(dbg.events) >= 0  # May or may not have events
+
+            assert len(dbg.events) > 0
