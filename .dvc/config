@@ -1,4 +1,8 @@
 [core]
-    remote = local-storage
+    remote = dagshub
 ['remote "local-storage"']
     url = /home/kami/dvc-store/neuraldbg
+['remote "dagshub"']
+    url = https://dagshub.com/P3niel/NeuralDBG.dvc
+    auth = basic
+    user = P3niel

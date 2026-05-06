@@ -1,0 +1,5 @@
+outs:
+- md5: 74df5c8478ca7f9834700e16fcdbbea7
+  size: 1728
+  hash: md5
+  path: gradient_norms_demo.npy
