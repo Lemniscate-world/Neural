@@ -146,6 +146,19 @@ class NeuralDbg:
         self.step = 0
         self.is_monitoring = False
 
+        # Resource profiling — psutil is optional but treated as a runtime dep
+        self._psutil_process = None
+        try:
+            import psutil as _psutil
+            self._psutil_process = _psutil.Process()
+        except ImportError:
+            pass
+
+        # Per-step resource snapshot cache: (step, snapshot) — sampled once per step
+        self._resource_snapshot_cache: Optional[Tuple[int, Dict[str, float]]] = None
+        # Snapshot from the previous step used as spike baseline
+        self._resource_baseline: Dict[str, float] = {}
+
     def step_iteration(self):
         """Increment the internal step counter."""
         self.step += 1
@@ -245,15 +258,19 @@ class NeuralDbg:
                 activation_stats = self._compute_activation_stats(output)
                 current_health = self._classify_activation_health(activation_stats)
 
+                # Sample resources once per step (outside transition check to build baseline)
+                resource_snapshot, resource_baseline = self._get_step_resource_snapshot(output.device)
+
                 # Detect activation regime shifts
                 if layer_name in self.previous_activation_stats:
                     prev_stats = self.previous_activation_stats[layer_name]
                     prev_health = self._classify_activation_health(prev_stats)
-                    
+
                     if prev_health != current_health:
                         if current_health != ActivationHealth.NORMAL:
                             self._track_first_occurrence(f"activation_{current_health.value}", layer_name)
-                            
+
+                        is_spike, spike_keys = self._is_memory_spike(resource_snapshot, resource_baseline)
                         event = SemanticEvent(
                             event_type=EventType.ACTIVATION_REGIME_SHIFT,
                             layer_name=layer_name,
@@ -265,7 +282,10 @@ class NeuralDbg:
                                 'prev_saturation': prev_stats.get('saturation_ratio'),
                                 'current_saturation': activation_stats.get('saturation_ratio'),
                                 'prev_dead': prev_stats.get('dead_ratio'),
-                                'current_dead': activation_stats.get('dead_ratio')
+                                'current_dead': activation_stats.get('dead_ratio'),
+                                'resources': resource_snapshot,
+                                'memory_spike': is_spike,
+                                'memory_spike_keys': spike_keys,
                             }
                         )
                         self.events.append(event)
@@ -300,7 +320,11 @@ class NeuralDbg:
             # Extract gradient health information
             # In full_backward_hook, grad_output is a tuple of gradients w.r.t. outputs
             if grad_output and len(grad_output) > 0 and grad_output[0] is not None:
-                grad_norm = grad_output[0].norm().item()
+                grad_tensor = grad_output[0]
+                grad_norm = grad_tensor.norm().item()
+
+                # Sample resources once per step (outside transition check to build baseline)
+                resource_snapshot, resource_baseline = self._get_step_resource_snapshot(grad_tensor.device)
 
                 # Detect gradient health transitions
                 if layer_name in self.previous_gradient_norms:
@@ -311,6 +335,7 @@ class NeuralDbg:
                         if current_health != GradientHealth.HEALTHY:
                             self._track_first_occurrence(f"gradient_{current_health.value}", layer_name)
 
+                        is_spike, spike_keys = self._is_memory_spike(resource_snapshot, resource_baseline)
                         event = SemanticEvent(
                             event_type=EventType.GRADIENT_HEALTH_TRANSITION,
                             layer_name=layer_name,
@@ -321,7 +346,10 @@ class NeuralDbg:
                             metadata={
                                 'prev_norm': prev_norm,
                                 'current_norm': grad_norm,
-                                'transition_type': transition['type']
+                                'transition_type': transition['type'],
+                                'resources': resource_snapshot,
+                                'memory_spike': is_spike,
+                                'memory_spike_keys': spike_keys,
                             }
                         )
                         self.events.append(event)
@@ -406,6 +434,46 @@ class NeuralDbg:
         for hook in self.hooks:
             hook.remove()
         self.hooks.clear()
+
+    def _sample_resources(self, device: Optional[torch.device] = None) -> Dict[str, float]:
+        """Snapshot current CPU and (if relevant) GPU memory usage."""
+        stats: Dict[str, float] = {}
+        if self._psutil_process is not None:
+            try:
+                stats['cpu_memory_mb'] = self._psutil_process.memory_info().rss / 1024 ** 2
+            except Exception:
+                pass
+        if device is not None and device.type == 'cuda':
+            stats['gpu_memory_allocated_mb'] = torch.cuda.memory_allocated(device) / 1024 ** 2
+            stats['gpu_memory_reserved_mb'] = torch.cuda.memory_reserved(device) / 1024 ** 2
+        return stats
+
+    def _get_step_resource_snapshot(self, device: Optional[torch.device] = None) -> Tuple[Dict[str, float], Dict[str, float]]:
+        """Return (current_snapshot, baseline) for this step, sampling at most once per step."""
+        if self._resource_snapshot_cache is not None and self._resource_snapshot_cache[0] == self.step:
+            return self._resource_snapshot_cache[1], self._resource_baseline
+        # New step: promote previous snapshot to baseline, then take a fresh one
+        if self._resource_snapshot_cache is not None:
+            self._resource_baseline = self._resource_snapshot_cache[1]
+        snapshot = self._sample_resources(device)
+        self._resource_snapshot_cache = (self.step, snapshot)
+        return snapshot, self._resource_baseline
+
+    def _is_memory_spike(
+        self,
+        current: Dict[str, float],
+        baseline: Dict[str, float],
+    ) -> Tuple[bool, List[str]]:
+        """Detect spikes: >20 % relative rise AND >50 MB absolute vs previous-step baseline."""
+        spike_keys: List[str] = []
+        for key, curr_val in current.items():
+            if key not in baseline:
+                continue
+            prev_val = baseline[key]
+            delta = curr_val - prev_val
+            if prev_val > 0 and (delta / prev_val) > 0.20 and delta > 50.0:
+                spike_keys.append(key)
+        return bool(spike_keys), spike_keys
 
     def _get_layer_name(self, module: nn.Module) -> str:
         """Get the name of a module from the pre-computed mapping (O(1) lookup)."""

@@ -210,6 +210,103 @@ class TestCausalReasoning:
         assert coupling['step_difference'] == 2
 
 
+class TestResourceProfiling:
+    """Unit tests for resource profiling integration in NeuralDbg."""
+
+    def test_sample_resources_cpu(self, monkeypatch):
+        """cpu_memory_mb is populated when psutil is available."""
+        import types
+        model = nn.Linear(4, 2)
+        dbg = NeuralDbg(model)
+
+        # Monkeypatch a fake psutil process on the instance
+        fake_mem = types.SimpleNamespace(rss=200 * 1024 ** 2)  # 200 MB
+        fake_proc = types.SimpleNamespace(memory_info=lambda: fake_mem)
+        dbg._psutil_process = fake_proc
+
+        stats = dbg._sample_resources()
+        assert 'cpu_memory_mb' in stats
+        assert stats['cpu_memory_mb'] == pytest.approx(200.0)
+
+    def test_sample_resources_no_psutil(self):
+        """Sampling degrades gracefully when psutil is unavailable."""
+        model = nn.Linear(4, 2)
+        dbg = NeuralDbg(model)
+        dbg._psutil_process = None  # simulate absent psutil
+
+        stats = dbg._sample_resources()
+        assert 'cpu_memory_mb' not in stats
+
+    def test_memory_spike_detected(self):
+        """_is_memory_spike returns True when rise > 20 % and > 50 MB."""
+        model = nn.Linear(4, 2)
+        dbg = NeuralDbg(model)
+
+        baseline = {'cpu_memory_mb': 200.0}
+        current = {'cpu_memory_mb': 200.0 + 60.0}  # +60 MB = 30 % rise
+        is_spike, keys = dbg._is_memory_spike(current, baseline)
+        assert is_spike is True
+        assert 'cpu_memory_mb' in keys
+
+    def test_memory_spike_not_triggered_below_threshold(self):
+        """No spike when rise is < 50 MB even if percentage is high."""
+        model = nn.Linear(4, 2)
+        dbg = NeuralDbg(model)
+
+        baseline = {'cpu_memory_mb': 10.0}
+        current = {'cpu_memory_mb': 25.0}  # +15 MB — > 20 % but < 50 MB
+        is_spike, keys = dbg._is_memory_spike(current, baseline)
+        assert is_spike is False
+        assert keys == []
+
+    def test_event_metadata_contains_resources(self, monkeypatch):
+        """SemanticEvents emitted by hooks carry resources/memory_spike keys."""
+        import types
+        model = nn.Sequential(nn.Linear(4, 4), nn.Linear(4, 2))
+        dbg = NeuralDbg(model)
+
+        fake_mem = types.SimpleNamespace(rss=300 * 1024 ** 2)
+        dbg._psutil_process = types.SimpleNamespace(memory_info=lambda: fake_mem)
+
+        x = torch.randn(2, 4)
+        with dbg:
+            for step in range(3):
+                dbg.step = step
+                out = model(x)
+                loss = out.sum()
+                loss.backward()
+
+        for event in dbg.events:
+            assert 'resources' in event.metadata
+            assert 'memory_spike' in event.metadata
+            assert 'memory_spike_keys' in event.metadata
+            assert isinstance(event.metadata['memory_spike'], bool)
+
+    def test_step_snapshot_cached(self, monkeypatch):
+        """Resource snapshot is taken only once per step, not once per module."""
+        import types
+        call_count = {'n': 0}
+        model = nn.Linear(4, 2)
+        dbg = NeuralDbg(model)
+
+        original_sample = dbg._sample_resources
+
+        def counting_sample(device=None):
+            call_count['n'] += 1
+            return original_sample(device)
+
+        monkeypatch.setattr(dbg, '_sample_resources', counting_sample)
+
+        dbg.step = 0
+        dbg._get_step_resource_snapshot()
+        dbg._get_step_resource_snapshot()  # same step — should not call again
+        assert call_count['n'] == 1
+
+        dbg.step = 1
+        dbg._get_step_resource_snapshot()  # new step — should call once more
+        assert call_count['n'] == 2
+
+
 class TestIntegrationBasics:
     """Basic integration tests for NeuralDbg with simple models."""
 
