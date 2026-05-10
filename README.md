@@ -37,6 +37,32 @@ Unlike traditional monitoring tools (TensorBoard, Weights & Biases), NeuralDBG f
 pip install neuraldbg
 ```
 
+### Contributor Onboarding
+
+For a new collaborator, run:
+
+```bash
+make bootstrap
+```
+
+This one-command setup:
+- verifies or recreates `.venv`
+- installs runtime, development, and MLflow/MLOps dependencies
+- activates the repository git hooks
+- installs the project in editable mode
+
+Then activate the environment:
+
+```bash
+source .venv/bin/activate
+```
+
+Validation sync is intentionally opt-in because it depends on `VALIDATION_BUNDLE_TOKEN` and rewrites protected local files:
+
+```bash
+bash scripts/bootstrap.sh --with-validation-sync
+```
+
 ### Basic Usage
 
 ```python

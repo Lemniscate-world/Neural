@@ -2,5 +2,11 @@
     "sonarlint.connectedMode.project": {
         "connectionId": "stable-turbo",
         "projectKey": "STABLE-TURBO_Neural"
-    }
+    },
+    "git.ignoreLimitWarning": true,
+    "editor.renderWhitespace": "all",
+    "editor.renderControlCharacters": true,
+    "editor.unicodeHighlight.invisibleCharacters": true,
+    "editor.unicodeHighlight.ambiguousCharacters": true,
+    "editor.unicodeHighlight.nonBasicASCII": false
 }

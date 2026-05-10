@@ -23,6 +23,7 @@ htmlcov/
 
 # Virtual environment
 venv/
+.venv/
 
 # Generated artifacts
 artifacts/*
