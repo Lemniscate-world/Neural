@@ -298,7 +298,12 @@ class NeuralDbg:
                         from_state="NONE",
                         to_state=current_health.value,
                         confidence=1.0,
-                        metadata=activation_stats
+                        metadata={
+                            **activation_stats,
+                            'resources': resource_snapshot,
+                            'memory_spike': False,
+                            'memory_spike_keys': [],
+                        }
                     )
                     self.events.append(event)
                     if current_health != ActivationHealth.NORMAL:
@@ -365,7 +370,10 @@ class NeuralDbg:
                         confidence=1.0,
                         metadata={
                             'current_norm': grad_norm,
-                            'transition_type': 'baseline'
+                            'transition_type': 'baseline',
+                            'resources': resource_snapshot,
+                            'memory_spike': False,
+                            'memory_spike_keys': [],
                         }
                     )
                     self.events.append(event)
