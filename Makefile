@@ -3,7 +3,7 @@ SHELL := /bin/bash
 PYTHON = $(shell if [ -x .venv/bin/python ]; then echo .venv/bin/python; elif command -v python3 >/dev/null 2>&1; then echo python3; else echo python; fi)
 COMPOSE := docker-compose
 
-.PHONY: help bootstrap install install-dev check-venv up down build rebuild shell test test-docker coverage bandit safety security precommit clean
+.PHONY: help bootstrap install install-dev check-venv up down build rebuild shell test test-docker coverage bandit safety security precommit docs clean
 
 help:
 	@echo "NeuralDBG Make targets:"
@@ -22,6 +22,7 @@ help:
 	@echo "  make security      - run Bandit + Safety"
 	@echo "  make precommit     - run pre-commit hooks on all files"
 	@echo "  make check-venv    - verify/recreate .venv if Python version mismatch"
+	@echo "  make docs          - generate API docs to docs/api/"
 	@echo "  make clean         - remove local QA artifacts"
 
 bootstrap:
@@ -73,6 +74,9 @@ security: bandit safety
 
 precommit:
 	$(PYTHON) -m pre_commit run --all-files
+
+docs: check-venv
+	$(PYTHON) -m pdoc neuraldbg --output-dir docs/api
 
 clean:
 	rm -rf .pytest_cache htmlcov .mypy_cache
