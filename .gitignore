@@ -43,6 +43,9 @@ mlruns/
 # Generated artifacts
 artifacts/*
 !artifacts/.gitkeep
+
+# Generated API docs
+docs/api/
 data/*
 !data/.gitkeep
 models/*
