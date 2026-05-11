@@ -16,6 +16,7 @@ help:
 	@echo "  make shell         - open shell in running dev container"
 	@echo "  make test          - run pytest locally"
 	@echo "  make test-docker   - run pytest in Docker container"
+	@echo "  make check-venv    - verify/recreate .venv if Python version mismatch"
 	@echo "  make coverage      - run coverage with gate >= 60%"
 	@echo "  make bandit        - run Bandit security scan"
 	@echo "  make safety        - run Safety dependency scan"

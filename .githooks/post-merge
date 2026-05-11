@@ -7,6 +7,8 @@
 if [ -x scripts/validation_sync.sh ]; then
   scripts/validation_sync.sh || true
 fi
+#!/usr/bin/env bash
+set -euo pipefail
 
 if [ -x scripts/ensure_venv.sh ]; then
   scripts/ensure_venv.sh || true
