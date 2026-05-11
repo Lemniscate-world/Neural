@@ -16,13 +16,9 @@ neuraldbg/
 ├── docs/
 │   ├── architecture/           # Design, system architecture
 │   │   ├── INFERENCE_FLOW.md
-│   │   ├── logic_graph.md
-│   │   └── GAD.md
-│   ├── guides/                 # User guides & tutorials
-│   │   └── AI_GUIDELINES.md
+│   │   └── logic_graph.md
 │   ├── api/                    # API documentation (generated)
-│   ├── STRUCTURE.md            # This file
-│   └── research/               # Research papers, experiments
+│   └── STRUCTURE.md            # This file
 │
 ├── examples/                   # Example scripts & notebooks
 │
@@ -38,7 +34,6 @@ neuraldbg/
 │
 ├── config/                     # Project configuration files
 │   ├── .pre-commit-config.yaml
-│   ├── .cursorrules
 │   └── copilot-instructions.md
 │
 ├── .github/                    # GitHub-specific (workflows, templates)
@@ -48,7 +43,6 @@ neuraldbg/
 │   ├── LICENSE.md
 │   ├── SECURITY.md             # Security policy (MUST be at root)
 │   ├── CHANGELOG.md
-│   ├── ROADMAP.md
 │   ├── pyproject.toml          # Package metadata
 │   ├── Makefile
 │   ├── requirements.txt
@@ -63,7 +57,6 @@ Only place files here that are critical for project visibility:
 - `LICENSE.md` - License
 - `SECURITY.md` - Security policy (required by kuro rules)
 - `CHANGELOG.md` - Version history
-- `ROADMAP.md` - Project roadmap
 - `pyproject.toml` - Package configuration
 - `.gitignore` - Git ignore rules
 - Core config files: `Makefile`, `docker-compose.yml` (if critical)
