@@ -3,7 +3,7 @@ SHELL := /bin/bash
 PYTHON = $(shell if [ -x .venv/bin/python ]; then echo .venv/bin/python; elif command -v python3 >/dev/null 2>&1; then echo python3; else echo python; fi)
 COMPOSE := docker-compose
 
-.PHONY: help bootstrap install install-dev check-venv up down build rebuild shell test test-docker coverage bandit safety security precommit docs clean
+.PHONY: help bootstrap install install-dev check-venv up down build rebuild shell test test-docker coverage bandit safety security precommit docs session-docx clean
 
 help:
 	@echo "NeuralDBG Make targets:"
@@ -24,6 +24,7 @@ help:
 	@echo "  make precommit     - run pre-commit hooks on all files"
 	@echo "  make check-venv    - verify/recreate .venv if Python version mismatch"
 	@echo "  make docs          - generate API docs to docs/api/"
+	@echo "  make session-docx  - convert SESSION_SUMMARY.md to outputs/SESSION_SUMMARY.docx"
 	@echo "  make clean         - remove local QA artifacts"
 
 bootstrap:
@@ -78,6 +79,9 @@ precommit:
 
 docs: check-venv
 	$(PYTHON) -m pdoc neuraldbg --output-dir docs/api
+
+session-docx: check-venv
+	$(PYTHON) scripts/session_to_docx.py
 
 clean:
 	rm -rf .pytest_cache htmlcov .mypy_cache
