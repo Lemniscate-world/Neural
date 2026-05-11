@@ -1,6 +1,6 @@
 """Unit tests for the Linear sync CLI helpers."""
 
-import scripts.linear_sync as linear_sync
+import infrastructure.scripts.linear_sync as linear_sync
 
 
 def test_update_issue_state_sends_linear_state_name(monkeypatch):

@@ -28,10 +28,10 @@ help:
 	@echo "  make clean         - remove local QA artifacts"
 
 bootstrap:
-	@bash scripts/bootstrap.sh
+	@bash infrastructure/scripts/bootstrap.sh
 
 check-venv:
-	@bash scripts/ensure_venv.sh
+	@bash infrastructure/scripts/ensure_venv.sh
 
 install:
 	$(PYTHON) -m pip install --upgrade pip
@@ -81,7 +81,7 @@ docs: check-venv
 	$(PYTHON) -m pdoc neuraldbg --output-dir docs/api
 
 session-docx: check-venv
-	$(PYTHON) scripts/session_to_docx.py
+	$(PYTHON) infrastructure/scripts/session_to_docx.py
 
 clean:
 	rm -rf .pytest_cache htmlcov .mypy_cache

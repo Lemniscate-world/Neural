@@ -7,7 +7,7 @@ from neuraldbg import NeuralDbg
 
 # Paths
 SCHEMA_PATH = "neuraldbg/schema/events.json"
-VALIDATOR_PATH = "scripts/validate_schema.py"
+VALIDATOR_PATH = "infrastructure/scripts/validate_schema.py"
 OUTPUT_DIR = "outputs/test_bridge"
 
 def run_validator(data_path):

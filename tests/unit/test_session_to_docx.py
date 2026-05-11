@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-# Make the scripts/ directory importable
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
+# Make the infrastructure/scripts/ directory importable
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "infrastructure" / "scripts"))
 
 from session_to_docx import _parse_lines, _add_inline_bold, convert
 
