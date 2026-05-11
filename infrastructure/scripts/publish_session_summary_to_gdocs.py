@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Publish SESSION_SUMMARY.md content to a Google Doc.
 
 This script supports two auth methods:

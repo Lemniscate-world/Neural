@@ -2,6 +2,7 @@ import json
 import os
 import sys
 
+
 def validate_json(data_path, schema_path):
     if not os.path.exists(data_path):
         print(f"[-] Data file not found: {data_path}")
@@ -10,15 +11,15 @@ def validate_json(data_path, schema_path):
         print(f"[-] Schema file not found: {schema_path}")
         return False
 
-    with open(data_path, 'r') as f:
+    with open(data_path, "r") as f:
         data = json.load(f)
-    with open(schema_path, 'r') as f:
-        schema = json.load(f)
+    with open(schema_path, "r") as f:
+        json.load(f)
 
     # Basic validation (Checking for required top-level keys)
     required_keys = ["step", "events", "hypotheses", "root_causes"]
     missing = [k for k in required_keys if k not in data]
-    
+
     if missing:
         print(f"[-] Validation Failed! Missing keys: {missing}")
         return False
@@ -34,10 +35,11 @@ def validate_json(data_path, schema_path):
     print(f"[+] Validation Success: {data_path} matches schema requirements.")
     return True
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python validate_schema.py <data.json> <schema.json>")
         sys.exit(1)
-        
+
     success = validate_json(sys.argv[1], sys.argv[2])
     sys.exit(0 if success else 1)

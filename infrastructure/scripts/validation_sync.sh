@@ -75,11 +75,11 @@ trap "rm -rf $TEMP_DIR" EXIT
 # Download each protected file
 for file in "${PROTECTED_FILES[@]}"; do
     log_info "Downloading $file..."
-    
+
     # Construct GitHub raw URL with token auth
     # Format: https://TOKEN@raw.githubusercontent.com/OWNER/REPO/BRANCH/FILE
     URL="https://${TOKEN}@raw.githubusercontent.com/${REPO}/${BRANCH}/${file}"
-    
+
     # Download with curl
     if curl -sSf -o "${TEMP_DIR}/${file}" "$URL" 2>/dev/null; then
         # Check if file is not empty

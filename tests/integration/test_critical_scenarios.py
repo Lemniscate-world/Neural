@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import pytest
@@ -12,13 +11,14 @@ requires_compile = pytest.mark.skipif(
     reason="torch.compile is not supported in this Python/PyTorch environment",
 )
 
+
 # 1. Output-Only Gradients Scenario (UserWarning Test)
 @requires_compile
 def test_output_only_gradients():
     model = nn.Linear(10, 1)
     # Input does NOT require grad
     x = torch.randn(1, 10)
-    
+
     # FIRST TEST EAGER
     with NeuralDbg(model) as dbg:
         out = model(x)
@@ -29,21 +29,24 @@ def test_output_only_gradients():
 
     # RESET
     model = nn.Linear(10, 1)
-    
+
     # THEN TEST COMPILED
     with NeuralDbg(model) as dbg:
         # Compile AFTER installing hooks
         compiled_model = torch.compile(model, backend="aot_eager")
         out = compiled_model(x)
         loss = out.sum()
-        
+
         # This should trigger the UserWarning but STILL fire hooks
         loss.backward()
-        
+
         # Verify event capture
         events = dbg.get_events()
         print(f"Compiled Events: {len(events)}")
-        assert len(events) > 0, "Should capture events even if only outputs have gradients"
+        assert (
+            len(events) > 0
+        ), "Should capture events even if only outputs have gradients"
+
 
 # 2. High-Density Hooks (Performance Benchmark)
 @requires_compile
@@ -52,13 +55,13 @@ def test_high_density_hook_performance():
         def __init__(self, layers=20):
             super().__init__()
             self.net = nn.Sequential(*[nn.Linear(10, 10) for _ in range(layers)])
-            
+
         def forward(self, x):
             return self.net(x)
 
     model = DeepModel(layers=20)
     x = torch.randn(1, 10)
-    
+
     # Warmup
     torch.compile(model, backend="aot_eager")(x).sum().backward()
 
@@ -69,7 +72,7 @@ def test_high_density_hook_performance():
     baseline = time.perf_counter() - start
 
     # Benchmark with NeuralDbg
-    with NeuralDbg(model) as dbg:
+    with NeuralDbg(model):
         compiled_model = torch.compile(model, backend="aot_eager")
         start = time.perf_counter()
         for _ in range(10):
@@ -80,6 +83,7 @@ def test_high_density_hook_performance():
     # We expect overhead but it shouldn't be astronomical (>10x)
     assert hooked_time < baseline * 20, "Overhead too high (>20x)"
 
+
 # 3. Compiler Disable Workaround
 @requires_compile
 def test_compiler_disable_persistence():
@@ -87,7 +91,7 @@ def test_compiler_disable_persistence():
         def __init__(self):
             super().__init__()
             self.lin = nn.Linear(10, 10)
-            
+
         @torch.compiler.disable
         def forward(self, x):
             return self.lin(x)
@@ -97,27 +101,30 @@ def test_compiler_disable_persistence():
             super().__init__()
             self.sub = SubModule()
             self.last = nn.Linear(10, 1)
-            
+
         def forward(self, x):
             x = self.sub(x)
             return self.last(x)
 
     model = MainModel()
     x = torch.randn(1, 10)
-    
+
     with NeuralDbg(model) as dbg:
         compiled_model = torch.compile(model, backend="aot_eager")
         out = compiled_model(x)
         out.sum().backward()
-        
+
         events = dbg.get_events()
-        # Events should be captured for BOTH the compiled 'last' layer 
+        # Events should be captured for BOTH the compiled 'last' layer
         # and the disabled 'sub' layer
-        sub_events = [e for e in events if 'sub' in e.layer_name]
-        last_events = [e for e in events if 'last' in e.layer_name]
-        
-        assert len(sub_events) > 0, "Should capture events in @torch.compiler.disable regions"
+        sub_events = [e for e in events if "sub" in e.layer_name]
+        last_events = [e for e in events if "last" in e.layer_name]
+
+        assert (
+            len(sub_events) > 0
+        ), "Should capture events in @torch.compiler.disable regions"
         assert len(last_events) > 0, "Should capture events in compiled regions"
+
 
 # 4. Backend Parity Mock (AOT_Eager vs Inductor imitation)
 @requires_compile
@@ -127,7 +134,7 @@ def test_graph_break_recovery():
             super().__init__()
             self.lin1 = nn.Linear(10, 10)
             self.lin2 = nn.Linear(10, 1)
-            
+
         def forward(self, x):
             x = self.lin1(x)
             # Force a graph break
@@ -137,32 +144,33 @@ def test_graph_break_recovery():
 
     model = GraphBreakModel()
     x = torch.randn(1, 10)
-    
+
     with NeuralDbg(model) as dbg:
         compiled_model = torch.compile(model, backend="aot_eager")
         out = compiled_model(x)
         out.sum().backward()
-        
+
         events = dbg.get_events()
         # Hooks should survive across graph breaks
-        lin1_events = [e for e in events if 'lin1' in e.layer_name]
-        lin2_events = [e for e in events if 'lin2' in e.layer_name]
-        
+        lin1_events = [e for e in events if "lin1" in e.layer_name]
+        lin2_events = [e for e in events if "lin2" in e.layer_name]
+
         assert len(lin1_events) > 0, "Should capture events before graph break"
         assert len(lin2_events) > 0, "Should capture events after graph break"
+
 
 # 5. Distributed Wrapper Simulation (DataParallel)
 def test_dataparallel_wrapping():
     model = nn.Linear(10, 1)
     # Simulate a wrapper like DataParallel
-    dp_model = nn.DataParallel(model, device_ids=[]) # Mocking DP on CPU
+    dp_model = nn.DataParallel(model, device_ids=[])  # Mocking DP on CPU
     x = torch.randn(2, 10)
-    
+
     with NeuralDbg(dp_model) as dbg:
         # Note: DataParallel might copy weights, testing if hooks persist
         out = dp_model(x)
         out.sum().backward()
-        
+
         events = dbg.get_events()
         assert len(events) > 0, "Should capture events inside DataParallel wrapper"
 
@@ -180,8 +188,10 @@ def test_inplace_ops_backward_hook_compatibility():
     patterns and verifies that NeuralDBG captures events without
     RuntimeError.
     """
+
     class ResidualBlock(nn.Module):
         """Minimal residual block with inplace ReLU and inplace add."""
+
         def __init__(self, channels):
             super().__init__()
             self.conv1 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
@@ -240,7 +250,7 @@ def test_inplace_ops_backward_hook_compatibility():
         assert len(events) > 0, "Should capture events from ResNet-style model"
 
         # Verify we got events from inside the residual blocks
-        block_events = [e for e in events if 'block' in e.layer_name]
-        assert len(block_events) > 0, (
-            "Should capture events from inside residual blocks"
-        )
+        block_events = [e for e in events if "block" in e.layer_name]
+        assert (
+            len(block_events) > 0
+        ), "Should capture events from inside residual blocks"

@@ -10,7 +10,9 @@ from pathlib import Path
 import pytest
 
 # Make the infrastructure/scripts/ directory importable
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "infrastructure" / "scripts"))
+sys.path.insert(
+    0, str(Path(__file__).parent.parent.parent / "infrastructure" / "scripts")
+)
 
 from session_to_docx import _parse_lines, _add_inline_bold, convert
 
@@ -79,6 +81,7 @@ class TestInlineBold:
 
     def test_plain_text(self, tmp_path):
         from docx import Document
+
         doc = Document()
         p = doc.add_paragraph()
         _add_inline_bold(p, "plain text")
@@ -89,6 +92,7 @@ class TestInlineBold:
 
     def test_bold_only(self, tmp_path):
         from docx import Document
+
         doc = Document()
         p = doc.add_paragraph()
         _add_inline_bold(p, "**bold**")
@@ -97,6 +101,7 @@ class TestInlineBold:
 
     def test_mixed_bold(self, tmp_path):
         from docx import Document
+
         doc = Document()
         p = doc.add_paragraph()
         _add_inline_bold(p, "before **bold** after")
@@ -139,18 +144,22 @@ class TestConvert:
 
     def test_output_contains_headings(self, tmp_path):
         from docx import Document
+
         src = tmp_path / "SESSION_SUMMARY.md"
         src.write_text(self.SAMPLE_MD, encoding="utf-8")
         out = tmp_path / "out.docx"
         convert(src, out)
         doc = Document(str(out))
-        heading_texts = [p.text for p in doc.paragraphs if p.style.name.startswith("Heading")]
+        heading_texts = [
+            p.text for p in doc.paragraphs if p.style.name.startswith("Heading")
+        ]
         assert any("Session Summary" in t for t in heading_texts)
         assert any("Francais" in t for t in heading_texts)
         assert any("English" in t for t in heading_texts)
 
     def test_output_contains_bullets(self, tmp_path):
         from docx import Document
+
         src = tmp_path / "SESSION_SUMMARY.md"
         src.write_text(self.SAMPLE_MD, encoding="utf-8")
         out = tmp_path / "out.docx"

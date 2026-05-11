@@ -3,13 +3,10 @@ import torch.nn as nn
 import torch.optim as optim
 from neuraldbg import NeuralDbg
 
+
 def test_saturation_detection():
     # Simple model with Tanh (prone to saturation)
-    model = nn.Sequential(
-        nn.Linear(10, 50),
-        nn.Tanh(),
-        nn.Linear(50, 1)
-    )
+    model = nn.Sequential(nn.Linear(10, 50), nn.Tanh(), nn.Linear(50, 1))
 
     # Force saturation by setting very large weights in the first layer
     with torch.no_grad():
@@ -39,18 +36,19 @@ def test_saturation_detection():
     print(f"Captured events: {len(dbg.events)}")
     for event in dbg.events:
         print(f"Event: {event.event_type} in {event.layer_name}, Step {event.step}")
-        if isinstance(event.to_state, dict) and 'saturation_ratio' in event.to_state:
+        if isinstance(event.to_state, dict) and "saturation_ratio" in event.to_state:
             print(f"  Saturation Ratio: {event.to_state['saturation_ratio']:.4f}")
 
     # Get hypotheses
     hypotheses = dbg.explain_failure("saturated_activations")
-    print(f"\nHypotheses for 'saturated_activations':")
+    print("\nHypotheses for 'saturated_activations':")
     for h in hypotheses:
         print(f"- {h.description} (Confidence: {h.confidence:.2f})")
         print(f"  Causal Chain: {' -> '.join(h.causal_chain)}")
 
     assert len(hypotheses) > 0, "No saturation hypothesis generated!"
     print("\nVerification successful!")
+
 
 if __name__ == "__main__":
     test_saturation_detection()

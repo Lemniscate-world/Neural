@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1-kuro] - 2026-05-11
+### Added
+- **Rule 91 (Hardened Versioning)**: Multi-point verification for release integrity.
+- **Rule 93 (Cross-Platform Reliability)**: Infrastructure support for Windows and Linux.
+- **PLAN.md & ROADMAP.md**: Tactical and strategic planning artifacts.
+- **LESSONS.md**: Capturing technical debt and recurring problem resolutions.
+- **infrastructure/scripts/ensure_venv.py**: Platform-agnostic venv management.
+- **infrastructure/scripts/bootstrap.py**: Platform-agnostic onboarding.
+- **infrastructure/scripts/bump_version.py**: Agnostic version management.
+
+### Changed
+- **NeuralDbg Core**: Improved layer name normalization (e.g., `Linear_0` instead of `0`).
+- **Makefile**: Refactored for platform-agnostic Python detection and Windows compatibility.
+- **Gouvernance**: Updated `.cursorrules` and `AI_GUIDELINES.md` to reference R1-R93.
+
+### Fixed
+- **Issue #650**: Deduplicated redundant failure couplings in `detect_coupled_failures()`.
+- **Infrastructure**: Fixed `make` targets failing on native Windows PowerShell.
+
 ## [1.2.0] - 2026-05-11
 ### Added
 - Integrated PR 651: Detect Python version mismatch in `ensure_venv.sh` (MLO-17).

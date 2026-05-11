@@ -13,52 +13,64 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 from typing import Dict, List, Tuple, Optional, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 
 # Try to import dynamo for torch.compile suppression
 try:
     import torch._dynamo as dynamo
+
     dynamo_disable = dynamo.disable
 except ImportError:
     # Fallback for PyTorch < 2.0 or if dynamo is unavailable
     def dynamo_disable(fn):
         return fn
 
+
 class EventType(Enum):
     """Types of semantic events that can occur during training."""
+
     GRADIENT_HEALTH_TRANSITION = "gradient_health_transition"
     ACTIVATION_REGIME_SHIFT = "activation_regime_shift"
     OPTIMIZER_INSTABILITY = "optimizer_instability"
     DATA_ANOMALY = "data_anomaly"
 
+
 class GradientHealth(Enum):
     """Gradient health states."""
+
     HEALTHY = "healthy"
     VANISHING = "vanishing"
     EXPLODING = "exploding"
     SATURATED = "saturated"
 
+
 class ActivationHealth(Enum):
     """Activation health states for semantic regime monitoring."""
+
     NORMAL = "normal"
     SATURATED = "saturated"
     DEAD = "dead"
     ANOMALOUS = "anomalous"
 
+
 class OptimizerHealth(Enum):
     """Optimizer stability states."""
+
     STABLE = "stable"
     LOSS_PLATEAU = "loss_plateau"
     LOSS_SPIKE = "loss_spike"
     DIVERGING = "diverging"
 
+
 class DataHealth(Enum):
     """Data quality states for anomaly detection."""
+
     NORMAL = "normal"
     NAN_DETECTED = "nan_detected"
     INF_DETECTED = "inf_detected"
     DISTRIBUTION_SHIFT = "distribution_shift"
+
 
 @dataclass
 class SemanticEvent:
@@ -68,6 +80,7 @@ class SemanticEvent:
     Unlike raw tensor snapshots, semantic events capture high-level changes
     that are relevant for causal inference.
     """
+
     event_type: EventType
     layer_name: str
     step: int
@@ -76,13 +89,16 @@ class SemanticEvent:
     confidence: float
     metadata: Dict[str, Any]
 
+
 @dataclass
 class CausalHypothesis:
     """A ranked hypothesis about the cause of a training failure."""
+
     description: str
     confidence: float
     evidence: List[SemanticEvent]
     causal_chain: List[str]
+
 
 class NeuralDbg:
     """
@@ -92,7 +108,12 @@ class NeuralDbg:
     and provide post-mortem explanations for training failures.
     """
 
-    def __init__(self, model: nn.Module, threshold_vanishing: float = 1e-6, threshold_exploding: float = 1e3):
+    def __init__(
+        self,
+        model: nn.Module,
+        threshold_vanishing: float = 1e-6,
+        threshold_exploding: float = 1e3,
+    ):
         """
         Initialize the causal inference engine.
 
@@ -106,13 +127,16 @@ class NeuralDbg:
         self.threshold_exploding = threshold_exploding
 
         # Verify if model is already compiled
-        if hasattr(torch, "_dynamo") and isinstance(model, torch._dynamo.eval_frame.OptimizedModule):
+        if hasattr(torch, "_dynamo") and isinstance(
+            model, torch._dynamo.eval_frame.OptimizedModule
+        ):
             import warnings
+
             warnings.warn(
                 "NeuralDbg: Model is already compiled. Hooks installed after compilation "
                 "might not fire in the optimized graph. For best results, wrap the model "
                 "with NeuralDbg BEFORE calling torch.compile().",
-                UserWarning
+                UserWarning,
             )
 
         # Semantic event storage (not tensors!)
@@ -133,7 +157,15 @@ class NeuralDbg:
         # Pre-computed module-to-name mapping for O(1) lookup
         self._module_names: Dict[int, str] = {}
         for name, mod in self.model.named_modules():
-            self._module_names[id(mod)] = name or "root"
+            if not name:
+                self._module_names[id(mod)] = "root"
+                continue
+
+            # If the name is just a digit (from Sequential), prepend the class name for clarity
+            if name.isdigit():
+                self._module_names[id(mod)] = f"{type(mod).__name__}_{name}"
+            else:
+                self._module_names[id(mod)] = name
 
         # Causal tracking: First layer to fail in a specific way
         self.first_failure_step: Dict[str, int] = {}  # failure_key -> step
@@ -150,6 +182,7 @@ class NeuralDbg:
         self._psutil_process = None
         try:
             import psutil as _psutil
+
             self._psutil_process = _psutil.Process()
         except ImportError:
             pass
@@ -241,8 +274,11 @@ class NeuralDbg:
 
     def _install_hooks(self):
         """Install forward and backward hooks to extract semantic events."""
+
         @dynamo_disable
-        def forward_hook(module: nn.Module, input: Tuple[torch.Tensor], output: torch.Tensor):
+        def forward_hook(
+            module: nn.Module, input: Tuple[torch.Tensor], output: torch.Tensor
+        ):
             """Extract semantic events from forward pass."""
             if not self.is_monitoring:
                 return
@@ -259,7 +295,9 @@ class NeuralDbg:
                 current_health = self._classify_activation_health(activation_stats)
 
                 # Sample resources once per step (outside transition check to build baseline)
-                resource_snapshot, resource_baseline = self._get_step_resource_snapshot(output.device)
+                resource_snapshot, resource_baseline = self._get_step_resource_snapshot(
+                    output.device
+                )
 
                 # Detect activation regime shifts
                 if layer_name in self.previous_activation_stats:
@@ -268,9 +306,13 @@ class NeuralDbg:
 
                     if prev_health != current_health:
                         if current_health != ActivationHealth.NORMAL:
-                            self._track_first_occurrence(f"activation_{current_health.value}", layer_name)
+                            self._track_first_occurrence(
+                                f"activation_{current_health.value}", layer_name
+                            )
 
-                        is_spike, spike_keys = self._is_memory_spike(resource_snapshot, resource_baseline)
+                        is_spike, spike_keys = self._is_memory_spike(
+                            resource_snapshot, resource_baseline
+                        )
                         event = SemanticEvent(
                             event_type=EventType.ACTIVATION_REGIME_SHIFT,
                             layer_name=layer_name,
@@ -279,14 +321,16 @@ class NeuralDbg:
                             to_state=current_health.value,
                             confidence=0.9,
                             metadata={
-                                'prev_saturation': prev_stats.get('saturation_ratio'),
-                                'current_saturation': activation_stats.get('saturation_ratio'),
-                                'prev_dead': prev_stats.get('dead_ratio'),
-                                'current_dead': activation_stats.get('dead_ratio'),
-                                'resources': resource_snapshot,
-                                'memory_spike': is_spike,
-                                'memory_spike_keys': spike_keys,
-                            }
+                                "prev_saturation": prev_stats.get("saturation_ratio"),
+                                "current_saturation": activation_stats.get(
+                                    "saturation_ratio"
+                                ),
+                                "prev_dead": prev_stats.get("dead_ratio"),
+                                "current_dead": activation_stats.get("dead_ratio"),
+                                "resources": resource_snapshot,
+                                "memory_spike": is_spike,
+                                "memory_spike_keys": spike_keys,
+                            },
                         )
                         self.events.append(event)
                 else:
@@ -300,14 +344,16 @@ class NeuralDbg:
                         confidence=1.0,
                         metadata={
                             **activation_stats,
-                            'resources': resource_snapshot,
-                            'memory_spike': False,
-                            'memory_spike_keys': [],
-                        }
+                            "resources": resource_snapshot,
+                            "memory_spike": False,
+                            "memory_spike_keys": [],
+                        },
                     )
                     self.events.append(event)
                     if current_health != ActivationHealth.NORMAL:
-                        self._track_first_occurrence(f"activation_{current_health.value}", layer_name)
+                        self._track_first_occurrence(
+                            f"activation_{current_health.value}", layer_name
+                        )
 
                 self.previous_activation_stats[layer_name] = activation_stats
 
@@ -315,7 +361,11 @@ class NeuralDbg:
         _backward_hook_failures: Dict[str, bool] = {}
 
         @dynamo_disable
-        def full_backward_hook(module: nn.Module, grad_input: Tuple[torch.Tensor], grad_output: Tuple[torch.Tensor]):
+        def full_backward_hook(
+            module: nn.Module,
+            grad_input: Tuple[torch.Tensor],
+            grad_output: Tuple[torch.Tensor],
+        ):
             """Extract semantic events from backward pass using full_backward_hook."""
             if not self.is_monitoring:
                 return
@@ -329,7 +379,9 @@ class NeuralDbg:
                 grad_norm = grad_tensor.norm().item()
 
                 # Sample resources once per step (outside transition check to build baseline)
-                resource_snapshot, resource_baseline = self._get_step_resource_snapshot(grad_tensor.device)
+                resource_snapshot, resource_baseline = self._get_step_resource_snapshot(
+                    grad_tensor.device
+                )
 
                 # Detect gradient health transitions
                 if layer_name in self.previous_gradient_norms:
@@ -338,24 +390,28 @@ class NeuralDbg:
                     if transition:
                         current_health = self._classify_gradient_health(grad_norm)
                         if current_health != GradientHealth.HEALTHY:
-                            self._track_first_occurrence(f"gradient_{current_health.value}", layer_name)
+                            self._track_first_occurrence(
+                                f"gradient_{current_health.value}", layer_name
+                            )
 
-                        is_spike, spike_keys = self._is_memory_spike(resource_snapshot, resource_baseline)
+                        is_spike, spike_keys = self._is_memory_spike(
+                            resource_snapshot, resource_baseline
+                        )
                         event = SemanticEvent(
                             event_type=EventType.GRADIENT_HEALTH_TRANSITION,
                             layer_name=layer_name,
                             step=self.step,
                             from_state=self._classify_gradient_health(prev_norm).value,
                             to_state=current_health.value,
-                            confidence=transition['confidence'],
+                            confidence=transition["confidence"],
                             metadata={
-                                'prev_norm': prev_norm,
-                                'current_norm': grad_norm,
-                                'transition_type': transition['type'],
-                                'resources': resource_snapshot,
-                                'memory_spike': is_spike,
-                                'memory_spike_keys': spike_keys,
-                            }
+                                "prev_norm": prev_norm,
+                                "current_norm": grad_norm,
+                                "transition_type": transition["type"],
+                                "resources": resource_snapshot,
+                                "memory_spike": is_spike,
+                                "memory_spike_keys": spike_keys,
+                            },
                         )
                         self.events.append(event)
                 else:
@@ -369,20 +425,26 @@ class NeuralDbg:
                         to_state=current_health.value,
                         confidence=1.0,
                         metadata={
-                            'current_norm': grad_norm,
-                            'transition_type': 'baseline',
-                            'resources': resource_snapshot,
-                            'memory_spike': False,
-                            'memory_spike_keys': [],
-                        }
+                            "current_norm": grad_norm,
+                            "transition_type": "baseline",
+                            "resources": resource_snapshot,
+                            "memory_spike": False,
+                            "memory_spike_keys": [],
+                        },
                     )
                     self.events.append(event)
                     if current_health != GradientHealth.HEALTHY:
-                        self._track_first_occurrence(f"gradient_{current_health.value}", layer_name)
+                        self._track_first_occurrence(
+                            f"gradient_{current_health.value}", layer_name
+                        )
 
                 self.previous_gradient_norms[layer_name] = grad_norm
 
-        def safe_backward_hook(module: nn.Module, grad_input: Tuple[torch.Tensor], grad_output: Tuple[torch.Tensor]):
+        def safe_backward_hook(
+            module: nn.Module,
+            grad_input: Tuple[torch.Tensor],
+            grad_output: Tuple[torch.Tensor],
+        ):
             """Wrapper that catches inplace-operation errors from full_backward_hook.
 
             Models with inplace operations (e.g., ReLU(inplace=True) in
@@ -399,6 +461,7 @@ class NeuralDbg:
                 if layer_name not in _backward_hook_failures:
                     _backward_hook_failures[layer_name] = True
                     import warnings
+
                     warnings.warn(
                         f"NeuralDbg: Backward hook failed for '{layer_name}' "
                         f"(likely inplace operation). Gradient tracking disabled "
@@ -423,18 +486,21 @@ class NeuralDbg:
             # Skip non-leaf modules (except root) to avoid redundant captures
             if len(list(module.children())) > 0 and name != "":
                 continue
-                
+
             self.hooks.append(module.register_forward_hook(forward_hook))
             self.hooks.append(module.register_backward_hook(safe_backward_hook))
 
         # Check for DataParallel/DDP and warn/handle
-        if isinstance(self.model, (nn.DataParallel, nn.parallel.DistributedDataParallel)):
+        if isinstance(
+            self.model, (nn.DataParallel, nn.parallel.DistributedDataParallel)
+        ):
             import warnings
+
             warnings.warn(
                 f"NeuralDbg: Model is wrapped in {type(self.model).__name__}. "
                 "Hooks might not persist correctly during replication. Consider wrapping "
                 "the inner module (.module) instead.",
-                UserWarning
+                UserWarning,
             )
 
     def _remove_hooks(self):
@@ -443,22 +509,35 @@ class NeuralDbg:
             hook.remove()
         self.hooks.clear()
 
-    def _sample_resources(self, device: Optional[torch.device] = None) -> Dict[str, float]:
+    def _sample_resources(
+        self, device: Optional[torch.device] = None
+    ) -> Dict[str, float]:
         """Snapshot current CPU and (if relevant) GPU memory usage."""
         stats: Dict[str, float] = {}
         if self._psutil_process is not None:
             try:
-                stats['cpu_memory_mb'] = self._psutil_process.memory_info().rss / 1024 ** 2
+                stats["cpu_memory_mb"] = (
+                    self._psutil_process.memory_info().rss / 1024**2
+                )
             except Exception:
                 pass
-        if device is not None and device.type == 'cuda':
-            stats['gpu_memory_allocated_mb'] = torch.cuda.memory_allocated(device) / 1024 ** 2
-            stats['gpu_memory_reserved_mb'] = torch.cuda.memory_reserved(device) / 1024 ** 2
+        if device is not None and device.type == "cuda":
+            stats["gpu_memory_allocated_mb"] = (
+                torch.cuda.memory_allocated(device) / 1024**2
+            )
+            stats["gpu_memory_reserved_mb"] = (
+                torch.cuda.memory_reserved(device) / 1024**2
+            )
         return stats
 
-    def _get_step_resource_snapshot(self, device: Optional[torch.device] = None) -> Tuple[Dict[str, float], Dict[str, float]]:
+    def _get_step_resource_snapshot(
+        self, device: Optional[torch.device] = None
+    ) -> Tuple[Dict[str, float], Dict[str, float]]:
         """Return (current_snapshot, baseline) for this step, sampling at most once per step."""
-        if self._resource_snapshot_cache is not None and self._resource_snapshot_cache[0] == self.step:
+        if (
+            self._resource_snapshot_cache is not None
+            and self._resource_snapshot_cache[0] == self.step
+        ):
             return self._resource_snapshot_cache[1], self._resource_baseline
         # New step: promote previous snapshot to baseline, then take a fresh one
         if self._resource_snapshot_cache is not None:
@@ -498,11 +577,11 @@ class NeuralDbg:
         """Compute statistical summary of activation tensor."""
         # Ensure we are working with float32 for stats to avoid precision issues
         t_float = tensor.detach().float()
-        
+
         # Calculate sparsity (fraction of zeros)
         # Using a small epsilon for float comparison
         sparsity = (t_float.abs() < 1e-9).float().mean().item()
-        
+
         # Calculate dead neurons (per-neuron sparsity over batch)
         # Assuming batch is dim 0
         if t_float.dim() > 1:
@@ -515,34 +594,39 @@ class NeuralDbg:
         saturation_ratio = (t_float.abs() > 0.95).float().mean().item()
 
         return {
-            'mean': t_float.mean().item(),
-            'std': t_float.std().item(),
-            'min': t_float.min().item(),
-            'max': t_float.max().item(),
-            'sparsity': sparsity,
-            'dead_ratio': dead_ratio,
-            'norm': t_float.norm().item(),
-            'saturation_ratio': saturation_ratio
+            "mean": t_float.mean().item(),
+            "std": t_float.std().item(),
+            "min": t_float.min().item(),
+            "max": t_float.max().item(),
+            "sparsity": sparsity,
+            "dead_ratio": dead_ratio,
+            "norm": t_float.norm().item(),
+            "saturation_ratio": saturation_ratio,
         }
 
     def _classify_activation_health(self, stats: Dict[str, float]) -> ActivationHealth:
         """Classify activation regime based on extracted statistics."""
-        if stats.get('dead_ratio', 0) > 0.9:
+        if stats.get("dead_ratio", 0) > 0.9:
             return ActivationHealth.DEAD
-        elif stats.get('saturation_ratio', 0) > 0.7:
+        elif stats.get("saturation_ratio", 0) > 0.7:
             return ActivationHealth.SATURATED
-        elif stats.get('std', 1.0) < 1e-4:
+        elif stats.get("std", 1.0) < 1e-4:
             return ActivationHealth.ANOMALOUS
         else:
             return ActivationHealth.NORMAL
 
-    def _detect_activation_shift(self, prev_stats: Dict[str, float], current_stats: Dict[str, float]) -> Optional[Dict[str, Any]]:
+    def _detect_activation_shift(
+        self, prev_stats: Dict[str, float], current_stats: Dict[str, float]
+    ) -> Optional[Dict[str, Any]]:
         """Deprecated: Use _classify_activation_health and direct transition detection instead."""
         # Kept for compatibility if needed, but preferred to use state-based transitions
         prev_health = self._classify_activation_health(prev_stats)
         curr_health = self._classify_activation_health(current_stats)
         if prev_health != curr_health:
-            return {'type': f"{prev_health.value}_to_{curr_health.value}", 'confidence': 0.9}
+            return {
+                "type": f"{prev_health.value}_to_{curr_health.value}",
+                "confidence": 0.9,
+            }
         return None
 
     def _classify_gradient_health(self, norm: float) -> GradientHealth:
@@ -551,7 +635,7 @@ class NeuralDbg:
             return GradientHealth.VANISHING
         elif norm > self.threshold_exploding:
             return GradientHealth.EXPLODING
-        # Saturated gradients in this context refer to persistent small values 
+        # Saturated gradients in this context refer to persistent small values
         # that are just above vanishing but indicate diminishing flow.
         elif norm < (self.threshold_vanishing * 100):
             return GradientHealth.SATURATED
@@ -564,7 +648,9 @@ class NeuralDbg:
             self.first_failure_step[failure_type] = self.step
             self.first_failure_layer[failure_type] = layer_name
 
-    def _detect_gradient_transition(self, prev_norm: float, current_norm: float) -> Optional[Dict[str, Any]]:
+    def _detect_gradient_transition(
+        self, prev_norm: float, current_norm: float
+    ) -> Optional[Dict[str, Any]]:
         """Detect transitions in gradient health."""
         prev_health = self._classify_gradient_health(prev_norm)
         current_health = self._classify_gradient_health(current_norm)
@@ -579,12 +665,14 @@ class NeuralDbg:
             confidence = min(ratio * 0.1, 1.0)  # Scale down the confidence
 
             return {
-                'type': f"{prev_health.value}_to_{current_health.value}",
-                'confidence': confidence
+                "type": f"{prev_health.value}_to_{current_health.value}",
+                "confidence": confidence,
             }
         return None
 
-    def explain_failure(self, failure_type: str = "vanishing_gradients") -> List[CausalHypothesis]:
+    def explain_failure(
+        self, failure_type: str = "vanishing_gradients"
+    ) -> List[CausalHypothesis]:
         """
         Provide ranked causal hypotheses for a training failure.
 
@@ -630,9 +718,12 @@ class NeuralDbg:
         hypotheses = []
 
         # Find first exploding gradient event
-        exploding_events = [e for e in self.events
-                          if e.event_type == EventType.GRADIENT_HEALTH_TRANSITION
-                          and e.to_state == GradientHealth.EXPLODING.value]
+        exploding_events = [
+            e
+            for e in self.events
+            if e.event_type == EventType.GRADIENT_HEALTH_TRANSITION
+            and e.to_state == GradientHealth.EXPLODING.value
+        ]
 
         if not exploding_events:
             return hypotheses
@@ -640,12 +731,14 @@ class NeuralDbg:
         first_exploding = min(exploding_events, key=lambda e: e.step)
 
         # Hypothesis 1: Originated in this layer
-        hypotheses.append(CausalHypothesis(
-            description=f"Gradient explosion originated in layer '{first_exploding.layer_name}' at step {first_exploding.step}",
-            confidence=first_exploding.confidence,
-            evidence=[first_exploding],
-            causal_chain=[f"Explosion detected in {first_exploding.layer_name}"]
-        ))
+        hypotheses.append(
+            CausalHypothesis(
+                description=f"Gradient explosion originated in layer '{first_exploding.layer_name}' at step {first_exploding.step}",
+                confidence=first_exploding.confidence,
+                evidence=[first_exploding],
+                causal_chain=[f"Explosion detected in {first_exploding.layer_name}"],
+            )
+        )
 
         return hypotheses
 
@@ -654,47 +747,60 @@ class NeuralDbg:
         hypotheses = []
 
         # Use ACTIVATION_REGIME_SHIFT to detect DEAD state
-        dead_events = [e for e in self.events
-                      if e.event_type == EventType.ACTIVATION_REGIME_SHIFT
-                      and e.to_state == ActivationHealth.DEAD.value]
+        dead_events = [
+            e
+            for e in self.events
+            if e.event_type == EventType.ACTIVATION_REGIME_SHIFT
+            and e.to_state == ActivationHealth.DEAD.value
+        ]
 
         if not dead_events:
             return hypotheses
 
         first_dead = min(dead_events, key=lambda e: e.step)
 
-        hypotheses.append(CausalHypothesis(
-            description=f"Neuron death detected in layer '{first_dead.layer_name}' at step {first_dead.step}",
-            confidence=first_dead.confidence,
-            evidence=[first_dead],
-            causal_chain=[f"High dead_ratio ({first_dead.metadata.get('current_dead', 1.0):.2f}) in {first_dead.layer_name}"]
-        ))
+        hypotheses.append(
+            CausalHypothesis(
+                description=f"Neuron death detected in layer '{first_dead.layer_name}' at step {first_dead.step}",
+                confidence=first_dead.confidence,
+                evidence=[first_dead],
+                causal_chain=[
+                    f"High dead_ratio ({first_dead.metadata.get('current_dead', 1.0):.2f}) in {first_dead.layer_name}"
+                ],
+            )
+        )
 
         return hypotheses
+
     def _explain_saturated_activations(self) -> List[CausalHypothesis]:
         """Generate hypotheses for saturated activation failures."""
         hypotheses = []
 
         # Find events with SATURATED state
-        sat_events = [e for e in self.events
-                     if e.event_type == EventType.ACTIVATION_REGIME_SHIFT
-                     and e.to_state == ActivationHealth.SATURATED.value]
+        sat_events = [
+            e
+            for e in self.events
+            if e.event_type == EventType.ACTIVATION_REGIME_SHIFT
+            and e.to_state == ActivationHealth.SATURATED.value
+        ]
 
         if not sat_events:
             return hypotheses
 
         first_sat = min(sat_events, key=lambda e: e.step)
 
-        hypotheses.append(CausalHypothesis(
-            description=f"Activation saturation detected in layer '{first_sat.layer_name}' at step {first_sat.step}",
-            confidence=first_sat.confidence,
-            evidence=[first_sat],
-            causal_chain=[
-                "High saturation_ratio "
-                f"({first_sat.metadata.get('current_saturation', first_sat.metadata.get('saturation_ratio', 1.0)):.2f}) "
-                f"in {first_sat.layer_name}"
-            ]
-        ))
+        hypotheses.append(
+            CausalHypothesis(
+                description=f"Activation saturation detected in layer '{first_sat.layer_name}' at step {first_sat.step}",
+                confidence=first_sat.confidence,
+                evidence=[first_sat],
+                causal_chain=[
+                    "High saturation_ratio "
+                    f"({first_sat.metadata.get('current_saturation', first_sat.metadata.get('saturation_ratio', 1.0)):.2f}) "
+                    f"in {first_sat.layer_name}"
+                ],
+            )
+        )
 
         return hypotheses
 
@@ -703,9 +809,12 @@ class NeuralDbg:
         hypotheses = []
 
         # Find first vanishing gradient event
-        vanishing_events = [e for e in self.events
-                          if e.event_type == EventType.GRADIENT_HEALTH_TRANSITION
-                          and e.to_state == GradientHealth.VANISHING.value]
+        vanishing_events = [
+            e
+            for e in self.events
+            if e.event_type == EventType.GRADIENT_HEALTH_TRANSITION
+            and e.to_state == GradientHealth.VANISHING.value
+        ]
 
         if not vanishing_events:
             return hypotheses
@@ -713,30 +822,39 @@ class NeuralDbg:
         first_vanishing = min(vanishing_events, key=lambda e: e.step)
 
         # Hypothesis 1: Originated in this layer
-        hypotheses.append(CausalHypothesis(
-            description=f"Gradient vanishing originated in layer '{first_vanishing.layer_name}' at step {first_vanishing.step}",
-            confidence=first_vanishing.confidence,
-            evidence=[first_vanishing],
-            causal_chain=[f"Vanishing detected in {first_vanishing.layer_name}"]
-        ))
+        hypotheses.append(
+            CausalHypothesis(
+                description=f"Gradient vanishing originated in layer '{first_vanishing.layer_name}' at step {first_vanishing.step}",
+                confidence=first_vanishing.confidence,
+                evidence=[first_vanishing],
+                causal_chain=[f"Vanishing detected in {first_vanishing.layer_name}"],
+            )
+        )
 
         # Hypothesis 2: Check for activation saturation coupling
-        saturation_events = [e for e in self.events
-                           if e.event_type == EventType.ACTIVATION_REGIME_SHIFT
-                           and e.to_state == ActivationHealth.SATURATED.value
-                           and e.step <= first_vanishing.step + 10]  # Nearby in time
+        saturation_events = [
+            e
+            for e in self.events
+            if e.event_type == EventType.ACTIVATION_REGIME_SHIFT
+            and e.to_state == ActivationHealth.SATURATED.value
+            and e.step <= first_vanishing.step + 10
+        ]  # Nearby in time
 
         if saturation_events:
-            nearest_sat = min(saturation_events, key=lambda e: abs(e.step - first_vanishing.step))
-            hypotheses.append(CausalHypothesis(
-                description=f"Gradient vanishing likely due to LR × activation mismatch - saturation in '{nearest_sat.layer_name}' preceded vanishing",
-                confidence=min(first_vanishing.confidence, nearest_sat.confidence),
-                evidence=[first_vanishing, nearest_sat],
-                causal_chain=[
-                    f"Saturation in {nearest_sat.layer_name} at step {nearest_sat.step}",
-                    f"Led to vanishing gradients in {first_vanishing.layer_name} at step {first_vanishing.step}"
-                ]
-            ))
+            nearest_sat = min(
+                saturation_events, key=lambda e: abs(e.step - first_vanishing.step)
+            )
+            hypotheses.append(
+                CausalHypothesis(
+                    description=f"Gradient vanishing likely due to LR × activation mismatch - saturation in '{nearest_sat.layer_name}' preceded vanishing",
+                    confidence=min(first_vanishing.confidence, nearest_sat.confidence),
+                    evidence=[first_vanishing, nearest_sat],
+                    causal_chain=[
+                        f"Saturation in {nearest_sat.layer_name} at step {nearest_sat.step}",
+                        f"Led to vanishing gradients in {first_vanishing.layer_name} at step {first_vanishing.step}",
+                    ],
+                )
+            )
 
         return hypotheses
 
@@ -748,15 +866,17 @@ class NeuralDbg:
         """Trace the causal chain for a specific type of event."""
         # Simple implementation - in practice this would be more sophisticated
         relevant_events = [e for e in self.events if e.event_type.value == event_type]
-        return [f"{e.layer_name} at step {e.step}: {e.metadata}" for e in relevant_events]
+        return [
+            f"{e.layer_name} at step {e.step}: {e.metadata}" for e in relevant_events
+        ]
 
     def detect_coupled_failures(self, window: int = 5) -> List[Dict[str, Any]]:
         """
         Detect coupled failures (events that occur together or in sequence).
-        
+
         Args:
             window: Maximum step difference to consider events coupled.
-            
+
         Returns:
             List of detected couplings with confidence and direction.
         """
@@ -768,26 +888,36 @@ class NeuralDbg:
         sorted_events = sorted(self.events, key=lambda e: e.step)
 
         for i, event1 in enumerate(sorted_events):
-            for event2 in sorted_events[i+1:]:
+            for event2 in sorted_events[i + 1 :]:
                 step_diff = event2.step - event1.step
                 if step_diff > window:
-                    break # Events too far apart
+                    break  # Events too far apart
 
                 if event1.layer_name != event2.layer_name:
                     # Potential causal coupling (event1 might influence event2)
                     confidence = min(event1.confidence, event2.confidence)
                     # Boost confidence for specific known patterns (e.g. saturation -> vanishing)
-                    if (event1.event_type == EventType.ACTIVATION_REGIME_SHIFT and 
-                        event2.event_type == EventType.GRADIENT_HEALTH_TRANSITION):
+                    if (
+                        event1.event_type == EventType.ACTIVATION_REGIME_SHIFT
+                        and event2.event_type == EventType.GRADIENT_HEALTH_TRANSITION
+                    ):
                         confidence = min(confidence + 0.2, 1.0)
 
-                    couplings.append({
-                        'trigger': f"{event1.event_type.value} in {event1.layer_name}",
-                        'consequence': f"{event2.event_type.value} in {event2.layer_name}",
-                        'step_difference': step_diff,
-                        'confidence': confidence,
-                        'is_causal_candidate': True
-                    })
+                    coupling = {
+                        "trigger": f"{event1.event_type.value} in {event1.layer_name}",
+                        "consequence": f"{event2.event_type.value} in {event2.layer_name}",
+                        "step_difference": step_diff,
+                        "confidence": confidence,
+                        "is_causal_candidate": True,
+                    }
+
+                    # Deduplicate: only add if this trigger/consequence pair isn't already present
+                    if not any(
+                        c["trigger"] == coupling["trigger"]
+                        and c["consequence"] == coupling["consequence"]
+                        for c in couplings
+                    ):
+                        couplings.append(coupling)
 
         return couplings
 
@@ -798,24 +928,30 @@ class NeuralDbg:
             step = self.first_failure_step[failure_key]
             # Find the actual event object
             matching_events = [
-                e for e in self.events
+                e
+                for e in self.events
                 if e.layer_name == layer_name
                 and e.step == step
                 and self._event_matches_failure_key(e, failure_key)
             ]
             if not matching_events:
                 matching_events = [
-                    e for e in self.events
+                    e
+                    for e in self.events
                     if e.layer_name == layer_name and e.step == step
                 ]
             evidence = matching_events[:1]
-            
-            hypotheses.append(CausalHypothesis(
-                description=f"Root cause candidate: {failure_key.replace('_', ' ')} originated in '{layer_name}' at step {step}",
-                confidence=0.95, # First occurrence is a strong indicator
-                evidence=evidence,
-                causal_chain=[f"First instance of {failure_key} detected in layer {layer_name}"]
-            ))
+
+            hypotheses.append(
+                CausalHypothesis(
+                    description=f"Root cause candidate: {failure_key.replace('_', ' ')} originated in '{layer_name}' at step {step}",
+                    confidence=0.95,  # First occurrence is a strong indicator
+                    evidence=evidence,
+                    causal_chain=[
+                        f"First instance of {failure_key} detected in layer {layer_name}"
+                    ],
+                )
+            )
         return hypotheses
 
     def _event_matches_failure_key(
@@ -845,12 +981,13 @@ class NeuralDbg:
             )
         if domain == "data":
             return (
-                event.event_type == EventType.DATA_ANOMALY
-                and event.to_state == state
+                event.event_type == EventType.DATA_ANOMALY and event.to_state == state
             )
         return False
 
-    def _classify_data_health(self, tensor: torch.Tensor) -> Tuple[DataHealth, Dict[str, Any]]:
+    def _classify_data_health(
+        self, tensor: torch.Tensor
+    ) -> Tuple[DataHealth, Dict[str, Any]]:
         """Classify data health and return state + metadata.
 
         Returns a tuple of (health_state, metadata_dict) based on the tensor contents.
@@ -860,11 +997,15 @@ class NeuralDbg:
 
         has_nan = torch.isnan(t).any().item()
         if has_nan:
-            return DataHealth.NAN_DETECTED, {"nan_count": int(torch.isnan(t).sum().item())}
+            return DataHealth.NAN_DETECTED, {
+                "nan_count": int(torch.isnan(t).sum().item())
+            }
 
         has_inf = torch.isinf(t).any().item()
         if has_inf:
-            return DataHealth.INF_DETECTED, {"inf_count": int(torch.isinf(t).sum().item())}
+            return DataHealth.INF_DETECTED, {
+                "inf_count": int(torch.isinf(t).sum().item())
+            }
 
         return DataHealth.NORMAL, {}
 
@@ -917,15 +1058,17 @@ class NeuralDbg:
                 mean_shift_val = health_metadata.get("mean_shift_sigma", 3.0)
                 confidence = min(mean_shift_val * 0.2, 1.0)
 
-            self.events.append(SemanticEvent(
-                event_type=EventType.DATA_ANOMALY,
-                layer_name=layer_name,
-                step=self.step,
-                from_state=prev_health.value,
-                to_state=current_health.value,
-                confidence=confidence,
-                metadata=health_metadata,
-            ))
+            self.events.append(
+                SemanticEvent(
+                    event_type=EventType.DATA_ANOMALY,
+                    layer_name=layer_name,
+                    step=self.step,
+                    from_state=prev_health.value,
+                    to_state=current_health.value,
+                    confidence=confidence,
+                    metadata=health_metadata,
+                )
+            )
 
         self.previous_data_health[layer_name] = current_health
 
@@ -934,8 +1077,7 @@ class NeuralDbg:
         hypotheses: List[CausalHypothesis] = []
 
         instability_events = [
-            e for e in self.events
-            if e.event_type == EventType.OPTIMIZER_INSTABILITY
+            e for e in self.events if e.event_type == EventType.OPTIMIZER_INSTABILITY
         ]
 
         if not instability_events:
@@ -966,15 +1108,17 @@ class NeuralDbg:
             f"Optimizer instability detected at step {first_event.step}",
         )
 
-        hypotheses.append(CausalHypothesis(
-            description=desc,
-            confidence=first_event.confidence,
-            evidence=[first_event],
-            causal_chain=[
-                f"Optimizer transitioned from {first_event.from_state} to "
-                f"{first_event.to_state} at step {first_event.step}"
-            ],
-        ))
+        hypotheses.append(
+            CausalHypothesis(
+                description=desc,
+                confidence=first_event.confidence,
+                evidence=[first_event],
+                causal_chain=[
+                    f"Optimizer transitioned from {first_event.from_state} to "
+                    f"{first_event.to_state} at step {first_event.step}"
+                ],
+            )
+        )
 
         # Cross-reference: if gradient explosion preceded the spike
         if first_event.to_state in (
@@ -982,31 +1126,31 @@ class NeuralDbg:
             OptimizerHealth.DIVERGING.value,
         ):
             exploding_before = [
-                e for e in self.events
+                e
+                for e in self.events
                 if e.event_type == EventType.GRADIENT_HEALTH_TRANSITION
                 and e.to_state == GradientHealth.EXPLODING.value
                 and e.step <= first_event.step
             ]
             if exploding_before:
                 grad_event = max(exploding_before, key=lambda e: e.step)
-                hypotheses.append(CausalHypothesis(
-                    description=(
-                        f"Loss {first_event.to_state} at step "
-                        f"{first_event.step} was likely caused by gradient "
-                        f"explosion in '{grad_event.layer_name}' at step "
-                        f"{grad_event.step}."
-                    ),
-                    confidence=min(
-                        first_event.confidence + 0.1, 1.0
-                    ),
-                    evidence=[first_event, grad_event],
-                    causal_chain=[
-                        f"Gradient explosion in {grad_event.layer_name} "
-                        f"at step {grad_event.step}",
-                        f"Led to {first_event.to_state} at step "
-                        f"{first_event.step}",
-                    ],
-                ))
+                hypotheses.append(
+                    CausalHypothesis(
+                        description=(
+                            f"Loss {first_event.to_state} at step "
+                            f"{first_event.step} was likely caused by gradient "
+                            f"explosion in '{grad_event.layer_name}' at step "
+                            f"{grad_event.step}."
+                        ),
+                        confidence=min(first_event.confidence + 0.1, 1.0),
+                        evidence=[first_event, grad_event],
+                        causal_chain=[
+                            f"Gradient explosion in {grad_event.layer_name} "
+                            f"at step {grad_event.step}",
+                            f"Led to {first_event.to_state} at step {first_event.step}",
+                        ],
+                    )
+                )
 
         return hypotheses
 
@@ -1015,8 +1159,7 @@ class NeuralDbg:
         hypotheses: List[CausalHypothesis] = []
 
         anomaly_events = [
-            e for e in self.events
-            if e.event_type == EventType.DATA_ANOMALY
+            e for e in self.events if e.event_type == EventType.DATA_ANOMALY
         ]
 
         if not anomaly_events:
@@ -1049,15 +1192,17 @@ class NeuralDbg:
             f"at step {first_event.step}",
         )
 
-        hypotheses.append(CausalHypothesis(
-            description=desc,
-            confidence=first_event.confidence,
-            evidence=[first_event],
-            causal_chain=[
-                f"Data anomaly ({first_event.to_state}) in "
-                f"{first_event.layer_name} at step {first_event.step}"
-            ],
-        ))
+        hypotheses.append(
+            CausalHypothesis(
+                description=desc,
+                confidence=first_event.confidence,
+                evidence=[first_event],
+                causal_chain=[
+                    f"Data anomaly ({first_event.to_state}) in "
+                    f"{first_event.layer_name} at step {first_event.step}"
+                ],
+            )
+        )
 
         return hypotheses
 
@@ -1118,19 +1263,19 @@ class NeuralDbg:
                 last = sorted_group[-1]
                 merged_metadata = dict(first.metadata)
                 merged_metadata["collapsed_count"] = len(sorted_group)
-                merged_metadata["step_range"] = (
-                    f"{first.step}-{last.step}"
-                )
+                merged_metadata["step_range"] = f"{first.step}-{last.step}"
 
-                collapsed.append(SemanticEvent(
-                    event_type=first.event_type,
-                    layer_name=first.layer_name,
-                    step=first.step,
-                    from_state=first.from_state,
-                    to_state=last.to_state,
-                    confidence=max(e.confidence for e in sorted_group),
-                    metadata=merged_metadata,
-                ))
+                collapsed.append(
+                    SemanticEvent(
+                        event_type=first.event_type,
+                        layer_name=first.layer_name,
+                        step=first.step,
+                        from_state=first.from_state,
+                        to_state=last.to_state,
+                        confidence=max(e.confidence for e in sorted_group),
+                        metadata=merged_metadata,
+                    )
+                )
 
         # Sort by step for consistent ordering
         collapsed.sort(key=lambda e: e.step)
@@ -1185,12 +1330,10 @@ class NeuralDbg:
             "step": self.step,
             "events": [self._event_to_dict(event) for event in self.events],
             "hypotheses": [
-                self._hypothesis_to_dict(hypothesis)
-                for hypothesis in hypotheses
+                self._hypothesis_to_dict(hypothesis) for hypothesis in hypotheses
             ],
             "root_causes": [
-                self._hypothesis_to_dict(hypothesis)
-                for hypothesis in root_causes
+                self._hypothesis_to_dict(hypothesis) for hypothesis in root_causes
             ],
             "couplings": self._json_safe(self.detect_coupled_failures()),
         }
@@ -1203,18 +1346,20 @@ class NeuralDbg:
     def export_mermaid_causal_graph(self) -> str:
         """
         Export the captured semantic events as a Mermaid causal graph.
-        
+
         Returns:
             Mermaid-compatible string for visualization
         """
         lines = ["graph TD"]
-        
+
         # Create nodes for all events
         for i, event in enumerate(self.events):
             # Format: EventID["Event Type in Layer (Step X)"]
-            label = f"{event.event_type.value} in {event.layer_name} (Step {event.step})"
+            label = (
+                f"{event.event_type.value} in {event.layer_name} (Step {event.step})"
+            )
             lines.append(f'    E{i}["{label}"]')
-            
+
         # Create edges for coupled failures
         couplings = self.detect_coupled_failures()
         for coupling in couplings:
@@ -1222,23 +1367,29 @@ class NeuralDbg:
             idx1 = -1
             idx2 = -1
             for i, event in enumerate(self.events):
-                if f"{event.event_type.value} in {event.layer_name}" == coupling['trigger']:
+                if (
+                    f"{event.event_type.value} in {event.layer_name}"
+                    == coupling["trigger"]
+                ):
                     idx1 = i
-                if f"{event.event_type.value} in {event.layer_name}" == coupling['consequence']:
+                if (
+                    f"{event.event_type.value} in {event.layer_name}"
+                    == coupling["consequence"]
+                ):
                     idx2 = i
-            
+
             if idx1 != -1 and idx2 != -1:
                 lines.append(f"    E{idx1} -->|coupled| E{idx2}")
-                
+
         # Create edges for temporal flow in the same layer
         layer_events: Dict[str, List[int]] = {}
         for i, event in enumerate(self.events):
             if event.layer_name not in layer_events:
                 layer_events[event.layer_name] = []
             layer_events[event.layer_name].append(i)
-            
+
         for layer, indices in layer_events.items():
             for j in range(len(indices) - 1):
-                lines.append(f"    E{indices[j]} -->|temporal| E{indices[j+1]}")
-                
+                lines.append(f"    E{indices[j]} -->|temporal| E{indices[j + 1]}")
+
         return "\n".join(lines)

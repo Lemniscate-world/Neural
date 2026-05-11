@@ -7,8 +7,6 @@ of NeuralDbg appear in the generated output.
 
 import subprocess
 import sys
-import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -30,6 +28,7 @@ REQUIRED_METHODS = [
 def _pdoc_available() -> bool:
     try:
         import pdoc  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -46,9 +45,9 @@ class TestDocsBuild:
             capture_output=True,
             text=True,
         )
-        assert result.returncode == 0, (
-            f"pdoc failed with exit {result.returncode}:\n{result.stderr}"
-        )
+        assert (
+            result.returncode == 0
+        ), f"pdoc failed with exit {result.returncode}:\n{result.stderr}"
 
     def test_docs_output_file_created(self, tmp_path):
         """pdoc produces an HTML file for the neuraldbg module."""

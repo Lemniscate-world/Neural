@@ -87,7 +87,11 @@ def linear_request(query: str, variables: dict = None) -> dict:
 
 def list_issues(state: str = "open", limit: int = 20) -> list[LinearIssue]:
     """List issues, optionally filtered by state."""
-    state_filter = 'filter: {state: {eq: open}}' if state == "open" else 'filter: {state: {eq: done}}'
+    state_filter = (
+        "filter: {state: {eq: open}}"
+        if state == "open"
+        else "filter: {state: {eq: done}}"
+    )
 
     query = f"""
     query {{
@@ -169,7 +173,9 @@ def update_issue_state(issue_id: str, new_state: str) -> dict:
     }
 
     if new_state not in state_mapping:
-        print(f"ERROR: Unknown state '{new_state}'. Valid: {list(state_mapping.keys())}")
+        print(
+            f"ERROR: Unknown state '{new_state}'. Valid: {list(state_mapping.keys())}"
+        )
         sys.exit(1)
 
     mutation = """
@@ -238,7 +244,7 @@ def create_issue(
         print(f"      {issue['url']}")
         return result
     else:
-        print(f"ERROR: Failed to create issue")
+        print("ERROR: Failed to create issue")
         sys.exit(1)
 
 
@@ -257,8 +263,8 @@ def print_issue(issue: LinearIssue, verbose: bool = False):
     print(f"  Assignee: {issue.assignee or 'Unassigned'}")
     print(f"  URL:      {issue.url}")
 
-    if verbose and hasattr(issue, 'description'):
-        print(f"\n  Description:")
+    if verbose and hasattr(issue, "description"):
+        print("\n  Description:")
         print(f"  {issue.description or '(none)'}")
 
     print()
@@ -359,8 +365,12 @@ Get API key: Linear app -> Settings -> API -> Personal API keys
 
     update_parser = subparsers.add_parser("update", help="Update issue state")
     update_parser.add_argument("issue_id", help="Issue identifier")
-    update_parser.add_argument("--state", dest="new_state", required=True,
-                              choices=["done", "in_progress", "backlog", "canceled"])
+    update_parser.add_argument(
+        "--state",
+        dest="new_state",
+        required=True,
+        choices=["done", "in_progress", "backlog", "canceled"],
+    )
     update_parser.set_defaults(func=cmd_update)
 
     create_parser = subparsers.add_parser("create", help="Create issue")

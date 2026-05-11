@@ -1,9 +1,20 @@
-SHELL := /bin/bash
+# Platform Detection
+ifeq ($(OS),Windows_NT)
+    VENV_BIN = .venv/Scripts
+    PYTHON = $(VENV_BIN)/python.exe
+else
+    VENV_BIN = .venv/bin
+    PYTHON = $(VENV_BIN)/python
+endif
 
-PYTHON = $(shell if [ -x .venv/bin/python ]; then echo .venv/bin/python; elif command -v python3 >/dev/null 2>&1; then echo python3; else echo python; fi)
+# Fallback to system python if venv doesn't exist
+ifeq (,$(wildcard $(PYTHON)))
+    PYTHON = python3
+endif
+
 COMPOSE := docker-compose
 
-.PHONY: help bootstrap install install-dev check-venv up down build rebuild shell test test-docker coverage bandit safety security precommit docs session-docx clean
+.PHONY: help bootstrap install install-dev check-venv up down build rebuild shell test test-docker coverage bandit safety security precommit docs session-docx release clean
 
 help:
 	@echo "NeuralDBG Make targets:"
@@ -25,21 +36,21 @@ help:
 	@echo "  make check-venv    - verify/recreate .venv if Python version mismatch"
 	@echo "  make docs          - generate API docs to docs/api/"
 	@echo "  make session-docx  - convert SESSION_SUMMARY.md to outputs/SESSION_SUMMARY.docx"
+	@echo "  make release       - full release automation (R18, R6, R19)"
 	@echo "  make clean         - remove local QA artifacts"
 
 bootstrap:
-	@bash infrastructure/scripts/bootstrap.sh
+	@$(PYTHON) infrastructure/scripts/bootstrap.py
 
 check-venv:
-	@bash infrastructure/scripts/ensure_venv.sh
+	@$(PYTHON) infrastructure/scripts/ensure_venv.py
 
 install:
 	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple torch
-	$(PYTHON) -m pip install -r requirements.txt
+	$(PYTHON) -m pip install -e ".[automation,mlops,sync,docs]"
 
 install-dev: install
-	$(PYTHON) -m pip install -r requirements-dev.txt
+	$(PYTHON) -m pip install -e ".[dev]"
 
 build:
 	$(COMPOSE) build neuraldbg-dev
@@ -82,6 +93,16 @@ docs: check-venv
 
 session-docx: check-venv
 	$(PYTHON) infrastructure/scripts/session_to_docx.py
+
+release: test security
+	@if [ -z "$(version)" ]; then echo "Error: version is required (e.g. make release version=1.2.0-kuro)"; exit 1; fi
+	@$(PYTHON) -c "import re; exit(0 if re.match(r'^[0-9]+\.[0-9]+\.[0-9]+-kuro$$', '$(version)') else 1)" || (echo "Error: version must match X.Y.Z-kuro (Rule 19/91)"; exit 1)
+	@echo "Releasing v$(version)..."
+	@$(PYTHON) infrastructure/scripts/bump_version.py pyproject.toml $(version)
+	@git add pyproject.toml
+	@git commit -m "release: v$(version)"
+	@git tag -a v$(version) -m "Release v$(version)"
+	@git push origin main --tags
 
 clean:
 	rm -rf .pytest_cache htmlcov .mypy_cache

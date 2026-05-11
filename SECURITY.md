@@ -19,7 +19,7 @@ If you discover a security vulnerability in NeuralDBG, please report it to us as
 
 Instead, please report security vulnerabilities by emailing:
 - **Email**: Lemniscate_zero@proton.me
-  
+
 ### What to Include
 
 When reporting a security vulnerability, please include:

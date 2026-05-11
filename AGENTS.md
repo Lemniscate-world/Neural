@@ -32,3 +32,5 @@ To read a rule, use your 'view_file' tool on the corresponding file in the maste
 - **rule_87_ownership_intelligence**: RULE 87: Deep Intelligence & Ownership Verification â€” MANDATORY
 - **rule_88_integrity_recovery**: RULE 88: File Integrity & Recovery â€” MANDATORY
 - **rule_89_lessons_learned**: RULE 89: Lessons Learned - Rule Creation from Problems Solved
+- **rule_91_hardened_versioning**: RULE 91: Hardened Versioning Integrity
+- **rule_93_cross_platform**: RULE 93: Cross-Platform Reliability (Windows/Linux)

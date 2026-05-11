@@ -76,17 +76,17 @@ for file in "${PROTECTED_FILES[@]}"; do
         log_warn "Skipping ${file} - not found locally"
         continue
     fi
-    
+
     log_info "Uploading ${file}..."
-    
+
     # Get file content and encode to base64
     CONTENT=$(base64 -w 0 "./${file}")
-    
+
     # Get current SHA if file exists
     SHA=$(curl -s -H "Authorization: token ${TOKEN}" \
         "https://api.github.com/repos/${REPO}/contents/${file}?ref=${BRANCH}" 2>/dev/null | \
         grep -o '"sha": "[^"]*"' | head -1 | cut -d'"' -f4)
-    
+
     # Prepare JSON payload
     if [ -n "$SHA" ]; then
         # Update existing file
@@ -97,7 +97,7 @@ for file in "${PROTECTED_FILES[@]}"; do
         JSON="{\"message\": \"Add ${file} from NeuralDBG\", \"content\": \"${CONTENT}\", \"branch\": \"${BRANCH}\"}"
         log_info "  -> Creating new file"
     fi
-    
+
     # Upload via GitHub API
     RESPONSE=$(curl -s -X PUT \
         -H "Authorization: token ${TOKEN}" \
@@ -105,7 +105,7 @@ for file in "${PROTECTED_FILES[@]}"; do
         -H "Content-Type: application/json" \
         -d "${JSON}" \
         "https://api.github.com/repos/${REPO}/contents/${file}")
-    
+
     # Check response
     if echo "$RESPONSE" | grep -q '"content"'; then
         log_info "  -> Uploaded successfully"

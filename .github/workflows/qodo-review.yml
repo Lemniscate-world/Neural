@@ -42,7 +42,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           qodo review --all --output-format json > qodo-review-results.json || true
-          
+
       - name: Post Qodo Review Summary
         if: always()
         run: |

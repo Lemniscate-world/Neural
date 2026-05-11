@@ -552,7 +552,7 @@ IF a session starts:
 ## RULE 33: Global Rule Parity and Mandatory Cross-Branch Sync -- CRITICAL
 
 ### Rule
-The AI rule set (AGENTS.md, AI_GUIDELINES.md, .cursorrules) represents the immutable "Physical Laws" of the repository ecosystem. Rules are **global** and MUST NOT vary between branches. 
+The AI rule set (AGENTS.md, AI_GUIDELINES.md, .cursorrules) represents the immutable "Physical Laws" of the repository ecosystem. Rules are **global** and MUST NOT vary between branches.
 
 ### Authority Restriction
 Only branches with the **`ceo/`** scope have the authority to modify rule files. Any rule changes attempted on `infra/`, `feat/`, or other branches MUST be rejected by the AI Agent. Non-CEO branches MUST merge rule updates FROM a `ceo/` branch to maintain parity.
@@ -563,5 +563,3 @@ Only branches with the **`ceo/`** scope have the authority to modify rule files.
    - Switch to all other active development branches (e.g., `infra/milestone-0-setup`, `main`) and merge the changes.
    - Update the master `kuro-rules` repository.
 2. **Review Enforcement**: No Pull Request (PR) can be merged without explicitly confirming that the branch has the status of the "Current Rule Set" (Rule 33 verification).
-
-

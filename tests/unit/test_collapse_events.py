@@ -6,10 +6,12 @@ in the same layer into summary traces.
 """
 
 import torch.nn as nn
-import pytest
 from neuraldbg import (
-    SemanticEvent, EventType, GradientHealth, ActivationHealth,
-    NeuralDbg
+    SemanticEvent,
+    EventType,
+    GradientHealth,
+    ActivationHealth,
+    NeuralDbg,
 )
 
 
@@ -45,24 +47,28 @@ class TestCollapseEvents:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=10,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.SATURATED.value,
-            confidence=0.7,
-            metadata={"prev_norm": 1.0},
-        ))
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=20,
-            from_state=GradientHealth.SATURATED.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={"prev_norm": 0.001},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=10,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.SATURATED.value,
+                confidence=0.7,
+                metadata={"prev_norm": 1.0},
+            )
+        )
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=20,
+                from_state=GradientHealth.SATURATED.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={"prev_norm": 0.001},
+            )
+        )
 
         collapsed = dbg._collapse_events()
         assert len(collapsed) == 1
@@ -76,24 +82,28 @@ class TestCollapseEvents:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=10,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.SATURATED.value,
-            confidence=0.7,
-            metadata={},
-        ))
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=20,
-            from_state=GradientHealth.SATURATED.value,
-            to_state=GradientHealth.HEALTHY.value,
-            confidence=0.8,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=10,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.SATURATED.value,
+                confidence=0.7,
+                metadata={},
+            )
+        )
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=20,
+                from_state=GradientHealth.SATURATED.value,
+                to_state=GradientHealth.HEALTHY.value,
+                confidence=0.8,
+                metadata={},
+            )
+        )
 
         collapsed = dbg._collapse_events()
         # States reverted: A -> B -> A, so from_state == to_state, keep all
@@ -104,24 +114,28 @@ class TestCollapseEvents:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=10,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={},
-        ))
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear2",
-            step=15,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.EXPLODING.value,
-            confidence=0.8,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=10,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear2",
+                step=15,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.EXPLODING.value,
+                confidence=0.8,
+                metadata={},
+            )
+        )
 
         collapsed = dbg._collapse_events()
         assert len(collapsed) == 2
@@ -131,24 +145,28 @@ class TestCollapseEvents:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=10,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={},
-        ))
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.ACTIVATION_REGIME_SHIFT,
-            layer_name="linear1",
-            step=12,
-            from_state=ActivationHealth.NORMAL.value,
-            to_state=ActivationHealth.DEAD.value,
-            confidence=0.85,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=10,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name="linear1",
+                step=12,
+                from_state=ActivationHealth.NORMAL.value,
+                to_state=ActivationHealth.DEAD.value,
+                confidence=0.85,
+                metadata={},
+            )
+        )
 
         collapsed = dbg._collapse_events()
         assert len(collapsed) == 2
@@ -159,25 +177,29 @@ class TestCollapseEvents:
         dbg = NeuralDbg(model)
 
         # Baseline event (initial state capture)
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=0,
-            from_state="NONE",
-            to_state=GradientHealth.HEALTHY.value,
-            confidence=1.0,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=0,
+                from_state="NONE",
+                to_state=GradientHealth.HEALTHY.value,
+                confidence=1.0,
+                metadata={},
+            )
+        )
         # Transition event in same layer
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=10,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=10,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
 
         collapsed = dbg._collapse_events()
         # Baseline kept individually + transition kept individually = 2 events
@@ -191,35 +213,41 @@ class TestCollapseEvents:
         dbg = NeuralDbg(model)
 
         # Baseline
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=0,
-            from_state="NONE",
-            to_state=GradientHealth.HEALTHY.value,
-            confidence=1.0,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=0,
+                from_state="NONE",
+                to_state=GradientHealth.HEALTHY.value,
+                confidence=1.0,
+                metadata={},
+            )
+        )
         # A -> B
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=10,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.SATURATED.value,
-            confidence=0.7,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=10,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.SATURATED.value,
+                confidence=0.7,
+                metadata={},
+            )
+        )
         # B -> A (reversion)
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=20,
-            from_state=GradientHealth.SATURATED.value,
-            to_state=GradientHealth.HEALTHY.value,
-            confidence=0.8,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=20,
+                from_state=GradientHealth.SATURATED.value,
+                to_state=GradientHealth.HEALTHY.value,
+                confidence=0.8,
+                metadata={},
+            )
+        )
 
         collapsed = dbg._collapse_events()
         # Baseline (1) + 2 reverted transitions kept individually = 3
@@ -230,24 +258,28 @@ class TestCollapseEvents:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=10,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.SATURATED.value,
-            confidence=0.5,
-            metadata={},
-        ))
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=20,
-            from_state=GradientHealth.SATURATED.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.95,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=10,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.SATURATED.value,
+                confidence=0.5,
+                metadata={},
+            )
+        )
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=20,
+                from_state=GradientHealth.SATURATED.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.95,
+                metadata={},
+            )
+        )
 
         collapsed = dbg._collapse_events()
         assert len(collapsed) == 1

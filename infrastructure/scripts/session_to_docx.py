@@ -66,7 +66,6 @@ def convert(source: Path, output: Path) -> None:
     try:
         from docx import Document
         from docx.shared import Pt, RGBColor
-        from docx.enum.text import WD_ALIGN_PARAGRAPH
     except ImportError:
         print(
             "python-docx is required. Install with:\n"
@@ -116,6 +115,7 @@ def convert(source: Path, output: Path) -> None:
             pPr = p._p.get_or_add_pPr()
             from docx.oxml.ns import qn
             from docx.oxml import OxmlElement
+
             pBdr = OxmlElement("w:pBdr")
             bottom = OxmlElement("w:bottom")
             bottom.set(qn("w:val"), "single")

@@ -34,7 +34,7 @@ jobs:
         run: |
           # Detect which rule files changed
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD -- "AGENTS.md" "AI_GUIDELINES.md" ".cursorrules" "copilot-instructions.md" "GAD.md" 2>/dev/null || echo "")
-          
+
           if [ -n "$CHANGED_FILES" ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
             echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
@@ -68,10 +68,10 @@ jobs:
           # Get the latest CEO branch
           CEO_BRANCH=$(git branch -r --format="%(refname:short)" | grep "origin/ceo/" | head -1)
           echo "Merging from: $CEO_BRANCH"
-          
+
           # Merge the rule files
           git merge --no-edit "$CEO_BRANCH" --strategy-option ours -- "AGENTS.md" "AI_GUIDELINES.md" ".cursorrules" "copilot-instructions.md" "GAD.md" || true
-          
+
           # Check if there are changes to commit
           if git diff --quiet HEAD; then
             echo "No changes to merge"

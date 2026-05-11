@@ -1,13 +1,17 @@
 """Integration smoke test for MLflow logging in the demo."""
 
+import sys
+from pathlib import Path
 import pytest
+
+# Add examples to path for importing the demo
+sys.path.append(str(Path(__file__).parent.parent.parent / "examples"))
 
 mlflow = pytest.importorskip("mlflow")
 pytest.importorskip("torch")
 
-from mlflow.tracking import MlflowClient
-
-from demo_vanishing_gradients import (
+from mlflow.tracking import MlflowClient  # noqa: E402
+from demo_vanishing_gradients import (  # noqa: E402
     create_failing_model,
     create_problematic_data,
     train_with_monitoring,
@@ -47,7 +51,10 @@ def test_demo_logs_metrics_and_artifacts_to_mlflow(tmp_path, monkeypatch):
     loss_history = client.get_metric_history(run.info.run_id, "loss")
     assert len(loss_history) == 5
 
-    artifacts = {artifact.path for artifact in client.list_artifacts(run.info.run_id, "artifacts")}
+    artifacts = {
+        artifact.path
+        for artifact in client.list_artifacts(run.info.run_id, "artifacts")
+    }
     assert "artifacts/causal_graph.mmd" in artifacts
     assert "artifacts/causal_hypotheses.json" in artifacts
     assert "artifacts/semantic_events.json" in artifacts
