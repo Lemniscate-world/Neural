@@ -43,15 +43,19 @@ mlruns/
 # Generated artifacts
 artifacts/*
 !artifacts/.gitkeep
+!artifacts/*.dvc
 
 # Generated API docs
 docs/api/
 data/*
 !data/.gitkeep
+!data/*.dvc
 models/*
 !models/.gitkeep
+!models/*.dvc
 outputs/*
 !outputs/.gitkeep
+!outputs/*.dvc
 logs/
 
 # Private logs and tracking

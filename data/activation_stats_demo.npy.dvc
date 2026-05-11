@@ -1,0 +1,5 @@
+outs:
+- md5: ce7ee96c89a375e54dc098570ce132e5
+  size: 6528
+  hash: md5
+  path: activation_stats_demo.npy
