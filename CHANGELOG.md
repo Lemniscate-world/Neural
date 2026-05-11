@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-05-11
+### Added
+- Integrated PR 651: Detect Python version mismatch in `ensure_venv.sh` (MLO-17).
+- Integrated PR 652: Initialized DVC for binary artifact versioning (MLO-4).
+- Integrated PR 654: Resource profiling (CPU/GPU memory) integration for semantic events (MLO-10).
+- Integrated PR 656: `SESSION_SUMMARY.md` to `.docx` conversion tool (NDBG-5).
+
+### Changed
+- Refactored repository structure: Unified all scripts into `infrastructure/scripts/`.
+- Moved `neuraldbg.py` to `neuraldbg/__init__.py` for better package organization.
+- Standardized `Makefile` to use centralized infrastructure scripts.
+- Cleaned root directory by moving legacy security reports to `outputs/reports/`.
+
+### Fixed
+- Restored `neuraldbg.py` core engine which was incorrectly removed in previous refactor commits.
+- Fixed import paths in test suite after directory restructuring.
+- Resolved multiple merge conflicts in `.gitignore` and `Makefile`.
+
 ### Added
 - `scripts/publish_session_summary_to_gdocs.py` to publish `SESSION_SUMMARY.md` directly to Google Docs (append/replace modes)
 - `.github/workflows/publish-summary-to-google-docs.yml` to support scheduled/manual Google Docs sync from CI with secrets-based auth
