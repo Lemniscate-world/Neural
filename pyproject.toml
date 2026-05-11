@@ -24,6 +24,7 @@ classifiers = [
 dependencies = [
     "numpy>=1.26.0",
     "torch>=2.0.0",
+    "psutil>=5.9,<6.0",
 ]
 
 [project.optional-dependencies]
