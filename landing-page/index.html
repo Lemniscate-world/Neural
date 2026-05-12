@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralDBG | Causal Inference for Deep Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #e0e0e0;
+            --accent-color: #00ff41;
+            --border-color: #333;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+        }
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .brutalist-border {
+            border: 1px solid var(--border-color);
+        }
+        .accent-text {
+            color: var(--accent-color);
+        }
+        .accent-bg {
+            background-color: var(--accent-color);
+            color: black;
+        }
+        .input-brutalist {
+            background: #111;
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            color: white;
+            outline: none;
+        }
+        .input-brutalist:focus {
+            border-color: var(--accent-color);
+        }
+        .btn-brutalist {
+            border: 1px solid var(--accent-color);
+            padding: 0.75rem 1.5rem;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-brutalist:hover {
+            background: var(--accent-color);
+            color: black;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="border-b border-[#333] p-6">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="mono text-xl font-bold tracking-tighter">NEURAL_DBG <span class="text-xs accent-text">v0.1-alfa</span></h1>
+            <nav class="hidden md:flex gap-8 text-sm mono uppercase tracking-widest text-[#888]">
+                <a href="#problem" class="hover:text-white">Problem</a>
+                <a href="#solution" class="hover:text-white">Solution</a>
+                <a href="#how-it-works" class="hover:text-white">Workflow</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- Hero Section -->
+        <section class="py-20 px-6 border-b border-[#333]">
+            <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="text-4xl md:text-5xl font-bold leading-tight mb-6">
+                        A causal inference engine for deep learning that tells you <span class="accent-text">WHY</span> your model failed, not just WHAT went wrong.
+                    </h2>
+                    <p class="text-lg text-[#aaa] mb-8 max-w-lg">
+                        For ML researchers and research engineers who spend hours debugging training failures without knowing the root cause.
+                    </p>
+                    <form action="https://formsubmit.co/neuraldbg@proton.me" method="POST" class="flex flex-col sm:flex-row gap-4">
+                        <input type="email" name="email" placeholder="Enter your email" required class="input-brutalist flex-grow">
+                        <button type="submit" class="btn-brutalist mono uppercase tracking-widest">Join waitlist</button>
+                    </form>
+                    <p class="mt-4 text-xs mono text-[#555]">
+                        Join 127 ML researchers waiting for early access.
+                    </p>
+                </div>
+                <div class="brutalist-border p-2 bg-[#0a0a0a]">
+                    <img src="assets/hero.png" alt="NeuralDBG Hero" class="w-full grayscale brightness-75 hover:grayscale-0 transition-all duration-500">
+                </div>
+            </div>
+        </section>
+
+        <!-- Problem Section -->
+        <section id="problem" class="py-20 px-6 border-b border-[#333] bg-[#080808]">
+            <div class="max-w-6xl mx-auto">
+                <h3 class="mono accent-text uppercase tracking-widest text-sm mb-12">Problem_Space</h3>
+                <div class="grid md:grid-cols-3 gap-12">
+                    <div class="brutalist-border p-8">
+                        <div class="mono text-xs text-[#555] mb-4">ERROR_01</div>
+                        <h4 class="text-xl font-bold mb-4">"My training plateaued and I don't know why"</h4>
+                        <p class="text-[#888] text-sm">TensorBoard shows metrics but doesn't explain the cause of failure. You're left staring at flat lines.</p>
+                    </div>
+                    <div class="brutalist-border p-8">
+                        <div class="mono text-xs text-[#555] mb-4">ERROR_02</div>
+                        <h4 class="text-xl font-bold mb-4">"I tried every hyperparameter but nothing works"</h4>
+                        <p class="text-[#888] text-sm">Without root cause analysis, debugging is guessing. You're wasting compute on random trials.</p>
+                    </div>
+                    <div class="brutalist-border p-8">
+                        <div class="mono text-xs text-[#555] mb-4">ERROR_03</div>
+                        <h4 class="text-xl font-bold mb-4">"Debugging takes more time than research"</h4>
+                        <p class="text-[#888] text-sm">Researchers spend 80% of their time on debugging instead of model improvements. It's a bottleneck.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Solution Section -->
+        <section id="solution" class="py-20 px-6 border-b border-[#333]">
+            <div class="max-w-6xl mx-auto">
+                <h3 class="mono accent-text uppercase tracking-widest text-sm mb-12">Solution_Architecture</h3>
+                <div class="grid md:grid-cols-2 gap-px bg-[#333] border border-[#333]">
+                    <div class="bg-[#050505] p-12">
+                        <h4 class="mono text-lg font-bold mb-4 uppercase">Semantic Event Extraction</h4>
+                        <p class="text-[#888]">Captures meaningful transitions (vanishing gradients, dead neurons) instead of raw tensor data. Reduced noise, higher signal.</p>
+                    </div>
+                    <div class="bg-[#050505] p-12">
+                        <h4 class="mono text-lg font-bold mb-4 uppercase">Causal Reasoning Engine</h4>
+                        <p class="text-[#888]">Generates ranked hypotheses with confidence scores about why training failed. Stop guessing, start knowing.</p>
+                    </div>
+                    <div class="bg-[#050505] p-12">
+                        <h4 class="mono text-lg font-bold mb-4 uppercase">Cross-layer Propagation</h4>
+                        <p class="text-[#888]">Identifies how failures cascade through your network layers. Track the root cause as it travels.</p>
+                    </div>
+                    <div class="bg-[#050505] p-12">
+                        <h4 class="mono text-lg font-bold mb-4 uppercase">Compiler-Aware</h4>
+                        <p class="text-[#888]">Works seamlessly with <code class="bg-[#111] px-1">torch.compile</code>. Performance and observability in one package.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it works -->
+        <section id="how-it-works" class="py-20 px-6 border-b border-[#333] bg-[#0a0a0a]">
+            <div class="max-w-6xl mx-auto">
+                <h3 class="mono accent-text uppercase tracking-widest text-sm mb-12">System_Workflow</h3>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="flex flex-col">
+                        <div class="mono text-4xl font-bold mb-6 text-[#222]">01</div>
+                        <h4 class="font-bold mb-2">Wrap your model</h4>
+                        <pre class="bg-[#050505] p-4 text-xs mono text-green-500 overflow-x-auto border border-[#222]">
+with NeuralDbg(model) as dbg:
+    # Your training loop
+    ...</pre>
+                    </div>
+                    <div class="flex flex-col">
+                        <div class="mono text-4xl font-bold mb-6 text-[#222]">02</div>
+                        <h4 class="font-bold mb-2">Run training</h4>
+                        <p class="text-[#888] text-sm">NeuralDBG captures events automatically in the background with minimal overhead.</p>
+                    </div>
+                    <div class="flex flex-col">
+                        <div class="mono text-4xl font-bold mb-6 text-[#222]">03</div>
+                        <h4 class="font-bold mb-2">Get explanations</h4>
+                        <pre class="bg-[#050505] p-4 text-xs mono text-green-500 overflow-x-auto border border-[#222]">
+dbg.explain_failure()
+# Returns ranked hypotheses</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="p-12 border-t border-[#333] bg-[#050505]">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+            <div>
+                <h1 class="mono text-lg font-bold mb-2">NEURAL_DBG</h1>
+                <p class="text-xs mono text-[#555]">CAUSAL_TRACE_ENGINE // V1.2.1</p>
+            </div>
+            <div class="flex flex-col md:flex-row gap-12 text-xs mono text-[#888] uppercase tracking-widest">
+                <div>No tracking</div>
+                <div>No cookies</div>
+                <div>Built for researchers</div>
+            </div>
+            <a href="https://github.com/Lemniscate-world/Neural" class="mono text-xs uppercase accent-text border-b border-transparent hover:border-[#00ff41] transition-all">GitHub Repo &rarr;</a>
+        </div>
+    </footer>
+</body>
+</html>
