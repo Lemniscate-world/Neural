@@ -46,13 +46,13 @@ corriger automatiquement un entraînement qui échoue.
 - [ ] Vérifier le chargement dans Aquarium (`~/Documents/Aquarium/`)
 - [ ] Itérer sur le format si nécessaire
 
-### Phase 4 : Desk Research (R75) — MANDATORY
-- [ ] Personas (3-4 avec verbatim Reddit/HN)
-- [ ] Competitors (5+ : WhyLabs, Weights & Biases, Neptune, TensorBoard, MLflow)
-- [ ] Market Sizing (TAM/SAM/SOM)
-- [ ] Risk Analysis (5 risques)
-- [ ] Gap Analysis (3+ gaps)
-- ⚠️ Règle 75 : Shallow research < 3 dimensions = STOP. Pas de GO sans ça.
+### Phase 4 : Desk Research (R75) — MANDATORY ✅
+- [x] Personas (4 personas avec verbatim Reddit/HN/SO)
+- [x] Competitors (8 : W&B, Neptune, MLflow, TensorBoard, Captum, Comet, WhyLabs, OpenAI Clarity)
+- [x] Market Sizing (TAM $16B, SAM $1.2B, SOM $2M/3yr)
+- [x] Risk Analysis (5 risques avec probabilité/impact/remède)
+- [x] Gap Analysis (4 gaps avec preuves)
+- ✅ **GO Decision** — toutes les 5 dimensions complétées
 
 ### Phase 5 : Publication PyPI
 - [ ] Ajouter `~/.pypirc` (token PyPI)
