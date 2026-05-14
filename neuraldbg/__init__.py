@@ -168,9 +168,11 @@ class NeuralDbg:
         self.previous_data_health: Dict[str, DataHealth] = {}
 
         # Pre-computed module-to-name mapping for O(1) lookup
+        # Format: "ClassName_index" (e.g. "Linear_0", "Tanh_1") for readability
         self._module_names: Dict[int, str] = {}
         for name, mod in self.model.named_modules():
-            self._module_names[id(mod)] = name or "root"
+            readable = f"{type(mod).__name__}_{name}" if name else "root"
+            self._module_names[id(mod)] = readable
 
         # Causal tracking: First layer to fail in a specific way
         self.first_failure_step: Dict[str, int] = {}  # failure_key -> step

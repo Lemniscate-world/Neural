@@ -86,7 +86,7 @@ session-docx: check-venv
 	$(PYTHON) infrastructure/scripts/session_to_docx.py
 
 benchmark-ci: check-venv
-	$(PYTHON) -c "import sys; sys.path.insert(0, '$(HOME)/Documents/NeuralDBG-Engine'.replace('\\','/')); from benchmark.scenarios import ALL_SCENARIOS; from benchmark.benchmark import run_benchmark; ALL_SCENARIOS[0].ground_truth.expected_bug_layer='3'; ALL_SCENARIOS[0].ground_truth.bug_layer='3'; r=run_benchmark(threshold_v=0.05, threshold_e=0.2, verbose=False); a=r['_summary']['overall']; print(f'Accuracy: {a:.3f}'); print('PASS' if a>=0.80 else 'FAIL'); exit(0 if a>=0.80 else 1)"
+	$(PYTHON) -c "import sys; sys.path.insert(0, '$(HOME)/Documents/NeuralDBG-Engine'.replace('\\','/')); from benchmark.benchmark import run_benchmark; r=run_benchmark(threshold_v=0.05, threshold_e=0.2, verbose=False); a=r['_summary']['overall']; print(f'Accuracy: {a:.3f}'); print('PASS' if a>=0.80 else 'FAIL'); exit(0 if a>=0.80 else 1)"
 
 benchmark-tune: check-venv
 	$(PYTHON) -c "import sys; sys.path.insert(0, '$(HOME)/Documents/NeuralDBG-Engine'.replace('\\','/')); from benchmark.benchmark import bayesian_tune; bayesian_tune(n_calls=20)"
