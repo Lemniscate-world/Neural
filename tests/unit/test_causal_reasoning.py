@@ -5,6 +5,8 @@ Tests for _explain_exploding_gradients, _explain_dead_neurons,
 _explain_saturated_activations, and export_mermaid_causal_graph.
 """
 
+import re
+
 import torch
 import torch.nn as nn
 import pytest
@@ -401,6 +403,47 @@ class TestMermaidGraphExport:
 
         graph = dbg.export_mermaid_causal_graph()
         assert "coupled" in graph
+
+    def test_export_deduplicates_coupled_edges(self):
+        """Duplicate logical couplings should render one Mermaid coupled edge."""
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        dbg.events.extend([
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name='tanh1',
+                step=10,
+                from_state=ActivationHealth.NORMAL.value,
+                to_state=ActivationHealth.SATURATED.value,
+                confidence=0.6,
+                metadata={},
+            ),
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name='tanh1',
+                step=11,
+                from_state=ActivationHealth.NORMAL.value,
+                to_state=ActivationHealth.SATURATED.value,
+                confidence=0.9,
+                metadata={},
+            ),
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name='linear2',
+                step=12,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.8,
+                metadata={},
+            ),
+        ])
+
+        graph = dbg.export_mermaid_causal_graph()
+
+        # Two activation SemanticEvents on tanh1 produce one logical
+        # tanh1-to-linear2 coupling in the exported graph.
+        assert len(re.findall(r"-+>\s*\|coupled\|", graph)) == 1
 
     def test_export_temporal_flow(self):
         """Test export shows temporal flow for same layer."""

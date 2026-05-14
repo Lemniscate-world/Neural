@@ -5,10 +5,6 @@ These tests focus on the causal inference engine components,
 ensuring semantic event extraction and causal reasoning work correctly.
 """
 
-import ast
-import inspect
-import textwrap
-
 import torch
 import torch.nn as nn
 import pytest
@@ -213,6 +209,52 @@ class TestCausalReasoning:
         assert 'relu1' in coupling['consequence']
         assert coupling['step_difference'] == 2
 
+    def test_detect_coupled_failures_deduplicates_logical_pairs(self):
+        """Duplicate logical layer/type pairs should collapse to one coupling."""
+        model = nn.Linear(10, 5)
+        dbg = NeuralDbg(model)
+
+        dbg.events.extend([
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name='tanh1',
+                step=10,
+                from_state=ActivationHealth.NORMAL,
+                to_state=ActivationHealth.SATURATED,
+                confidence=0.6,
+                metadata={},
+            ),
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name='tanh1',
+                step=11,
+                from_state=ActivationHealth.NORMAL,
+                to_state=ActivationHealth.SATURATED,
+                confidence=0.9,
+                metadata={},
+            ),
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name='linear2',
+                step=12,
+                from_state=GradientHealth.HEALTHY,
+                to_state=GradientHealth.VANISHING,
+                confidence=0.8,
+                metadata={},
+            ),
+        ])
+
+        couplings = dbg.detect_coupled_failures()
+        matching = [
+            coupling for coupling in couplings
+            if coupling['trigger'] == 'activation_regime_shift in tanh1'
+            and coupling['consequence'] == 'gradient_health_transition in linear2'
+        ]
+
+        assert len(matching) == 1
+        assert matching[0]['step_difference'] == 1
+        assert matching[0]['confidence'] == pytest.approx(1.0, rel=0.01)
+
 
 class TestResourceProfiling:
     """Unit tests for resource profiling integration in NeuralDbg."""
@@ -241,19 +283,21 @@ class TestResourceProfiling:
         stats = dbg._sample_resources()
         assert 'cpu_memory_mb' not in stats
 
-    def test_sample_resources_has_no_silent_exception_pass(self):
-        """Resource sampling should not silently swallow CPU sampling errors."""
-        tree = ast.parse(textwrap.dedent(inspect.getsource(NeuralDbg._sample_resources)))
-        exception_handlers = [
-            node for node in ast.walk(tree)
-            if isinstance(node, ast.ExceptHandler)
-        ]
+    def test_sample_resources_disables_cpu_sampler_after_failure(self):
+        """CPU sampling failures degrade gracefully and disable repeat attempts."""
+        import types
+        model = nn.Linear(4, 2)
+        dbg = NeuralDbg(model)
 
-        assert exception_handlers
-        assert not any(
-            any(isinstance(statement, ast.Pass) for statement in handler.body)
-            for handler in exception_handlers
-        )
+        def failing_memory_info():
+            raise RuntimeError("process memory unavailable")
+
+        dbg._psutil_process = types.SimpleNamespace(memory_info=failing_memory_info)
+
+        stats = dbg._sample_resources()
+
+        assert 'cpu_memory_mb' not in stats
+        assert dbg._psutil_process is None
 
     def test_memory_spike_detected(self):
         """_is_memory_spike returns True when rise > 20 % and > 50 MB."""

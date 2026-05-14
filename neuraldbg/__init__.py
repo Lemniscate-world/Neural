@@ -450,7 +450,7 @@ class NeuralDbg:
             try:
                 stats['cpu_memory_mb'] = self._psutil_process.memory_info().rss / 1024 ** 2
             except Exception:
-                stats.pop('cpu_memory_mb', None)
+                self._psutil_process = None
         if device is not None and device.type == 'cuda':
             stats['gpu_memory_allocated_mb'] = torch.cuda.memory_allocated(device) / 1024 ** 2
             stats['gpu_memory_reserved_mb'] = torch.cuda.memory_reserved(device) / 1024 ** 2
@@ -760,9 +760,9 @@ class NeuralDbg:
         Returns:
             List of detected couplings with confidence and direction.
         """
-        couplings = []
+        couplings_by_pair: Dict[Tuple[str, str], Dict[str, Any]] = {}
         if len(self.events) < 2:
-            return couplings
+            return []
 
         # Sort events by step to find sequential dependencies
         sorted_events = sorted(self.events, key=lambda e: e.step)
@@ -781,15 +781,33 @@ class NeuralDbg:
                         event2.event_type == EventType.GRADIENT_HEALTH_TRANSITION):
                         confidence = min(confidence + 0.2, 1.0)
 
-                    couplings.append({
-                        'trigger': f"{event1.event_type.value} in {event1.layer_name}",
-                        'consequence': f"{event2.event_type.value} in {event2.layer_name}",
+                    trigger = f"{event1.event_type.value} in {event1.layer_name}"
+                    consequence = f"{event2.event_type.value} in {event2.layer_name}"
+                    candidate = {
+                        'trigger': trigger,
+                        'consequence': consequence,
                         'step_difference': step_diff,
                         'confidence': confidence,
                         'is_causal_candidate': True
-                    })
+                    }
+                    key = (trigger, consequence)
+                    existing = couplings_by_pair.get(key)
+                    if (
+                        existing is None
+                        or candidate['confidence'] > existing['confidence']
+                        or (
+                            math.isclose(
+                                candidate['confidence'],
+                                existing['confidence'],
+                                rel_tol=1e-6,
+                                abs_tol=1e-9,
+                            )
+                            and candidate['step_difference'] < existing['step_difference']
+                        )
+                    ):
+                        couplings_by_pair[key] = candidate
 
-        return couplings
+        return list(couplings_by_pair.values())
 
     def get_root_causes(self) -> List[CausalHypothesis]:
         """Identify and rank root causes based on first-occurrence tracking."""
