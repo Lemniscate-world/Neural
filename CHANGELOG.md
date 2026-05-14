@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-05-14
+### Added
+- ResNet-18 failure scenarios demo (`demo_resnet_failures.py`) : vanishing gradients (Tanh + small init), exploding gradients (high LR), data anomaly (NaN injection)
+- Integration tests for ResNet-18 demo (5 tests, 100% coverage)
+- Semantic demo smoke tests (`test_semantic_demo.py`) for causal hypothesis validation
+
+### Fixed
+- Deduplication of logical causal couplings in `detect_coupled_failures()` and Mermaid graph export
+- Import path for MLflow demo test after directory restructuring
+- Graceful degradation of CPU resource sampler after psutil failure (avoids repeated exceptions)
+
 ## [1.2.0] - 2026-05-11
 ### Added
 - Integrated PR 651: Detect Python version mismatch in `ensure_venv.sh` (MLO-17).
