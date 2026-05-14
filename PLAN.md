@@ -44,9 +44,9 @@ corriger automatiquement un entraînement qui échoue.
 | Priorité | Architecture | Type de défaillance | Statut |
 |----------|-------------|---------------------|--------|
 | 🔴 Haute | **Transformer** (nanoGPT) | Attention collapse, NaN softmax, LR warmup | ✅ |
-| 🔴 Haute | **GANs** (DCGAN) | Mode collapse, D/G imbalance | ❌ |
+| 🔴 Haute | **GANs** (DCGAN generator) | Vanishing, exploding, NaN injection | ✅ |
 | 🟡 Moyenne | **LLM fine-tuning** (LoRA) | Catastrophic forgetting, loss spikes | ❌ |
-| 🟡 Moyenne | **Diffusion** (DDPM) | Unstable denoising, NaN UNet | ❌ |
+| 🟡 Moyenne | **Diffusion** (DDPM) | NaN UNet, exploding gradients, noise collapse | ✅ |
 | 🟡 Moyenne | **Distributed/DataParallel** | Multi-GPU hook integrity | ❌ |
 | 🟢 Basse | **LSTM/Time Series** | Vanishing recurrent gradients | ❌ |
 | 🟢 Basse | **GNN** (GCN/GAT) | Oversmoothing, deep GNN | ❌ |
@@ -74,7 +74,7 @@ corriger automatiquement un entraînement qui échoue.
 - [ ] Vérifier `pip install neuraldbg` fonctionnel
 
 ### Phase 6 : Agent Auto-Correcteur
-- [ ✓ ] Créer repo `~/Documents/Neural-Agent/`
+- [x] Créer repo `~/Documents/Neural-Agent/`
 - [ ] Définir le protocole : NeuralDBG causal output → action
 - [ ] Implémenter un agent qui reçoit `explain_failure()` → ajuste LR/init/archi
 - [ ] Boucle fermée : training → diagnostic → correction → nouveau training
@@ -153,18 +153,18 @@ Scenario Generator → Dataset causal → Grid/Bayesian Search → Meilleurs seu
 |----------|-----|-------------|---------------|
 | Vanishing | Weights zeroed | MLP 3 couches | layer "3", step 2 |
 | Exploding | Weights ×1000 | MLP 3 couches | layer "0", step 2 |
-| NaN injection | NaN dans weight | MLP 3 couches | layer "3", step 3 |
+| NaN injection | NaN dans weight | MLP 3 couches | layer "2", step 3 |
 | Healthy | Aucun | Linear 1 couche | 0 hypothèses |
-| à ajouter | Attention collapse | Transformer | ? |
-| à ajouter | Mode collapse | GAN | ? |
-| à ajouter | NaN softmax | Transformer | ? |
+| Dead Neurons | Poids → -100 | MLP + ReLU | layer "1", step 2 |
+| GAN Exploding | Poids ×500 | Generator | layer "0", step 2 |
+| Attention collapse | Embedding ×1e6 | Transformer | layer "wte", step 2 |
 | à ajouter | Catastrophic forgetting | LoRA | ? |
 
 #### Hyperparamètres du moteur causal (à optimiser)
 | Paramètre | Valeur défaut | Meilleur trouvé | Impact |
 |-----------|--------------|-----------------|--------|
-| `threshold_vanishing` | 1e-6 | **1e-8** | Sensibilité vanishing |
-| `threshold_exploding` | 1e3 | **1.0** | Sensibilité explosion |
+| `threshold_vanishing` | 1e-6 | **6e-2** (Bayes) | Sensibilité vanishing |
+| `threshold_exploding` | 1e3 | **2e-1** (Bayes) | Sensibilité explosion |
 | confidence boost coupling | 0.2 | ? | Poids des couplages |
 | saturation_threshold | 0.5 | ? | Seuil saturation actv. |
 
