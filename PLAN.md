@@ -45,7 +45,7 @@ corriger automatiquement un entraînement qui échoue.
 |----------|-------------|---------------------|--------|
 | 🔴 Haute | **Transformer** (nanoGPT) | Attention collapse, NaN softmax, LR warmup | ✅ |
 | 🔴 Haute | **GANs** (DCGAN generator) | Vanishing, exploding, NaN injection | ✅ |
-| 🟡 Moyenne | **LLM fine-tuning** (LoRA) | Catastrophic forgetting, loss spikes | ❌ |
+| 🟡 Moyenne | **LLM fine-tuning** (LoRA) | Catastrophic forgetting, loss spikes, NaN | ✅ |
 | 🟡 Moyenne | **Diffusion** (DDPM) | NaN UNet, exploding gradients, noise collapse | ✅ |
 | 🟡 Moyenne | **Distributed/DataParallel** | Multi-GPU hook integrity | ❌ |
 | 🟢 Basse | **LSTM/Time Series** | Vanishing recurrent gradients | ❌ |
