@@ -299,9 +299,11 @@ class NeuralDbg:
 
             layer_name = self._get_layer_name(module)
 
-            # --- Data anomaly detection on inputs ---
+            # --- Data anomaly detection on inputs AND outputs ---
             if input and len(input) > 0 and isinstance(input[0], torch.Tensor):
                 self._check_data_anomaly(input[0], layer_name)
+            if isinstance(output, torch.Tensor):
+                self._check_data_anomaly(output, layer_name)
 
             # Extract activation regime information
             if isinstance(output, torch.Tensor):
