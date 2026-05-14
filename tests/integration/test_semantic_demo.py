@@ -1,3 +1,4 @@
+"""NeuralDBG. Copyright (c) 2026 NeuralDBG."""
 """Integration test for semantic explanations in the demo."""
 
 import pytest

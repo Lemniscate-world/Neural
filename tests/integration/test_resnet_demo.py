@@ -1,3 +1,4 @@
+"""NeuralDBG. Copyright (c) 2026 NeuralDBG."""
 """Integration tests for ResNet-18 failure scenarios demo."""
 
 import pytest
