@@ -7,7 +7,7 @@ pytest.importorskip("torch")
 
 from mlflow.tracking import MlflowClient
 
-from demo_vanishing_gradients import (
+from examples.demo_vanishing_gradients import (
     create_failing_model,
     create_problematic_data,
     train_with_monitoring,

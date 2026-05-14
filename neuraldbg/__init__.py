@@ -450,7 +450,7 @@ class NeuralDbg:
             try:
                 stats['cpu_memory_mb'] = self._psutil_process.memory_info().rss / 1024 ** 2
             except Exception:
-                pass
+                stats.pop('cpu_memory_mb', None)
         if device is not None and device.type == 'cuda':
             stats['gpu_memory_allocated_mb'] = torch.cuda.memory_allocated(device) / 1024 ** 2
             stats['gpu_memory_reserved_mb'] = torch.cuda.memory_reserved(device) / 1024 ** 2

@@ -5,6 +5,10 @@ These tests focus on the causal inference engine components,
 ensuring semantic event extraction and causal reasoning work correctly.
 """
 
+import ast
+import inspect
+import textwrap
+
 import torch
 import torch.nn as nn
 import pytest
@@ -236,6 +240,20 @@ class TestResourceProfiling:
 
         stats = dbg._sample_resources()
         assert 'cpu_memory_mb' not in stats
+
+    def test_sample_resources_has_no_silent_exception_pass(self):
+        """Resource sampling should not silently swallow CPU sampling errors."""
+        tree = ast.parse(textwrap.dedent(inspect.getsource(NeuralDbg._sample_resources)))
+        exception_handlers = [
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.ExceptHandler)
+        ]
+
+        assert exception_handlers
+        assert not any(
+            any(isinstance(statement, ast.Pass) for statement in handler.body)
+            for handler in exception_handlers
+        )
 
     def test_memory_spike_detected(self):
         """_is_memory_spike returns True when rise > 20 % and > 50 MB."""
