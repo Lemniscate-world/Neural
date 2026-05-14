@@ -27,25 +27,23 @@ corriger automatiquement un entraînement qui échoue.
 - [x] ResNet-18 demo (vanishing, exploding, data anomaly)
 - [x] 105+ tests pass, version taggée
 
-### Phase 0 : Validité Causale — Moteur Infaillible
-Le vrai moat n'est pas le code, c'est la **qualité du raisonnement causal**.
-Ces tests prouvent que le moteur ne peut pas être cloné sans être réécrit au même niveau de rigueur.
-
-| Priorité | Test | Pourquoi | Statut |
-|----------|------|----------|--------|
-| 🔴 **Critique** | **Validité causale** : injecter NaN dans une couche spécifique → vérifier que l'engine localise *cette couche* et pas une autre | Seul test qui distingue causalité VS corrélation | ❌ |
-| 🔴 **Critique** | **Faux positifs** : entraînement sain (LR optimal, init correcte) → 0 hypothèses, 0 alertes | Sans ça, l'engine crie au loup en production | ❌ |
-| 🔴 **Critique** | **Déterminisme** : même seed + même bug → même diagnostic exact (hash des hypothèses) | Reproductibilité pour debug CI | ❌ |
-| 🟡 **Haut** | **Mutation** : casser un modèle de N façons connues (N modes de défaillance) → engine détecte les N | Couverture exhaustive, pas de trou | ❌ |
-| 🟡 **Haut** | **Scalabilité** : modèle avec 1000 modules feuilles → hooks s'installent en < 1s | Preuve que ça passe à l'échelle | ❌ |
-| 🟡 **Haut** | **API Contract** : `export_aquarium_package()` → JSON valide conforme à un schéma connu | Interopérabilité avec Aquarium & Agent | ❌ |
-| 🟢 **Moyen** | **Invariance cross-architecture** : NaN dans MLP = même diagnostic que NaN dans ResNet = même diagnostic que NaN dans Transformer | Cohérence du diagnostic | ❌ |
-| 🟢 **Moyen** | **Régression CI** : hook dans la CI qui bloque si le nombre d'hypothèses change inexpliqué | Détection précoce de dérive | ❌ |
+### Phase 0 : Validité Causale — Moteur Infaillible ✅
+| Priorité | Test | Statut |
+|----------|------|--------|
+| 🔴 **Critique** | **Validité causale** : NaN dans couche X → engine localise X | ✅ |
+| 🔴 **Critique** | **Faux positifs** : entraînement sain → 0 hypothèses | ✅ |
+| 🔴 **Critique** | **Déterminisme** : même seed + même bug → mêmes hypothèses | ✅ |
+| 🟡 **Haut** | **Mutation** : N modes de défaillance → N détectés | ✅ |
+| 🟡 **Haut** | **Scalabilité** : 1000 modules → hooks < 1s | ✅ |
+| 🟡 **Haut** | **API Contract** : export JSON valide | ✅ |
+| 🟢 **Moyen** | **Invariance cross-architecture** : MLP + ResNet + Transformer | ✅ |
+| 🟢 **Moyen** | **Régression CI** : seuils d'hypothèses stables | ✅ |
+| 🆕 | **Benchmark causal** → accuracy 0.917 (grid search) | ✅ |
 
 ### Phase 2 : Dogfooding Extensif
 | Priorité | Architecture | Type de défaillance | Statut |
 |----------|-------------|---------------------|--------|
-| 🔴 Haute | **Transformer** (nanoGPT) | Attention collapse, NaN softmax, LR warmup | ❌ |
+| 🔴 Haute | **Transformer** (nanoGPT) | Attention collapse, NaN softmax, LR warmup | ✅ |
 | 🔴 Haute | **GANs** (DCGAN) | Mode collapse, D/G imbalance | ❌ |
 | 🟡 Moyenne | **LLM fine-tuning** (LoRA) | Catastrophic forgetting, loss spikes | ❌ |
 | 🟡 Moyenne | **Diffusion** (DDPM) | Unstable denoising, NaN UNet | ❌ |
@@ -138,6 +136,63 @@ Ces tests prouvent que le moteur ne peut pas être cloné sans être réécrit a
 | **Marque "NeuralDBG"** | Protection légale, notoriété |
 | **Aquarium** | IDE Tauri séparé, écosystème propre |
 | **Tests de validité causale** | Privés, non reproductibles sans connaissance du domaine |
+
+### Phase 8 : Auto-Improvement Causal — ML sur le ML
+Le benchmark causal + grid search a déjà amélioré l'accuracy de 0.750 → 0.917.
+Prochaine étape : faire du vrai ML sur le moteur de diagnostic.
+
+#### Pipeline d'auto-amélioration
+```
+Scenario Generator → Dataset causal → Grid/Bayesian Search → Meilleurs seuils
+      ↑                                                    ↓
+      └────── Validation sur benchmarks externes ←─────────┘
+```
+
+#### Dataset causal (NeuralDBG-Engine/benchmark/scenarios.py)
+| Scénario | Bug | Architecture | Vérité terrain |
+|----------|-----|-------------|---------------|
+| Vanishing | Weights zeroed | MLP 3 couches | layer "3", step 2 |
+| Exploding | Weights ×1000 | MLP 3 couches | layer "0", step 2 |
+| NaN injection | NaN dans weight | MLP 3 couches | layer "3", step 3 |
+| Healthy | Aucun | Linear 1 couche | 0 hypothèses |
+| à ajouter | Attention collapse | Transformer | ? |
+| à ajouter | Mode collapse | GAN | ? |
+| à ajouter | NaN softmax | Transformer | ? |
+| à ajouter | Catastrophic forgetting | LoRA | ? |
+
+#### Hyperparamètres du moteur causal (à optimiser)
+| Paramètre | Valeur défaut | Meilleur trouvé | Impact |
+|-----------|--------------|-----------------|--------|
+| `threshold_vanishing` | 1e-6 | **1e-8** | Sensibilité vanishing |
+| `threshold_exploding` | 1e3 | **1.0** | Sensibilité explosion |
+| confidence boost coupling | 0.2 | ? | Poids des couplages |
+| saturation_threshold | 0.5 | ? | Seuil saturation actv. |
+
+#### Algorithmes d'optimisation
+| Algo | Principe | Coût | Quand l'utiliser |
+|------|----------|------|-----------------|
+| **Grid Search** | Tester TOUTES les combinaisons d'une grille fixe | Élevé (N^params) | ≤ 2 params, exploratoire |
+| **Random Search** | Tester N combinaisons aléatoires | Moyen | > 2 params, baseline |
+| **Bayesian (GP)** | Modéliser l'accuracy comme une fonction gaussienne, explorer les zones prometteuses | Faible (10-30× moins de runs) | Par défaut — le meilleur rapport coût/précision |
+| **CMA-ES** | Évolution différentielle sans gradient | Moyen | Paramètres continus, surface non-lisse |
+
+#### External Benchmarks
+Ces benchmarks vérifient que l'amélioration sur notre dataset n'est pas du surapprentissage.
+
+| Source | Type | Comment |
+|--------|------|---------|
+| **Issues GitHub PyTorch** | Réel | Scraper des issues avec stack traces, vérifier le diagnostic |
+| **Papers de recherche** | Synthétique | Reproduire les modes de défaillance documentés |
+| **Kaggle competitions** | Réel | Entraînements qui échouent, causes documentées |
+| **HuggingFace Forums** | Réel | Posts "training failed" avec logs |
+| **Student's mistakes book** | Pédagogique | Catalogue d'erreurs classiques en DL |
+| **Auto-validation** | Automatique | Générer N runs aléatoires avec bugs aléatoires, mesurer l'accuracy |
+
+### Phase 9 : Auto-Validation Continue
+- [ ] Boucle CI : à chaque commit → run benchmark → vérifier accuracy ≥ seuil
+- [ ] Auto-tune : si accuracy baisse → lancer Bayesian search → commit les nouveaux seuils
+- [ ] Rapport hebdomadaire : évolution de l'accuracy dans le temps
+- [ ] Détection de régression : alerter si l'accuracy baisse de > 0.05
 
 ---
 **Last Updated**: 2026-05-14
