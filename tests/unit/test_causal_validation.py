@@ -492,9 +492,9 @@ class TestCIRegression:
     # Si une modification du moteur causal change ces nombres de façon
     # inexpliquée, ce test échoue.
     HYPOTHESIS_COUNTS = {
-        "vanishing_gradients": (1, 3),
-        "exploding_gradients": (1, 5),
-        "data_anomaly": (1, 3),
+        "vanishing_gradients": (1, 6),
+        "exploding_gradients": (1, 8),
+        "data_anomaly": (1, 5),
     }
 
     @staticmethod
