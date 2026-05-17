@@ -32,6 +32,7 @@ SEED = 42
 # ═══════════════════════════════════════════════════════════════════
 # TEST 1 : Validité causale
 # ═══════════════════════════════════════════════════════════════════
+@requires_engine
 class TestCausalValidity:
     """Injecter NaN dans UNE couche spécifique → engine localise CETTE couche."""
 
@@ -152,6 +153,7 @@ class TestFalsePositives:
 # ═══════════════════════════════════════════════════════════════════
 # TEST 3 : Déterminisme
 # ═══════════════════════════════════════════════════════════════════
+@requires_engine
 class TestDeterminism:
     """Même seed + même bug → mêmes hypothèses exactes."""
 
