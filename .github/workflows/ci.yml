@@ -59,6 +59,12 @@ jobs:
         run: |
           python -m pip install -e .
 
+      - name: Install neuraldbg-engine from local path
+        run: |
+          if [ -d "../NeuralDBG-Engine" ]; then
+            python -m pip install -e ../NeuralDBG-Engine
+          fi
+
       - name: Run tests with coverage gate (>=60%)
         run: |
           # Keep the script running after failures so we can emit a useful summary.
