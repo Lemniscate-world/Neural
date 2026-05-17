@@ -11,11 +11,21 @@ import torch
 import torch.nn as nn
 import pytest
 from neuraldbg import (
-    SemanticEvent, EventType, GradientHealth, ActivationHealth, CausalHypothesis,
-    NeuralDbg
+    SemanticEvent,
+    EventType,
+    GradientHealth,
+    ActivationHealth,
+    CausalHypothesis,
+    NeuralDbg,
+    _HAS_ENGINE,
+)
+
+requires_engine = pytest.mark.skipif(
+    not _HAS_ENGINE, reason="requires neuraldbg-engine"
 )
 
 
+@requires_engine
 class TestExplodingGradients:
     """Unit tests for _explain_exploding_gradients method."""
 
@@ -35,12 +45,12 @@ class TestExplodingGradients:
         # Add an exploding gradient event
         event = SemanticEvent(
             event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
+            layer_name="linear1",
             step=100,
             from_state=GradientHealth.HEALTHY.value,
             to_state=GradientHealth.EXPLODING.value,
             confidence=0.95,
-            metadata={'prev_norm': 1.0, 'current_norm': 1e5}
+            metadata={"prev_norm": 1.0, "current_norm": 1e5},
         )
         dbg.events.append(event)
 
@@ -55,24 +65,28 @@ class TestExplodingGradients:
         dbg = NeuralDbg(model)
 
         # Add multiple exploding events
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=50,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.EXPLODING.value,
-            confidence=0.9,
-            metadata={}
-        ))
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear2',
-            step=100,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.EXPLODING.value,
-            confidence=0.8,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=50,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.EXPLODING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear2",
+                step=100,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.EXPLODING.value,
+                confidence=0.8,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg._explain_exploding_gradients()
         assert len(hypotheses) >= 1
@@ -80,6 +94,7 @@ class TestExplodingGradients:
         assert "step 50" in hypotheses[0].description
 
 
+@requires_engine
 class TestDeadNeurons:
     """Unit tests for _explain_dead_neurons method."""
 
@@ -99,12 +114,12 @@ class TestDeadNeurons:
         # Add a dead neuron event (high dead_ratio)
         event = SemanticEvent(
             event_type=EventType.ACTIVATION_REGIME_SHIFT,
-            layer_name='relu1',
+            layer_name="relu1",
             step=200,
             from_state=ActivationHealth.NORMAL.value,
             to_state=ActivationHealth.DEAD.value,
             confidence=0.88,
-            metadata={}
+            metadata={},
         )
         dbg.events.append(event)
 
@@ -119,20 +134,23 @@ class TestDeadNeurons:
         dbg = NeuralDbg(model)
 
         # Add event with low dead_ratio (should be ignored)
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.ACTIVATION_REGIME_SHIFT,
-            layer_name='relu1',
-            step=200,
-            from_state=ActivationHealth.NORMAL.value,
-            to_state=ActivationHealth.NORMAL.value,  # Low ratio doesn't trigger shift in new logic
-            confidence=0.7,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name="relu1",
+                step=200,
+                from_state=ActivationHealth.NORMAL.value,
+                to_state=ActivationHealth.NORMAL.value,  # Low ratio doesn't trigger shift in new logic
+                confidence=0.7,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg._explain_dead_neurons()
         assert len(hypotheses) == 0
 
 
+@requires_engine
 class TestSaturatedActivations:
     """Unit tests for _explain_saturated_activations method."""
 
@@ -152,12 +170,12 @@ class TestSaturatedActivations:
         # Add a saturation event
         event = SemanticEvent(
             event_type=EventType.ACTIVATION_REGIME_SHIFT,
-            layer_name='sigmoid1',
+            layer_name="sigmoid1",
             step=150,
             from_state=ActivationHealth.NORMAL.value,
             to_state=ActivationHealth.SATURATED.value,
             confidence=0.92,
-            metadata={}
+            metadata={},
         )
         dbg.events.append(event)
 
@@ -173,12 +191,12 @@ class TestSaturatedActivations:
 
         event = SemanticEvent(
             event_type=EventType.ACTIVATION_REGIME_SHIFT,
-            layer_name='sigmoid1',
+            layer_name="sigmoid1",
             step=0,
             from_state="NONE",
             to_state=ActivationHealth.SATURATED.value,
             confidence=1.0,
-            metadata={"saturation_ratio": 0.84}
+            metadata={"saturation_ratio": 0.84},
         )
         dbg.events.append(event)
 
@@ -192,20 +210,23 @@ class TestSaturatedActivations:
         dbg = NeuralDbg(model)
 
         # Add event with low saturation_ratio (should be ignored)
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.ACTIVATION_REGIME_SHIFT,
-            layer_name='sigmoid1',
-            step=150,
-            from_state=ActivationHealth.NORMAL.value,
-            to_state=ActivationHealth.NORMAL.value,
-            confidence=0.6,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name="sigmoid1",
+                step=150,
+                from_state=ActivationHealth.NORMAL.value,
+                to_state=ActivationHealth.NORMAL.value,
+                confidence=0.6,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg._explain_saturated_activations()
         assert len(hypotheses) == 0
 
 
+@requires_engine
 class TestExplainFailure:
     """Unit tests for explain_failure method."""
 
@@ -214,15 +235,17 @@ class TestExplainFailure:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=50,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=50,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg.explain_failure("vanishing_gradients")
         assert len(hypotheses) >= 1
@@ -233,26 +256,28 @@ class TestExplainFailure:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.extend([
-            SemanticEvent(
-                event_type=EventType.ACTIVATION_REGIME_SHIFT,
-                layer_name="relu1",
-                step=0,
-                from_state="NONE",
-                to_state=ActivationHealth.NORMAL.value,
-                confidence=1.0,
-                metadata={},
-            ),
-            SemanticEvent(
-                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-                layer_name="linear1",
-                step=0,
-                from_state="NONE",
-                to_state=GradientHealth.VANISHING.value,
-                confidence=1.0,
-                metadata={},
-            ),
-        ])
+        dbg.events.extend(
+            [
+                SemanticEvent(
+                    event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                    layer_name="relu1",
+                    step=0,
+                    from_state="NONE",
+                    to_state=ActivationHealth.NORMAL.value,
+                    confidence=1.0,
+                    metadata={},
+                ),
+                SemanticEvent(
+                    event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                    layer_name="linear1",
+                    step=0,
+                    from_state="NONE",
+                    to_state=GradientHealth.VANISHING.value,
+                    confidence=1.0,
+                    metadata={},
+                ),
+            ]
+        )
 
         hypotheses = dbg._explain_vanishing_gradients()
 
@@ -264,15 +289,17 @@ class TestExplainFailure:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=50,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.EXPLODING.value,
-            confidence=0.85,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=50,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.EXPLODING.value,
+                confidence=0.85,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg.explain_failure("exploding_gradients")
         assert len(hypotheses) >= 1
@@ -282,15 +309,17 @@ class TestExplainFailure:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.ACTIVATION_REGIME_SHIFT,
-            layer_name='relu1',
-            step=100,
-            from_state=ActivationHealth.NORMAL.value,
-            to_state=ActivationHealth.DEAD.value,
-            confidence=0.8,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name="relu1",
+                step=100,
+                from_state=ActivationHealth.NORMAL.value,
+                to_state=ActivationHealth.DEAD.value,
+                confidence=0.8,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg.explain_failure("dead_neurons")
         assert len(hypotheses) >= 1
@@ -300,15 +329,17 @@ class TestExplainFailure:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.ACTIVATION_REGIME_SHIFT,
-            layer_name='sigmoid1',
-            step=100,
-            from_state=ActivationHealth.NORMAL.value,
-            to_state=ActivationHealth.SATURATED.value,
-            confidence=0.75,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name="sigmoid1",
+                step=100,
+                from_state=ActivationHealth.NORMAL.value,
+                to_state=ActivationHealth.SATURATED.value,
+                confidence=0.75,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg.explain_failure("saturated_activations")
         assert len(hypotheses) >= 1
@@ -319,24 +350,28 @@ class TestExplainFailure:
         dbg = NeuralDbg(model)
 
         # Add multiple events with different confidences
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=50,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.5,
-            metadata={}
-        ))
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear2',
-            step=100,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=50,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.5,
+                metadata={},
+            )
+        )
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear2",
+                step=100,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg.explain_failure("vanishing_gradients")
         # Should be sorted by confidence (highest first)
@@ -344,6 +379,7 @@ class TestExplainFailure:
             assert hypotheses[0].confidence >= hypotheses[1].confidence
 
 
+@requires_engine
 class TestMermaidGraphExport:
     """Unit tests for export_mermaid_causal_graph method."""
 
@@ -360,15 +396,17 @@ class TestMermaidGraphExport:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=50,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=50,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
 
         graph = dbg.export_mermaid_causal_graph()
         assert "graph TD" in graph
@@ -382,24 +420,28 @@ class TestMermaidGraphExport:
         dbg = NeuralDbg(model)
 
         # Add coupled events (close in time, different layers)
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=50,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={}
-        ))
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.ACTIVATION_REGIME_SHIFT,
-            layer_name='relu1',
-            step=52,
-            from_state=ActivationHealth.NORMAL.value,
-            to_state=ActivationHealth.DEAD.value,
-            confidence=0.8,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=50,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name="relu1",
+                step=52,
+                from_state=ActivationHealth.NORMAL.value,
+                to_state=ActivationHealth.DEAD.value,
+                confidence=0.8,
+                metadata={},
+            )
+        )
 
         graph = dbg.export_mermaid_causal_graph()
         assert "coupled" in graph
@@ -409,35 +451,37 @@ class TestMermaidGraphExport:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.extend([
-            SemanticEvent(
-                event_type=EventType.ACTIVATION_REGIME_SHIFT,
-                layer_name='tanh1',
-                step=10,
-                from_state=ActivationHealth.NORMAL.value,
-                to_state=ActivationHealth.SATURATED.value,
-                confidence=0.6,
-                metadata={},
-            ),
-            SemanticEvent(
-                event_type=EventType.ACTIVATION_REGIME_SHIFT,
-                layer_name='tanh1',
-                step=11,
-                from_state=ActivationHealth.NORMAL.value,
-                to_state=ActivationHealth.SATURATED.value,
-                confidence=0.9,
-                metadata={},
-            ),
-            SemanticEvent(
-                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-                layer_name='linear2',
-                step=12,
-                from_state=GradientHealth.HEALTHY.value,
-                to_state=GradientHealth.VANISHING.value,
-                confidence=0.8,
-                metadata={},
-            ),
-        ])
+        dbg.events.extend(
+            [
+                SemanticEvent(
+                    event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                    layer_name="tanh1",
+                    step=10,
+                    from_state=ActivationHealth.NORMAL.value,
+                    to_state=ActivationHealth.SATURATED.value,
+                    confidence=0.6,
+                    metadata={},
+                ),
+                SemanticEvent(
+                    event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                    layer_name="tanh1",
+                    step=11,
+                    from_state=ActivationHealth.NORMAL.value,
+                    to_state=ActivationHealth.SATURATED.value,
+                    confidence=0.9,
+                    metadata={},
+                ),
+                SemanticEvent(
+                    event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                    layer_name="linear2",
+                    step=12,
+                    from_state=GradientHealth.HEALTHY.value,
+                    to_state=GradientHealth.VANISHING.value,
+                    confidence=0.8,
+                    metadata={},
+                ),
+            ]
+        )
 
         graph = dbg.export_mermaid_causal_graph()
 
@@ -451,29 +495,34 @@ class TestMermaidGraphExport:
         dbg = NeuralDbg(model)
 
         # Add events in same layer at different steps
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=50,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={}
-        ))
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=100,
-            from_state=GradientHealth.VANISHING.value,
-            to_state=GradientHealth.HEALTHY.value,
-            confidence=0.8,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=50,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=100,
+                from_state=GradientHealth.VANISHING.value,
+                to_state=GradientHealth.HEALTHY.value,
+                confidence=0.8,
+                metadata={},
+            )
+        )
 
         graph = dbg.export_mermaid_causal_graph()
         assert "temporal" in graph
 
 
+@requires_engine
 class TestTraceCausalChain:
     """Unit tests for trace_causal_chain method."""
 
@@ -490,15 +539,17 @@ class TestTraceCausalChain:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=50,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={'test': 'value'}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=50,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={"test": "value"},
+            )
+        )
 
         chain = dbg.trace_causal_chain("gradient_health_transition")
         assert len(chain) == 1
@@ -506,6 +557,7 @@ class TestTraceCausalChain:
         assert "step 50" in chain[0]
 
 
+@requires_engine
 class TestGetCausalHypotheses:
     """Unit tests for get_causal_hypotheses method."""
 
@@ -514,20 +566,23 @@ class TestGetCausalHypotheses:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name='linear1',
-            step=50,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.VANISHING.value,
-            confidence=0.9,
-            metadata={}
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=50,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.VANISHING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg.get_causal_hypotheses()
         assert len(hypotheses) >= 1
 
 
+@requires_engine
 class TestRootCauseEvidence:
     """Unit tests for first-occurrence root cause evidence selection."""
 
