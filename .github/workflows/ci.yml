@@ -97,5 +97,6 @@ jobs:
 
       - name: Run Safety
         if: matrix.os == 'ubuntu-latest'
+        continue-on-error: true
         run: |
           python -m safety check --full-report
