@@ -269,19 +269,21 @@ Ces benchmarks vérifient que l'amélioration sur notre dataset n'est pas du sur
 - [ ] **Le Researcher** (Twitter/X, Discord IA) : "Je publie un paper, j'ai besoin d'expliquer *pourquoi* mon model a divergé."
 
 #### 3. Préparer les Assets de Lancement
-- [ ] **README "Killer"** : Actuel est bon, mais ajouter une section "Why NeuralDBG?" avec un comparatif visuel (TensorBoard vs NeuralDBG).
-- [ ] **Landing Page** (v0.dev) : Une page simple avec le pitch, la démo, et le lien PyPI.
-- [ ] **Démo Vidéo** (30s) : Un screen recording montrant un training qui faille, l'installation de NeuralDBG, et l'explication causale qui apparaît.
-- [ ] **Exemple "Copy-Paste"** : Un script `quickstart.py` que n'importe qui peut lancer en 2 minutes pour voir la magie opérer.
+- [x] **README "Killer"** : Section "Why NeuralDBG?" avec comparatif visuel.
+- [x] **Landing Page** (GitHub Pages) : Page statique dans `docs/index.html`.
+- [x] **Démo Vidéo** : Script `scripts/record_demo.py` pour enregistrement automatisé.
+- [x] **Exemple "Copy-Paste"** : `quickstart.py` à la racine.
 
 #### 4. Canaux de Distribution (Launch Plan)
-- [ ] **Reddit** : Poster sur r/MachineLearning (format "Show & Tell" ou "I built a tool to debug training failures").
-- [ ] **HackerNews** : "Show HN: NeuralDBG – Causal inference for PyTorch training dynamics".
-- [ ] **Twitter/X** : Thread avec le problème (gradient vanishing), la solution (NeuralDBG), et le lien. Taguer des influenceurs ML (ex: @karpathy, @AndrewYNg).
-- [ ] **Discord** : Partager dans les serveurs IA/ML (PyTorch Discord, HuggingFace Discord).
+- [ ] **Reddit** : Poster sur r/MachineLearning.
+- [x] **HackerNews** : Brouillon prêt dans `LAUNCH_POSTS.md`.
+- [ ] **Twitter/X** : Thread avec le problème/solution.
+- [ ] **Discord** : Partager dans les serveurs IA/ML.
 
 #### 5. Boucle de Feedback (Validation Loop)
-- [ ] **GitHub Issues Template** : "Bug Report", "Feature Request", "False Positive Report".
+- [x] **GitHub Issues Template** : Bug, Feature, False Positive.
+- [ ] **Discord Channel** : Créer un channel `#feedback`.
+- [ ] **Mom Test 2.0** : Contacter les 5 premiers utilisateurs.
 - [ ] **Discord Channel** : Créer un channel `#feedback` pour discuter en direct avec les premiers utilisateurs.
 - [ ] **Mom Test 2.0** : Contacter les 5 premiers utilisateurs pour un call de 15 min. "Est-ce que ça t'a vraiment fait gagner du temps ?"
 
