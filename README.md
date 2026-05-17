@@ -21,6 +21,18 @@ NeuralDBG treats training as a **semantic trace of learning dynamics** rather th
 
 Unlike traditional monitoring tools (TensorBoard, Weights & Biases), NeuralDBG focuses on **causal inference** rather than metric tracking.
 
+## Why NeuralDBG?
+
+| Feature | TensorBoard / W&B | NeuralDBG |
+|---|---|---|
+| **What it shows** | Graphs of loss/accuracy over time | **Why** the loss spiked or vanished |
+| **Diagnosis** | Manual inspection of curves | **Automated causal hypotheses** |
+| **Actionable?** | You guess the fix | Suggests root causes (LR, Init, Data) |
+| **Integration** | Separate dashboard | **One line of code** in your loop |
+| **Privacy** | Data sent to cloud | **100% Local** (unless you opt-in) |
+
+> "TensorBoard tells you *when* it failed. NeuralDBG tells you *why*."
+
 ## Key Features
 
 - **Semantic Event Extraction**: Detects meaningful transitions in training dynamics

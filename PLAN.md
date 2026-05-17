@@ -252,5 +252,38 @@ Ces benchmarks vérifient que l'amélioration sur notre dataset n'est pas du sur
 - [ ] Rapport hebdomadaire : évolution de l'accuracy dans le temps
 - [ ] Détection de régression : alerter si l'accuracy baisse de > 0.05
 
+### Phase 10 : MVP Launch & Market Validation (Go-to-Market)
+> **Objectif** : Valider le Product-Market Fit avec des utilisateurs réels. Passer du "Code qui marche" au "Produit qu'on utilise".
+
+#### 1. Métriques de Succès (KPIs de Validation)
+| Métrique | Objectif (30 jours) | Pourquoi |
+|---|---|---|
+| **Installs PyPI** | 100 | Preuve que le packaging et l'install fonctionnent |
+| **GitHub Stars** | 50 | Preuve d'intérêt et de crédibilité technique |
+| **Retours Qualifiés** | 5 | Preuve que le problème est réel et que NeuralDBG aide |
+| **Issues/PRs** | 3+ | Preuve que la communauté s'engage |
+
+#### 2. Cibler les Early Adopters (Personas Phase 4)
+- [ ] **Le PhD Student** (Reddit r/MachineLearning, r/deeplearning) : "J'ai passé 3 jours à debugger mon gradient, j'aurais aimé avoir ça."
+- [ ] **Le ML Engineer** (HackerNews, Twitter/X) : "On a un pipeline CI/CD, mais on n'a pas de test de validité causale sur nos models."
+- [ ] **Le Researcher** (Twitter/X, Discord IA) : "Je publie un paper, j'ai besoin d'expliquer *pourquoi* mon model a divergé."
+
+#### 3. Préparer les Assets de Lancement
+- [ ] **README "Killer"** : Actuel est bon, mais ajouter une section "Why NeuralDBG?" avec un comparatif visuel (TensorBoard vs NeuralDBG).
+- [ ] **Landing Page** (v0.dev) : Une page simple avec le pitch, la démo, et le lien PyPI.
+- [ ] **Démo Vidéo** (30s) : Un screen recording montrant un training qui faille, l'installation de NeuralDBG, et l'explication causale qui apparaît.
+- [ ] **Exemple "Copy-Paste"** : Un script `quickstart.py` que n'importe qui peut lancer en 2 minutes pour voir la magie opérer.
+
+#### 4. Canaux de Distribution (Launch Plan)
+- [ ] **Reddit** : Poster sur r/MachineLearning (format "Show & Tell" ou "I built a tool to debug training failures").
+- [ ] **HackerNews** : "Show HN: NeuralDBG – Causal inference for PyTorch training dynamics".
+- [ ] **Twitter/X** : Thread avec le problème (gradient vanishing), la solution (NeuralDBG), et le lien. Taguer des influenceurs ML (ex: @karpathy, @AndrewYNg).
+- [ ] **Discord** : Partager dans les serveurs IA/ML (PyTorch Discord, HuggingFace Discord).
+
+#### 5. Boucle de Feedback (Validation Loop)
+- [ ] **GitHub Issues Template** : "Bug Report", "Feature Request", "False Positive Report".
+- [ ] **Discord Channel** : Créer un channel `#feedback` pour discuter en direct avec les premiers utilisateurs.
+- [ ] **Mom Test 2.0** : Contacter les 5 premiers utilisateurs pour un call de 15 min. "Est-ce que ça t'a vraiment fait gagner du temps ?"
+
 ---
 **Last Updated**: 2026-05-17
