@@ -63,6 +63,8 @@ jobs:
         run: |
           # Keep the script running after failures so we can emit a useful summary.
           set +e
+          # Add repo root to PYTHONPATH so examples/ modules are importable
+          export PYTHONPATH="${{ github.workspace }}:$PYTHONPATH"
           # Limit coverage to project source to avoid external library artifacts.
           python -m coverage run --include=neuraldbg/** -m pytest 2>&1 | tee /tmp/pytest-ci.log
           # In a pipeline, capture the command status (not tee's status).
