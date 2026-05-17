@@ -3,11 +3,10 @@
 A causal inference engine for deep learning training that provides **structured explanations** of neural network training failures. Understand *why* your model failed during training through semantic analysis and abductive reasoning, not raw tensor inspection.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Build Status](https://github.com/Lemniscate-world/Neural/workflows/Build/badge.svg)](https://github.com/Lemniscate-world/Neural/actions)
-[![CodeQL](https://github.com/Lemniscate-world/Neural/workflows/CodeQL/badge.svg)](https://github.com/Lemniscate-world/Neural/actions)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI](https://img.shields.io/pypi/v/neuraldbg.svg)](https://pypi.org/project/neuraldbg/)
+[![CI](https://github.com/LambdaSection/NeuralDBG/actions/workflows/ci.yml/badge.svg)](https://github.com/LambdaSection/NeuralDBG/actions/workflows/ci.yml)
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
-[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 ## Overview
 
@@ -33,6 +32,7 @@ Unlike traditional monitoring tools (TensorBoard, Weights & Biases), NeuralDBG f
 - **Compiler-Aware**: Operates at module boundaries to survive torch.compile
 - **Non-Invasive**: Wraps existing PyTorch training loops without code changes
 - **Minimal API**: Focused on explanations, not raw data dumps
+- **Aquarium Export**: JSON export for visualization in Aquarium IDE
 
 ## Quick Start
 
@@ -40,78 +40,6 @@ Unlike traditional monitoring tools (TensorBoard, Weights & Biases), NeuralDBG f
 
 ```bash
 pip install neuraldbg
-```
-
-### Contributor Onboarding
-
-For a new collaborator, run:
-
-```bash
-make bootstrap
-```
-
-This one-command setup:
-- verifies or recreates `.venv`
-- installs runtime, development, and MLflow/MLOps dependencies
-- activates the repository git hooks
-- installs the project in editable mode
-
-Then activate the environment:
-
-```bash
-source .venv/bin/activate
-```
-
-Validation sync is intentionally opt-in because it depends on `VALIDATION_BUNDLE_TOKEN` and rewrites protected local files:
-
-```bash
-bash scripts/bootstrap.sh --with-validation-sync
-```
-
-### Docker Development (Hermetic Workspace)
-
-Use Docker to keep a reproducible local environment across machines and contributors.
-
-```bash
-# Build image
-docker-compose build
-
-# Start the dev container (one-command startup)
-docker-compose up -d
-
-# Open a shell in the running workspace
-docker-compose exec neuraldbg-dev bash
-```
-
-Equivalent shortcuts via `Makefile`:
-
-```bash
-make build
-make up
-make shell
-```
-
-Run tests inside Docker:
-
-```bash
-docker-compose run --rm neuraldbg-dev bash -lc "pytest"
-```
-
-Or:
-
-```bash
-make test-docker
-```
-
-Persistent volumes are mounted to:
-- `/data` (host: `./data`)
-- `/models` (host: `./models`)
-- `/outputs` (host: `./outputs`)
-
-Stop containers:
-
-```bash
-docker-compose down
 ```
 
 ### Basic Usage
@@ -134,13 +62,12 @@ with NeuralDbg(model) as dbg:
         outputs = model(inputs)
         loss = criterion(outputs, targets)
         loss.backward()
+        dbg.record_loss(loss.item())
         optimizer.step()
-
-        # Events are extracted automatically
 
 # After training failure, query for explanations
 explanations = dbg.explain_failure()
-print(explanations[0])  # "Gradient vanishing originated in layer 'linear1' at step 234, likely due to LR × activation mismatch (confidence: 0.87)"
+print(explanations[0])  # "Gradient vanishing originated in layer 'linear1' at step 234..."
 ```
 
 ### Inference API
@@ -154,6 +81,9 @@ chain = dbg.trace_causal_chain('vanishing_gradients')
 
 # Check for coupled failures
 couplings = dbg.detect_coupled_failures()
+
+# Export to Aquarium (JSON)
+dbg.export_aquarium_package('debug_session.json')
 ```
 
 ### Optimizer Instability Detection
@@ -165,43 +95,55 @@ with NeuralDbg(model) as dbg:
         output = model(inputs)
         loss = criterion(output, targets)
         loss.backward()
-
-        # Feed loss values for optimizer instability detection
         dbg.record_loss(loss.item())
-
         optimizer.step()
 
 # Detect loss plateaus, spikes, or divergence
 hypotheses = dbg.explain_failure("optimizer_instability")
 for h in hypotheses:
-    print(h.description)  # "Loss spike detected at step 50..."
+    print(h.description)
 ```
 
 ### Data Anomaly Detection
 
-Data anomalies (NaN, Inf, distribution shifts) are detected automatically
-from layer inputs during the forward pass -- no extra API call needed:
+Data anomalies (NaN, Inf, distribution shifts) are detected automatically from layer inputs during the forward pass:
 
 ```python
 with NeuralDbg(model) as dbg:
     # ... training loop ...
     pass
 
-# Check for data issues
 hypotheses = dbg.explain_failure("data_anomaly")
 for h in hypotheses:
     print(h.description)  # "NaN values detected in input to layer 'linear1'..."
 ```
 
-### Event Collapsing
+## Supported Architectures
 
-Compress sequential events in the same layer into summary traces:
+NeuralDBG has been validated across 9 architectures:
 
-```python
-# Get compressed event timeline
-collapsed = dbg._collapse_events()
-print(f"{len(dbg.events)} raw events -> {len(collapsed)} collapsed")
-```
+| Architecture | Failure Modes Tested |
+|---|---|
+| Transformer (nanoGPT) | Attention collapse, NaN softmax, LR warmup |
+| GANs (DCGAN) | Vanishing, exploding, NaN injection |
+| LLM fine-tuning (LoRA) | Catastrophic forgetting, loss spikes |
+| Diffusion (DDPM) | NaN UNet, exploding gradients |
+| LSTM / Time Series | Vanishing recurrent gradients |
+| GNN (GCN/GAT) | Oversmoothing, deep GNN |
+| RL (PPO-style) | Policy collapse, value explosion |
+| torch.compile | Dynamo graph compatibility |
+| DataParallel | Multi-GPU hook integrity |
+
+## Supported Failure Types
+
+| Failure Type | Description |
+|---|---|
+| `vanishing_gradients` | Root cause + saturation coupling |
+| `exploding_gradients` | First layer to explode |
+| `dead_neurons` | Neuron death in activation layers |
+| `saturated_activations` | Activation saturation patterns |
+| `optimizer_instability` | Loss plateaus, spikes, divergence |
+| `data_anomaly` | NaN/Inf/distribution shift in inputs |
 
 ## Architecture
 
@@ -215,20 +157,20 @@ print(f"{len(dbg.events)} raw events -> {len(collapsed)} collapsed")
 ### Event Types
 
 | Event Type | Source | Detects |
-|------------|--------|---------|
+|---|---|---|
 | `gradient_health_transition` | Backward hooks | Vanishing, exploding, saturated gradients |
 | `activation_regime_shift` | Forward hooks | Dead neurons, saturated activations |
 | `optimizer_instability` | `record_loss()` | Loss plateaus, spikes, divergence |
 | `data_anomaly` | Forward hooks (inputs) | NaN, Inf, distribution shifts |
 
-### Event Structure
+## Editions
 
-Each semantic event represents:
-- Transition type (gradient_health, activation_regime, optimizer_instability, data_anomaly)
-- Layer/parameter identifier
-- Step range of occurrence
-- Confidence score
-- Causal metadata (propagation patterns, coupled failures)
+| Edition | Package | License | Features |
+|---|---|---|---|
+| **Core** | `pip install neuraldbg` | MIT | Hooks, events, export JSON, basic heuristics |
+| **Engine** | `pip install neuraldbg-engine` | Proprietary | Full causal inference, detailed hypotheses, coupling detection |
+
+The Core edition works standalone with basic heuristic fallbacks. Install the Engine for advanced causal reasoning.
 
 ## Target Users
 
@@ -236,27 +178,12 @@ Each semantic event represents:
 - **PhD Students** analyzing learning dynamics in novel architectures
 - **Research Engineers** understanding optimization instabilities
 
-*Not intended for production monitoring, metric tracking, or no-code users.*
-
-## Supported Failure Types
-
-- `vanishing_gradients` -- Root cause + saturation coupling
-- `exploding_gradients` -- First layer to explode
-- `dead_neurons` -- Neuron death in activation layers
-- `saturated_activations` -- Activation saturation patterns
-- `optimizer_instability` -- Loss plateaus, spikes, divergence (with gradient cross-reference)
-- `data_anomaly` -- NaN/Inf/distribution shift in inputs
-
-## Limitations (MVP Scope)
+## Limitations
 
 - PyTorch only
 - Focus on semantic events, not tensor inspection
-- Command-line interface only
-- Compiler-aware (torch.compile compatible)
 
 ## Contributing
-
-This is an MVP focused on proving the concept of causal inference for training dynamics. Contributions should align with the core mission of providing structured explanations for training failures.
 
 1. Fork the repository
 2. Create a feature branch
@@ -264,26 +191,34 @@ This is an MVP focused on proving the concept of causal inference for training d
 4. Ensure all tests pass
 5. Submit a pull request
 
+### Developer Setup
+
+```bash
+make bootstrap
+source .venv/bin/activate  # Linux/macOS
+# or
+.venv\Scripts\activate     # Windows
+```
+
 ## License
 
 MIT License - see [LICENSE.md](LICENSE.md) for details.
 
 ## Documentation
 
-
 - [CHANGELOG.md](CHANGELOG.md) - Version history and notable changes
 - [logic_graph.md](logic_graph.md) - System architecture and data flow
-
+- [docs/PHASE2_DOGFOODING.md](docs/PHASE2_DOGFOODING.md) - Detailed dogfooding scenarios
 
 ## Citation
 
 If you use NeuralDBG in your research, please cite:
 
 ```bibtex
-@misc{neuraldbg2025,
+@misc{neuraldbg2026,
   title={NeuralDBG: A Causal Inference Engine for Deep Learning Training Dynamics},
   author={SENOUVO Jacques-Charles Gad},
-  year={2025},
-  url={https://github.com/Lemniscate-world/Neural}
+  year={2026},
+  url={https://github.com/LambdaSection/NeuralDBG}
 }
 ```
