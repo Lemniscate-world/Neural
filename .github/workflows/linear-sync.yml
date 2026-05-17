@@ -15,6 +15,9 @@ on:
           - list
           - report
 
+permissions:
+  contents: read
+
 jobs:
   linear-sync:
     runs-on: ubuntu-latest

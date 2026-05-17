@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   test-and-security:
     name: Test and Security (${{ matrix.os }})
