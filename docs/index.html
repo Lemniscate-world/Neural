@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralDBG — Causal Inference for PyTorch Training</title>
+    <meta name="description" content="Understand *why* your model failed during training through semantic analysis and abductive reasoning, not raw tensor inspection.">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --text: #c9d1d9;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --code-bg: #161b22;
+            --border: #30363d;
+            --success: #2ea043;
+            --warning: #d29922;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        header {
+            text-align: center;
+            padding: 4rem 0 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--accent), #a371f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .tagline {
+            font-size: 1.25rem;
+            color: #8b949e;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--accent);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.2s;
+            margin: 0 0.5rem;
+        }
+        .btn:hover { background-color: var(--accent-hover); }
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+        
+        section { padding: 3rem 0; }
+        h2 { font-size: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        .card h3 { margin-top: 0; }
+        .highlight { color: var(--success); font-weight: bold; }
+        
+        pre {
+            background: var(--code-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .feature {
+            padding: 1rem;
+            border-left: 3px solid var(--accent);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #8b949e;
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>NeuralDBG</h1>
+            <p class="tagline">Stop guessing why your model failed. Get <strong>structured causal explanations</strong> for PyTorch training dynamics.</p>
+            <div>
+                <a href="https://pypi.org/project/neuraldbg/" class="btn">pip install neuraldbg</a>
+                <a href="https://github.com/LambdaSection/NeuralDBG" class="btn btn-outline">View on GitHub</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <section>
+            <h2>Why NeuralDBG?</h2>
+            <div class="comparison">
+                <div class="card">
+                    <h3>📉 TensorBoard / W&B</h3>
+                    <p>Shows graphs of loss over time. You see <em>when</em> it failed, but you have to guess <em>why</em>.</p>
+                    <p class="highlight">❌ Manual diagnosis required</p>
+                </div>
+                <div class="card">
+                    <h3>🧠 NeuralDBG</h3>
+                    <p>Analyzes gradients, activations, and data to tell you <em>why</em> it failed.</p>
+                    <p class="highlight">✅ "Gradient vanishing in layer 2 at step 45 (Confidence: 0.92)"</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Quick Start</h2>
+            <p>Wrap your training loop in one line. No dashboard setup, no cloud account.</p>
+            <pre><code>import torch
+from neuraldbg import NeuralDbg
+
+model = MyModel()
+optimizer = torch.optim.Adam(model.parameters())
+
+# Wrap your training loop
+with NeuralDbg(model) as dbg:
+    for step, (x, y) in enumerate(dataloader):
+        optimizer.zero_grad()
+        dbg.step = step
+        loss = criterion(model(x), y)
+        loss.backward()
+        dbg.record_loss(loss.item())
+        optimizer.step()
+
+# Get the explanation after a failure
+print(dbg.explain_failure())
+# >> "Gradient vanishing originated in layer 'linear1' at step 234..."</code></pre>
+        </section>
+
+        <section>
+            <h2>Key Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>🔍 Semantic Events</h3>
+                    <p>Detects transitions like "Healthy → Vanishing" or "Stable → Exploding" automatically.</p>
+                </div>
+                <div class="feature">
+                    <h3>🧩 Causal Reasoning</h3>
+                    <p>Ranks hypotheses by confidence. "Likely LR mismatch" vs "Possible data anomaly".</p>
+                </div>
+                <div class="feature">
+                    <h3>🛡️ 100% Local</h3>
+                    <p>No data leaves your machine. Privacy-first by design.</p>
+                </div>
+                <div class="feature">
+                    <h3>⚡ Compiler-Aware</h3>
+                    <p>Works seamlessly with <code>torch.compile</code> and distributed training.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>NeuralDBG is open-source under the MIT License.</p>
+            <p><a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a> · <a href="https://pypi.org/project/neuraldbg/">PyPI</a> · <a href="https://github.com/LambdaSection/NeuralDBG/blob/main/CHANGELOG.md">Changelog</a></p>
+        </div>
+    </footer>
+</body>
+</html>
