@@ -43,11 +43,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
+    "pytest>=8.0",
     "coverage>=7.0",
-]
-mlops = [
-    "mlflow>=2.13.0",
 ]
 docs = [
     "pdoc>=14.0.0",
