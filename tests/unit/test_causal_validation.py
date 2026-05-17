@@ -18,10 +18,12 @@ from torch.utils.data import DataLoader, TensorDataset
 from neuraldbg import (
     NeuralDbg,
     SemanticEvent,
-    CausalHypothesis,
-    EventType,
-    GradientHealth,
-    ActivationHealth,
+    _HAS_ENGINE,
+)
+import pytest
+
+requires_engine = pytest.mark.skipif(
+    not _HAS_ENGINE, reason="requires neuraldbg-engine"
 )
 
 SEED = 42
@@ -197,6 +199,7 @@ class TestDeterminism:
 # ═══════════════════════════════════════════════════════════════════
 # TEST 4 : Mutation Coverage
 # ═══════════════════════════════════════════════════════════════════
+@requires_engine
 class TestMutationCoverage:
     """N modes de défaillance → engine détecte N root causes distinctes."""
 
@@ -374,6 +377,7 @@ class TestAPIContract:
 # ═══════════════════════════════════════════════════════════════════
 # TEST 7 : Invariance cross-architecture
 # ═══════════════════════════════════════════════════════════════════
+@requires_engine
 class TestCrossArchitectureInvariance:
     """NaN dans MLP = même diagnostic que NaN dans ResNet = NaN dans Transformer."""
 
@@ -483,6 +487,7 @@ class TestCrossArchitectureInvariance:
 # ═══════════════════════════════════════════════════════════════════
 # TEST 8 : Régression CI
 # ═══════════════════════════════════════════════════════════════════
+@requires_engine
 class TestCIRegression:
     """Vérifie que le nombre d'hypothèses pour chaque mode de défaillance
     est stable (détecte les changements inexpliqués)."""

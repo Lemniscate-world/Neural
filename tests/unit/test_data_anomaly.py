@@ -8,11 +8,20 @@ import torch
 import torch.nn as nn
 import pytest
 from neuraldbg import (
-    SemanticEvent, EventType, DataHealth,
-    CausalHypothesis, NeuralDbg
+    SemanticEvent,
+    EventType,
+    DataHealth,
+    CausalHypothesis,
+    NeuralDbg,
+    _HAS_ENGINE,
+)
+
+requires_engine = pytest.mark.skipif(
+    not _HAS_ENGINE, reason="requires neuraldbg-engine"
 )
 
 
+@requires_engine
 class TestCheckDataAnomaly:
     """Unit tests for _check_data_anomaly method."""
 
@@ -26,8 +35,7 @@ class TestCheckDataAnomaly:
         dbg._check_data_anomaly(tensor_with_nan, "layer1")
 
         anomaly_events = [
-            e for e in dbg.events
-            if e.event_type == EventType.DATA_ANOMALY
+            e for e in dbg.events if e.event_type == EventType.DATA_ANOMALY
         ]
         assert len(anomaly_events) == 1
         assert anomaly_events[0].to_state == DataHealth.NAN_DETECTED.value
@@ -42,8 +50,7 @@ class TestCheckDataAnomaly:
         dbg._check_data_anomaly(tensor_with_inf, "layer1")
 
         anomaly_events = [
-            e for e in dbg.events
-            if e.event_type == EventType.DATA_ANOMALY
+            e for e in dbg.events if e.event_type == EventType.DATA_ANOMALY
         ]
         assert len(anomaly_events) == 1
         assert anomaly_events[0].to_state == DataHealth.INF_DETECTED.value
@@ -66,7 +73,8 @@ class TestCheckDataAnomaly:
         dbg._check_data_anomaly(shifted_tensor, "layer1")
 
         shift_events = [
-            e for e in dbg.events[events_before:]
+            e
+            for e in dbg.events[events_before:]
             if e.event_type == EventType.DATA_ANOMALY
             and e.to_state == DataHealth.DISTRIBUTION_SHIFT.value
         ]
@@ -88,7 +96,8 @@ class TestCheckDataAnomaly:
         dbg._check_data_anomaly(torch.randn(32, 10), "layer1")
 
         anomaly_events = [
-            e for e in dbg.events[events_before:]
+            e
+            for e in dbg.events[events_before:]
             if e.event_type == EventType.DATA_ANOMALY
         ]
         assert len(anomaly_events) == 0
@@ -105,13 +114,13 @@ class TestCheckDataAnomaly:
         dbg._check_data_anomaly(nan_tensor, "layer1")
 
         anomaly_events = [
-            e for e in dbg.events
-            if e.event_type == EventType.DATA_ANOMALY
+            e for e in dbg.events if e.event_type == EventType.DATA_ANOMALY
         ]
         # Should only have one NaN event, not a distribution shift
-        nan_events = [e for e in anomaly_events if e.to_state == DataHealth.NAN_DETECTED.value]
+        nan_events = [
+            e for e in anomaly_events if e.to_state == DataHealth.NAN_DETECTED.value
+        ]
         assert len(nan_events) >= 1
-
 
     def test_repeated_nan_emits_single_event(self):
         """Calling _check_data_anomaly with NaN multiple times should emit only one event.
@@ -132,8 +141,7 @@ class TestCheckDataAnomaly:
         dbg._check_data_anomaly(nan_tensor, "layer1")
 
         anomaly_events = [
-            e for e in dbg.events
-            if e.event_type == EventType.DATA_ANOMALY
+            e for e in dbg.events if e.event_type == EventType.DATA_ANOMALY
         ]
         # Only one transition: NORMAL -> NAN_DETECTED (step 1)
         assert len(anomaly_events) == 1
@@ -154,8 +162,7 @@ class TestCheckDataAnomaly:
         dbg._check_data_anomaly(torch.randn(1, 10), "layer1")
 
         anomaly_events = [
-            e for e in dbg.events
-            if e.event_type == EventType.DATA_ANOMALY
+            e for e in dbg.events if e.event_type == EventType.DATA_ANOMALY
         ]
         assert len(anomaly_events) == 2
         assert anomaly_events[0].from_state == DataHealth.NORMAL.value
@@ -177,14 +184,12 @@ class TestCheckDataAnomaly:
         dbg._check_data_anomaly(torch.tensor([[float("inf")]]), "layer1")
 
         anomaly_events = [
-            e for e in dbg.events
-            if e.event_type == EventType.DATA_ANOMALY
+            e for e in dbg.events if e.event_type == EventType.DATA_ANOMALY
         ]
         assert len(anomaly_events) == 2
         # Second event should transition FROM nan TO inf
         assert anomaly_events[1].from_state == DataHealth.NAN_DETECTED.value
         assert anomaly_events[1].to_state == DataHealth.INF_DETECTED.value
-
 
     def test_nan_does_not_poison_distribution_shift_stats(self):
         """After NaN recovery, distribution shift detection should still work.
@@ -212,19 +217,18 @@ class TestCheckDataAnomaly:
         dbg._check_data_anomaly(shifted, "layer1")
 
         anomaly_events = [
-            e for e in dbg.events
-            if e.event_type == EventType.DATA_ANOMALY
+            e for e in dbg.events if e.event_type == EventType.DATA_ANOMALY
         ]
         # Should have: NORMAL->NAN, NAN->DISTRIBUTION_SHIFT (or NAN->NORMAL then NORMAL->SHIFT)
         # The key assertion: distribution shift IS detected after NaN recovery
         states = [(e.from_state, e.to_state) for e in anomaly_events]
         has_shift = any(
-            e.to_state == DataHealth.DISTRIBUTION_SHIFT.value
-            for e in anomaly_events
+            e.to_state == DataHealth.DISTRIBUTION_SHIFT.value for e in anomaly_events
         )
         # If no distribution shift, at minimum the NaN->NORMAL recovery happened
         has_recovery = any(
-            e.to_state == DataHealth.NORMAL.value and e.from_state == DataHealth.NAN_DETECTED.value
+            e.to_state == DataHealth.NORMAL.value
+            and e.from_state == DataHealth.NAN_DETECTED.value
             for e in anomaly_events
         )
         assert has_shift or has_recovery, (
@@ -232,6 +236,7 @@ class TestCheckDataAnomaly:
         )
 
 
+@requires_engine
 class TestExplainDataAnomaly:
     """Unit tests for _explain_data_anomaly method."""
 
@@ -245,15 +250,17 @@ class TestExplainDataAnomaly:
         """NaN anomaly event should produce a hypothesis about NaN."""
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.DATA_ANOMALY,
-            layer_name="linear1",
-            step=10,
-            from_state=DataHealth.NORMAL.value,
-            to_state=DataHealth.NAN_DETECTED.value,
-            confidence=1.0,
-            metadata={"nan_count": 5},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.DATA_ANOMALY,
+                layer_name="linear1",
+                step=10,
+                from_state=DataHealth.NORMAL.value,
+                to_state=DataHealth.NAN_DETECTED.value,
+                confidence=1.0,
+                metadata={"nan_count": 5},
+            )
+        )
 
         hypotheses = dbg._explain_data_anomaly()
         assert len(hypotheses) >= 1
@@ -263,17 +270,21 @@ class TestExplainDataAnomaly:
         """Distribution shift event should produce a hypothesis about the shift."""
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.DATA_ANOMALY,
-            layer_name="linear1",
-            step=20,
-            from_state=DataHealth.NORMAL.value,
-            to_state=DataHealth.DISTRIBUTION_SHIFT.value,
-            confidence=0.8,
-            metadata={"mean_shift_sigma": 5.0},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.DATA_ANOMALY,
+                layer_name="linear1",
+                step=20,
+                from_state=DataHealth.NORMAL.value,
+                to_state=DataHealth.DISTRIBUTION_SHIFT.value,
+                confidence=0.8,
+                metadata={"mean_shift_sigma": 5.0},
+            )
+        )
 
         hypotheses = dbg._explain_data_anomaly()
         assert len(hypotheses) >= 1
-        assert "distribution" in hypotheses[0].description.lower() or \
-               "shift" in hypotheses[0].description.lower()
+        assert (
+            "distribution" in hypotheses[0].description.lower()
+            or "shift" in hypotheses[0].description.lower()
+        )

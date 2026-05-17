@@ -9,8 +9,17 @@ import torch
 import torch.nn as nn
 import pytest
 from neuraldbg import (
-    SemanticEvent, EventType, GradientHealth, OptimizerHealth,
-    CausalHypothesis, NeuralDbg
+    SemanticEvent,
+    EventType,
+    GradientHealth,
+    OptimizerHealth,
+    CausalHypothesis,
+    NeuralDbg,
+    _HAS_ENGINE,
+)
+
+requires_engine = pytest.mark.skipif(
+    not _HAS_ENGINE, reason="requires neuraldbg-engine"
 )
 
 
@@ -85,7 +94,8 @@ class TestRecordLoss:
         dbg.record_loss(100.0)
 
         instability_events = [
-            e for e in dbg.events[events_before:]
+            e
+            for e in dbg.events[events_before:]
             if e.event_type == EventType.OPTIMIZER_INSTABILITY
         ]
         assert len(instability_events) >= 1
@@ -102,12 +112,12 @@ class TestRecordLoss:
             dbg.record_loss(v)
 
         instability_events = [
-            e for e in dbg.events
-            if e.event_type == EventType.OPTIMIZER_INSTABILITY
+            e for e in dbg.events if e.event_type == EventType.OPTIMIZER_INSTABILITY
         ]
         assert len(instability_events) == 0
 
 
+@requires_engine
 class TestExplainOptimizerInstability:
     """Unit tests for _explain_optimizer_instability method."""
 
@@ -121,15 +131,17 @@ class TestExplainOptimizerInstability:
         """A loss spike event should produce a hypothesis mentioning spike."""
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.OPTIMIZER_INSTABILITY,
-            layer_name="optimizer",
-            step=50,
-            from_state=OptimizerHealth.STABLE.value,
-            to_state=OptimizerHealth.LOSS_SPIKE.value,
-            confidence=0.85,
-            metadata={"recent_losses": [0.5, 0.5, 0.5, 0.5, 100.0]},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.OPTIMIZER_INSTABILITY,
+                layer_name="optimizer",
+                step=50,
+                from_state=OptimizerHealth.STABLE.value,
+                to_state=OptimizerHealth.LOSS_SPIKE.value,
+                confidence=0.85,
+                metadata={"recent_losses": [0.5, 0.5, 0.5, 0.5, 100.0]},
+            )
+        )
 
         hypotheses = dbg._explain_optimizer_instability()
         assert len(hypotheses) >= 1
@@ -142,26 +154,30 @@ class TestExplainOptimizerInstability:
         dbg = NeuralDbg(model)
 
         # Gradient explosion at step 45
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-            layer_name="linear1",
-            step=45,
-            from_state=GradientHealth.HEALTHY.value,
-            to_state=GradientHealth.EXPLODING.value,
-            confidence=0.9,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name="linear1",
+                step=45,
+                from_state=GradientHealth.HEALTHY.value,
+                to_state=GradientHealth.EXPLODING.value,
+                confidence=0.9,
+                metadata={},
+            )
+        )
 
         # Diverging loss at step 50
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.OPTIMIZER_INSTABILITY,
-            layer_name="optimizer",
-            step=50,
-            from_state=OptimizerHealth.STABLE.value,
-            to_state=OptimizerHealth.DIVERGING.value,
-            confidence=0.85,
-            metadata={},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.OPTIMIZER_INSTABILITY,
+                layer_name="optimizer",
+                step=50,
+                from_state=OptimizerHealth.STABLE.value,
+                to_state=OptimizerHealth.DIVERGING.value,
+                confidence=0.85,
+                metadata={},
+            )
+        )
 
         hypotheses = dbg._explain_optimizer_instability()
         assert len(hypotheses) >= 2
