@@ -47,16 +47,33 @@ corriger automatiquement un entraînement qui échoue.
 | 🔴 Haute | **GANs** (DCGAN generator) | Vanishing, exploding, NaN injection | ✅ |
 | 🟡 Moyenne | **LLM fine-tuning** (LoRA) | Catastrophic forgetting, loss spikes, NaN | ✅ |
 | 🟡 Moyenne | **Diffusion** (DDPM) | NaN UNet, exploding gradients, noise collapse | ✅ |
-| 🟡 Moyenne | **Distributed/DataParallel** | Multi-GPU hook integrity | ❌ |
-| 🟢 Basse | **LSTM/Time Series** | Vanishing recurrent gradients | ❌ |
-| 🟢 Basse | **GNN** (GCN/GAT) | Oversmoothing, deep GNN | ❌ |
-| 🟢 Basse | **RL** (PPO/DQN) | Reward hacking, policy collapse | ❌ |
-| 🟢 Basse | **torch.compile** | Dynamo graph compatibility | ❌ |
+| 🟡 Moyenne | **Distributed/DataParallel** | Multi-GPU hook integrity | ✅ |
+| 🟢 Basse | **LSTM/Time Series** | Vanishing recurrent gradients | ✅ |
+| 🟢 Basse | **GNN** (GCN/GAT) | Oversmoothing, deep GNN | ✅ |
+| 🟢 Basse | **RL** (PPO/DQN) | Reward hacking, policy collapse | ✅ |
+| 🟢 Basse | **torch.compile** | Dynamo graph compatibility | ✅ |
 
-### Phase 3 : Pipeline Aquarium
-- [ ] Ajouter `export_aquarium_package()` dans les 3 scénarios ResNet
-- [ ] Générer un fichier `events.json` pour chaque scénario
-- [ ] Vérifier le chargement dans Aquarium (`~/Documents/Aquarium/`)
+### Phase 3 : Pipeline Aquarium (connexion au repo Aquarium)
+| Priorité | Tâche | Statut |
+|----------|-------|--------|
+| 🔴 Haute | **Setup repo Aquarium** (GitHub) | ❌ |
+| 🔴 Haute | **Export JSON** vers Aquarium — schéma complet (events, hypotheses, couplings, loss_history, first_failure) | ✅ |
+| 🟡 Moyenne | **Visualisation** des causal graphs | ❌ |
+| 🟢 Basse | **Dashboard** temps réel | ❌ |
+
+**Schéma JSON Aquarium :**
+```json
+{
+  "events": [{"type", "layer", "step", "from", "to", "confidence", "metadata"}],
+  "hypotheses": [{"description", "confidence", "causal_chain"}],
+  "couplings": [...],
+  "first_failure_layer": {...},
+  "first_failure_step": {...},
+  "loss_history": [...]
+}
+```
+
+**Tests :** 14 tests unitaires (`test_aquarium_export.py`) + intégration dans les demos
 - [ ] Itérer sur le format si nécessaire
 
 ### Phase 4 : Desk Research (R75) — MANDATORY ✅
@@ -68,10 +85,14 @@ corriger automatiquement un entraînement qui échoue.
 - ✅ **GO Decision** — toutes les 5 dimensions complétées
 
 ### Phase 5 : Publication PyPI
-- [ ] Ajouter `~/.pypirc` (token PyPI)
-- [ ] Créer `.github/workflows/publish.yml`
-- [ ] Builder + push sur PyPI
-- [ ] Vérifier `pip install neuraldbg` fonctionnel
+- [x] Mettre à jour `pyproject.toml` (metadata, auteurs, keywords, classifiers)
+- [x] Créer `.github/workflows/publish.yml` (TestPyPI + PyPI)
+- [x] Build local : `neuraldbg-1.3.0.tar.gz` + `neuraldbg-1.3.0-py3-none-any.whl`
+- [x] Twine check : PASSED
+- [x] Test install fresh venv : `pip install ./dist/neuraldbg-1.3.0-py3-none-any.whl` ✅
+- [ ] Configurer environments GitHub (testpypi, pypi) avec trusted publishing
+- [ ] Publier sur TestPyPI pour validation
+- [ ] Tag v1.3.0 + release GitHub → auto-publish PyPI
 
 ### Phase 6 : Agent Auto-Correcteur
 - [x] Créer repo `~/Documents/Neural-Agent/`
@@ -105,11 +126,48 @@ corriger automatiquement un entraînement qui échoue.
 - [ ] **Secret commercial** pour les heuristiques de couplage causal (dans le code privé)
 - [ ] **Dépôt logiciel** (APP / LDAP) — preuve d'antériorité
 
-##### Restructuration du Code
-- [ ] Séparer le moteur causal en `neuraldbg-engine/` (privé, nouveau repo)
-- [ ] Laisser `neuraldbg-core/` (MIT, public) avec hooks + collecte d'events uniquement
-- [ ] Le public `NeuralDbg` context manager appelle l'engine privé via import conditionnel
-- [ ] Les tests de validité causale (Phase 0) restent privés
+##### Restructuration du Code — Stratégie Two-Package ✅
+
+**Architecture des paquets :**
+
+```
+┌──────────────────────────────────────────────┐
+│  neuraldbg  (public — PyPI — MIT)            │
+│  pip install neuraldbg                       │
+│  Repo: github.com/NeuralDBG/neuraldbg        │
+│                                              │
+│  - Hooks PyTorch (forward/backward)          │
+│  - SemanticEvent, CausalHypothesis           │
+│  - Context manager NeuralDbg                 │
+│  - Export JSON Aquarium                      │
+│  - Fallbacks heuristiques (sans engine)      │
+│  - Demos basiques                            │
+│                                              │
+│  try: import neuraldbg_engine                │
+│  except ImportError: pass  ← optionnel       │
+└──────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────┐
+│  neuraldbg-engine  (privé — registry privée) │
+│  pip install neuraldbg-engine                │
+│  Repo: ~/Documents/NeuralDBG-Engine          │
+│                                              │
+│  - Classification gradients/activations      │
+│  - Inférence causale avancée                 │
+│  - Détection d'anomalies de données          │
+│  - Couplages de défaillances                 │
+│  - Hypothèses causales détaillées            │
+│  - Base de patterns de défaillance           │
+└──────────────────────────────────────────────┘
+```
+
+- [x] Repo `neuraldbg-engine/` existe (`~/Documents/NeuralDBG-Engine`) avec structure complète
+- [x] Import conditionnel dans `neuraldbg/__init__.py` (try/except)
+- [x] Fallbacks heuristiques implémentés quand engine absent
+- [x] 130 tests passent avec engine, fallbacks fonctionnent sans engine
+- [ ] Publier `neuraldbg` sur PyPI public
+- [ ] Publier `neuraldbg-engine` sur registry privée (GitHub Packages)
+- [ ] Documenter : `pip install neuraldbg` = gratuit, `pip install neuraldbg-engine` = payant
 
 ##### Cloud SaaS
 - [ ] Définir l'API : POST `/diagnose` (events JSON) → `{ root_causes, hypotheses, couplings }`
@@ -195,4 +253,4 @@ Ces benchmarks vérifient que l'amélioration sur notre dataset n'est pas du sur
 - [ ] Détection de régression : alerter si l'accuracy baisse de > 0.05
 
 ---
-**Last Updated**: 2026-05-14
+**Last Updated**: 2026-05-17

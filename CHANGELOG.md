@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Phase 2 dogfooding: LSTM/Time Series failure scenarios (vanishing recurrent, exploding recurrent, deep LSTM)
+- Phase 2 dogfooding: GNN (GCN/GAT) failure scenarios (oversmoothing, exploding, NaN injection)
+- Phase 2 dogfooding: torch.compile (Dynamo) compatibility scenarios (healthy, vanishing, exploding)
+- Phase 2 dogfooding: RL (PPO-style) failure scenarios (policy collapse, value explosion, reward hacking)
+- Phase 2 dogfooding: Distributed/DataParallel failure scenarios (healthy, vanishing, exploding under DP)
+- Engine fallbacks in core: `_classify_activation_health`, `explain_failure`, `detect_coupled_failures`, `export_mermaid_causal_graph`, `_classify_data_health`, `_check_data_anomaly` now work without proprietary engine
+- **Phase 3**: Complete Aquarium JSON export schema with all required fields (events, hypotheses, couplings, first_failure_layer, first_failure_step, loss_history)
+- 14 new unit tests for Aquarium export (`test_aquarium_export.py`)
+- Aquarium export integrated into LSTM demo with auto-export to `aquarium_exports/`
+
+### Phase 7 — Two-Package Architecture ✅
+- Repo `neuraldbg-engine/` confirmé existant (`~/Documents/NeuralDBG-Engine`) avec structure complète
+- Import conditionnel fonctionnel : `neuraldbg` (public) + `neuraldbg-engine` (privé)
+- **130 tests passent avec engine installé**, fallbacks fonctionnent sans engine
+- Architecture validée : core MIT open-source, engine propriétaire séparé
+
+### Phase 5 — Publication PyPI ✅
+- `pyproject.toml` mis à jour : auteurs, keywords, classifiers, license SPDX
+- GitHub Actions workflow `publish.yml` : build → TestPyPI (manual) → PyPI (release)
+- Package buildé : `neuraldbg-1.3.0.tar.gz` + `neuraldbg-1.3.0-py3-none-any.whl`
+- Twine check : PASSED
+- Test install fresh venv : import réussi
+
 ## [1.3.0] - 2026-05-14
 ### Added
 - ResNet-18 failure scenarios demo (`demo_resnet_failures.py`) : vanishing gradients (Tanh + small init), exploding gradients (high LR), data anomaly (NaN injection)

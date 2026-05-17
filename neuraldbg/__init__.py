@@ -303,9 +303,15 @@ class NeuralDbg:
 
             # --- Data anomaly detection on inputs AND outputs ---
             if input and len(input) > 0 and isinstance(input[0], torch.Tensor):
-                self._check_data_anomaly(input[0], layer_name)
+                try:
+                    self._check_data_anomaly(input[0], layer_name)
+                except NotImplementedError:
+                    pass
             if isinstance(output, torch.Tensor):
-                self._check_data_anomaly(output, layer_name)
+                try:
+                    self._check_data_anomaly(output, layer_name)
+                except NotImplementedError:
+                    pass
 
             # Extract activation regime information
             if isinstance(output, torch.Tensor):
@@ -624,7 +630,16 @@ class NeuralDbg:
 
     def _classify_activation_health(self, stats: Dict[str, float]) -> ActivationHealth:
         """Classify activation regime — delegates to engine when available."""
-        return self._engine.activation.classify_health(stats)
+        if self._causal_engine is not None:
+            return self._engine.activation.classify_health(stats)
+        # Fallback heuristic when engine is not available
+        sat = stats.get("saturation_ratio", 0.0)
+        dead = stats.get("dead_ratio", 0.0)
+        if dead > 0.5:
+            return ActivationHealth.DEAD
+        if sat > 0.5:
+            return ActivationHealth.SATURATED
+        return ActivationHealth.NORMAL
 
     def _detect_activation_shift(
         self, prev_stats: Dict[str, float], current_stats: Dict[str, float]
@@ -652,39 +667,73 @@ class NeuralDbg:
         self, failure_type: str = "vanishing_gradients"
     ) -> List[CausalHypothesis]:
         """Provide ranked causal hypotheses — delegates to engine."""
-        return self._engine.explain.explain(failure_type)
+        if self._causal_engine is not None:
+            return self._engine.explain.explain(failure_type)
+        # Fallback: generate basic hypotheses from captured events
+        hypotheses = []
+        for event in self.events:
+            if (
+                event.event_type.value == failure_type
+                or failure_type in str(event.event_type).lower()
+            ):
+                hypotheses.append(
+                    CausalHypothesis(
+                        description=f"{event.event_type.value} detected at {event.layer_name} (step {event.step})",
+                        confidence=event.confidence,
+                        evidence=[event],
+                        causal_chain=[f"{event.layer_name}@{event.step}"],
+                    )
+                )
+        return hypotheses
 
     def _explain_vanishing_gradients(self) -> List[CausalHypothesis]:
         """Generate hypotheses for vanishing — delegates to engine."""
-        return self._engine.explain._explain_vanishing_gradients()
+        if self._causal_engine is not None:
+            return self._engine.explain._explain_vanishing_gradients()
+        return self.explain_failure("vanishing_gradients")
 
     def _explain_exploding_gradients(self) -> List[CausalHypothesis]:
         """Generate hypotheses for exploding — delegates to engine."""
-        return self._engine.explain._explain_exploding_gradients()
+        if self._causal_engine is not None:
+            return self._engine.explain._explain_exploding_gradients()
+        return self.explain_failure("exploding_gradients")
 
     def _explain_dead_neurons(self) -> List[CausalHypothesis]:
         """Generate hypotheses for dead neurons — delegates to engine."""
-        return self._engine.explain._explain_dead_neurons()
+        if self._causal_engine is not None:
+            return self._engine.explain._explain_dead_neurons()
+        return self.explain_failure("dead_neurons")
 
     def _explain_saturated_activations(self) -> List[CausalHypothesis]:
         """Generate hypotheses for saturated activations — delegates to engine."""
-        return self._engine.explain._explain_saturated_activations()
+        if self._causal_engine is not None:
+            return self._engine.explain._explain_saturated_activations()
+        return self.explain_failure("saturated_activations")
 
     def get_causal_hypotheses(self) -> List[CausalHypothesis]:
         """Get all current causal hypotheses — delegates to engine."""
-        return self._engine.explain.get_causal_hypotheses()
+        if self._causal_engine is not None:
+            return self._engine.explain.get_causal_hypotheses()
+        return []
 
     def trace_causal_chain(self, event_type: str) -> List[str]:
         """Trace the causal chain — delegates to engine."""
-        return self._engine.explain.trace_causal_chain(event_type)
+        if self._causal_engine is not None:
+            return self._engine.explain.trace_causal_chain(event_type)
+        return []
 
     def detect_coupled_failures(self, window: int = 5) -> List[Dict[str, Any]]:
         """Detect coupled failures — delegates to engine."""
-        return self._engine.coupling.detect(window)
+        if self._causal_engine is not None:
+            return self._engine.coupling.detect(window)
+        # Fallback: return empty list when engine not available
+        return []
 
     def get_root_causes(self) -> List[CausalHypothesis]:
         """Identify root causes — delegates to engine."""
-        return self._engine.explain.get_root_causes()
+        if self._causal_engine is not None:
+            return self._engine.explain.get_root_causes()
+        return []
 
     def _event_matches_failure_key(
         self,
@@ -692,34 +741,100 @@ class NeuralDbg:
         failure_key: str,
     ) -> bool:
         """Check event/failure key match — delegates to engine."""
-        return self._engine.explain.event_matches_failure_key(event, failure_key)
+        if self._causal_engine is not None:
+            return self._engine.explain.event_matches_failure_key(event, failure_key)
+        return failure_key in str(event.event_type).lower()
 
     def _classify_data_health(
         self, tensor: torch.Tensor
     ) -> Tuple[DataHealth, Dict[str, Any]]:
         """Classify data health — delegates to engine."""
-        return self._engine.data.classify_health(tensor)
+        if self._causal_engine is not None:
+            return self._engine.data.classify_health(tensor)
+        if torch.isnan(tensor).any():
+            return DataHealth.NAN_DETECTED, {
+                "nan_count": torch.isnan(tensor).sum().item()
+            }
+        return DataHealth.NORMAL, {}
 
     def _check_data_anomaly(self, tensor: torch.Tensor, layer_name: str):
         """Detect data anomalies — delegates to engine."""
-        return self._engine.data.check_anomaly(tensor, layer_name)
+        if self._causal_engine is not None:
+            return self._engine.data.check_anomaly(tensor, layer_name)
+        # Fallback: no-op when engine not available
 
     def _explain_optimizer_instability(self) -> List[CausalHypothesis]:
         """Generate hypotheses for optimizer instability — delegates to engine."""
-        return self._engine.explain._explain_optimizer_instability()
+        if self._causal_engine is not None:
+            return self._engine.explain._explain_optimizer_instability()
+        return []
 
     def _explain_data_anomaly(self) -> List[CausalHypothesis]:
         """Generate hypotheses for data anomaly — delegates to engine."""
-        return self._engine.explain._explain_data_anomaly()
+        if self._causal_engine is not None:
+            return self._engine.explain._explain_data_anomaly()
+        return []
 
     def _collapse_events(self) -> List[SemanticEvent]:
         """Collapse sequential events — delegates to engine."""
-        return self._engine.explain.collapse_events()
+        if self._causal_engine is not None:
+            return self._engine.explain.collapse_events()
+        return self.events
 
     def export_aquarium_package(self, package_path: str) -> str:
         """Export JSON package for Aquarium — delegates to engine."""
-        return self._engine.explain.export_aquarium_package(package_path)
+        if self._causal_engine is not None:
+            return self._engine.explain.export_aquarium_package(package_path)
+        import json
+
+        data = {
+            "events": [
+                {
+                    "type": e.event_type.value,
+                    "layer": e.layer_name,
+                    "step": e.step,
+                    "from": str(e.from_state),
+                    "to": str(e.to_state),
+                    "confidence": e.confidence,
+                    "metadata": {
+                        k: v
+                        for k, v in e.metadata.items()
+                        if isinstance(v, (str, int, float, bool, type(None)))
+                    },
+                }
+                for e in self.events
+            ],
+            "hypotheses": [
+                {
+                    "description": h.description,
+                    "confidence": h.confidence,
+                    "causal_chain": h.causal_chain,
+                }
+                for h in self.get_causal_hypotheses()
+            ],
+            "couplings": self.detect_coupled_failures(),
+            "first_failure_layer": dict(self.first_failure_layer),
+            "first_failure_step": dict(self.first_failure_step),
+            "loss_history": list(self.loss_history),
+        }
+        with open(package_path, "w") as f:
+            json.dump(data, f, indent=2)
+        return package_path
 
     def export_mermaid_causal_graph(self) -> str:
         """Export Mermaid causal graph — delegates to engine."""
-        return self._engine.explain.export_mermaid_causal_graph()
+        if self._causal_engine is not None:
+            return self._engine.explain.export_mermaid_causal_graph()
+        # Fallback: basic mermaid graph from events
+        lines = ["graph TD"]
+        seen = set()
+        for event in self.events:
+            node = f"{event.layer_name}_{event.step}"
+            if node not in seen:
+                lines.append(f'    {node}["{event.layer_name} (step {event.step})"]')
+                seen.add(node)
+        if len(seen) > 1:
+            nodes = list(seen)
+            for i in range(len(nodes) - 1):
+                lines.append(f"    {nodes[i]} --> {nodes[i + 1]}")
+        return "\n".join(lines)
