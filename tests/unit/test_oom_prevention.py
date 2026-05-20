@@ -109,3 +109,18 @@ def test_compute_activation_stats_efficiency_and_correctness():
         assert abs(stats["max"] - tensor.float().max().item()) < eps_mean
         eps_norm = 5e-3 if tensor.dtype in (torch.float16, torch.bfloat16) else 1e-4
         assert abs(stats["norm"] - tensor.float().norm().item()) < eps_norm
+
+
+def test_compute_activation_stats_non_floating_point():
+    """Verify that integer tensors do not crash and return default statistics."""
+    model = nn.Linear(5, 2)
+    dbg = NeuralDbg(model)
+    
+    int_tensor = torch.tensor([[1, 2], [3, 4]], dtype=torch.int64)
+    stats = dbg._compute_activation_stats(int_tensor)
+    
+    assert stats["mean"] == 0.0
+    assert stats["std"] == 0.0
+    assert stats["sparsity"] == 0.0
+    assert stats["dead_ratio"] == 0.0
+    assert stats["saturation_ratio"] == 0.0

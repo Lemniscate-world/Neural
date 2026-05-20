@@ -139,6 +139,12 @@ class TensorDiskCache:
                     pass
         self._files.clear()
 
+    def __del__(self):
+        try:
+            self.cleanup()
+        except Exception:
+            pass
+
 
 class NeuralDbg:
     """
@@ -634,8 +640,19 @@ class NeuralDbg:
     def _compute_activation_stats(self, tensor: torch.Tensor) -> Dict[str, float]:
         """Compute statistical summary of activation tensor."""
         t = tensor.detach()
-        numel = t.numel()
+        if not torch.is_floating_point(t):
+            return {
+                "mean": 0.0,
+                "std": 0.0,
+                "min": 0.0,
+                "max": 0.0,
+                "sparsity": 0.0,
+                "dead_ratio": 0.0,
+                "norm": 0.0,
+                "saturation_ratio": 0.0,
+            }
 
+        numel = t.numel()
         if numel == 0:
             return {
                 "mean": 0.0,
