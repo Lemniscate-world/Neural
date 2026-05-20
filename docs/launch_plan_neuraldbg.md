@@ -38,7 +38,7 @@
 - [x] Posts Discord (FrancophonIA, PyTorch, HF) — prêts
 - [x] 7 réponses types aux questions HN probables
 
-### T-1 : 24 Mai — Vérifications R98 (Niveaux 3-5)
+### T-1 : 25 Mai — Vérifications R98 (Niveaux 3-5)
 
 **Niveau 3 — Tests fonctionnels**
 - [ ] **Cas normal** : entraînement simple avec NeuralDbg → events capturés
