@@ -30,6 +30,14 @@
 - [x] Mettre à jour la branche `main` avec les derniers commits
 - [ ] Ajouter un badge PyPI dans le README
 
+### T-7 : 19 Mai — Pré-lancement & Posts Communautaires (DONE)
+
+- [x] **Reddit** : Post initial de présentation sur r/deeplearning
+- [x] **Twitter/X** : Publication du premier thread (4 posts)
+- [x] **Discord** : Partage sur FrancophonIA (#ia-general)
+- [x] **Discord** : Partage sur le serveur officiel PyTorch (#showcase)
+- [x] **Lobsters** : Post alternatif soumis
+
 ### T-3 : 21 Mai — Création des assets (fait)
 
 - [x] Post Show HN dans `LAUNCH_POSTS.md`

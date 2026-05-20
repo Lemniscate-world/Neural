@@ -110,10 +110,8 @@ corriger automatiquement un entraînement qui échoue.
 #### 4. Statut des Canaux de Distribution & Pré-lancement (R98)
 - [x] **Niveau 1 (Installation)** : `pip install` local wheel dans venv frais + import OK + version 1.3.1 cohérente.
 - [x] **Niveau 2 (Quickstart)** : Exécution de `quickstart.py` OK (sans crash d'encodage, rapports générés).
-- [ ] **HackerNews (Show HN)** : Draft rédigé dans `LAUNCH_POSTS.md`. Prévu le mardi 26 mai, 10h EST.
-- [ ] **Reddit** : Post prêt dans `LAUNCH_POSTS.md` pour r/MachineLearning.
-- [ ] **Twitter/X** : Thread technique prêt dans `LAUNCH_POSTS.md`.
-- [ ] **Discord** : Annonces prêtes pour les serveurs PyTorch, HF et FrancophonIA.
+- [x] **Posts de Pré-lancement (19 Mai)** : Reddit (r/deeplearning), Twitter/X, Discord (FrancophonIA & PyTorch) et Lobsters publiés (suivis dans `acquisition_tracker.md`).
+- [ ] **Lancement Officiel (26 Mai)** : HackerNews (Show HN) et Reddit (r/MachineLearning) planifiés.
 
 ---
 
