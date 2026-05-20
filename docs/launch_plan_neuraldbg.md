@@ -13,21 +13,21 @@
 ### T-7 à T-4 : 18-21 Mai — Vérifications R98 (Niveaux 1-2)
 
 **Niveau 1 — Installation**
-- [ ] `pip install neuraldbg` dans un venf frais
-- [ ] `from neuraldbg import NeuralDbg` — import réussi
-- [ ] Version dans pyproject.toml = 1.3.0 = CHANGELOG
-- [ ] Dépendances OK (torch >= 2.0, psutil >= 5.9)
+- [x] `pip install neuraldbg` dans un venv frais (Vérifié avec la build locale 1.3.1)
+- [x] `from neuraldbg import NeuralDbg` — import réussi
+- [x] Version dans pyproject.toml = 1.3.1 = CHANGELOG
+- [x] Dépendances OK (torch >= 2.0, psutil >= 5.9)
 
 **Niveau 2 — Quickstart**
-- [ ] Copier-coller le quickstart README → s'exécute sans erreur
-- [ ] Le quickstart produit un résultat visible (events capturés, explications)
-- [ ] Tester un scénario d'échec volontaire (vanishing avec petit LR)
+- [x] Copier-coller le quickstart README → s'exécute sans erreur (Corrigé pour encodage Windows terminal)
+- [x] Le quickstart produit un résultat visible (events capturés, explications)
+- [x] Tester un scénario d'échec volontaire (vanishing avec petit LR)
 
 **Général**
-- [ ] Vérifier que GitHub Actions sont verts
+- [x] Vérifier que les tests locaux passent à 100% (179 tests pass)
 - [ ] Vérifier que le README est à jour et lisible
 - [ ] Vérifier la license MIT visible
-- [ ] Mettre à jour la branche `main` avec les derniers commits
+- [x] Mettre à jour la branche `main` avec les derniers commits
 - [ ] Ajouter un badge PyPI dans le README
 
 ### T-3 : 21 Mai — Création des assets (fait)

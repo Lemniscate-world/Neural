@@ -7,29 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-05-20
+
 ### Added
-- Phase 2 dogfooding: LSTM/Time Series failure scenarios (vanishing recurrent, exploding recurrent, deep LSTM)
-- Phase 2 dogfooding: GNN (GCN/GAT) failure scenarios (oversmoothing, exploding, NaN injection)
-- Phase 2 dogfooding: torch.compile (Dynamo) compatibility scenarios (healthy, vanishing, exploding)
-- Phase 2 dogfooding: RL (PPO-style) failure scenarios (policy collapse, value explosion, reward hacking)
-- Phase 2 dogfooding: Distributed/DataParallel failure scenarios (healthy, vanishing, exploding under DP)
-- Engine fallbacks in core: `_classify_activation_health`, `explain_failure`, `detect_coupled_failures`, `export_mermaid_causal_graph`, `_classify_data_health`, `_check_data_anomaly` now work without proprietary engine
-- **Phase 3**: Complete Aquarium JSON export schema with all required fields (events, hypotheses, couplings, first_failure_layer, first_failure_step, loss_history)
-- 14 new unit tests for Aquarium export (`test_aquarium_export.py`)
-- Aquarium export integrated into LSTM demo with auto-export to `aquarium_exports/`
+- **OOM Prevention & Memory Optimization**: Added `TensorDiskCache` to JIT-cache intermediate tensors on disk during anomaly states, preventing VRAM/RAM exhaustion.
+- **Precision and Epsilon Scaling**: Implemented dtype-aware epsilon scaling (`1e-4` for float16/bfloat16, `1e-9` for float32/64) to prevent precision underflow during activation statistics computation.
+- **Safety Guards for Integer Tensors**: Added strict checks (`torch.is_floating_point`) to bypass statistics computations on non-floating-point tensors (e.g., token indices, label masks), preventing PyTorch runtime errors.
+- - Phase 2 dogfooding: LSTM/Time Series failure scenarios (vanishing recurrent, exploding recurrent, deep LSTM)
+- - Phase 2 dogfooding: GNN (GCN/GAT) failure scenarios (oversmoothing, exploding, NaN injection)
+- - Phase 2 dogfooding: torch.compile (Dynamo) compatibility scenarios (healthy, vanishing, exploding)
+- - Phase 2 dogfooding: RL (PPO-style) failure scenarios (policy collapse, value explosion, reward hacking)
+- - Phase 2 dogfooding: Distributed/DataParallel failure scenarios (healthy, vanishing, exploding under DP)
+- - Engine fallbacks in core: `_classify_activation_health`, `explain_failure`, `detect_coupled_failures`, `export_mermaid_causal_graph`, `_classify_data_health`, `_check_data_anomaly` now work without proprietary engine
+- - **Phase 3**: Complete Aquarium JSON export schema with all required fields (events, hypotheses, couplings, first_failure_layer, first_failure_step, loss_history)
+- - 14 new unit tests for Aquarium export (`test_aquarium_export.py`)
+- - Aquarium export integrated into LSTM demo with auto-export to `aquarium_exports/`
+- - **Phase 7 — Two-Package Architecture**: Conditional import check for `neuraldbg-engine` and seamless fallback support for `neuraldbg` core, enabling private/public package separation.
+- - **Zero-Warnings Policy**: Configured `filterwarnings` in `pyproject.toml` to ignore third-party deprecation warnings (MLflow, PyTorch full_backward_hook warnings), dropping warnings from 616 to 5.
 
-### Phase 7 — Two-Package Architecture ✅
-- Repo `neuraldbg-engine/` confirmé existant (`~/Documents/NeuralDBG-Engine`) avec structure complète
-- Import conditionnel fonctionnel : `neuraldbg` (public) + `neuraldbg-engine` (privé)
-- **130 tests passent avec engine installé**, fallbacks fonctionnent sans engine
-- Architecture validée : core MIT open-source, engine propriétaire séparé
-
-### Phase 5 — Publication PyPI ✅
-- `pyproject.toml` mis à jour : auteurs, keywords, classifiers, license SPDX
-- GitHub Actions workflow `publish.yml` : build → TestPyPI (manual) → PyPI (release)
-- Package buildé : `neuraldbg-1.3.0.tar.gz` + `neuraldbg-1.3.0-py3-none-any.whl`
-- Twine check : PASSED
-- Test install fresh venv : import réussi
+### Fixed
+- Fixed Unicode/emoji terminal rendering encoding crash on Windows consoles for `quickstart.py`.
 
 ## [1.3.0] - 2026-05-14
 ### Added

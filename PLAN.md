@@ -266,6 +266,7 @@ Ces benchmarks vérifient que l'amélioration sur notre dataset n'est pas du sur
 
 ### Phase 10 : MVP Launch & Market Validation (Go-to-Market)
 > **Objectif** : Valider le Product-Market Fit avec des utilisateurs réels. Passer du "Code qui marche" au "Produit qu'on utilise".
+> **Launch Plan Officiel** : Référencer [launch_plan_neuraldbg.md](file:///c:/Users/Utilisateur/Documents/NeuralDBG/docs/launch_plan_neuraldbg.md) pour le calendrier J-7 à J+30.
 
 #### 1. Métriques de Succès (KPIs de Validation)
 | Métrique | Objectif (30 jours) | Pourquoi |
@@ -284,9 +285,11 @@ Ces benchmarks vérifient que l'amélioration sur notre dataset n'est pas du sur
 - [x] **README "Killer"** : Section "Why NeuralDBG?" avec comparatif visuel.
 - [x] **Landing Page** (GitHub Pages) : Page statique dans `docs/index.html`.
 - [x] **Démo Vidéo** : Script `scripts/record_demo.py` pour enregistrement automatisé.
-- [x] **Exemple "Copy-Paste"** : `quickstart.py` à la racine.
+- [x] **Exemple "Copy-Paste"** : `quickstart.py` à la racine (corrigé pour encodage Windows).
 
-#### 4. Canaux de Distribution (Launch Plan)
+#### 4. Canaux de Distribution & Pré-lancement (R98)
+- [x] **Vérifications R98 Niveau 1 (Installation)** : `pip install` local wheel dans venv frais + import OK + version 1.3.1 cohérente.
+- [x] **Vérifications R98 Niveau 2 (Quickstart)** : Exécution de `quickstart.py` OK (sans emoji unicode, résultats capturés).
 - [ ] **Reddit** : Poster sur r/MachineLearning.
 - [x] **HackerNews** : Brouillon prêt dans `LAUNCH_POSTS.md`.
 - [ ] **Twitter/X** : Thread avec le problème/solution.

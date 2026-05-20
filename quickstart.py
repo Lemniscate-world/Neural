@@ -21,7 +21,7 @@ optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 criterion = nn.MSELoss()
 
 # 2. Wrap your training loop with NeuralDbg
-print("🔍 Training a sabotaged model with NeuralDBG...")
+print("[Search] Training a sabotaged model with NeuralDBG...")
 with NeuralDbg(model) as dbg:
     for step in range(5):
         optimizer.zero_grad()
@@ -33,7 +33,7 @@ with NeuralDbg(model) as dbg:
         optimizer.step()
 
 # 3. Get the explanation
-print("\n📊 NeuralDBG Analysis:")
+print("\n[Analysis] NeuralDBG Analysis:")
 hypotheses = dbg.explain_failure()
 if hypotheses:
     for h in hypotheses:
@@ -41,5 +41,5 @@ if hypotheses:
 else:
     print("  (No specific failure detected, but events were captured)")
 
-print("\n✅ Done! Check the 'neuraldbg_report.json' for the full report.")
+print("\n[OK] Done! Check the 'neuraldbg_report.json' for the full report.")
 dbg.export_aquarium_package("neuraldbg_report.json")
