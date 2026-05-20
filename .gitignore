@@ -61,8 +61,9 @@ logs/
 # Private logs and tracking
 SESSION_SUMMARY.md
 SESSION_SUMMARY.md.bak
+SESSION_SUMMARY.docx
+SESSION_SUMMARY.docx.bak
 acquisition_tracker.md
-sync_summary.py
 sync_agents.py
 SYNC_LOG.md
 bandit*.json
@@ -96,12 +97,12 @@ leads.csv
 prospects.csv
 
 # Temporary test/demo files
-demo_*.py
-dogfooding_*.py
-scale_test_*.py
-test_compile_hooks*.py
-visualize_*.py
-synthetic_data_*.png
+/demo_*.py
+/dogfooding_*.py
+/scale_test_*.py
+/test_compile_hooks*.py
+/visualize_*.py
+/synthetic_data_*.png
 
 # Non-essential docs
 GOOGLE_DOCS_SYNC.md

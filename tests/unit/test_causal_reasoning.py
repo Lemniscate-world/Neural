@@ -410,7 +410,7 @@ class TestMermaidGraphExport:
 
         graph = dbg.export_mermaid_causal_graph()
         assert "graph TD" in graph
-        assert "E0" in graph
+        assert "E_" in graph
         assert "gradient_health_transition" in graph
         assert "linear1" in graph
 

@@ -8,6 +8,7 @@ post-mortem reasoning about training failures.
 
 import math
 import json
+import uuid
 from pathlib import Path
 
 import torch
@@ -98,6 +99,7 @@ class SemanticEvent:
     to_state: Any
     confidence: float
     metadata: Dict[str, Any]
+    id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
 
 @dataclass
@@ -108,6 +110,34 @@ class CausalHypothesis:
     confidence: float
     evidence: List[SemanticEvent]
     causal_chain: List[str]
+
+
+class TensorDiskCache:
+    """Manages caching of large tensors on disk to prevent RAM/VRAM OOMs."""
+
+    def __init__(self, cache_dir: Optional[str] = None):
+        self.cache_dir = Path(cache_dir or "artifacts/tensor_cache")
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self._files: List[Path] = []
+
+    def save(self, tensor: torch.Tensor, prefix: str = "tensor") -> str:
+        """Save a tensor to disk and return the absolute file path."""
+        filename = f"{prefix}_{uuid.uuid4().hex}.pt"
+        filepath = self.cache_dir / filename
+        # Detach and move to CPU to release GPU VRAM immediately
+        torch.save(tensor.detach().cpu(), filepath)
+        self._files.append(filepath)
+        return str(filepath.absolute().as_posix())
+
+    def cleanup(self):
+        """Delete all cached files and clear the registry."""
+        for filepath in self._files:
+            if filepath.exists():
+                try:
+                    filepath.unlink()
+                except Exception:
+                    pass
+        self._files.clear()
 
 
 class NeuralDbg:
@@ -194,6 +224,9 @@ class NeuralDbg:
         except ImportError:
             pass
 
+        # Disk cache for storing large tensors
+        self.disk_cache = TensorDiskCache()
+
         # Per-step resource snapshot cache: (step, snapshot) — sampled once per step
         self._resource_snapshot_cache: Optional[Tuple[int, Dict[str, float]]] = None
         # Snapshot from the previous step used as spike baseline
@@ -225,6 +258,7 @@ class NeuralDbg:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Stop monitoring and cleanup."""
         self._remove_hooks()
+        self.disk_cache.cleanup()
         self.is_monitoring = False
 
     def record_loss(self, loss_value: float):
@@ -599,32 +633,54 @@ class NeuralDbg:
 
     def _compute_activation_stats(self, tensor: torch.Tensor) -> Dict[str, float]:
         """Compute statistical summary of activation tensor."""
-        # Ensure we are working with float32 for stats to avoid precision issues
-        t_float = tensor.detach().float()
+        t = tensor.detach()
+        numel = t.numel()
+
+        if numel == 0:
+            return {
+                "mean": 0.0,
+                "std": 0.0,
+                "min": 0.0,
+                "max": 0.0,
+                "sparsity": 0.0,
+                "dead_ratio": 0.0,
+                "norm": 0.0,
+                "saturation_ratio": 0.0,
+            }
+
+        # Determine epsilon based on dtype to avoid underflow
+        eps = 1e-4 if t.dtype in (torch.float16, torch.bfloat16) else 1e-9
 
         # Calculate sparsity (fraction of zeros)
-        # Using a small epsilon for float comparison
-        sparsity = (t_float.abs() < 1e-9).float().mean().item()
+        # Using a small epsilon for float comparison, sum booleans to avoid float tensor allocations
+        sparsity = (t.abs() < eps).sum().item() / numel
 
         # Calculate dead neurons (per-neuron sparsity over batch)
         # Assuming batch is dim 0
-        if t_float.dim() > 1:
-            dead_ratio = (t_float.abs().sum(dim=0) < 1e-9).float().mean().item()
+        if t.dim() > 1:
+            dead_ratio = (t.abs().sum(dim=0) < eps).sum().item() / t[0].numel()
         else:
             dead_ratio = sparsity
 
         # Calculate saturation ratio (for Sigmoid or Tanh typically)
         # We consider a value saturated if it's very close to 1.0 or -1.0
-        saturation_ratio = (t_float.abs() > 0.95).float().mean().item()
+        saturation_ratio = (t.abs() > 0.95).sum().item() / numel
+
+        # Standard statistics - compute directly on the detached tensor
+        mean_val = t.mean().item()
+        std_val = t.std().item() if numel > 1 else 0.0
+        min_val = t.min().item()
+        max_val = t.max().item()
+        norm_val = t.norm().item()
 
         return {
-            "mean": t_float.mean().item(),
-            "std": t_float.std().item(),
-            "min": t_float.min().item(),
-            "max": t_float.max().item(),
+            "mean": mean_val,
+            "std": std_val,
+            "min": min_val,
+            "max": max_val,
             "sparsity": sparsity,
             "dead_ratio": dead_ratio,
-            "norm": t_float.norm().item(),
+            "norm": norm_val,
             "saturation_ratio": saturation_ratio,
         }
 
@@ -825,16 +881,10 @@ class NeuralDbg:
         """Export Mermaid causal graph — delegates to engine."""
         if self._causal_engine is not None:
             return self._engine.explain.export_mermaid_causal_graph()
-        # Fallback: basic mermaid graph from events
         lines = ["graph TD"]
-        seen = set()
         for event in self.events:
-            node = f"{event.layer_name}_{event.step}"
-            if node not in seen:
-                lines.append(f'    {node}["{event.layer_name} (step {event.step})"]')
-                seen.add(node)
-        if len(seen) > 1:
-            nodes = list(seen)
-            for i in range(len(nodes) - 1):
-                lines.append(f"    {nodes[i]} --> {nodes[i + 1]}")
+            lines.append(f'    E_{event.id}["{event.layer_name} (step {event.step})"]')
+        if len(self.events) > 1:
+            for i in range(len(self.events) - 1):
+                lines.append(f"    E_{self.events[i].id} --> E_{self.events[i + 1].id}")
         return "\n".join(lines)

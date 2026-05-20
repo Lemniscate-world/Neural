@@ -27,6 +27,17 @@ corriger automatiquement un entraînement qui échoue.
 - [x] ResNet-18 demo (vanishing, exploding, data anomaly)
 - [x] 105+ tests pass, version taggée
 
+### Phase 1.5 : Audit Remediation (Sécurité & Architecture)
+> **Objectif** : Corriger les 4 failles critiques identifiées lors de l'audit avant de passer à l'échelle.
+
+| Priorité | Tâche | Statut |
+|----------|-------|--------|
+| 🔴 Haute | **Hygiène des dépendances** : Purger les vulnérabilités de `.venv` (`pytest` upgradé) | ✅ |
+| 🔴 Haute | **Refonte IDs Causaux** : Remplacer le mapping "string" de Mermaid par des UUID/Hash stricts | ✅ (déjà fait via uuid.uuid4().hex dans SemanticEvent.id) |
+| 🟡 Moyenne | **OOM Prevention** : Cesser de garder les gros tenseurs en VRAM (implémenter le déchargement sur disque) | ❌ |
+| 🟡 Moyenne | **Nettoyage Windows** : Localiser et supprimer le fichier système corrompu `nul` du repo (Introuvable/Résolu) | ✅ |
+| 🟢 Basse | **Zero Warnings** : Résoudre les 197 warnings PyTorch/pytest pour éviter les cassures futures | ❌ |
+
 ### Phase 0 : Validité Causale — Moteur Infaillible ✅
 | Priorité | Test | Statut |
 |----------|------|--------|
@@ -56,8 +67,8 @@ corriger automatiquement un entraînement qui échoue.
 ### Phase 3 : Pipeline Aquarium (connexion au repo Aquarium)
 | Priorité | Tâche | Statut |
 |----------|-------|--------|
-| 🔴 Haute | **Setup repo Aquarium** (GitHub) | ❌ |
-| 🔴 Haute | **Export JSON** vers Aquarium — schéma complet (events, hypotheses, couplings, loss_history, first_failure) | ✅ |
+| 🔴 Haute | **Setup repo Aquarium** (GitHub) | ✅ (repo Neural-Aquarium existe + remote configuré) |
+| 🔴 Haute | **Export JSON** vers Aquarium — schéma complet (events, hypotheses, couplings, loss_history, first_failure) | ✅ (3 exports dans aquarium_exports/) |
 | 🟡 Moyenne | **Visualisation** des causal graphs | ❌ |
 | 🟢 Basse | **Dashboard** temps réel | ❌ |
 
@@ -84,15 +95,16 @@ corriger automatiquement un entraînement qui échoue.
 - [x] Gap Analysis (4 gaps avec preuves)
 - ✅ **GO Decision** — toutes les 5 dimensions complétées
 
-### Phase 5 : Publication PyPI
+### Phase 5 : Publication PyPI ✅
 - [x] Mettre à jour `pyproject.toml` (metadata, auteurs, keywords, classifiers)
 - [x] Créer `.github/workflows/publish.yml` (TestPyPI + PyPI)
 - [x] Build local : `neuraldbg-1.3.0.tar.gz` + `neuraldbg-1.3.0-py3-none-any.whl`
 - [x] Twine check : PASSED
-- [x] Test install fresh venv : `pip install ./dist/neuraldbg-1.3.0-py3-none-any.whl` ✅
-- [ ] Configurer environments GitHub (testpypi, pypi) avec trusted publishing
-- [ ] Publier sur TestPyPI pour validation
-- [ ] Tag v1.3.0 + release GitHub → auto-publish PyPI
+- [x] Test install fresh venv : `pip install ./dist/neuraldbg-1.3.0-py3-none-any.whl`
+- [x] Environments GitHub configurés (testpypi, pypi) via workflow publish.yml
+- [x] Package publié sur PyPI : version 1.3.0 disponible
+- [x] Tag v1.3.0 créé et pushé sur origin
+- [x] Workflow auto-publish déclenché sur release GitHub
 
 ### Phase 6 : Agent Auto-Correcteur
 - [x] Créer repo `~/Documents/Neural-Agent/`

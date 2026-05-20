@@ -1,0 +1,95 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.2, pytest-9.0.3, pluggy-1.6.0
+rootdir: C:\Users\Utilisateur\Documents\NeuralDBG
+configfile: pyproject.toml
+plugins: anyio-4.13.0, hydra-core-1.3.2, cov-7.1.0
+collected 17 items
+
+tests\unit\test_causal_validation.py F............sF..                   [100%]
+
+================================== FAILURES ===================================
+___________ TestCausalValidity.test_nan_localized_to_correct_layer ____________
+
+self = <unit.test_causal_validation.TestCausalValidity object at 0x000001A49DB7B4D0>
+
+    def test_nan_localized_to_correct_layer(self):
+        model = nn.Sequential(
+            nn.Linear(10, 20),
+            nn.Tanh(),
+            nn.Linear(20, 5),  # On injecte NaN ici
+            nn.Tanh(),
+        )
+        model[2].weight.data.fill_(0.0)
+    
+        x = torch.randn(2, 10)
+        dbg = NeuralDbg(model)
+        dbg.step = 0
+    
+        # Inject NaN into layer 2 ONLY
+        dbg._check_data_anomaly(x, "0")  # clean
+        dbg._check_data_anomaly(torch.tensor(float("nan")).expand(2, 20), "2")  # NaN!
+        dbg._check_data_anomaly(x, "4")  # clean
+    
+        nan_events = [
+            e
+            for e in dbg.events
+>           if e.event_type == EventType.DATA_ANOMALY and e.to_state == "nan_detected"
+                               ^^^^^^^^^
+        ]
+E       NameError: name 'EventType' is not defined
+
+tests\unit\test_causal_validation.py:60: NameError
+______ TestCrossArchitectureInvariance.test_nan_detected_in_transformer _______
+
+self = <unit.test_causal_validation.TestCrossArchitectureInvariance object at 0x000001A4A609CC30>
+
+    def test_nan_detected_in_transformer(self):
+        """Transformer: NaN injectÚ via forward_hook dans wte (embedding)."""
+        from examples.demo_transformer_failures import NanoGPT
+    
+        torch.manual_seed(SEED)
+        model = NanoGPT(vocab_size=100, d_model=16, n_layers=2)
+        x = torch.randint(0, 100, (4, 16))
+        y = torch.randint(0, 100, (4, 16))
+        data = DataLoader(TensorDataset(x, y), batch_size=4)
+        optimizer = optim.SGD(model.parameters(), lr=0.001)
+    
+        with NeuralDbg(model) as dbg:
+            for step in range(3):
+                for bx, by in data:
+                    optimizer.zero_grad()
+                    dbg.step = step
+                    out = model(bx)
+                    loss = nn.CrossEntropyLoss()(out.reshape(-1, 100), by.reshape(-1))
+                    loss.backward()
+                    dbg.record_loss(loss.item())
+                    optimizer.step()
+                    break
+    
+        # Inject NaN event manually (transformer embedding \u2192 forward hook limitation)
+        dbg.events.append(
+            SemanticEvent(
+>               event_type=EventType.DATA_ANOMALY,
+                           ^^^^^^^^^
+                layer_name="wte",
+                step=1,
+                from_state="normal",
+                to_state="nan_detected",
+                confidence=1.0,
+                metadata={"nan_count": 16},
+            )
+        )
+E       NameError: name 'EventType' is not defined
+
+tests\unit\test_causal_validation.py:451: NameError
+============================== warnings summary ===============================
+tests/unit/test_causal_validation.py: 13 warnings
+  C:\Users\Utilisateur\Documents\NeuralDBG\.venv\Lib\site-packages\torch\nn\modules\module.py:1870: FutureWarning: Using a non-full backward hook when the forward contains multiple autograd Nodes is deprecated and will be removed in future versions. This hook will be missing some grad_input. Please use register_full_backward_hook to get the documented behavior.
+    self._maybe_warn_non_full_backward_hook(args, result, grad_fn)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\unit\test_causal_validation.py:423: torchvision not installed
+FAILED tests/unit/test_causal_validation.py::TestCausalValidity::test_nan_localized_to_correct_layer
+FAILED tests/unit/test_causal_validation.py::TestCrossArchitectureInvariance::test_nan_detected_in_transformer
+============ 2 failed, 14 passed, 1 skipped, 13 warnings in 4.62s =============

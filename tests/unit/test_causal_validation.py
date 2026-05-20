@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from neuraldbg import (
     NeuralDbg,
     SemanticEvent,
+    EventType,
     _HAS_ENGINE,
 )
 import pytest

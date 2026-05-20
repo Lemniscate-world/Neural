@@ -219,8 +219,8 @@ class TestCausalReasoning:
         couplings = dbg.detect_coupled_failures()
         assert len(couplings) >= 1
         coupling = couplings[0]
-        assert "linear1" in coupling["trigger"]
-        assert "relu1" in coupling["consequence"]
+        assert "linear1" in coupling["trigger_label"]
+        assert "relu1" in coupling["consequence_label"]
         assert coupling["step_difference"] == 2
 
     def test_detect_coupled_failures_deduplicates_logical_pairs(self):
@@ -264,8 +264,8 @@ class TestCausalReasoning:
         matching = [
             coupling
             for coupling in couplings
-            if coupling["trigger"] == "activation_regime_shift in tanh1"
-            and coupling["consequence"] == "gradient_health_transition in linear2"
+            if coupling["trigger_label"] == "activation_regime_shift in tanh1"
+            and coupling["consequence_label"] == "gradient_health_transition in linear2"
         ]
 
         assert len(matching) == 1
