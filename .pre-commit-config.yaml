@@ -13,6 +13,12 @@ repos:
         pass_filenames: false
         stages: [manual]
         always_run: true
+      - id: check-sensitive-files
+        name: check sensitive files
+        entry: python scripts/check_sensitive_files.py
+        language: system
+        pass_filenames: false
+        always_run: true
 
   # Security scanner for Python
   - repo: https://github.com/PyCQA/bandit
@@ -21,6 +27,8 @@ repos:
       - id: bandit
         args: ['-r', '.', '-ll', '--skip', 'B101']
         files: \.py$
+        pass_filenames: false
+        additional_dependencies: [pbr]
 
   # Code formatting
   - repo: https://github.com/psf/black

@@ -1,0 +1,24 @@
+#!/bin/sh
+# Pre-commit hook — bloque les fichiers sensibles avant chaque commit
+# Install: cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+SENSITIVE_PATTERNS="decision-memo.md|LAUNCH_POSTS.md|SESSION_SUMMARY\.md|docs/launch_plan_|docs/hn_feedback_log|docs/community_post_template|docs/launch_postmortem|docs/cdp_protocol|docs/STRUCTURE_DOCS|docs/verification_report_|docs/tracking/|rules/COMPLIANCE_CHECKLIST"
+
+FILES=$(git diff --cached --name-only | grep -E "$SENSITIVE_PATTERNS")
+
+if [ -n "$FILES" ]; then
+    echo "❌ BLOCKED: Ces fichiers privés ne doivent pas être commités:"
+    echo "$FILES"
+    echo ""
+    echo "Ajoute-les à .gitignore s'ils doivent rester locaux."
+    echo "Pour forcer (déconseillé): git commit --no-verify"
+    exit 1
+fi
+
+# Vérification .gitignore
+if ! grep -q "docs/tracking/" .gitignore; then
+    echo "⚠️  .gitignore ne protège pas docs/tracking/. Ajoute-le."
+    exit 1
+fi
+
+exit 0

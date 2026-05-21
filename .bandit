@@ -1,6 +1,0 @@
-[bandit]
-# We exclude test files and local virtualenvs from security scanning results.
-# Tests use `assert` heavily and can produce noisy B101 findings that do not
-# represent production risk.
-exclude = .venv,venv,tests,htmlcov,.pytest_cache,__pycache__
-
