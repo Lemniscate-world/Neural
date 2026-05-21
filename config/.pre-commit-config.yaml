@@ -48,7 +48,7 @@ repos:
     rev: 'v1.8.0'
     hooks:
       - id: mypy
-        additional_dependencies: [types-all]
+        additional_dependencies: [types-PyYAML]
         args: ['--ignore-missing-imports']
 
   # General checks
@@ -70,7 +70,6 @@ repos:
     rev: 'v1.4.0'
     hooks:
       - id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
 
 # CI configuration
 ci:

@@ -111,3 +111,15 @@ marketing_test_plan.md
 sonar-project.properties
 opencode.json
 GAD.md
+
+# Marketing / Launch / Planning files (internal only, never commit)
+decision-memo.md
+LAUNCH_POSTS.md
+docs/launch_plan_*.md
+docs/hn_feedback_log.md
+docs/community_post_template.md
+docs/launch_postmortem.md
+docs/cdp_protocol_definition.md
+docs/STRUCTURE_DOCS.md
+docs/verification_report_*.md
+docs/tracking/
