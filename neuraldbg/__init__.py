@@ -706,11 +706,16 @@ class NeuralDbg:
         if self._causal_engine is not None:
             return self._engine.activation.classify_health(stats)
         # Fallback heuristic when engine is not available
-        sat = stats.get("saturation_ratio", 0.0)
-        dead = stats.get("dead_ratio", 0.0)
-        if dead > 0.5:
+        dead_ratio = stats.get("dead_ratio", 0.0)
+        sat_ratio = stats.get("saturation_ratio", 0.0)
+        has_nan = stats.get("has_nan", False)
+        has_inf = stats.get("has_inf", False)
+
+        if has_nan or has_inf:
+            return ActivationHealth.ANOMALOUS
+        if dead_ratio > 0.9:
             return ActivationHealth.DEAD
-        if sat > 0.5:
+        if sat_ratio > 0.5:
             return ActivationHealth.SATURATED
         return ActivationHealth.NORMAL
 
@@ -718,11 +723,32 @@ class NeuralDbg:
         self, prev_stats: Dict[str, float], current_stats: Dict[str, float]
     ) -> Optional[Dict[str, Any]]:
         """Detect activation shifts — delegates to engine."""
-        return self._engine.activation.detect_shift(prev_stats, current_stats)
+        if self._causal_engine is not None:
+            return self._engine.activation.detect_shift(prev_stats, current_stats)
+
+        # Fallback heuristic when engine is not available
+        prev_health = self._classify_activation_health(prev_stats)
+        current_health = self._classify_activation_health(current_stats)
+        if prev_health != current_health:
+            return {
+                "type": f"{prev_health.value}_to_{current_health.value}",
+                "confidence": 0.9,
+            }
+        return None
 
     def _classify_gradient_health(self, norm: float) -> GradientHealth:
         """Classify gradient health — delegates to engine."""
-        return self._engine.gradient.classify_health(norm)
+        if self._causal_engine is not None:
+            return self._engine.gradient.classify_health(norm)
+        # Fallback heuristic when engine is not available
+        if norm < self.threshold_vanishing:
+            return GradientHealth.VANISHING
+        elif norm > self.threshold_exploding:
+            return GradientHealth.EXPLODING
+        elif norm < (self.threshold_vanishing * 100):
+            return GradientHealth.SATURATED
+        else:
+            return GradientHealth.HEALTHY
 
     def _track_first_occurrence(self, failure_type: str, layer_name: str):
         """Track the first layer that encountered a specific failure."""
@@ -734,7 +760,24 @@ class NeuralDbg:
         self, prev_norm: float, current_norm: float
     ) -> Optional[Dict[str, Any]]:
         """Detect transitions in gradient health — delegates to engine."""
-        return self._engine.gradient.detect_transition(prev_norm, current_norm)
+        if self._causal_engine is not None:
+            return self._engine.gradient.detect_transition(prev_norm, current_norm)
+
+        # Fallback heuristic when engine is not available
+        prev_health = self._classify_gradient_health(prev_norm)
+        current_health = self._classify_gradient_health(current_norm)
+
+        if prev_health != current_health:
+            if prev_norm > 0:
+                ratio = abs(current_norm - prev_norm) / prev_norm
+            else:
+                ratio = abs(current_norm)
+            confidence = min(ratio * 0.1, 1.0)
+            return {
+                "type": f"{prev_health.value}_to_{current_health.value}",
+                "confidence": confidence,
+            }
+        return None
 
     def explain_failure(
         self, failure_type: str = "vanishing_gradients"
@@ -824,9 +867,16 @@ class NeuralDbg:
         """Classify data health — delegates to engine."""
         if self._causal_engine is not None:
             return self._engine.data.classify_health(tensor)
-        if torch.isnan(tensor).any():
+        t = tensor.detach().float()
+        has_nan = torch.isnan(t).any().item()
+        if has_nan:
             return DataHealth.NAN_DETECTED, {
-                "nan_count": torch.isnan(tensor).sum().item()
+                "nan_count": int(torch.isnan(t).sum().item())
+            }
+        has_inf = torch.isinf(t).any().item()
+        if has_inf:
+            return DataHealth.INF_DETECTED, {
+                "inf_count": int(torch.isinf(t).sum().item())
             }
         return DataHealth.NORMAL, {}
 
@@ -834,7 +884,78 @@ class NeuralDbg:
         """Detect data anomalies — delegates to engine."""
         if self._causal_engine is not None:
             return self._engine.data.check_anomaly(tensor, layer_name)
-        # Fallback: no-op when engine not available
+
+        # Fallback implementation
+        if not torch.is_floating_point(tensor):
+            return
+
+        current_health, health_metadata = self._classify_data_health(tensor)
+
+        if current_health not in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED):
+            t = tensor.detach().float()
+            if t.numel() == 0:
+                current_mean = 0.0
+                current_std = 0.0
+            else:
+                current_mean = t.mean().item()
+                current_std = t.std().item() if t.numel() > 1 else 0.0
+
+            if layer_name in self.previous_input_stats:
+                prev = self.previous_input_stats[layer_name]
+                prev_std = prev.get("std", 1.0)
+                if prev_std > 1e-9:
+                    mean_shift = abs(current_mean - prev.get("mean", 0.0)) / prev_std
+                    std_ratio = current_std / prev_std if prev_std > 0 else 1.0
+                    if mean_shift > 3.0 or std_ratio > 5.0 or std_ratio < 0.2:
+                        current_health = DataHealth.DISTRIBUTION_SHIFT
+                        health_metadata = {
+                            "prev_mean": prev.get("mean", 0.0),
+                            "current_mean": current_mean,
+                            "prev_std": prev_std,
+                            "current_std": current_std,
+                            "mean_shift_sigma": mean_shift,
+                        }
+
+            self.previous_input_stats[layer_name] = {
+                "mean": current_mean,
+                "std": current_std,
+            }
+
+        prev_health = self.previous_data_health.get(layer_name, DataHealth.NORMAL)
+
+        if current_health != prev_health:
+            if current_health != DataHealth.NORMAL:
+                self._track_first_occurrence(
+                    f"data_{current_health.value}", layer_name
+                )
+                if current_health in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED, DataHealth.DISTRIBUTION_SHIFT):
+                    cache_path = self.disk_cache.save(tensor, prefix=f"anomaly_{layer_name}")
+                    health_metadata["tensor_cache_path"] = cache_path
+
+            confidence = 1.0
+            if current_health == DataHealth.DISTRIBUTION_SHIFT:
+                mean_shift_val = health_metadata.get("mean_shift_sigma", 3.0)
+                confidence = min(mean_shift_val * 0.2, 1.0)
+
+            # Sample resources once per step
+            resource_snapshot, resource_baseline = self._get_step_resource_snapshot(tensor.device)
+            is_spike, spike_keys = self._is_memory_spike(resource_snapshot, resource_baseline)
+            health_metadata["resources"] = resource_snapshot
+            health_metadata["memory_spike"] = is_spike
+            health_metadata["memory_spike_keys"] = spike_keys
+
+            self.events.append(
+                SemanticEvent(
+                    event_type=EventType.DATA_ANOMALY,
+                    layer_name=layer_name,
+                    step=self.step,
+                    from_state=prev_health.value,
+                    to_state=current_health.value,
+                    confidence=confidence,
+                    metadata=health_metadata,
+                )
+            )
+            self.previous_data_health[layer_name] = current_health
 
     def _explain_optimizer_instability(self) -> List[CausalHypothesis]:
         """Generate hypotheses for optimizer instability — delegates to engine."""

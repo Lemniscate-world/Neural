@@ -33,6 +33,7 @@ PROTECTED_PATTERNS = [
     ".env",
     ".env.*",
     "service_account*.json",
+    ".bandit",
     "bandit*.json",
     "bandit*.txt",
     "safety-report.json",
