@@ -27,7 +27,6 @@ from neuraldbg import (
     SemanticEvent,
     EventType,
     TensorDiskCache,
-    CausalHypothesis,
 )
 
 
@@ -68,23 +67,17 @@ class TestDynamoDisableFallback:
     def test_dynamo_disable_is_callable(self):
         """Verify that dynamo_disable (either real or fallback) is callable."""
         import neuraldbg as ndbg
-        # The module-level dynamo_disable must always be callable
         assert callable(ndbg.dynamo_disable)
 
     def test_fallback_dynamo_disable_is_identity(self):
         """When torch._dynamo is unavailable, dynamo_disable must be identity."""
-        with patch.dict("sys.modules", {"torch._dynamo": None}):
-            import importlib
-            import neuraldbg
-            # We can't easily re-import, but we can verify the identity behaviour
-            # by directly testing the fallback lambda
-            def identity_disable(fn):
-                return fn
+        def identity_disable(fn):
+            return fn
 
-            def sample():
-                return 42
+        def sample():
+            return 42
 
-            assert identity_disable(sample) is sample
+        assert identity_disable(sample) is sample
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -97,33 +90,27 @@ class TestTensorDiskCacheErrorPaths:
         """Cleanup should not raise even if file deletion fails."""
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = TensorDiskCache(cache_dir=tmpdir)
-            t = torch.randn(4, 4)
-            path_str = cache.save(t, prefix="test")
-            # Manually corrupt the internal registry with a fake path
+            cache.save(torch.randn(4, 4), prefix="test")
             cache._files.append(Path("/nonexistent/fake_file.pt"))
-            # Should not raise
             cache.cleanup()
             assert cache._files == []
 
     def test_cleanup_removes_real_files(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = TensorDiskCache(cache_dir=tmpdir)
-            t = torch.randn(4, 4)
-            path_str = cache.save(t, prefix="test")
-            assert Path(path_str).exists()
+            saved = cache.save(torch.randn(4, 4), prefix="test")
+            assert Path(saved).exists()
             cache.cleanup()
-            assert not Path(path_str).exists()
+            assert not Path(saved).exists()
 
     def test_destructor_does_not_raise(self):
         """__del__ should swallow all exceptions."""
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = TensorDiskCache(cache_dir=tmpdir)
             cache.save(torch.randn(2, 2), prefix="x")
-            # Simulate destructor with a bad path already removed
             for f in cache._files:
                 if f.exists():
                     f.unlink()
-            # Call __del__ manually — should not raise
             try:
                 cache.__del__()
             except Exception as e:
@@ -156,13 +143,9 @@ class TestSafeBackwardHook:
         dbg = NeuralDbg(simple_model)
         dbg._causal_engine = None
 
-        # Run a forward pass but DO NOT backprop → grads will be None
         x = torch.randn(2, 4)
         _ = simple_model(x)
-        # No backward call → hooks that check grad.data should handle gracefully
 
-        # Alternatively: trigger a step that forces backward
-        optimizer = torch.optim.SGD(simple_model.parameters(), lr=0.01)
         loss = simple_model(x).sum()
         loss.backward()
 
@@ -171,7 +154,6 @@ class TestSafeBackwardHook:
             loss2 = simple_model(x).sum()
             loss2.backward()
 
-        # Should complete without RuntimeError
         assert isinstance(dbg.events, list)
 
     def test_hook_registered_during_context(self, simple_model):
@@ -186,7 +168,6 @@ class TestSafeBackwardHook:
         dbg = NeuralDbg(simple_model)
         dbg._causal_engine = None
 
-        # Zero all gradients manually
         for p in simple_model.parameters():
             p.grad = torch.zeros_like(p)
 
@@ -210,12 +191,11 @@ class TestGPUMemoryStatsMocked:
         fake_device = MagicMock()
         fake_device.type = "cuda"
 
-        with patch("torch.cuda.memory_allocated", return_value=512 * 1024 * 1024) as mock_alloc, \
-             patch("torch.cuda.memory_reserved", return_value=1024 * 1024 * 1024) as mock_reserved:
+        with patch("torch.cuda.memory_allocated", return_value=512 * 1024 * 1024), \
+             patch("torch.cuda.memory_reserved", return_value=1024 * 1024 * 1024):
             dbg.step = 1
             snapshot, baseline = dbg._get_step_resource_snapshot(fake_device)
 
-        # Should have gpu_memory_allocated in snapshot
         assert "gpu_memory_allocated_mb" in snapshot or snapshot is not None
 
     def test_cpu_device_no_gpu_stats(self, dbg):
@@ -293,7 +273,7 @@ class TestExportAquariumPackageStandalone:
             from_state="normal",
             to_state="nan_detected",
             confidence=1.0,
-            metadata={"tensor_ref": torch.randn(3), "count": 5},  # tensor not serializable
+            metadata={"tensor_ref": torch.randn(3), "count": 5},
         ))
 
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
@@ -305,7 +285,6 @@ class TestExportAquariumPackageStandalone:
         finally:
             os.unlink(path)
 
-        # Should succeed — non-serializable values filtered by the comprehension
         assert data["events"][0]["metadata"]["count"] == 5
         assert "tensor_ref" not in data["events"][0]["metadata"]
 
