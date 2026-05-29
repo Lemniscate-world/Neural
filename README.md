@@ -7,6 +7,8 @@ A causal inference engine for deep learning training that provides **structured 
 [![PyPI](https://img.shields.io/pypi/v/neuraldbg.svg)](https://pypi.org/project/neuraldbg/)
 [![CI](https://github.com/LambdaSection/NeuralDBG/actions/workflows/ci.yml/badge.svg)](https://github.com/LambdaSection/NeuralDBG/actions/workflows/ci.yml)
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/LambdaSection/NeuralDBG/blob/main/notebooks/quickstart.ipynb)
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://lambdasection.github.io/NeuralDBG/)
 
 ## Overview
 
@@ -20,6 +22,32 @@ NeuralDBG treats training as a **semantic trace of learning dynamics** rather th
 - **Generate ranked causal explanations** for training failures
 
 Unlike traditional monitoring tools (TensorBoard, Weights & Biases), NeuralDBG focuses on **causal inference** rather than metric tracking.
+
+## Neural Suite
+
+| Component | Availability | Role |
+|-----------|--------------|------|
+| **NeuralDBG** | Public ([PyPI](https://pypi.org/project/neuraldbg/)) | Causal diagnostics in your training loop |
+| **Diagnostic Workspace** | Private beta | Visual causal graphs and hypothesis explorer |
+| **Neural Agent** | Private beta | Auto-remediation from causal hypotheses |
+
+Request early access: [open an issue](https://github.com/LambdaSection/NeuralDBG/issues/new?labels=suite-access) with label `suite-access`.
+
+## Try it in 60 seconds (Colab)
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/LambdaSection/NeuralDBG/blob/main/notebooks/quickstart.ipynb)
+
+Or locally: `python examples/quickstart_interactive.py`
+
+## Public benchmark
+
+Reproducible causal accuracy on synthetic failures ([details](benchmark_public/README.md)):
+
+```bash
+python -m benchmark_public.run
+```
+
+Latest results: [benchmark_public/results.json](benchmark_public/results.json)
 
 ## Why NeuralDBG?
 
@@ -44,7 +72,7 @@ Unlike traditional monitoring tools (TensorBoard, Weights & Biases), NeuralDBG f
 - **Compiler-Aware**: Operates at module boundaries to survive torch.compile
 - **Non-Invasive**: Wraps existing PyTorch training loops without code changes
 - **Minimal API**: Focused on explanations, not raw data dumps
-- **Aquarium Export**: JSON export for visualization in Aquarium IDE
+- **Diagnostic package export**: JSON export for the Neural Suite visualizer (private beta)
 
 ## Quick Start
 
@@ -94,7 +122,7 @@ chain = dbg.trace_causal_chain('vanishing_gradients')
 # Check for coupled failures
 couplings = dbg.detect_coupled_failures()
 
-# Export to Aquarium (JSON)
+# Export diagnostic package (JSON) for Neural Suite visualizer
 dbg.export_aquarium_package('debug_session.json')
 ```
 
@@ -218,6 +246,8 @@ MIT License - see [LICENSE.md](LICENSE.md) for details.
 
 ## Documentation
 
+- [Landing page](https://lambdasection.github.io/NeuralDBG/) — branding and suite overview
+- [PyTorch support matrix](docs/PYTORCH_SUPPORT.md)
 - [CHANGELOG.md](CHANGELOG.md) - Version history and notable changes
 - [logic_graph.md](logic_graph.md) - System architecture and data flow
 - [docs/PHASE2_DOGFOODING.md](docs/PHASE2_DOGFOODING.md) - Detailed dogfooding scenarios

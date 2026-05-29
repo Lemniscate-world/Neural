@@ -1,0 +1,32 @@
+name: Neural Suite early access
+description: Request private beta access to Diagnostic Workspace or Neural Agent
+title: "[suite-access] "
+labels: ["suite-access"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        NeuralDBG is public. Diagnostic Workspace and Neural Agent are private betas.
+  - type: dropdown
+    id: product
+    attributes:
+      label: Product
+      options:
+        - Diagnostic Workspace (visualizer)
+        - Neural Agent (auto-remediation)
+        - Both
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What training failure are you debugging?
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Contact (email or GitHub handle)
+    validations:
+      required: true

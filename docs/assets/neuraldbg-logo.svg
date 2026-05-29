@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="NeuralDBG">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#58a6ff"/>
+      <stop offset="100%" stop-color="#a371f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#0d1117"/>
+  <circle cx="64" cy="64" r="44" fill="none" stroke="url(#g)" stroke-width="6"/>
+  <path d="M36 78 L52 50 L64 64 L76 44 L92 78" fill="none" stroke="url(#g)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="52" cy="50" r="5" fill="#79c0ff"/>
+  <circle cx="76" cy="44" r="5" fill="#d2a8ff"/>
+  <circle cx="64" cy="64" r="5" fill="#58a6ff"/>
+</svg>

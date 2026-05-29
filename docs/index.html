@@ -3,198 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuralDBG — Causal Inference for PyTorch Training</title>
-    <meta name="description" content="Understand *why* your model failed during training through semantic analysis and abductive reasoning, not raw tensor inspection.">
+    <title>NeuralDBG — Causal PyTorch Training Diagnostics</title>
+    <meta name="description" content="Structured causal explanations when PyTorch training fails. Part of the Neural Suite.">
+    <link rel="icon" href="assets/neuraldbg-logo.svg" type="image/svg+xml">
     <style>
         :root {
             --bg: #0d1117;
-            --text: #c9d1d9;
+            --surface: #161b22;
+            --text: #e6edf3;
+            --muted: #8b949e;
             --accent: #58a6ff;
-            --accent-hover: #79c0ff;
-            --code-bg: #161b22;
+            --accent2: #a371f7;
+            --success: #3fb950;
             --border: #30363d;
-            --success: #2ea043;
-            --warning: #d29922;
         }
+        * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
+            background: var(--bg);
             color: var(--text);
-            line-height: 1.6;
             margin: 0;
-            padding: 0;
+            line-height: 1.6;
         }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
+        .container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
         header {
             text-align: center;
-            padding: 4rem 0 2rem;
+            padding: 3.5rem 0 2.5rem;
             border-bottom: 1px solid var(--border);
         }
+        .brand { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .brand img { width: 88px; height: 88px; }
         h1 {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(90deg, var(--accent), #a371f7);
+            font-size: 2.75rem;
+            margin: 0;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .tagline {
-            font-size: 1.25rem;
-            color: #8b949e;
-            max-width: 600px;
-            margin: 0 auto 2rem;
-        }
+        .tagline { color: var(--muted); font-size: 1.15rem; max-width: 640px; }
+        .cta { margin-top: 1.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; }
         .btn {
             display: inline-block;
-            padding: 0.75rem 1.5rem;
-            background-color: var(--accent);
-            color: #fff;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: background 0.2s;
-            margin: 0 0.5rem;
-        }
-        .btn:hover { background-color: var(--accent-hover); }
-        .btn-outline {
-            background-color: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-        
-        section { padding: 3rem 0; }
-        h2 { font-size: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
-        
-        .comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        .card {
-            background: var(--code-bg);
-            border: 1px solid var(--border);
+            padding: 0.7rem 1.25rem;
             border-radius: 8px;
-            padding: 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid transparent;
+        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-outline { border-color: var(--border); color: var(--text); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-colab { background: #f9ab00; color: #111; }
+        section { padding: 2.5rem 0; }
+        h2 { font-size: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
         }
         .card h3 { margin-top: 0; }
-        .highlight { color: var(--success); font-weight: bold; }
-        
+        .badge { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--success); }
+        .badge-private { color: var(--accent2); }
         pre {
-            background: var(--code-bg);
-            padding: 1rem;
-            border-radius: 8px;
-            overflow-x: auto;
+            background: var(--surface);
             border: 1px solid var(--border);
-        }
-        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
-        
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-        .feature {
+            border-radius: 8px;
             padding: 1rem;
-            border-left: 3px solid var(--accent);
+            overflow-x: auto;
+            font-size: 0.9rem;
         }
-        
+        .metric {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
         footer {
             text-align: center;
             padding: 2rem 0;
-            color: #8b949e;
+            color: var(--muted);
             border-top: 1px solid var(--border);
             font-size: 0.9rem;
         }
-        a { color: var(--accent); text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        a { color: var(--accent); }
     </style>
 </head>
 <body>
     <header>
-        <div class="container">
+        <div class="container brand">
+            <img src="assets/neuraldbg-logo.svg" alt="NeuralDBG logo">
             <h1>NeuralDBG</h1>
-            <p class="tagline">Stop guessing why your model failed. Get <strong>structured causal explanations</strong> for PyTorch training dynamics.</p>
-            <div>
-                <a href="https://pypi.org/project/neuraldbg/" class="btn">pip install neuraldbg</a>
-                <a href="https://github.com/LambdaSection/NeuralDBG" class="btn btn-outline">View on GitHub</a>
+            <p class="tagline">When PyTorch training breaks, get <strong>ranked causal hypotheses</strong> — not another loss curve.</p>
+            <div class="cta">
+                <a class="btn btn-primary" href="https://pypi.org/project/neuraldbg/">pip install neuraldbg</a>
+                <a class="btn btn-colab" href="https://colab.research.google.com/github/LambdaSection/NeuralDBG/blob/main/notebooks/quickstart.ipynb">Open in Colab</a>
+                <a class="btn btn-outline" href="https://github.com/LambdaSection/NeuralDBG">GitHub</a>
+                <a class="btn btn-outline" href="../benchmark_public/README.md">Public benchmark</a>
             </div>
         </div>
     </header>
 
     <div class="container">
         <section>
+            <h2>Neural Suite</h2>
+            <p>NeuralDBG is the open core. The full stack adds visualization and autonomous remediation (private beta).</p>
+            <div class="grid">
+                <div class="card">
+                    <span class="badge">Public · PyPI</span>
+                    <h3>NeuralDBG</h3>
+                    <p>Causal hooks, semantic events, JSON diagnostic export, MIT license.</p>
+                </div>
+                <div class="card">
+                    <span class="badge badge-private">Private beta</span>
+                    <h3>Diagnostic Workspace</h3>
+                    <p>Desktop viewer for causal graphs, loss traces, and hypothesis inspection.</p>
+                </div>
+                <div class="card">
+                    <span class="badge badge-private">Private beta</span>
+                    <h3>Neural Agent</h3>
+                    <p>Closed loop: diagnose → patch LR, clipping, activations → retry training.</p>
+                </div>
+            </div>
+            <p style="margin-top:1rem;color:var(--muted)">Early access: open a GitHub issue with label <code>suite-access</code>.</p>
+        </section>
+
+        <section>
             <h2>Why NeuralDBG?</h2>
-            <div class="comparison">
+            <div class="grid">
                 <div class="card">
-                    <h3>📉 TensorBoard / W&B</h3>
-                    <p>Shows graphs of loss over time. You see <em>when</em> it failed, but you have to guess <em>why</em>.</p>
-                    <p class="highlight">❌ Manual diagnosis required</p>
+                    <h3>TensorBoard / W&amp;B</h3>
+                    <p>Shows <em>when</em> metrics moved. You still guess the root cause.</p>
                 </div>
                 <div class="card">
-                    <h3>🧠 NeuralDBG</h3>
-                    <p>Analyzes gradients, activations, and data to tell you <em>why</em> it failed.</p>
-                    <p class="highlight">✅ "Gradient vanishing in layer 2 at step 45 (Confidence: 0.92)"</p>
+                    <h3>NeuralDBG</h3>
+                    <p>Explains <em>why</em> with layer-level hypotheses and confidence scores.</p>
                 </div>
             </div>
         </section>
 
         <section>
-            <h2>Quick Start</h2>
-            <p>Wrap your training loop in one line. No dashboard setup, no cloud account.</p>
-            <pre><code>import torch
-from neuraldbg import NeuralDbg
+            <h2>Reproducible proof</h2>
+            <p>Run the public benchmark locally — results are checked into the repo.</p>
+            <p class="metric" id="bench-score">—</p>
+            <pre><code>pip install neuraldbg &amp;&amp; python -m benchmark_public.run</code></pre>
+        </section>
 
-model = MyModel()
-optimizer = torch.optim.Adam(model.parameters())
+        <section>
+            <h2>Quick start</h2>
+            <pre><code>from neuraldbg import NeuralDbg
 
-# Wrap your training loop
 with NeuralDbg(model) as dbg:
-    for step, (x, y) in enumerate(dataloader):
-        optimizer.zero_grad()
+    for step, (x, y) in enumerate(loader):
         dbg.step = step
-        loss = criterion(model(x), y)
-        loss.backward()
+        loss = train_step(x, y)
         dbg.record_loss(loss.item())
-        optimizer.step()
 
-# Get the explanation after a failure
-print(dbg.explain_failure())
-# >> "Gradient vanishing originated in layer 'linear1' at step 234..."</code></pre>
-        </section>
-
-        <section>
-            <h2>Key Features</h2>
-            <div class="features">
-                <div class="feature">
-                    <h3>🔍 Semantic Events</h3>
-                    <p>Detects transitions like "Healthy → Vanishing" or "Stable → Exploding" automatically.</p>
-                </div>
-                <div class="feature">
-                    <h3>🧩 Causal Reasoning</h3>
-                    <p>Ranks hypotheses by confidence. "Likely LR mismatch" vs "Possible data anomaly".</p>
-                </div>
-                <div class="feature">
-                    <h3>🛡️ 100% Local</h3>
-                    <p>No data leaves your machine. Privacy-first by design.</p>
-                </div>
-                <div class="feature">
-                    <h3>⚡ Compiler-Aware</h3>
-                    <p>Works seamlessly with <code>torch.compile</code> and distributed training.</p>
-                </div>
-            </div>
+print(dbg.explain_failure())</code></pre>
         </section>
     </div>
 
     <footer>
-        <div class="container">
-            <p>NeuralDBG is open-source under the MIT License.</p>
-            <p><a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a> · <a href="https://pypi.org/project/neuraldbg/">PyPI</a> · <a href="https://github.com/LambdaSection/NeuralDBG/blob/main/CHANGELOG.md">Changelog</a></p>
-        </div>
+        <p>MIT License · <a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a> · <a href="https://pypi.org/project/neuraldbg/">PyPI</a></p>
     </footer>
+    <script>
+        fetch('../benchmark_public/results.json')
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+                if (d && d.summary) {
+                    document.getElementById('bench-score').textContent =
+                        (d.summary.overall * 100).toFixed(1) + '% overall (public benchmark)';
+                }
+            })
+            .catch(() => {});
+    </script>
 </body>
 </html>
