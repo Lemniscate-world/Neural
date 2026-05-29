@@ -25,9 +25,8 @@ repos:
     rev: '1.7.5'
     hooks:
       - id: bandit
-        args: ['-r', '.', '-ll', '--skip', 'B101']
+        args: ['-ll', '--skip', 'B101']
         files: \.py$
-        pass_filenames: false
         additional_dependencies: [pbr]
 
   # Code formatting

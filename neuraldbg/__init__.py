@@ -1,21 +1,24 @@
 """
 NeuralDbg Causal Inference Engine
 
-This module defines the NeuralDbg class, which is a causal inference engine for deep learning training dynamics.
+This module defines the NeuralDbg class, a causal inference engine for deep learning
+training dynamics.
 It extracts semantic events from training, compresses them into causal patterns, and provides
 post-mortem reasoning about training failures.
 """
 
-import math
 import json
+import math
 import uuid
+from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-from typing import Dict, List, Tuple, Optional, Any
-from dataclasses import dataclass, field
-from enum import Enum
+
+__version__ = "1.3.1"
 
 # Try to import dynamo for torch.compile suppression
 try:
@@ -794,7 +797,10 @@ class NeuralDbg:
             ):
                 hypotheses.append(
                     CausalHypothesis(
-                        description=f"{event.event_type.value} detected at {event.layer_name} (step {event.step})",
+                        description=(
+                            f"{event.event_type.value} detected at "
+                            f"{event.layer_name} (step {event.step})"
+                        ),
                         confidence=event.confidence,
                         evidence=[event],
                         causal_chain=[f"{event.layer_name}@{event.step}"],
@@ -925,11 +931,15 @@ class NeuralDbg:
 
         if current_health != prev_health:
             if current_health != DataHealth.NORMAL:
-                self._track_first_occurrence(
-                    f"data_{current_health.value}", layer_name
-                )
-                if current_health in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED, DataHealth.DISTRIBUTION_SHIFT):
-                    cache_path = self.disk_cache.save(tensor, prefix=f"anomaly_{layer_name}")
+                self._track_first_occurrence(f"data_{current_health.value}", layer_name)
+                if current_health in (
+                    DataHealth.NAN_DETECTED,
+                    DataHealth.INF_DETECTED,
+                    DataHealth.DISTRIBUTION_SHIFT,
+                ):
+                    cache_path = self.disk_cache.save(
+                        tensor, prefix=f"anomaly_{layer_name}"
+                    )
                     health_metadata["tensor_cache_path"] = cache_path
 
             confidence = 1.0
@@ -938,8 +948,12 @@ class NeuralDbg:
                 confidence = min(mean_shift_val * 0.2, 1.0)
 
             # Sample resources once per step
-            resource_snapshot, resource_baseline = self._get_step_resource_snapshot(tensor.device)
-            is_spike, spike_keys = self._is_memory_spike(resource_snapshot, resource_baseline)
+            resource_snapshot, resource_baseline = self._get_step_resource_snapshot(
+                tensor.device
+            )
+            is_spike, spike_keys = self._is_memory_spike(
+                resource_snapshot, resource_baseline
+            )
             health_metadata["resources"] = resource_snapshot
             health_metadata["memory_spike"] = is_spike
             health_metadata["memory_spike_keys"] = spike_keys
@@ -979,8 +993,6 @@ class NeuralDbg:
         """Export JSON package for Aquarium — delegates to engine."""
         if self._causal_engine is not None:
             return self._engine.explain.export_aquarium_package(package_path)
-        import json
-
         data = {
             "events": [
                 {

@@ -44,7 +44,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pytest-cov>=5.0",
     "coverage>=7.0",
+    "numpy>=1.24",
 ]
 docs = [
     "pdoc>=14.0.0",
@@ -63,7 +65,7 @@ include = ["neuraldbg*"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q"
+addopts = "-ra -q --cov=neuraldbg --cov-report=term-missing"
 testpaths = ["tests"]
 pythonpath = ["."]
 filterwarnings = [
@@ -71,4 +73,21 @@ filterwarnings = [
     "ignore::FutureWarning:mlflow.*",
     "ignore::FutureWarning:torch.nn.modules.module.*",
     "ignore::DeprecationWarning:torch.jit.*",
+    # Expected internal warnings — intentional design decisions
+    "ignore:NeuralDbg\\: Model is wrapped in DataParallel.*:UserWarning",
+    "ignore:NeuralDbg\\: Model is already compiled.*:UserWarning",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["neuraldbg"]
+omit = ["tests/*", "examples/*"]
+
+[tool.coverage.report]
+fail_under = 75
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "def __repr__",
 ]

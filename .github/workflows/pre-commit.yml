@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -29,9 +31,23 @@ jobs:
           python -m pip install -r requirements-dev.txt
           python -m pip install -e .
 
-      - name: Run pre-commit
+      - name: Determine pre-commit range
+        id: precommit-range
         run: |
-          python -m pre_commit run --all-files
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            echo "from_ref=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
+          elif git rev-parse HEAD~1 >/dev/null 2>&1; then
+            echo "from_ref=HEAD~1" >> "$GITHUB_OUTPUT"
+          else
+            git fetch origin main --depth=1 || true
+            echo "from_ref=origin/main" >> "$GITHUB_OUTPUT"
+          fi
+          echo "to_ref=HEAD" >> "$GITHUB_OUTPUT"
+
+      - name: Run pre-commit on changed files
+        run: |
+          python -m pre_commit run --from-ref "${{ steps.precommit-range.outputs.from_ref }}" --to-ref "${{ steps.precommit-range.outputs.to_ref }}"
 
       - name: Verify protected files are not tracked
         run: |

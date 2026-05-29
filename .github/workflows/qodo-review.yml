@@ -36,11 +36,13 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO_NAME: ${{ github.repository }}
         run: |
+          command -v qodo >/dev/null 2>&1 || { echo "::warning::qodo command is unavailable after install; skipping optional review."; exit 0; }
           qodo review --pr $PR_NUMBER --repo $REPO_NAME --token $GITHUB_TOKEN
 
       - name: Run Qodo Review on Push
         if: github.event_name == 'push'
         run: |
+          command -v qodo >/dev/null 2>&1 || { echo "::warning::qodo command is unavailable after install; skipping optional review."; exit 0; }
           qodo review --all --output-format json > qodo-review-results.json || true
           
       - name: Post Qodo Review Summary
@@ -73,6 +75,7 @@ jobs:
 
       - name: Run Qodo Security Scan
         run: |
+          command -v qodo >/dev/null 2>&1 || { echo "::warning::qodo command is unavailable after install; skipping optional security scan."; echo '{}' > qodo-security-results.json; exit 0; }
           qodo security-scan --output-format json > qodo-security-results.json || true
 
       - name: Upload Security Results
