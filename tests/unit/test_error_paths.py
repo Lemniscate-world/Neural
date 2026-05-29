@@ -22,17 +22,12 @@ import pytest
 import torch
 import torch.nn as nn
 
-from neuraldbg import (
-    NeuralDbg,
-    SemanticEvent,
-    EventType,
-    TensorDiskCache,
-)
-
+from neuraldbg import EventType, NeuralDbg, SemanticEvent, TensorDiskCache
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def simple_model():
@@ -47,30 +42,34 @@ def dbg(simple_model):
 
 
 def _inject_event(dbg, layer="fc1", step=1):
-    dbg.events.append(SemanticEvent(
-        event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-        layer_name=layer,
-        step=step,
-        from_state="healthy",
-        to_state="vanishing",
-        confidence=0.9,
-        metadata={"key": "value"},
-    ))
+    dbg.events.append(
+        SemanticEvent(
+            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+            layer_name=layer,
+            step=step,
+            from_state="healthy",
+            to_state="vanishing",
+            confidence=0.9,
+            metadata={"key": "value"},
+        )
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # dynamo_disable fallback (lines 28-31)
 # ──────────────────────────────────────────────────────────────────────────────
 
-class TestDynamoDisableFallback:
 
+class TestDynamoDisableFallback:
     def test_dynamo_disable_is_callable(self):
         """Verify that dynamo_disable (either real or fallback) is callable."""
         import neuraldbg as ndbg
+
         assert callable(ndbg.dynamo_disable)
 
     def test_fallback_dynamo_disable_is_identity(self):
         """When torch._dynamo is unavailable, dynamo_disable must be identity."""
+
         def identity_disable(fn):
             return fn
 
@@ -84,8 +83,8 @@ class TestDynamoDisableFallback:
 # TensorDiskCache — cleanup and destructor error paths
 # ──────────────────────────────────────────────────────────────────────────────
 
-class TestTensorDiskCacheErrorPaths:
 
+class TestTensorDiskCacheErrorPaths:
     def test_cleanup_silently_ignores_unlink_errors(self):
         """Cleanup should not raise even if file deletion fails."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -136,8 +135,8 @@ class TestTensorDiskCacheErrorPaths:
 # safe_backward_hook — RuntimeError handler (lines 526-538)
 # ──────────────────────────────────────────────────────────────────────────────
 
-class TestSafeBackwardHook:
 
+class TestSafeBackwardHook:
     def test_backward_hook_survives_runtime_error_in_grad(self, simple_model):
         """Hook on a parameter that has no gradient should not crash."""
         dbg = NeuralDbg(simple_model)
@@ -184,15 +183,16 @@ class TestSafeBackwardHook:
 # GPU memory stats path (lines 592-595) — mocked CUDA
 # ──────────────────────────────────────────────────────────────────────────────
 
-class TestGPUMemoryStatsMocked:
 
+class TestGPUMemoryStatsMocked:
     def test_cuda_memory_allocated_called_when_cuda_available(self, dbg):
         """When device is CUDA (mocked), GPU stats should be collected."""
         fake_device = MagicMock()
         fake_device.type = "cuda"
 
-        with patch("torch.cuda.memory_allocated", return_value=512 * 1024 * 1024), \
-             patch("torch.cuda.memory_reserved", return_value=1024 * 1024 * 1024):
+        with patch(
+            "torch.cuda.memory_allocated", return_value=512 * 1024 * 1024
+        ), patch("torch.cuda.memory_reserved", return_value=1024 * 1024 * 1024):
             dbg.step = 1
             snapshot, baseline = dbg._get_step_resource_snapshot(fake_device)
 
@@ -210,8 +210,8 @@ class TestGPUMemoryStatsMocked:
 # export_aquarium_package — standalone (lines 996-1028)
 # ──────────────────────────────────────────────────────────────────────────────
 
-class TestExportAquariumPackageStandalone:
 
+class TestExportAquariumPackageStandalone:
     def test_exports_valid_json(self, dbg):
         _inject_event(dbg, "fc1", step=1)
         _inject_event(dbg, "fc2", step=2)
@@ -266,15 +266,17 @@ class TestExportAquariumPackageStandalone:
 
     def test_metadata_non_serializable_filtered(self, dbg):
         """Metadata values that are not JSON-serializable should be filtered."""
-        dbg.events.append(SemanticEvent(
-            event_type=EventType.DATA_ANOMALY,
-            layer_name="fc1",
-            step=1,
-            from_state="normal",
-            to_state="nan_detected",
-            confidence=1.0,
-            metadata={"tensor_ref": torch.randn(3), "count": 5},
-        ))
+        dbg.events.append(
+            SemanticEvent(
+                event_type=EventType.DATA_ANOMALY,
+                layer_name="fc1",
+                step=1,
+                from_state="normal",
+                to_state="nan_detected",
+                confidence=1.0,
+                metadata={"tensor_ref": torch.randn(3), "count": 5},
+            )
+        )
 
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -293,8 +295,8 @@ class TestExportAquariumPackageStandalone:
 # export_mermaid_causal_graph — standalone (lines 1034-1040)
 # ──────────────────────────────────────────────────────────────────────────────
 
-class TestExportMermaidCausalGraphStandalone:
 
+class TestExportMermaidCausalGraphStandalone:
     def test_returns_string_starting_with_graph(self, dbg):
         result = dbg.export_mermaid_causal_graph()
         assert isinstance(result, str)
