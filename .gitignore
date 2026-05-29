@@ -118,6 +118,8 @@ LAUNCH_POSTS.md
 docs/launch_plan_*.md
 docs/hn_feedback_log.md
 docs/community_post_template.md
+docs/community_post_pytorch.md
+docs/community_post_*.md
 docs/launch_postmortem.md
 docs/cdp_protocol_definition.md
 docs/STRUCTURE_DOCS.md
