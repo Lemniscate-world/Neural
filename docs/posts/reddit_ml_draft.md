@@ -1,4 +1,4 @@
-[D] NeuralDBG: Causal inference engine that tells you WHY your PyTorch training failed (not just when)
+[D] I built a tool that tells you why your PyTorch training failed in 30 seconds
 
 Hey r/MachineLearning,
 

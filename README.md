@@ -1,6 +1,6 @@
 # NeuralDBG
 
-A causal inference engine for deep learning training that provides **structured explanations** of neural network training failures. Understand *why* your model failed during training through semantic analysis and abductive reasoning, not raw tensor inspection.
+Training failed? NeuralDBG tells you **why**. It hooks into your PyTorch training loop, detects what went wrong (vanishing gradients, exploding gradients, data anomalies), and pinpoints the exact layer and step — so you fix it in seconds, not hours.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)

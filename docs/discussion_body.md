@@ -1,9 +1,10 @@
 ## What it does
 
-NeuralDBG hooks into your PyTorch training loop and automatically:
-1. **Detects** failure types (vanishing gradients, exploding gradients, data anomalies)
-2. **Localizes** the exact layer where the failure originates
-3. **Generates ranked causal hypotheses** about why it happened
+Your model's loss spikes to NaN or vanishes to zero. Instead of adding print statements and Googling for 2 hours, NeuralDBG hooks into your training loop and tells you:
+
+1. **What** failed (vanishing gradients, exploding gradients, data anomalies)
+2. **Where** (exact layer: "Tanh_3", not "somewhere in the middle")
+3. **When** (exact step: "step 2", not "somewhere early")
 
 ```python
 from neuraldbg import NeuralDbg
@@ -13,10 +14,10 @@ with NeuralDbg(model) as dbg:
         loss = train_step(model, x, y)
         dbg.record_loss(loss.item())
 
-# After failure - get explanations
+# After failure - get answers
 hypotheses = dbg.explain_failure()
 for h in hypotheses:
-    print(h.description)  # e.g. "Gradient vanishing in layer Tanh_3 at step 2"
+    print(h.description)  # "Gradient vanishing in layer Tanh_3 at step 2"
 ```
 
 ## Benchmark results

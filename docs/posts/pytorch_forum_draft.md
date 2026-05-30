@@ -1,4 +1,4 @@
-[D] NeuralDBG: Automatically detect and localize PyTorch training failures with causal hypotheses
+[D] Stop guessing why your loss went to NaN — this tool pinpoints the exact layer
 
 Hello PyTorch community,
 
