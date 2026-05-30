@@ -10,6 +10,10 @@ A causal inference engine for deep learning training that provides **structured 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/LambdaSection/NeuralDBG/blob/main/notebooks/quickstart.ipynb)
 [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://lambdasection.github.io/NeuralDBG/)
 
+<p align="center">
+  <img src="outputs/neuraldbg_workflow.gif" alt="NeuralDBG Workflow" width="800"/>
+</p>
+
 ## Overview
 
 NeuralDBG treats training as a **semantic trace of learning dynamics** rather than a black box. It extracts meaningful events and provides causal hypotheses about training failures, enabling researchers to:
@@ -48,6 +52,10 @@ python -m benchmark_public.run
 ```
 
 Latest results: [benchmark_public/results.json](benchmark_public/results.json)
+
+<p align="center">
+  <img src="outputs/vanishing_gradient_demo.gif" alt="Vanishing Gradient Detection" width="800"/>
+</p>
 
 ## Why NeuralDBG?
 
