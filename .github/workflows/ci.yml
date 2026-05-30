@@ -94,3 +94,62 @@ jobs:
         continue-on-error: true
         run: |
           python -m safety check --full-report
+
+  pytorch-compat:
+    name: PyTorch ${{ matrix.pytorch-version }} (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pytorch-version: "2.0.1"
+            python-version: "3.11"
+          - pytorch-version: "2.1.2"
+            python-version: "3.11"
+          - pytorch-version: "2.2.2"
+            python-version: "3.11"
+          - pytorch-version: "2.3.1"
+            python-version: "3.11"
+          - pytorch-version: "2.4.1"
+            python-version: "3.12"
+          - pytorch-version: "2.5.1"
+            python-version: "3.12"
+          - pytorch-version: "2.6.0"
+            python-version: "3.12"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install PyTorch ${{ matrix.pytorch-version }} (CPU)
+        run: |
+          python -m pip install \
+            --index-url https://download.pytorch.org/whl/cpu \
+            "torch==${{ matrix.pytorch-version }}+cpu"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install numpy "pytest>=9.0.3" pytest-cov
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Verify PyTorch version
+        run: |
+          python -c "import torch; print(f'PyTorch {torch.__version__}')"
+          python -c "import neuraldbg; print(f'NeuralDBG {neuraldbg.__version__}')"
+
+      - name: Run unit tests
+        run: |
+          python -m pytest tests/unit/ -x -q --tb=short 2>&1
