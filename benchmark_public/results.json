@@ -4,9 +4,9 @@
   "scenarios": 3,
   "summary": {
     "detection": 1.0,
-    "localization": 0.667,
-    "step_accuracy": 0.333,
-    "overall": 0.667
+    "localization": 1.0,
+    "step_accuracy": 1.0,
+    "overall": 1.0
   },
   "results": {
     "healthy_training": {
@@ -15,23 +15,23 @@
       "step_accuracy": 1.0,
       "overall": 1.0,
       "num_hypotheses": 0,
-      "execution_time_sec": 2.005
+      "execution_time_sec": 1.472
     },
     "vanishing_gradients": {
       "detection": 1.0,
-      "localization": 0.0,
-      "step_accuracy": 0.0,
-      "overall": 0.3333333333333333,
+      "localization": 1.0,
+      "step_accuracy": 1.0,
+      "overall": 1.0,
       "num_hypotheses": 4,
-      "execution_time_sec": 0.086
+      "execution_time_sec": 0.087
     },
     "exploding_gradients": {
       "detection": 1.0,
       "localization": 1.0,
-      "step_accuracy": 0.0,
-      "overall": 0.6666666666666666,
+      "step_accuracy": 1.0,
+      "overall": 1.0,
       "num_hypotheses": 3,
-      "execution_time_sec": 0.062
+      "execution_time_sec": 0.055
     }
   }
 }

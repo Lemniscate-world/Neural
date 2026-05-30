@@ -49,6 +49,38 @@ def run_scenario(
     return dbg, scenario.ground_truth
 
 
+def _hypothesis_mentions_layer(hyp, expected_layer: str) -> bool:
+    """Check if a hypothesis mentions the expected layer via any available path.
+
+    Checks: evidence[].layer_name, causal_chain[], description.
+    """
+    # Check evidence events
+    for event in getattr(hyp, "evidence", []):
+        if hasattr(event, "layer_name") and expected_layer in event.layer_name:
+            return True
+    # Check causal chain entries (format: "layer_name@step")
+    for chain_entry in getattr(hyp, "causal_chain", []):
+        if expected_layer in chain_entry:
+            return True
+    # Check description substring
+    if expected_layer in getattr(hyp, "description", ""):
+        return True
+    return False
+
+
+def _hypothesis_step(hyp) -> int | None:
+    """Extract the step from a hypothesis via evidence or attributes."""
+    # Direct attribute
+    step = getattr(hyp, "step", None)
+    if step is not None:
+        return int(step)
+    # From first evidence event
+    for event in getattr(hyp, "evidence", []):
+        if hasattr(event, "step"):
+            return event.step
+    return None
+
+
 def evaluate(dbg, ground_truth: GroundTruth) -> dict:
     hyps = dbg.explain_failure()
     descriptions = " ".join(
@@ -73,15 +105,13 @@ def evaluate(dbg, ground_truth: GroundTruth) -> dict:
     localization = (
         1.0
         if any(
-            ground_truth.expected_bug_layer in getattr(h, "description", str(h))
-            or ground_truth.expected_bug_layer in getattr(h, "layer_name", "")
-            for h in hyps
+            _hypothesis_mentions_layer(h, ground_truth.expected_bug_layer) for h in hyps
         )
         else 0.0
     )
     step_accuracy = 0.0
     for h in hyps:
-        step = getattr(h, "step", None)
+        step = _hypothesis_step(h)
         if step is not None and abs(step - ground_truth.bug_step) <= 2:
             step_accuracy = 1.0
             break
@@ -98,7 +128,12 @@ def evaluate(dbg, ground_truth: GroundTruth) -> dict:
 
 def run_public_benchmark(verbose: bool = True) -> dict:
     results = {}
-    totals = {"detection": 0.0, "localization": 0.0, "step_accuracy": 0.0, "overall": 0.0}
+    totals = {
+        "detection": 0.0,
+        "localization": 0.0,
+        "step_accuracy": 0.0,
+        "overall": 0.0,
+    }
 
     for scenario in PUBLIC_SCENARIOS:
         t0 = time.perf_counter()
