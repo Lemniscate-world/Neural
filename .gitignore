@@ -22,6 +22,7 @@ __pycache__/
 
 # Coverage reports
 .coverage
+coverage.json
 htmlcov/
 .coverage.*
 
@@ -103,6 +104,9 @@ prospects.csv
 /test_compile_hooks*.py
 /visualize_*.py
 /synthetic_data_*.png
+
+# NeuralDBG diagnostic reports (test artifacts)
+neuraldbg_report_*.json
 
 # Non-essential docs
 GOOGLE_DOCS_SYNC.md
