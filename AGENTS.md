@@ -14,8 +14,10 @@ To read a rule, use your 'view_file' tool on the corresponding file in the maste
 - **rule_100_session_compliance**: RULE 100: Session Compliance â€” VÃ©rification Obligatoire en DÃ©but de Session
 - **rule_101_file_integrity_guard**: RULE 101: File Integrity Guard â€” Protection des fichiers privÃ©s
 - **rule_101_tensor_and_pytest_safety**: RULE 101: Tensor Operations and Test Suite Warning Governance
-- **rule_103_profile_readme_sync**: RULE 103: Profile README Sync — MANDATORY (LambdaSection + Lemniscate-world)
+- **rule_102_test_coverage**: RULE 102: ML Project Test Coverage â€” Mandatory Standards
+- **rule_103_profile_readme_sync**: RULE 103: Profile README Sync â€” MANDATORY
 - **rule_104_auto_issues_tracking**: RULE 104: Auto-Issues & Tracking â€” CrÃ©ation Obligatoire d'Issues pour Chaque Action
+- **rule_105_multirepo_governance**: RULE 105: Multi-Repo & Monorepo Governance â€” MANDATORY
 - **rule_14_validation_and_failure**: RULE 14.5: 5-Risk Failure Mode Table - Full Detail
 - **rule_20_21_22_23_24_25_26_27_29_31_32_33_34_35_37_40**: LINEAR, TEAM & PROJECT MANAGEMENT RULES - Full Detail
 - **rule_28_linear_review**: RULE 28: Linear Automation and DevOps Review - Full Detail

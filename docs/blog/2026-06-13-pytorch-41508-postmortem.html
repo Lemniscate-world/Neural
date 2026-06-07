@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post-mortem: PyTorch issue #41508 — NeuralDBG Blog</title>
+    <meta name="description" content="A real PyTorch bug (open since 2020, 25+ participants) dissected: when does MHA produce NaN gradients, why can't NeuralDBG auto-detect it, and what is the community workaround.">
+    <link rel="icon" href="../assets/neuraldbg-logo.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #a371f7;
+            --success: #3fb950;
+            --danger: #f85149;
+            --border: #30363d;
+            --code-bg: #0b1018;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            line-height: 1.7;
+        }
+        .container { max-width: 760px; margin: 0 auto; padding: 0 1.5rem; }
+        header {
+            padding: 2.5rem 0 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .breadcrumb { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        h1 {
+            font-size: 2.1rem;
+            line-height: 1.25;
+            margin: 0.5rem 0 0.75rem;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .meta { color: var(--muted); font-size: 0.9rem; }
+        h2 {
+            font-size: 1.5rem;
+            margin-top: 2.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.4rem;
+        }
+        h3 { font-size: 1.15rem; margin-top: 1.75rem; color: var(--accent); }
+        p { margin: 1rem 0; }
+        a { color: var(--accent); }
+        ul, ol { padding-left: 1.5rem; }
+        li { margin: 0.4rem 0; }
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.9em;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.15em 0.4em;
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.15rem;
+            overflow-x: auto;
+            font-size: 0.88rem;
+            line-height: 1.55;
+        }
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 3px solid var(--accent2);
+            background: var(--surface);
+            margin: 1.25rem 0;
+            padding: 0.75rem 1.1rem;
+            border-radius: 0 6px 6px 0;
+            color: var(--muted);
+        }
+        blockquote p:first-child { margin-top: 0; }
+        blockquote p:last-child { margin-bottom: 0; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            font-size: 0.92rem;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.55rem 0.8rem;
+            text-align: left;
+        }
+        th { background: var(--surface); }
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 2.5rem 0;
+        }
+        footer {
+            margin-top: 3rem;
+            padding: 1.5rem 0;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .tag { display: inline-block; padding: 0.15rem 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; font-size: 0.75rem; color: var(--muted); margin-right: 0.25rem; }
+        .label { font-size: 0.75rem; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 600; }
+        .label-real { background: var(--success); color: #000; }
+        .label-limitation { background: var(--danger); color: #000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb"><a href="../index.html">← NeuralDBG</a> · Blog</div>
+            <h1>Post-mortem: PyTorch issue #41508</h1>
+            <p class="meta">2026-06-13 · ~12 min read · <span class="label label-real">REAL BUG</span> · <span class="tag">pytorch</span><span class="tag">attention</span><span class="tag">postmortem</span></p>
+        </header>
+
+        <article>
+            <blockquote>
+                <p><strong>TL;DR.</strong> A bug in <code>nn.MultiheadAttention</code>, open since 2020 with 25+ participants, produces NaN gradients when <code>attn_mask</code> and <code>key_padding_mask</code> together leave a row fully masked. We reproduce it, document NeuralDBG's blind spot on composite modules, and confirm the community workaround. Honest about what we can and cannot detect.</p>
+            </blockquote>
+
+            <h2>The bug</h2>
+            <p><a href="https://github.com/pytorch/pytorch/issues/41508"><code>pytorch/pytorch#41508</code></a> — <em>"nn.MultiheadAttention causes gradients to become NaN under some use cases"</em>. Open since July 2020, still reproducible on PyTorch 2.6.0 as of April 2025.</p>
+            <p><strong>Repro</strong> (from the issue, slightly simplified):</p>
+<pre><code>import torch
+
+torch.manual_seed(0)
+attn = torch.nn.MultiheadAttention(embed_dim=1, num_heads=1)
+x = torch.rand(4, 2, 1)
+
+key_padding_mask = torch.as_tensor(
+    [[False, False, False, False],
+     [False, False, True,  True]], dtype=torch.bool)
+
+attn_mask = torch.as_tensor(
+    [[0., float('-inf'), float('-inf'), float('-inf')],
+     [0., 0., float('-inf'), float('-inf')],
+     [float('-inf'), 0., 0., float('-inf')],
+     [float('-inf'), float('-inf'), 0., 0.]])
+
+output, scores = attn(x, x, x,
+                      key_padding_mask=key_padding_mask,
+                      attn_mask=attn_mask)
+loss = output[:2, :].sum()  # only valid rows
+loss.backward()</code></pre>
+            <p>Running this on PyTorch 2.6.0 produces:</p>
+<pre><code>output[3, 1, 0] = nan           # the fully-masked row
+scores[1, 3]    = [nan, nan, nan, nan]
+loss            = 0.008393     # forward is finite
+
+in_proj_weight   shape=(3, 1)   finite=False   &lt;-- NaN corruption
+in_proj_bias     shape=(3,)     finite=False   &lt;-- NaN corruption
+out_proj.weight  shape=(1, 1)   finite=False   &lt;-- NaN corruption
+out_proj.bias    shape=(1,)     finite=True</code></pre>
+            <p>The forward pass produces a finite loss (because we sliced <code>output[:2]</code> to skip the NaN row). The backward pass corrupts all learnable parameters. <strong>One masked row is enough to break the whole layer.</strong></p>
+
+            <h2>Why this happens</h2>
+            <p>The PyTorch team explained it on the issue: MHA implements masking by passing a large negative bias (<code>-inf</code>) to the attention scores before softmax. A row that is fully masked produces <code>softmax([-inf, -inf, -inf, -inf]) = [nan, nan, nan, nan]</code>. The NaN scores are then used during backward, propagating corruption to all weight gradients.</p>
+            <p>Mathematically this is the <em>correct</em> behavior of softmax. The issue is that the <em>output</em> of MHA on a fully-masked row should arguably be <code>0</code> or undefined — but in any case, it should not contaminate gradients on rows the user is actually using for the loss.</p>
+            <p>The PR that attempted to fix this (<a href="https://github.com/pytorch/pytorch/pull/133882">#133882</a>, merged via co-dev in August 2024) added a private <code>_safe_softmax</code> op that returns 0 for fully-masked rows. As of April 2025, users on PyTorch 2.6.0 still report the bug is reproducible.</p>
+
+            <h2>Where NeuralDBG fits (and where it doesn't) <span class="label label-limitation">LIMITATION</span></h2>
+            <p>NeuralDBG auto-installs forward/backward hooks on <strong>leaf modules</strong> of a model. <code>nn.MultiheadAttention</code> is a <em>composite</em> module — it owns <code>in_proj_weight</code>, <code>in_proj_bias</code>, <code>out_proj.weight</code>, <code>out_proj.bias</code> as <code>nn.Parameter</code>s, but it has no leaf submodules. When you wrap a bare MHA in <code>NeuralDbg(attn)</code>, the auto-hook installer skips it, and the engine captures <strong>no events</strong> for the bug — even though the gradients are NaN.</p>
+            <p>We tried it. The output:</p>
+<pre><code>attn = torch.nn.MultiheadAttention(embed_dim=1, num_heads=1)
+with NeuralDbg(attn) as dbg:
+    # ... same forward + backward as above ...
+    pass
+
+print(len(dbg.events))  # 1 (an activation baseline, not a NaN detection)</code></pre>
+            <p>This is a real, documented limitation. NeuralDBG is optimised for sequential architectures (Linear → Activation → …) and convolutional / recurrent modules that decompose into leaf ops. Composite transformer blocks — MHA, the various <code>*Norm</code> layers wrapping leaf ops inside, fused QKV projections — fall outside the auto-instrumentation surface.</p>
+            <p><strong>This is not the end of the story.</strong> Three things are possible:</p>
+            <ol>
+                <li><strong>Manual hook installation</strong> on <code>attn</code> via <code>register_full_backward_hook</code> works (we verified the API path is reachable). It is just not part of the public <code>NeuralDbg</code> API yet.</li>
+                <li><strong>Wrapping the inner matmuls</strong> (extracting <code>W_q</code>, <code>W_k</code>, <code>W_v</code> from <code>in_proj_weight</code> and instantiating a <code>MultiheadAttention</code> with <code>in_proj_weight=None</code> + explicit <code>W_q</code>/<code>W_k</code>/<code>W_v</code> modules) would make the components visible as leaf modules. Not always feasible.</li>
+                <li><strong>A future version of NeuralDBG</strong> could expose a <code>composite=True</code> flag that installs hooks at the module level for known patterns. Tracked internally.</li>
+            </ol>
+            <p>We are not going to claim NeuralDBG auto-detects this bug today. <strong>It doesn't.</strong> But we are going to document the limitation and the workaround.</p>
+
+            <h2>The community workaround</h2>
+            <p>The cleanest workaround, proposed by <a href="https://github.com/JayanthShreekumar"><code>@JayanthShreekumar</code></a> on June 27 2025, is to:</p>
+            <ol>
+                <li><strong>Merge</strong> <code>attn_mask</code> and <code>key_padding_mask</code> into a single <code>attn_mask</code>.</li>
+                <li><strong>Force the diagonal to 0</strong> so every query attends to at least itself.</li>
+                <li><strong>Pass the result to <code>attn_mask=</code></strong>, leaving <code>key_padding_mask=None</code>.</li>
+            </ol>
+<pre><code>B, S = key_padding_mask.shape
+combined = attn_mask.unsqueeze(0).expand(B, S, S).clone()
+combined = combined.masked_fill(key_padding_mask.unsqueeze(1), float('-inf'))
+diag = torch.arange(S)
+combined[:, diag, diag] = 0.0  # unmask self-attention
+
+output, scores = attn(x, x, x, attn_mask=combined)</code></pre>
+            <p>Result:</p>
+<pre><code>output[3, 1, 0] = 7.884680e-05   # finite
+scores[1, 3]    = [0.0, 0.0, 0.0, 1.0]  # clean self-attention
+All gradients finite? True</code></pre>
+            <p>The fully-masked row no longer exists: every query attends to at least itself, so the softmax denominator is always positive. Mathematically sound, no NaN possible, no change to the gradient flow on the unmasked rows.</p>
+            <p>The previous variant proposed in the issue (add <code>torch.eye</code> to the mask) is a special case of the same idea.</p>
+
+            <h2>The clean run with NeuralDBG</h2>
+            <p>After applying the workaround, the same scenario wrapped in NeuralDBG over 5 steps produces <strong>two events</strong>: a single activation regime shift baseline at step 0 (the attention output is small but non-anomalous), and an activation baseline at step 1. <strong>No <code>gradient_health_transition</code>, no <code>data_anomaly</code>, no <code>optimizer_instability</code>.</strong> That's exactly what a healthy run should look like in the event log.</p>
+<pre><code>with NeuralDbg(attn) as dbg:
+    for step in range(5):
+        dbg.step = step
+        output, _ = attn(x, x, x, attn_mask=combined)
+        loss = output[:2, :].sum()
+        loss.backward()
+        dbg.record_loss(loss.item())</code></pre>
+<pre><code>Events emitted by NeuralDBG over 5 steps: 2
+Summary (per event type):
+  activation_regime_shift: 2
+--> Clean run, no NaN, no anomaly, training stable.</code></pre>
+
+            <h2>What we learned (and what's next for NeuralDBG)</h2>
+            <p>This is the third category of bug we have catalogued in our <code>docs/bug_hunt_charter.md</code>:</p>
+            <table>
+                <thead>
+                    <tr><th>Category</th><th>Detection status</th><th>Mitigation</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Standard sequential model (Linear/Tanh)</td><td>✅ Auto-detected</td><td>Activation regime shift event</td></tr>
+                    <tr><td>Conv / residual block (ResNet)</td><td>✅ Auto-detected</td><td>Gradient health transition + first-occurrence ranking</td></tr>
+                    <tr><td><strong>Composite transformer block (MHA, custom fused layers)</strong></td><td>❌ <strong>Auto-blind spot</strong></td><td><strong>Manual hook or workaround</strong></td></tr>
+                </tbody>
+            </table>
+            <p>The action items that fall out of this post-mortem:</p>
+            <ol>
+                <li><strong>Expose <code>register_composite_hook</code> in NeuralDBG's public API</strong> for users to instrument known composite modules (tracked internally).</li>
+                <li><strong>Add a "silent loss" detection</strong> that flags when <code>loss.backward()</code> does not produce gradient events despite being called — the failure mode of this bug, but at a higher level. (Currently we rely on activation hooks; if none fire, we are silent.)</li>
+                <li><strong>Update the standalone fallback warnings</strong> to mention composite modules explicitly when they are the root of the model.</li>
+                <li><strong>Document this case in the user guide</strong> with the workaround, so users who hit it find the recipe.</li>
+            </ol>
+            <p>None of these change NeuralDBG's core engine. They are integration improvements driven by a real failure mode we found in the wild.</p>
+
+            <h2>Try the repro</h2>
+<pre><code>pip install neuraldbg
+python examples/repro_pytorch_41508.py</code></pre>
+            <p>The script runs in about a second on CPU. It shows all four steps: the bug, the NeuralDBG limitation, the workaround, and the clean run.</p>
+
+            <h2>Credits</h2>
+            <ul>
+                <li><a href="https://github.com/wgale"><code>@wgale</code></a> — original bug report (PyTorch issue #41508, July 2020).</li>
+                <li><a href="https://github.com/zhangguanheng66"><code>@zhangguanheng66</code></a> — early explanation of the softmax-NaN root cause.</li>
+                <li><a href="https://github.com/chenxie95"><code>@chenxie95</code></a> — additional reproduction and the observation that <code>x.grad[:, 0, :]</code> was valid but <code>x.grad[:, 1, :]</code> was NaN.</li>
+                <li><a href="https://github.com/JayanthShreekumar"><code>@JayanthShreekumar</code></a> — the merged-mask + diagonal-unmask workaround (June 2025).</li>
+                <li><a href="https://github.com/drisspg"><code>@drisspg</code></a> and the PyTorch core team — the merged PR #133882 (<code>_safe_softmax</code>).</li>
+            </ul>
+            <p>We stand on their shoulders. This post-mortem is a small contribution back to the same conversation.</p>
+
+            <hr>
+
+            <h3>Related</h3>
+            <ul>
+                <li><a href="https://github.com/pytorch/pytorch/issues/41508">GitHub issue: pytorch/pytorch#41508</a></li>
+                <li><a href="https://github.com/pytorch/pytorch/pull/133882">PyTorch PR #133882 — _safe_softmax</a></li>
+                <li><a href="bug_hunt_charter.html">NeuralDBG bug-hunt charter</a></li>
+                <li><a href="https://github.com/LambdaSection/NeuralDBG">Standalone library: github.com/LambdaSection/NeuralDBG</a> (MIT)</li>
+            </ul>
+        </article>
+
+        <footer>
+            <p><a href="../index.html">← Back to NeuralDBG</a> · MIT License · <a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a></p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 
-__version__ = "1.3.1"
+__version__ = "1.3.2"
 
 # Try to import dynamo for torch.compile suppression
 try:
@@ -238,8 +238,27 @@ class NeuralDbg:
 
         # Per-step resource snapshot cache: (step, snapshot) — sampled once per step
         self._resource_snapshot_cache: Optional[Tuple[int, Dict[str, float]]] = None
-        # Snapshot from the previous step used as spike baseline
+        # Snapshot from the previous step used as baseline
         self._resource_baseline: Dict[str, float] = {}
+
+        # FIX-001 — Composite-module support (BUG-001 / pytorch#41508):
+        # users can register hooks on non-leaf modules (e.g. nn.MultiheadAttention)
+        # via the new register_composite_hook() public API. This fills the gap
+        # revealed by pytorch/pytorch#41508 where MHA gradients go undetected
+        # because MHA is a composite module with no leaf children.
+        self._composite_modules: List[nn.Module] = []
+
+        # FIX-001 — Silent-loss detection: track steps with NO gradient
+        # event at all. If the user calls loss.backward() but NeuralDBG
+        # never sees a gradient_health_transition event, the model is
+        # probably a fully-composite architecture (e.g. MHA, custom fused
+        # kernels) and the auto-leaf hooks are silent. Flag it on __exit__.
+        self._steps_without_gradient_events: int = 0
+        self._silent_loss_warning_emitted: bool = False
+
+        # FIX-001 — Track how many leaf modules actually got hooks. If
+        # zero, the model is fully composite and we warn at __enter__.
+        self._hooked_leaf_count: int = 0
 
     @property
     def _engine(self) -> "CausalEngine":
@@ -262,13 +281,116 @@ class NeuralDbg:
         """Start monitoring the training loop."""
         self._install_hooks()
         self.is_monitoring = True
+
+        # FIX-001 — Warn the user when the wrapped model exposes no
+        # *internal* leaf modules (i.e., all leaves the auto installer
+        # could attach to are the model root itself). This usually means
+        # the architecture is fully composite (e.g. a bare
+        # nn.MultiheadAttention, a custom fused block, a custom
+        # autograd Function) and the auto hooks will only see the root
+        # forward/backward. Internal parameters (e.g. MHA's in_proj_*)
+        # are therefore blind to NeuralDBG unless the user opts in via
+        # register_composite_hook().
+        if self._hooked_leaf_count <= 1 and not self._composite_modules:
+            # Heuristic: at most 1 leaf means the only "leaf" the walker
+            # found is the root itself. Internal params exist on the root
+            # and bypass any hook on the root.
+            import warnings
+
+            warnings.warn(
+                "NeuralDbg: this model exposes no internal leaf modules. "
+                "Auto-installed forward/backward hooks will NOT see internal "
+                "parameters (e.g. nn.MultiheadAttention's in_proj_weight, "
+                "custom fused kernels, custom autograd Functions). To "
+                "instrument composite modules manually, call "
+                "`dbg.register_composite_hook(module)` after `with NeuralDbg(...)`. "
+                "See docs/blog/2026-06-13-pytorch-41508-postmortem.html for "
+                "a worked example.",
+                UserWarning,
+            )
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Stop monitoring and cleanup."""
+        # FIX-001 — Silent-loss detection: if the user has called
+        # loss.backward() at least 3 times but NeuralDBG never saw a
+        # gradient_health_transition event on any monitored module, the
+        # model is probably fully composite and our hooks are blind.
+        if (
+            not self._silent_loss_warning_emitted
+            and self.step >= 3
+            and not any(
+                e.event_type == EventType.GRADIENT_HEALTH_TRANSITION
+                for e in self.events
+            )
+        ):
+            import warnings
+
+            warnings.warn(
+                f"NeuralDbg: {self.step} training step(s) executed but no "
+                "gradient_health_transition event was captured. This usually "
+                "means the model is fully composite (e.g. nn.MultiheadAttention, "
+                "custom fused kernels) and the auto leaf-module hooks are silent. "
+                "Use `dbg.register_composite_hook(attn_module)` to instrument "
+                "composite modules explicitly. "
+                "See docs/blog/2026-06-13-pytorch-41508-postmortem.html.",
+                UserWarning,
+            )
+            self._silent_loss_warning_emitted = True
+
         self._remove_hooks()
         self.disk_cache.cleanup()
         self.is_monitoring = False
+
+    def register_composite_hook(self, module: nn.Module) -> None:
+        """Manually install NeuralDbg hooks on a composite (non-leaf) module.
+
+        Use this to instrument modules that the auto leaf-only hook
+        installer would skip, such as ``nn.MultiheadAttention`` or any
+        custom fused/quantised block that has no leaf children.
+
+        The module is added to the internal ``_composite_modules`` list
+        and the same forward/backward hook pair used by the auto
+        installer is attached. Hooks are removed automatically on
+        ``__exit__`` via the standard ``_remove_hooks`` path.
+
+        Args:
+            module: The composite ``nn.Module`` to instrument.
+
+        Example:
+            >>> with NeuralDbg(model) as dbg:
+            ...     dbg.register_composite_hook(attn)  # nn.MultiheadAttention
+            ...     loss = train_step(x, y)
+            ...     loss.backward()
+            ...     dbg.record_loss(loss.item())
+
+        Added in FIX-001 (v1.3.2) — see BUG-001 / POST-001
+        (post-mortem of pytorch/pytorch#41508).
+        """
+        if not isinstance(module, nn.Module):
+            raise TypeError(
+                f"register_composite_hook expects nn.Module, got {type(module).__name__}"
+            )
+        # The auto installer skips non-leaf modules. We bypass that here.
+        # We re-use the exact same hook pair by calling _install_hooks()
+        # logic on this single module.
+        for name, sub in self.model.named_modules():
+            if id(sub) == id(module):
+                self._install_hook_on_module(sub, name)
+                self._composite_modules.append(module)
+                return
+        # Module not found in the model's tree; warn but still install
+        # the hooks so the user gets a chance to debug.
+        import warnings
+
+        warnings.warn(
+            f"NeuralDbg: register_composite_hook target '{type(module).__name__}' "
+            "was not found inside the wrapped model. Hooks are still installed "
+            "but events will be tagged with the module's class name only.",
+            UserWarning,
+        )
+        self._install_hook_on_module(module, type(module).__name__)
+        self._composite_modules.append(module)
 
     def record_loss(self, loss_value: float):
         """Record a loss value for optimizer instability detection.
@@ -332,7 +454,13 @@ class NeuralDbg:
         return OptimizerHealth.STABLE
 
     def _install_hooks(self):
-        """Install forward and backward hooks to extract semantic events."""
+        """Install forward and backward hooks to extract semantic events.
+
+        Defines the hook closures, stashes them on ``self`` so that
+        :meth:`register_composite_hook` and :meth:`_install_hook_on_module`
+        can re-use the exact same hook pair on non-leaf modules, and then
+        walks the model to attach the hooks on every leaf module.
+        """
 
         @dynamo_disable
         def forward_hook(
@@ -537,6 +665,12 @@ class NeuralDbg:
                     )
                 return None
 
+        # FIX-001 — Stash the hook implementations on self so
+        # register_composite_hook() and _install_hook_on_module() can
+        # re-use the exact same pair on non-leaf (composite) modules.
+        self._forward_hook_impl = forward_hook
+        self._backward_hook_impl = safe_backward_hook
+
         # Install hooks on leaf modules for maximum compatibility with
         # torch.compile. We use register_backward_hook (not
         # register_full_backward_hook) because the "full" variant wraps
@@ -553,9 +687,44 @@ class NeuralDbg:
             # Skip non-leaf modules (except root) to avoid redundant captures
             if len(list(module.children())) > 0 and name != "":
                 continue
+            self._install_hook_on_module(module, name)
+            self._hooked_leaf_count += 1
 
-            self.hooks.append(module.register_forward_hook(forward_hook))
-            self.hooks.append(module.register_backward_hook(safe_backward_hook))
+        # Check for DataParallel/DDP and warn/handle
+        if isinstance(
+            self.model, (nn.DataParallel, nn.parallel.DistributedDataParallel)
+        ):
+            import warnings
+
+            warnings.warn(
+                f"NeuralDbg: Model is wrapped in {type(self.model).__name__}. "
+                "Hooks might not persist correctly during replication. Consider wrapping "
+                "the inner module (.module) instead.",
+                UserWarning,
+            )
+
+    def _install_hook_on_module(self, module: "nn.Module", name: str) -> None:
+        """Attach the forward/backward hook pair to a single module.
+
+        Used by :meth:`_install_hooks` for the leaf-module walk and by
+        :meth:`register_composite_hook` to opt-in instrument composite
+        modules that the auto installer skipped (FIX-001 / BUG-001).
+
+        The hook implementations must already be defined on
+        ``self._forward_hook_impl`` and ``self._backward_hook_impl``;
+        this is done at the start of :meth:`_install_hooks`.
+        """
+        forward_hook = getattr(self, "_forward_hook_impl", None)
+        backward_hook = getattr(self, "_backward_hook_impl", None)
+        if forward_hook is None or backward_hook is None:
+            # Hooks not yet defined (e.g. _install_hooks was never called).
+            # Fall back to running _install_hooks first so the closures
+            # exist; then attach on the target module.
+            self._install_hooks()
+            forward_hook = self._forward_hook_impl
+            backward_hook = self._backward_hook_impl
+        self.hooks.append(module.register_forward_hook(forward_hook))
+        self.hooks.append(module.register_backward_hook(backward_hook))
 
         # Check for DataParallel/DDP and warn/handle
         if isinstance(

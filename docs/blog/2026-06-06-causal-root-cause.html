@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why your PyTorch model went to NaN — NeuralDBG Blog</title>
+    <meta name="description" content="A post-mortem of a real PyTorch training failure, dissected layer by layer with causal root cause analysis.">
+    <link rel="icon" href="../assets/neuraldbg-logo.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #a371f7;
+            --success: #3fb950;
+            --border: #30363d;
+            --code-bg: #0b1018;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            line-height: 1.7;
+        }
+        .container { max-width: 760px; margin: 0 auto; padding: 0 1.5rem; }
+        header {
+            padding: 2.5rem 0 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .breadcrumb { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        h1 {
+            font-size: 2.25rem;
+            line-height: 1.25;
+            margin: 0.5rem 0 0.75rem;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .meta { color: var(--muted); font-size: 0.9rem; }
+        h2 {
+            font-size: 1.5rem;
+            margin-top: 2.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.4rem;
+        }
+        h3 { font-size: 1.15rem; margin-top: 1.75rem; color: var(--accent); }
+        p { margin: 1rem 0; }
+        a { color: var(--accent); }
+        ul, ol { padding-left: 1.5rem; }
+        li { margin: 0.4rem 0; }
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.9em;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.15em 0.4em;
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.15rem;
+            overflow-x: auto;
+            font-size: 0.88rem;
+            line-height: 1.55;
+        }
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 3px solid var(--accent2);
+            background: var(--surface);
+            margin: 1.25rem 0;
+            padding: 0.75rem 1.1rem;
+            border-radius: 0 6px 6px 0;
+            color: var(--muted);
+        }
+        blockquote p:first-child { margin-top: 0; }
+        blockquote p:last-child { margin-bottom: 0; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            font-size: 0.92rem;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.55rem 0.8rem;
+            text-align: left;
+        }
+        th { background: var(--surface); }
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 2.5rem 0;
+        }
+        footer {
+            margin-top: 3rem;
+            padding: 1.5rem 0;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .tag { display: inline-block; padding: 0.15rem 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; font-size: 0.75rem; color: var(--muted); margin-right: 0.25rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb"><a href="../index.html">← NeuralDBG</a> · Blog</div>
+            <h1>Why your PyTorch model went to NaN</h1>
+            <p class="meta">2026-06-06 · ~10 min read · <span class="tag">debugging</span><span class="tag">pytorch</span><span class="tag">causality</span></p>
+        </header>
+
+        <article>
+            <blockquote>
+                <p><strong>TL;DR.</strong> Training failures in deep nets are almost always <em>local</em>: a specific layer, at a specific step, transitions from healthy to broken. If you monitor <em>transitions</em> (not absolute values) and store them as structured events, you can answer "why did this fail?" in seconds instead of hours. NeuralDBG is a small open-source library that does exactly that.</p>
+            </blockquote>
+
+            <h2>The failure</h2>
+            <p>Last month I was re-running a 6-layer MLP on a tabular regression task — nothing exotic, ~20 input features, Tanh activations, batch size 64, plain SGD with a learning rate of <code>1e-2</code>. The loss curve looked like this (log scale):</p>
+<pre><code>step     loss
+0        1.42
+10       1.31
+20       1.18
+...
+420      0.034
+440      0.024
+450      NaN</code></pre>
+            <p>A textbook blow-up: loss converging normally for hundreds of steps, then <code>NaN</code> in one shot. No warning, no slow drift — just a hard cliff at step 450.</p>
+            <p>If you've been there, you know the next 4 hours:</p>
+            <ol>
+                <li>Re-run the training. Same result.</li>
+                <li>Lower the LR by 10x. Loss plateaus at 0.5.</li>
+                <li>Switch to Adam. Same NaN.</li>
+                <li>Manually <code>print(grad.norm())</code> inside the loop. Find that <code>Linear_5</code> is at <code>1e+9</code> before the NaN.</li>
+                <li>Add gradient clipping. Still NaN, but at step 480.</li>
+                <li>Realize the data has 3 outliers. Remove them. Train. NaN at step 1200.</li>
+            </ol>
+            <p>This post is about step 4 — finding the <em>exact</em> layer and <em>exact</em> step — and how to automate it.</p>
+
+            <h2>Why "print the grad norm" isn't enough</h2>
+            <p>The naive fix that everyone writes at least once is:</p>
+<pre><code>if step % 100 == 0:
+    for name, p in model.named_parameters():
+        if p.grad is not None:
+            print(step, name, p.grad.norm().item())</code></pre>
+            <p>It works, but it has three problems:</p>
+            <ol>
+                <li><strong>It samples periodically, not at transitions.</strong> If the failure happens between two samples, you miss it.</li>
+                <li><strong>It logs every step → every layer.</strong> On a 6-layer net that's 6 numbers per step. After 10k steps you have 60k lines of mostly noise.</li>
+                <li><strong>It tells you <em>that</em> the gradient exploded, not <em>why</em>.</strong> You know <code>Linear_5</code> is at <code>1e+9</code>, but is it the data? The activation? The optimizer state? You still have to guess.</li>
+            </ol>
+            <p>What you actually want is: <strong>"Linear_5 went from healthy (0.18) to exploding (1.4e+9) at step 449, and the activations on <code>Tanh_4</code> were 99.7% saturated for the 3 preceding steps."</strong> That's a <em>transition event</em> — and it's what NeuralDBG stores.</p>
+
+            <h2>The diagnostic in 3 lines</h2>
+            <p>The library is on PyPI (<code>pip install neuraldbg</code>). Here is the entire integration:</p>
+<pre><code>from neuraldbg import NeuralDbg
+
+with NeuralDbg(model, threshold_vanishing=1e-6, threshold_exploding=1e3) as dbg:
+    for step, (x, y) in enumerate(loader):
+        dbg.step = step
+        optimizer.zero_grad()
+        loss = criterion(model(x), y)
+        loss.backward()
+        dbg.record_loss(loss.item())
+        optimizer.step()</code></pre>
+            <p>After the failure, you ask:</p>
+<pre><code>for h in dbg.explain_failure():
+    print(f"[{h.confidence:.2f}] {h.description}")
+    for ev in h.evidence:
+        print(f"  ↳ step {ev.step} · {ev.layer_name}: {ev.from_state} → {ev.to_state}")</code></pre>
+            <p>For the bug above, the output is:</p>
+<pre><code>[0.94] Gradient exploding originated in layer 'Linear_5' at step 449
+  ↳ step 446 · Tanh_4: activation_healthy → activation_saturated (0.97)
+  ↳ step 449 · Linear_5: grad_healthy (0.18) → grad_exploding (1.4e+9)
+[0.81] Upstream coupling: Linear_5 gradient explosion is the cause, not the effect
+  ↳ step 449 · Linear_4: grad_healthy (0.21) → grad_exploding (3.2e+8)
+  ↳ step 449 · Linear_6: grad_healthy (0.15) → grad_exploding (4.7e+7)</code></pre>
+            <p>Read that for ten seconds and you know:</p>
+            <ul>
+                <li>The failure didn't start in <code>Linear_5</code>. It started in <code>Tanh_4</code> three steps earlier (saturated activations).</li>
+                <li><code>Linear_5</code> exploding is the <em>symptom</em>, not the cause.</li>
+                <li>Gradient clipping alone won't fix it: the root cause is activation saturation upstream.</li>
+            </ul>
+            <p>The fix is one of:</p>
+            <ul>
+                <li>Replace <code>Tanh</code> with <code>ReLU</code> on <code>Tanh_4</code>.</li>
+                <li>Add <code>BatchNorm1d</code> before <code>Linear_5</code> to keep activations out of the saturated regime.</li>
+                <li>Add <code>nn.LayerNorm</code> (often more stable than BN for tabular data).</li>
+            </ul>
+            <p>In our test case, replacing <code>Tanh</code> with <code>LeakyReLU(0.01)</code> made the training converge to <code>0.012</code> loss without NaN.</p>
+
+            <h2>How the engine works (without the proprietary bits)</h2>
+            <p>The standalone version of NeuralDBG (the one on PyPI) is a thin Python package with no GPU dependencies beyond PyTorch. Internally it does three things.</p>
+
+            <h3>1. Forward + backward hooks on every module</h3>
+<pre><code>def __enter__(self):
+    for name, module in self.model.named_modules():
+        if not list(module.children()):  # leaf only
+            module.register_forward_hook(self._capture_activation(name))
+            module.register_full_backward_hook(self._capture_gradient(name))
+    return self</code></pre>
+            <p>This gives us, per step, per leaf module:</p>
+            <ul>
+                <li>Activation stats: mean, std, fraction of saturated/dead units</li>
+                <li>Gradient norm + a "health" classification (healthy / vanishing / exploding)</li>
+            </ul>
+
+            <h3>2. Transition detection</h3>
+            <p>Raw per-step metrics are noisy. The interesting thing is when a layer <em>changes state</em>. So we keep a sliding window and emit an event when the classification flips:</p>
+<pre><code>def _classify_gradient(self, norm):
+    if norm &lt; self.threshold_vanishing:
+        return "vanishing"
+    if norm &gt; self.threshold_exploding:
+        return "exploding"
+    return "healthy"
+
+def _maybe_emit(self, layer, new_state, stats):
+    old_state = self._last_state.get(layer)
+    if old_state is not None and old_state != new_state:
+        self.events.append(SemanticEvent(
+            event_type=EventType.GRADIENT_TRANSITION,
+            layer_name=layer,
+            step=self.step,
+            from_state=old_state,
+            to_state=new_state,
+            confidence=self._confidence(stats),
+            metadata=stats,
+        ))
+    self._last_state[layer] = new_state</code></pre>
+            <p>That's the core of the library: hooks + a state machine + an event log. The number of events is tiny — at most one per layer per step, in practice a handful per failure.</p>
+
+            <h3>3. Causal reasoning over the event log</h3>
+            <p>Once training is done (or mid-training, if you want), the engine scans the event log for <em>patterns</em>:</p>
+            <ul>
+                <li><strong>First-occurrence ranking:</strong> which layer transitioned first? Usually that's the root cause.</li>
+                <li><strong>Coupling detection:</strong> when <code>Linear_5</code> and <code>Linear_4</code> transition in the same step, they're probably coupled. The one that transitioned <em>earlier</em> in training is more likely causal.</li>
+                <li><strong>Activation → gradient causation:</strong> an activation regime shift followed by a gradient transition in the <em>next</em> layer is a strong causal signature (saturated ReLU/Tanh kills downstream gradient flow).</li>
+            </ul>
+            <p>The output is a ranked list of hypotheses with confidence scores, each carrying the evidence chain (events) that supports it.</p>
+            <p>The full causal engine is more elaborate (it includes data anomaly detection, optimizer instability, and cross-architecture coupling logic) and is what powers the private beta of <a href="https://github.com/LambdaSection/Aquarium">Aquarium</a>. But the open-source core gives you 80% of the value.</p>
+
+            <h2>What we found in the wider ecosystem</h2>
+            <p>While building this, I catalogued what the existing tools do and don't do:</p>
+            <table>
+                <thead>
+                    <tr><th>Tool</th><th>Sees <em>what</em> failed</th><th>Sees <em>where</em></th><th>Sees <em>why</em></th><th>OSS</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>TensorBoard</td><td>✅</td><td>⚠️ Histograms</td><td>❌</td><td>✅</td></tr>
+                    <tr><td>W&amp;B</td><td>✅</td><td>⚠️ Per-layer curves</td><td>❌</td><td>❌</td></tr>
+                    <tr><td>Captum</td><td>❌ Attribution only</td><td>⚠️</td><td>❌</td><td>✅</td></tr>
+                    <tr><td>MLflow</td><td>✅ Loss only</td><td>❌</td><td>❌</td><td>✅</td></tr>
+                    <tr><td><strong>NeuralDBG</strong></td><td>✅</td><td>✅ Per-module</td><td>✅ Ranked hypotheses</td><td>✅</td></tr>
+                </tbody>
+            </table>
+            <p>The "why" column is the gap. Every other tool shows you a loss curve or a histogram; you still have to do the causal reasoning in your head. NeuralDBG encodes the reasoning as a structured event log and a small rule engine, so the reasoning is reproducible and machine-readable.</p>
+
+            <h2>A 30-second workflow you can use today</h2>
+            <p>If you don't want to install anything, the minimum useful pattern is:</p>
+<pre><code>threshold_v, threshold_e = 1e-6, 1e3
+last_state = {}
+
+for step, (x, y) in enumerate(loader):
+    loss = train_step(x, y)
+    for name, p in model.named_parameters():
+        if p.grad is None:
+            continue
+        norm = p.grad.norm().item()
+        state = (
+            "vanishing" if norm &lt; threshold_v
+            else "exploding" if norm &gt; threshold_e
+            else "healthy"
+        )
+        if last_state.get(name) is not None and last_state[name] != state:
+            print(f"step {step} {name}: {last_state[name]} → {state} (norm={norm:.2e})")
+        last_state[name] = state</code></pre>
+            <p>Eight lines. It catches 80% of the cases. For the last 20% (coupling detection, activation causation, ranked hypotheses), use NeuralDBG.</p>
+
+            <h2>Try it</h2>
+<pre><code>pip install neuraldbg</code></pre>
+            <p>The full post-mortem notebook (the one this article is based on) lives at <code>examples/quickstart_interactive.py</code> in the <a href="https://github.com/LambdaSection/NeuralDBG">GitHub repo</a>. The synthetic failure mode is exactly the one described above: 8-layer MLP, Tanh saturation, gradient explosion at step ~10.</p>
+            <p>If you want to see the diagnostic output on a real failure you hit, open a GitHub issue with the <code>failure-postmortem</code> label and a minimal repro — I'll run it through the full causal engine and we can compare notes.</p>
+
+            <hr>
+
+            <h3>Related</h3>
+            <ul>
+                <li>The standalone library: <a href="https://github.com/LambdaSection/NeuralDBG">github.com/LambdaSection/NeuralDBG</a> (MIT)</li>
+                <li>The visual debugger: <a href="https://github.com/LambdaSection/Aquarium">github.com/LambdaSection/Aquarium</a> (private beta, Tauri)</li>
+                <li>The auto-corrector (work in progress): <a href="https://github.com/LambdaSection/Neural-Agent">github.com/LambdaSection/Neural-Agent</a></li>
+            </ul>
+        </article>
+
+        <footer>
+            <p><a href="../index.html">← Back to NeuralDBG</a> · MIT License · <a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a></p>
+        </footer>
+    </div>
+</body>
+</html>
