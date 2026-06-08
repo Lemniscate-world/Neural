@@ -1,26 +1,58 @@
-# ROADMAP.md — NeuralDBG
+# NeuralSuite
 
-> Causal root cause analysis for deep learning training dynamics.
+> The complete toolkit for diagnosing and fixing deep learning training failures.
 
-## Vision
+## What is NeuralSuite?
 
-NeuralDBG is the **diagnostic engine** for neural network training. It captures causal event chains (gradients, activations, loss) and automatically detects the root cause of training failures.
+NeuralSuite is a three-part system that catches training problems before they waste your GPU hours:
 
-> A Python library alone isn't enough in the age of AI coding agents.
-> NeuralDBG becomes the **structured protocol** (causal chains, event types, root causes) that an AI agent consumes to auto-diagnose and auto-repair training.
+| Component | What it does | Install |
+|-----------|-------------|---------|
+| **NeuralDBG** | Causal diagnostic engine — hooks into PyTorch, captures gradient/activation events, detects root causes | `pip install neuraldbg` |
+| **Neural-Agent** | Auto-corrector — diagnoses failures and applies source-level fixes to training scripts | `pip install neural-agent` |
+| **Aquarium** | Visualizer — interactive causal tree viewer for NeuralDBG exports | Desktop app (Tauri) |
 
-## Architecture
+## Why NeuralSuite?
+
+Existing tools (W&B, MLflow, TensorBoard) are **dashboards** — they show you what happened. NeuralSuite tells you **why** it happened and **how to fix it**.
 
 ```
-NeuralDBG (engine)  -->  Neural-Agent (auto-fixer)  -->  Aquarium (visualizer)
-     |                         |                              |
-  pip install neuraldbg    pip install neural-agent        Tauri IDE
+Training fails
+    │
+    ▼
+NeuralDBG: "Vanishing gradients in layer_3, caused by Sigmoid saturation"
+    │
+    ▼
+Neural-Agent: "Swap Sigmoid → LeakyReLU, increase LR by 2x"
+    │
+    ▼
+Training runs successfully
+```
+
+## Quick Start
+
+```python
+from neuraldbg import NeuralDbg
+import torch.nn as nn
+
+model = nn.Sequential(nn.Linear(10, 64), nn.Sigmoid(), nn.Linear(64, 2))
+
+with NeuralDbg(model) as dbg:
+    for step in range(100):
+        out = model(x)
+        loss = criterion(out, y)
+        loss.backward()
+        dbg.record_loss(loss.item())
+        optimizer.step()
+
+# See what went wrong
+print(dbg.explain_failure())
 ```
 
 ## Roadmap
 
 ### v1.3.2 — Bug-Solver MVP (June 2026)
-- [x] Composite-module hook support (FIX-001)
+- [x] Composite-module hook support
 - [x] Silent-loss and zero-leaf warnings
 - [x] MHA fully-masked-row remediation rule
 - [x] Neural-Agent: end-to-end diagnose -> fix -> validate pipeline
@@ -32,7 +64,6 @@ NeuralDBG (engine)  -->  Neural-Agent (auto-fixer)  -->  Aquarium (visualizer)
 - [ ] 10 real bugs cataloged (MHA, GNN, LSTM, GAN, diffusion, transformers, RL)
 - [ ] Reproducible public benchmark on 5+ real scenarios
 - [ ] Comparison vs W&B / MLflow / TensorBoard / Captum
-- [ ] Neural-Agent published on PyPI
 - [ ] 3+ upstream PRs submitted (at least 1 merged)
 - [ ] Detection accuracy >= 0.90
 
@@ -47,25 +78,6 @@ NeuralDBG (engine)  -->  Neural-Agent (auto-fixer)  -->  Aquarium (visualizer)
 
 ```bash
 pip install neuraldbg
-```
-
-## Quick Start
-
-```python
-from neuraldbg import NeuralDbg
-import torch.nn as nn
-
-model = nn.Sequential(nn.Linear(10, 64), nn.Sigmoid(), nn.Linear(64, 2))
-
-with NeuralDbg(model) as dbg:
-    for step in range(10):
-        out = model(x)
-        loss = criterion(out, y)
-        loss.backward()
-        dbg.record_loss(loss.item())
-        optimizer.step()
-
-print(dbg.explain_failure())
 ```
 
 ## License
