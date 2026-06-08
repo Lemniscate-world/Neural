@@ -3,10 +3,10 @@
   "version": "1.3.1",
   "scenarios": 4,
   "summary": {
-    "detection": 0.75,
-    "localization": 0.75,
+    "detection": 1.0,
+    "localization": 1.0,
     "step_accuracy": 1.0,
-    "overall": 0.833
+    "overall": 1.0
   },
   "results": {
     "healthy_training": {
@@ -15,7 +15,7 @@
       "step_accuracy": 1.0,
       "overall": 1.0,
       "num_hypotheses": 0,
-      "execution_time_sec": 2.388
+      "execution_time_sec": 2.836
     },
     "vanishing_gradients": {
       "detection": 1.0,
@@ -23,7 +23,7 @@
       "step_accuracy": 1.0,
       "overall": 1.0,
       "num_hypotheses": 4,
-      "execution_time_sec": 0.263
+      "execution_time_sec": 0.228
     },
     "exploding_gradients": {
       "detection": 1.0,
@@ -31,15 +31,15 @@
       "step_accuracy": 1.0,
       "overall": 1.0,
       "num_hypotheses": 3,
-      "execution_time_sec": 0.101
+      "execution_time_sec": 0.122
     },
     "mha_fully_masked_row_BUG-001": {
-      "detection": 0.0,
-      "localization": 0.0,
+      "detection": 1.0,
+      "localization": 1.0,
       "step_accuracy": 1.0,
-      "overall": 0.3333333333333333,
-      "num_hypotheses": 1,
-      "execution_time_sec": 0.021
+      "overall": 1.0,
+      "num_hypotheses": 2,
+      "execution_time_sec": 0.055
     }
   }
 }

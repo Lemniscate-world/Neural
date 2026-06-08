@@ -36,6 +36,21 @@ def run_scenario(
         threshold_vanishing=threshold_vanishing,
         threshold_exploding=threshold_exploding,
     ) as dbg:
+        # Auto-register composite hooks for modules that have direct
+        # parameters (recurse=False) beyond what their children own.
+        # e.g. nn.MultiheadAttention has in_proj_weight/in_proj_bias
+        # directly on the module, invisible to child-level hooks.
+        if hasattr(dbg, "register_composite_hook"):
+            for name, module in model.named_modules():
+                direct_params = set(id(p) for p in module.parameters(recurse=False))
+                child_params = set()
+                for c in module.children():
+                    for p in c.parameters(recurse=False):
+                        child_params.add(id(p))
+                orphan_params = direct_params - child_params
+                if orphan_params:
+                    dbg.register_composite_hook(module)
+
         # If the scenario provides a custom step loop (e.g. MHA needs
         # attn_mask + key_padding_mask), use it. Otherwise the default
         # classification loop applies.
@@ -160,7 +175,7 @@ def run_public_benchmark(verbose: bool = True) -> dict:
     summary = {k: round(v / n, 3) for k, v in totals.items()}
     payload = {
         "benchmark": "neuraldbg-public-causal-v1",
-        "version": "1.3.1",
+        "version": "1.3.2",
         "scenarios": len(PUBLIC_SCENARIOS),
         "summary": summary,
         "results": results,
