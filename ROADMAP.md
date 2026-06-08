@@ -57,13 +57,14 @@ print(dbg.explain_failure())
 - [x] MHA fully-masked-row remediation rule
 - [x] Neural-Agent: end-to-end diagnose -> fix -> validate pipeline
 - [x] 300+ tests passing
-- [ ] Public benchmark with real bug scenarios
+- [x] Public benchmark: 4/4 scenarios at 1.0 accuracy
+- [x] Tool comparison v2: NeuralDBG vs W&B vs MLflow vs TensorBoard
 - [ ] First upstream PR submitted
 
 ### v1.4.5 — Catalog Expansion (July-August 2026)
 - [ ] 10 real bugs cataloged (MHA, GNN, LSTM, GAN, diffusion, transformers, RL)
 - [ ] Reproducible public benchmark on 5+ real scenarios
-- [ ] Comparison vs W&B / MLflow / TensorBoard / Captum
+- [ ] Comparison vs Captum (explainability)
 - [ ] 3+ upstream PRs submitted (at least 1 merged)
 - [ ] Detection accuracy >= 0.90
 
@@ -73,6 +74,23 @@ print(dbg.explain_failure())
 - [ ] Neural-Agent autonomous: closed loop on ResNet + Transformer + GAN
 - [ ] 1+ upstream PR merged (external validation)
 - [ ] Research paper draft on causal ML diagnostics
+
+## Benchmark Results (v1.3.2)
+
+4 scenarios, healthy excluded from averages:
+
+| Tool | Detection (loss-only) | Detection (+grad norms) | Localization |
+|------|:---------------------:|:-----------------------:|:------------:|
+| **NeuralDBG** | **1.00** | **1.00** | **1.00** |
+| W&B | 0.33 | 0.67 | 0.00 |
+| MLflow | 0.33 | 0.67 | 0.00 |
+| TensorBoard | 0.33 | 0.67 | 0.00 |
+
+Key findings:
+- External tools can detect anomalies (NaN loss, loss spikes) but cannot localize the failing layer
+- With gradient norm logging, external tools detect MHA NaN gradients (0.33 -> 0.67)
+- NeuralDBG is the only tool that names the layer causing the failure
+- Benchmark is reproducible: `python -m benchmark_public.run`
 
 ## Install
 

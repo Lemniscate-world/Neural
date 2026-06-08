@@ -1,93 +1,154 @@
 {
-  "benchmark": "neuralsuite-tool-comparison-v1",
+  "benchmark": "neuralsuite-tool-comparison-v2",
   "version": "1.3.2",
+  "note": "Healthy scenarios excluded from averages (trivial true negatives). Loss-only = default user. Grad-norms = power user who monitors gradient health.",
   "scenarios": {
     "healthy_training": {
       "neuraldbg": {
         "detection": 1.0,
         "localization": 1.0,
-        "notes": "Hooks detect gradient anomalies at parameter level"
+        "notes": "Causal hooks + composite detection"
       },
-      "wandb": {
-        "detection": 1.0,
+      "wandb_loss_only": {
+        "detection": null,
         "localization": 0.0,
-        "notes": "No bug; loss-only logger correctly sees no anomaly"
+        "notes": "No bug (excluded from averages)"
       },
-      "mlflow": {
-        "detection": 1.0,
+      "wandb_grad_norms": {
+        "detection": null,
         "localization": 0.0,
-        "notes": "No bug; loss-only logger correctly sees no anomaly"
+        "notes": "No bug (excluded from averages)"
       },
-      "tensorboard": {
-        "detection": 1.0,
+      "mlflow_loss_only": {
+        "detection": null,
         "localization": 0.0,
-        "notes": "No bug; loss-only logger correctly sees no anomaly"
+        "notes": "No bug (excluded from averages)"
+      },
+      "mlflow_grad_norms": {
+        "detection": null,
+        "localization": 0.0,
+        "notes": "No bug (excluded from averages)"
+      },
+      "tensorboard_loss_only": {
+        "detection": null,
+        "localization": 0.0,
+        "notes": "No bug (excluded from averages)"
+      },
+      "tensorboard_grad_norms": {
+        "detection": null,
+        "localization": 0.0,
+        "notes": "No bug (excluded from averages)"
       }
     },
     "vanishing_gradients": {
       "neuraldbg": {
         "detection": 1.0,
         "localization": 1.0,
-        "notes": "Hooks detect gradient anomalies at parameter level"
+        "notes": "Causal hooks + composite detection"
       },
-      "wandb": {
+      "wandb_loss_only": {
         "detection": 0.0,
         "localization": 0.0,
-        "notes": "Loss is finite at every step; no anomaly flagged"
+        "notes": "No anomaly visible in logged data"
       },
-      "mlflow": {
+      "wandb_grad_norms": {
         "detection": 0.0,
         "localization": 0.0,
-        "notes": "Loss is finite at every step; no anomaly flagged"
+        "notes": "No anomaly visible in logged data"
       },
-      "tensorboard": {
+      "mlflow_loss_only": {
         "detection": 0.0,
         "localization": 0.0,
-        "notes": "Loss is finite at every step; no anomaly flagged"
+        "notes": "No anomaly visible in logged data"
+      },
+      "mlflow_grad_norms": {
+        "detection": 0.0,
+        "localization": 0.0,
+        "notes": "No anomaly visible in logged data"
+      },
+      "tensorboard_loss_only": {
+        "detection": 0.0,
+        "localization": 0.0,
+        "notes": "No anomaly visible in logged data"
+      },
+      "tensorboard_grad_norms": {
+        "detection": 0.0,
+        "localization": 0.0,
+        "notes": "No anomaly visible in logged data"
       }
     },
     "exploding_gradients": {
       "neuraldbg": {
         "detection": 1.0,
         "localization": 1.0,
-        "notes": "Hooks detect gradient anomalies at parameter level"
+        "notes": "Causal hooks + composite detection"
       },
-      "wandb": {
+      "wandb_loss_only": {
         "detection": 1.0,
         "localization": 0.0,
-        "notes": "Loss spike detected (12.97 vs baseline 0.70)"
+        "notes": "Loss spike: 12.97 vs baseline 0.70"
       },
-      "mlflow": {
+      "wandb_grad_norms": {
         "detection": 1.0,
         "localization": 0.0,
-        "notes": "Loss spike detected (12.97 vs baseline 0.70)"
+        "notes": "Loss spike: 12.97 vs baseline 0.70"
       },
-      "tensorboard": {
+      "mlflow_loss_only": {
         "detection": 1.0,
         "localization": 0.0,
-        "notes": "Loss spike detected (12.97 vs baseline 0.70)"
+        "notes": "Loss spike: 12.97 vs baseline 0.70"
+      },
+      "mlflow_grad_norms": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Loss spike: 12.97 vs baseline 0.70"
+      },
+      "tensorboard_loss_only": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Loss spike: 12.97 vs baseline 0.70"
+      },
+      "tensorboard_grad_norms": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Loss spike: 12.97 vs baseline 0.70"
       }
     },
     "mha_fully_masked_row_BUG-001": {
       "neuraldbg": {
         "detection": 1.0,
         "localization": 1.0,
-        "notes": "Hooks detect gradient anomalies at parameter level"
+        "notes": "Causal hooks + composite detection"
       },
-      "wandb": {
+      "wandb_loss_only": {
         "detection": 0.0,
         "localization": 0.0,
-        "notes": "Loss is finite at every step; NaN gradients on parameters not visible to loss-only logger"
+        "notes": "NaN grads present but NOT logged (loss-only mode)"
       },
-      "mlflow": {
+      "wandb_grad_norms": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "NaN grad_norm at step(s) [0, 1, 2]"
+      },
+      "mlflow_loss_only": {
         "detection": 0.0,
         "localization": 0.0,
-        "notes": "Loss is finite at every step; NaN gradients on parameters not visible to loss-only logger"
+        "notes": "NaN grads present but NOT logged (loss-only mode)"
       },
-      "tensorboard": {
+      "mlflow_grad_norms": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "NaN grad_norm at step(s) [0, 1, 2]"
+      },
+      "tensorboard_loss_only": {
         "detection": 0.0,
         "localization": 0.0,
-        "notes": "Loss is finite at every step; NaN gradients on parameters not visible to loss-only logger"
+        "notes": "NaN grads present but NOT logged (loss-only mode)"
+      },
+      "tensorboard_grad_norms": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "NaN grad_norm at step(s) [0, 1, 2]"
       }
     }
   },
@@ -96,17 +157,30 @@
       "avg_detection": 1.0,
       "avg_localization": 1.0
     },
-    "wandb": {
-      "avg_detection": 0.5,
+    "wandb_loss_only": {
+      "avg_detection": 0.33,
       "avg_localization": 0.0
     },
-    "mlflow": {
-      "avg_detection": 0.5,
+    "wandb_grad_norms": {
+      "avg_detection": 0.67,
       "avg_localization": 0.0
     },
-    "tensorboard": {
-      "avg_detection": 0.5,
+    "mlflow_loss_only": {
+      "avg_detection": 0.33,
+      "avg_localization": 0.0
+    },
+    "mlflow_grad_norms": {
+      "avg_detection": 0.67,
+      "avg_localization": 0.0
+    },
+    "tensorboard_loss_only": {
+      "avg_detection": 0.33,
+      "avg_localization": 0.0
+    },
+    "tensorboard_grad_norms": {
+      "avg_detection": 0.67,
       "avg_localization": 0.0
     }
-  }
+  },
+  "n_buggy_scenarios": 3
 }
