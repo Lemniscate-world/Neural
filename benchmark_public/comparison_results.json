@@ -1,0 +1,112 @@
+{
+  "benchmark": "neuralsuite-tool-comparison-v1",
+  "version": "1.3.2",
+  "scenarios": {
+    "healthy_training": {
+      "neuraldbg": {
+        "detection": 1.0,
+        "localization": 1.0,
+        "notes": "Hooks detect gradient anomalies at parameter level"
+      },
+      "wandb": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "No bug; loss-only logger correctly sees no anomaly"
+      },
+      "mlflow": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "No bug; loss-only logger correctly sees no anomaly"
+      },
+      "tensorboard": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "No bug; loss-only logger correctly sees no anomaly"
+      }
+    },
+    "vanishing_gradients": {
+      "neuraldbg": {
+        "detection": 1.0,
+        "localization": 1.0,
+        "notes": "Hooks detect gradient anomalies at parameter level"
+      },
+      "wandb": {
+        "detection": 0.0,
+        "localization": 0.0,
+        "notes": "Loss is finite at every step; no anomaly flagged"
+      },
+      "mlflow": {
+        "detection": 0.0,
+        "localization": 0.0,
+        "notes": "Loss is finite at every step; no anomaly flagged"
+      },
+      "tensorboard": {
+        "detection": 0.0,
+        "localization": 0.0,
+        "notes": "Loss is finite at every step; no anomaly flagged"
+      }
+    },
+    "exploding_gradients": {
+      "neuraldbg": {
+        "detection": 1.0,
+        "localization": 1.0,
+        "notes": "Hooks detect gradient anomalies at parameter level"
+      },
+      "wandb": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Loss spike detected (12.97 vs baseline 0.70)"
+      },
+      "mlflow": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Loss spike detected (12.97 vs baseline 0.70)"
+      },
+      "tensorboard": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Loss spike detected (12.97 vs baseline 0.70)"
+      }
+    },
+    "mha_fully_masked_row_BUG-001": {
+      "neuraldbg": {
+        "detection": 1.0,
+        "localization": 1.0,
+        "notes": "Hooks detect gradient anomalies at parameter level"
+      },
+      "wandb": {
+        "detection": 0.0,
+        "localization": 0.0,
+        "notes": "Loss is finite at every step; NaN gradients on parameters not visible to loss-only logger"
+      },
+      "mlflow": {
+        "detection": 0.0,
+        "localization": 0.0,
+        "notes": "Loss is finite at every step; NaN gradients on parameters not visible to loss-only logger"
+      },
+      "tensorboard": {
+        "detection": 0.0,
+        "localization": 0.0,
+        "notes": "Loss is finite at every step; NaN gradients on parameters not visible to loss-only logger"
+      }
+    }
+  },
+  "summary": {
+    "neuraldbg": {
+      "avg_detection": 1.0,
+      "avg_localization": 1.0
+    },
+    "wandb": {
+      "avg_detection": 0.5,
+      "avg_localization": 0.0
+    },
+    "mlflow": {
+      "avg_detection": 0.5,
+      "avg_localization": 0.0
+    },
+    "tensorboard": {
+      "avg_detection": 0.5,
+      "avg_localization": 0.0
+    }
+  }
+}
