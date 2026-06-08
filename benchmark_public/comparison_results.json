@@ -150,6 +150,43 @@
         "localization": 0.0,
         "notes": "NaN grad_norm at step(s) [0, 1, 2]"
       }
+    },
+    "nan_loss_from_layer_injection": {
+      "neuraldbg": {
+        "detection": 1.0,
+        "localization": 1.0,
+        "notes": "Causal hooks + composite detection"
+      },
+      "wandb_loss_only": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Anomaly detected"
+      },
+      "wandb_grad_norms": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Anomaly detected"
+      },
+      "mlflow_loss_only": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Anomaly detected"
+      },
+      "mlflow_grad_norms": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Anomaly detected"
+      },
+      "tensorboard_loss_only": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Anomaly detected"
+      },
+      "tensorboard_grad_norms": {
+        "detection": 1.0,
+        "localization": 0.0,
+        "notes": "Anomaly detected"
+      }
     }
   },
   "summary": {
@@ -158,29 +195,29 @@
       "avg_localization": 1.0
     },
     "wandb_loss_only": {
-      "avg_detection": 0.33,
+      "avg_detection": 0.5,
       "avg_localization": 0.0
     },
     "wandb_grad_norms": {
-      "avg_detection": 0.67,
+      "avg_detection": 0.75,
       "avg_localization": 0.0
     },
     "mlflow_loss_only": {
-      "avg_detection": 0.33,
+      "avg_detection": 0.5,
       "avg_localization": 0.0
     },
     "mlflow_grad_norms": {
-      "avg_detection": 0.67,
+      "avg_detection": 0.75,
       "avg_localization": 0.0
     },
     "tensorboard_loss_only": {
-      "avg_detection": 0.33,
+      "avg_detection": 0.5,
       "avg_localization": 0.0
     },
     "tensorboard_grad_norms": {
-      "avg_detection": 0.67,
+      "avg_detection": 0.75,
       "avg_localization": 0.0
     }
   },
-  "n_buggy_scenarios": 3
+  "n_buggy_scenarios": 4
 }

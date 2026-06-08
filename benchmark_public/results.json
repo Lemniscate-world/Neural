@@ -1,7 +1,7 @@
 {
   "benchmark": "neuraldbg-public-causal-v1",
   "version": "1.3.2",
-  "scenarios": 4,
+  "scenarios": 5,
   "summary": {
     "detection": 1.0,
     "localization": 1.0,
@@ -15,7 +15,7 @@
       "step_accuracy": 1.0,
       "overall": 1.0,
       "num_hypotheses": 0,
-      "execution_time_sec": 2.762
+      "execution_time_sec": 3.253
     },
     "vanishing_gradients": {
       "detection": 1.0,
@@ -23,7 +23,7 @@
       "step_accuracy": 1.0,
       "overall": 1.0,
       "num_hypotheses": 4,
-      "execution_time_sec": 0.244
+      "execution_time_sec": 0.22
     },
     "exploding_gradients": {
       "detection": 1.0,
@@ -31,7 +31,7 @@
       "step_accuracy": 1.0,
       "overall": 1.0,
       "num_hypotheses": 3,
-      "execution_time_sec": 0.116
+      "execution_time_sec": 0.101
     },
     "mha_fully_masked_row_BUG-001": {
       "detection": 1.0,
@@ -39,7 +39,15 @@
       "step_accuracy": 1.0,
       "overall": 1.0,
       "num_hypotheses": 2,
-      "execution_time_sec": 0.038
+      "execution_time_sec": 0.057
+    },
+    "nan_loss_from_layer_injection": {
+      "detection": 1.0,
+      "localization": 1.0,
+      "step_accuracy": 1.0,
+      "overall": 1.0,
+      "num_hypotheses": 5,
+      "execution_time_sec": 0.158
     }
   }
 }

@@ -212,3 +212,64 @@ PUBLIC_SCENARIOS.append(
         ),
     )
 )
+
+
+# ---------------------------------------------------------------------------
+# NaN loss from direct NaN injection into layer output.
+#
+# This simulates a common real-world failure: a layer produces NaN values
+# (e.g., from log(0), division by zero, or numerical instability) which
+# propagate to the loss. External tools (W&B, MLflow, TensorBoard) can
+# detect NaN loss but cannot localize which layer caused it.
+#
+# NeuralDBG hooks at parameter level and can identify the failing layer.
+# ---------------------------------------------------------------------------
+
+
+def _nan_loss_model():
+    return nn.Sequential(
+        nn.Linear(10, 20),
+        nn.ReLU(),
+        nn.Linear(20, 20),
+        nn.ReLU(),
+        nn.Linear(20, 2),
+    )
+
+
+def _nan_loss_data():
+    return torch.randn(8, 10), torch.randint(0, 2, (8,))
+
+
+def _nan_loss_injector(model, step):
+    """Inject NaN into the second Linear layer's output at step 3.
+
+    This causes the loss to become NaN from step 3 onward. The injection
+    happens on the output of Linear_2 (the middle layer), making it the
+    root cause layer for localization.
+    """
+    if step == 3:
+        original_forward = model[2].forward
+
+        def nan_forward(x):
+            out = original_forward(x)
+            return out.fill_(float("nan"))
+
+        model[2].forward = nan_forward
+
+
+PUBLIC_SCENARIOS.append(
+    Scenario(
+        name="nan_loss_from_layer_injection",
+        model_builder=_nan_loss_model,
+        data_builder=_nan_loss_data,
+        num_steps=10,
+        bug_injector=_nan_loss_injector,
+        ground_truth=GroundTruth(
+            bug_type="nan_loss",
+            bug_layer="Linear_2",
+            bug_step=3,
+            expected_hypothesis_substring="nan",
+            expected_bug_layer="Linear_2",
+        ),
+    )
+)
