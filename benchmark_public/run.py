@@ -28,7 +28,7 @@ def run_scenario(
 
     torch.manual_seed(seed)
     model = scenario.model_builder()
-    x, y = scenario.data_builder()
+    data = scenario.data_builder()
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     with NeuralDbg(
@@ -36,15 +36,25 @@ def run_scenario(
         threshold_vanishing=threshold_vanishing,
         threshold_exploding=threshold_exploding,
     ) as dbg:
-        for step in range(scenario.num_steps):
-            optimizer.zero_grad()
-            dbg.step = step
-            scenario.bug_injector(model, step)
-            out = model(x)
-            loss = nn.CrossEntropyLoss()(out, y)
-            loss.backward()
-            dbg.record_loss(loss.item())
-            optimizer.step()
+        # If the scenario provides a custom step loop (e.g. MHA needs
+        # attn_mask + key_padding_mask), use it. Otherwise the default
+        # classification loop applies.
+        if scenario.step_fn is not None:
+            for step in range(scenario.num_steps):
+                dbg.step = step
+                scenario.bug_injector(model, step)
+                scenario.step_fn(model, dbg, data[0], data, step)
+        else:
+            x, y = data
+            for step in range(scenario.num_steps):
+                optimizer.zero_grad()
+                dbg.step = step
+                scenario.bug_injector(model, step)
+                out = model(x)
+                loss = nn.CrossEntropyLoss()(out, y)
+                loss.backward()
+                dbg.record_loss(loss.item())
+                optimizer.step()
 
     return dbg, scenario.ground_truth
 
