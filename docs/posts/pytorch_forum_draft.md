@@ -1,20 +1,18 @@
-[D] Stop guessing why your loss went to NaN — this tool pinpoints the exact layer
+# [D] NeuralDBG — Causal root-cause analysis when PyTorch training fails
 
 Hello PyTorch community,
 
-I want to share a tool I've been building: **NeuralDBG** — a causal inference engine for PyTorch training loops.
+I've been building **NeuralDBG** — an open-source causal inference engine for PyTorch training loops. When your loss goes to NaN or gradients vanish, it pinpoints the exact layer and step where the failure started.
 
-## What it does
+## The problem it solves
 
-NeuralDBG installs hooks on your model modules and extracts semantic events during training. When something goes wrong, it generates ranked causal hypotheses:
+When training breaks, the debugging workflow is:
+1. Stare at the loss curve
+2. Add `print(grad.norm())` in the loop
+3. Guess which layer is responsible
+4. Try random fixes
 
-```
-→ Gradient vanishing originated in layer 'Tanh_3' at step 2
-  Confidence: 1.00
-
-→ Root cause: data distribution shift in 'root' at step 0  
-  Confidence: 0.95
-```
+NeuralDBG automates steps 2-4 by installing hooks that capture layer-level gradient and activation statistics, then generates ranked causal hypotheses.
 
 ## Quick start
 
@@ -22,7 +20,7 @@ NeuralDBG installs hooks on your model modules and extracts semantic events duri
 from neuraldbg import NeuralDbg
 
 with NeuralDbg(model) as dbg:
-    for step in range(num_steps):
+    for step, (x, y) in enumerate(loader):
         optimizer.zero_grad()
         dbg.step = step
         out = model(x)
@@ -31,36 +29,73 @@ with NeuralDbg(model) as dbg:
         dbg.record_loss(loss.item())
         optimizer.step()
 
-# Query explanations after failure
+# After a failure, query explanations
 hypotheses = dbg.explain_failure()
+for h in hypotheses:
+    print(f"{h.layer}: {h.description} (confidence: {h.confidence:.2f})")
 ```
 
-## What's under the hood
+Output when gradients vanish:
+```
+Tanh_3: Gradient vanishing detected at step 2 (confidence: 1.00)
+  Transition: grad_norm dropped from 0.45 to 0.00 between steps 1 and 2
+```
 
-- **Forward hooks** capture activation statistics per layer
-- **Backward hooks** track gradient norms and detect health transitions
+## How it differs from TensorBoard / W&B
+
+| | TensorBoard / W&B | NeuralDBG |
+|---|---|---|
+| Shows **when** metrics moved | Yes | Yes |
+| Shows **which layer** caused it | No | Yes |
+| Generates ranked hypotheses | No | Yes |
+| Detects gradient NaN in specific layers | No | Yes |
+
+## What it does under the hood
+
+- **Backward hooks** track per-layer gradient norms and detect health transitions
+- **Forward hooks** capture activation statistics (sparsity, dead neurons, saturation)
 - **Event compression** identifies first occurrences and propagation patterns
 - **Abductive reasoning** generates hypotheses ranked by confidence
+- **Composite module support** for nn.MultiheadAttention, etc. (v1.3.2)
 
-## Compatibility
+## Public benchmark
 
-- Python 3.9+ / PyTorch 2.0 → 2.6
-- Works with nn.DataParallel
-- Compatible with torch.compile (hooks at module boundaries)
-- CPU and CUDA
+5 scenarios, reproducible: `python -m benchmark_public.run`
 
-## Benchmark
-
-| Scenario | Detection | Localization | Step Accuracy |
-|----------|-----------|-------------|---------------|
+| Scenario | Detection | Localization | Accuracy |
+|----------|-----------|-------------|----------|
 | Healthy training | 1.0 | 1.0 | 1.0 |
 | Vanishing gradients | 1.0 | 1.0 | 1.0 |
 | Exploding gradients | 1.0 | 1.0 | 1.0 |
+| MHA fully-masked row (BUG-001) | 1.0 | 1.0 | 1.0 |
+| NaN loss from layer injection | 1.0 | 1.0 | 1.0 |
+
+We also ran a real comparison against W&B, MLflow, and TensorBoard on the same scenarios (loss-only mode):
+
+| Tool | Detection | Localization |
+|------|-----------|-------------|
+| **NeuralDBG** | **1.00** | **1.00** |
+| W&B | 0.50 | 0.00 |
+| MLflow | 0.50 | 0.00 |
+| TensorBoard | 0.50 | 0.00 |
+
+## Real bugs found
+
+We've used NeuralDBG to diagnose real upstream bugs:
+- **BUG-001**: pytorch#41508 — NaN gradients in nn.MultiheadAttention with masked rows
+- **BUG-002**: pytorch#176793 — NaN gradients in varlen_attn with padding
+- **BUG-003**: pytorch#177116 — MPS backward pass produces 1000x-100000x wrong gradients
 
 ## Links
 
 - GitHub: https://github.com/LambdaSection/NeuralDBG
 - PyPI: `pip install neuraldbg`
-- Colab: https://colab.research.google.com/github/LambdaSection/NeuralDBG/blob/main/notebooks/quickstart.ipynb
+- Blog: https://lambdasection.github.io/NeuralDBG/blog/
+
+## Compatibility
+
+- Python 3.9+ / PyTorch 2.0+
+- Works with nn.DataParallel
+- CPU and CUDA
 
 Feedback welcome — especially if you've ever stared at a loss curve wondering "why did this die?"
