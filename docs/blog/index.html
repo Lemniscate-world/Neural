@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralDBG Blog — PyTorch Training Failures</title>
+    <meta name="description" content="Post-mortems and analysis of real PyTorch training failures. Honest diagnostics, no mocks.">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #a371f7;
+            --success: #3fb950;
+            --border: #30363d;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            line-height: 1.6;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 0 1.5rem; }
+        header {
+            padding: 2.5rem 0 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        h1 {
+            font-size: 2rem;
+            margin: 0;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { color: var(--muted); margin-top: 0.5rem; }
+        .back { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+        .back:hover { text-decoration: underline; }
+        main { padding: 2rem 0; }
+        .post {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .post h2 { margin-top: 0; font-size: 1.4rem; }
+        .post h2 a { color: var(--text); text-decoration: none; }
+        .post h2 a:hover { color: var(--accent); }
+        .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+        .badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+        .badge-real { background: #238636; color: #fff; }
+        .badge-synthetic { background: #9e6a03; color: #fff; }
+        .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            color: var(--accent);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            margin-right: 0.3rem;
+        }
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        a { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a class="back" href="../">&larr; NeuralDBG</a>
+            <h1>Blog</h1>
+            <p class="subtitle">Post-mortems and analysis of real PyTorch training failures.</p>
+        </header>
+
+        <main>
+            <article class="post">
+                <div class="meta">
+                    <span class="badge badge-real">Real Bug</span>
+                    <span>2026-06-13</span>
+                    <span style="margin-left:0.5rem">POST-001</span>
+                </div>
+                <h2><a href="2026-06-13-pytorch-41508-postmortem.html">Post-mortem: PyTorch issue #41508 — NaN gradients in nn.MultiheadAttention</a></h2>
+                <p>A real PyTorch bug (open since 2020, 25+ participants) produces NaN gradients when attn_mask and key_padding_mask together leave a row fully masked. We reproduce it, document NeuralDBG's blind spot on composite modules, and confirm the community workaround.</p>
+                <div>
+                    <span class="tag">pytorch</span>
+                    <span class="tag">attention</span>
+                    <span class="tag">postmortem</span>
+                    <span class="tag">BUG-001</span>
+                </div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
+                    <span class="badge badge-synthetic">Synthetic Scenario</span>
+                    <span>2026-06-06</span>
+                </div>
+                <h2><a href="2026-06-06-causal-root-cause.html">Why your PyTorch model went to NaN: a post-mortem with causal root cause analysis</a></h2>
+                <p>A synthetic 6-layer MLP failure (vanishing gradients, then NaN) dissected layer by layer. Demonstrates how structured causal hypotheses would have saved hours of debugging. Illustrative scenario, not a real upstream bug.</p>
+                <div>
+                    <span class="tag">pytorch</span>
+                    <span class="tag">debugging</span>
+                    <span class="tag">causality</span>
+                </div>
+            </article>
+        </main>
+
+        <footer>
+            <p>MIT License · <a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a> · <a href="https://pypi.org/project/neuraldbg/">PyPI</a></p>
+        </footer>
+    </div>
+</body>
+</html>
