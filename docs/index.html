@@ -12,8 +12,7 @@
             --surface: #161b22;
             --text: #e6edf3;
             --muted: #8b949e;
-            --accent: #58a6ff;
-            --accent2: #a371f7;
+            --accent: #0f4c75;
             --success: #3fb950;
             --border: #30363d;
         }
@@ -32,13 +31,10 @@
             border-bottom: 1px solid var(--border);
         }
         .brand { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-        .brand img { width: 88px; height: 88px; }
         h1 {
             font-size: 2.75rem;
             margin: 0;
-            background: linear-gradient(90deg, var(--accent), var(--accent2));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--accent);
         }
         .tagline { color: var(--muted); font-size: 1.15rem; max-width: 640px; }
         .cta { margin-top: 1.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; }
@@ -54,7 +50,6 @@
         .btn-primary:hover { filter: brightness(1.1); }
         .btn-outline { border-color: var(--border); color: var(--text); }
         .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-        .btn-colab { background: #f9ab00; color: #111; }
         section { padding: 2.5rem 0; }
         h2 { font-size: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
@@ -93,14 +88,13 @@
 <body>
     <header>
         <div class="container brand">
-            <img src="assets/neuraldbg-logo.svg" alt="NeuralDBG logo">
             <h1>NeuralDBG</h1>
             <p class="tagline">When PyTorch training breaks, get <strong>ranked causal hypotheses</strong> — not another loss curve.</p>
             <div class="cta">
                 <a class="btn btn-primary" href="https://pypi.org/project/neuraldbg/">pip install neuraldbg</a>
-                <a class="btn btn-colab" href="https://colab.research.google.com/github/LambdaSection/NeuralDBG/blob/main/notebooks/quickstart.ipynb">Open in Colab</a>
                 <a class="btn btn-outline" href="https://github.com/LambdaSection/NeuralDBG">GitHub</a>
-                <a class="btn btn-outline" href="../benchmark_public/README.md">Public benchmark</a>
+                <a class="btn btn-outline" href="benchmark_public/README.md">Benchmarks</a>
+                <a class="btn btn-outline" href="blog/index.html">Blog</a>
             </div>
         </div>
     </header>
@@ -165,7 +159,7 @@ print(dbg.explain_failure())</code></pre>
     </div>
 
     <footer>
-        <p>MIT License · <a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a> · <a href="https://pypi.org/project/neuraldbg/">PyPI</a></p>
+        <p>MIT License · <a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a> · <a href="https://pypi.org/project/neuraldbg/">PyPI</a> · <a href="blog/index.html">Blog</a></p>
     </footer>
     <script>
         fetch('../benchmark_public/results.json')
