@@ -32,7 +32,7 @@ AVANT de documenter un bug:
 
 **Problème** : On écrit "workaround" au lieu de "fix". Un workaround n'est pas une résolution.
 
-**Solution** : 
+**Solution** :
 - Si le bug est dans PyTorch/upstream → soumettre un PR qui le RÉSOUT (pas `warnings.warn`)
 - Si le bug est dans notre code → le corriger dans NeuralDBG/Neural-Agent
 - Si on ne peut pas résoudre → documenter POURQUOI on ne peut pas, puis passer à un autre bug
