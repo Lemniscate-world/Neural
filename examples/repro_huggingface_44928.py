@@ -47,9 +47,10 @@ def stage1_reproduce_bug():
     print(f"Loading {model_name} with SDPA attention...")
 
     try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True, revision="main")
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
+            revision="main",
             torch_dtype=torch.bfloat16,
             device_map="auto",
             attn_implementation="sdpa",  # force SDPA to trigger the bug
@@ -247,9 +248,10 @@ def stage3_fix_verification():
     print(f"Loading {model_name} with flash_attention_2...")
 
     try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True, revision="main")
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
+            revision="main",
             torch_dtype=torch.bfloat16,
             device_map="auto",
             attn_implementation="flash_attention_2",  # the fix

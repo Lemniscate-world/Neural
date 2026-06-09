@@ -72,11 +72,11 @@ def train_on_cpu():
     print(f"\n[1/5] Loading {model_name}...")
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, revision="main")
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name, revision="main")
     print(f"  Model params: {sum(p.numel() for p in model.parameters()):,}")
 
     # 2. Apply LoRA
