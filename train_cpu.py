@@ -10,8 +10,7 @@ import time
 from pathlib import Path
 
 import torch
-from torch.utils.data import Dataset, DataLoader
-
+from torch.utils.data import DataLoader, Dataset
 
 # ── Dataset ──────────────────────────────────────────────────────────────────
 
@@ -166,9 +165,7 @@ def train_on_cpu():
     input_ids = tokenizer(test_prompt, return_tensors="pt").input_ids
     with torch.no_grad():
         output = model.generate(input_ids, max_new_tokens=100, do_sample=False)
-    response = tokenizer.decode(
-        output[0][input_ids.shape[1] :], skip_special_tokens=True
-    )
+    response = tokenizer.decode(output[0][input_ids.shape[1] :], skip_special_tokens=True)
     print(f"Input: {test_prompt[:80]}...")
     print(f"Output: {response[:200]}")
     print(f"\nPipeline: collect -> format -> train -> infer : OK")

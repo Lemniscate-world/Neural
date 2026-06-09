@@ -12,9 +12,10 @@ Stages:
 Requires: GPU with FlashAttention support, Qwen3.5 model access
 """
 
-import torch
-import sys
 import json
+import sys
+
+import torch
 
 # ---------------------------------------------------------------------------
 # Stage 1: Reproduce the bug
@@ -62,9 +63,7 @@ def stage1_reproduce_bug():
 
     # Create input with 3D position_ids (mRoPE style)
     seq_len = 2048
-    input_ids = torch.randint(
-        0, tokenizer.vocab_size, (1, seq_len), device=model.device
-    )
+    input_ids = torch.randint(0, tokenizer.vocab_size, (1, seq_len), device=model.device)
     position_ids = torch.arange(seq_len, device=model.device).unsqueeze(0).expand(1, -1)
 
     print(f"Input shape: {input_ids.shape}")
@@ -263,9 +262,7 @@ def stage3_fix_verification():
     model.train()
 
     seq_len = 2048
-    input_ids = torch.randint(
-        0, tokenizer.vocab_size, (1, seq_len), device=model.device
-    )
+    input_ids = torch.randint(0, tokenizer.vocab_size, (1, seq_len), device=model.device)
     position_ids = torch.arange(seq_len, device=model.device).unsqueeze(0).expand(1, -1)
 
     outputs = model(input_ids=input_ids, position_ids=position_ids)

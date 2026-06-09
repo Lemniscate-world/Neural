@@ -14,10 +14,10 @@ Strategy:
 If/when MPS hardware is available, the same test runs with real MPS.
 """
 
-import torch
-import torch.nn as nn
 import sys
 
+import torch
+import torch.nn as nn
 
 # ---------------------------------------------------------------------------
 # The bug: MPS computes wrong gradients for linear layers
@@ -83,7 +83,7 @@ def test_neuraldbg_detects_gradient_discrepancy():
     We check that NeuralDBG's SemanticEvent log contains gradient-related events
     with the right severity when we inject bad gradients.
     """
-    from neuraldbg import NeuralDbg, EventType
+    from neuraldbg import EventType, NeuralDbg
 
     grad_norm, grad_mean, correct_grad = get_cpu_ground_truth()
     patterns = simulate_mps_wrong_gradient(correct_grad)

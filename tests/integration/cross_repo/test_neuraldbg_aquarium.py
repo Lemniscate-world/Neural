@@ -17,7 +17,6 @@ nn = pytest.importorskip("torch.nn")
 
 from neuraldbg import NeuralDbg  # noqa: E402
 
-
 # Schema location (canonical, per COMPATIBILITY_MATRIX.md)
 SCHEMA_PATH = Path(__file__).parents[3] / "neuraldbg" / "schema" / "events.json"
 
@@ -98,6 +97,5 @@ class TestAquariumJSONContract:
         assert isinstance(graph, str)
         # Mermaid graph types: flowchart, sequenceDiagram, etc.
         assert any(
-            kw in graph
-            for kw in ("flowchart", "graph", "sequenceDiagram", "graph TD", "graph LR")
+            kw in graph for kw in ("flowchart", "graph", "sequenceDiagram", "graph TD", "graph LR")
         ), f"Output does not look like Mermaid: {graph[:200]!r}"

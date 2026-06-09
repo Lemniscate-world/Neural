@@ -109,10 +109,10 @@ def reproduce_lstm_batch_pollution() -> None:
     print("\nNeuralDBG event log (simulated):")
     if nan_b and not nan_s:
         print("  [sample_independence_violation]")
-        print(f"    layer=lstm1")
+        print("    layer=lstm1")
         print(f"    sample_idx={polluter_idx}")
-        print(f"    out_batch_nan=True, out_single_nan=False")
-        print(f"    relative_l2_inf=torch.tensor('inf')")
+        print("    out_batch_nan=True, out_single_nan=False")
+        print("    relative_l2_inf=torch.tensor('inf')")
         print("  [rnn_output_nan]")
         print(f"    mode=batch, has_nan={nan_b}, max={max_b}")
         print("  [rnn_output_valid]")

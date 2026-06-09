@@ -154,9 +154,9 @@ class TestNeuralDbgNeuralAgentContract:
         # The diagonal MUST be 0 (every query attends to at least itself)
         for b in range(batch):
             for s in range(seq_len):
-                assert merged[b, s, s].item() == 0.0, (
-                    f"Diagonal [{b},{s},{s}] should be 0, got {merged[b,s,s].item()}"
-                )
+                assert (
+                    merged[b, s, s].item() == 0.0
+                ), f"Diagonal [{b},{s},{s}] should be 0, got {merged[b,s,s].item()}"
 
     def test_engine_optional_fallback_returns_empty(self):
         """Without neuraldbg-engine, detect_coupled_failures() MUST return [].
@@ -168,7 +168,14 @@ class TestNeuralDbgNeuralAgentContract:
 
         with NeuralDbg(model) as dbg:
             for _ in range(2):
-                _train_step(model, x, target, dbg, torch.optim.SGD(model.parameters(), lr=0.01), nn.MSELoss())
+                _train_step(
+                    model,
+                    x,
+                    target,
+                    dbg,
+                    torch.optim.SGD(model.parameters(), lr=0.01),
+                    nn.MSELoss(),
+                )
             couplings = dbg.detect_coupled_failures()
 
         # Per cdp_protocol_definition.md: no engine -> empty list, no crash

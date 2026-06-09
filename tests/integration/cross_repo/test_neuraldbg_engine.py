@@ -45,7 +45,7 @@ class TestEngineDiscovery:
 
     def test_neuraldbg_imports_without_engine(self):
         """Core MUST import cleanly when engine is absent (cdp_protocol_definition)."""
-        from neuraldbg import NeuralDbg, _HAS_ENGINE  # type: ignore
+        from neuraldbg import _HAS_ENGINE, NeuralDbg  # type: ignore
 
         # If engine is installed, _HAS_ENGINE is True; else False.
         # Either way, NeuralDbg is importable.
@@ -145,4 +145,9 @@ class TestEngineRichness:
             assert hasattr(engine, "classify_gradient_health")
             assert hasattr(engine, "classify_activation_health")
             # Smoke test: call with sane inputs
-            assert engine.classify_gradient_health(1.0) in ("healthy", "stable", "vanishing", "exploding")
+            assert engine.classify_gradient_health(1.0) in (
+                "healthy",
+                "stable",
+                "vanishing",
+                "exploding",
+            )
