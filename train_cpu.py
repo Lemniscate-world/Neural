@@ -5,12 +5,11 @@ Validates the full pipeline: collect -> format -> train -> infer.
 """
 
 import json
-import sys
 import time
 from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 # ── Dataset ──────────────────────────────────────────────────────────────────
 
@@ -170,7 +169,7 @@ def train_on_cpu():
     response = tokenizer.decode(output[0][input_ids.shape[1] :], skip_special_tokens=True)
     print(f"Input: {test_prompt[:80]}...")
     print(f"Output: {response[:200]}")
-    print(f"\nPipeline: collect -> format -> train -> infer : OK")
+    print("\nPipeline: collect -> format -> train -> infer : OK")
 
 
 if __name__ == "__main__":
