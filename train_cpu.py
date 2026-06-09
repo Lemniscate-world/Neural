@@ -76,7 +76,9 @@ def train_on_cpu():
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(model_name, revision="main", torch_dtype=torch.float32)  # nosec: B615
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name, revision="main", torch_dtype=torch.float32
+    )  # nosec: B615
     print(f"  Model params: {sum(p.numel() for p in model.parameters()):,}")
 
     # 2. Apply LoRA
