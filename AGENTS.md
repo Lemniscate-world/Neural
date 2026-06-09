@@ -4,6 +4,8 @@
 You MUST read the rules relevant to your current task. Read R1 first.
 To read a rule, use your 'view_file' tool on the corresponding file in the master folder.
 
+**ALSO READ**: `DEV_RULES.md` in this repo — project-specific rules for bug resolution and code quality.
+
 ## Rule Index
 - **rule_01_foundation**: RULE 1: Read Rules First â€” MANDATORY
 - **rule_02_mom_test**: RULE 2: Mom Test Gate - Full Detail
@@ -50,3 +52,4 @@ To read a rule, use your 'view_file' tool on the corresponding file in the maste
 - **rule_97_launch_planning**: RULE 97: Launch Planning Master Template
 - **rule_98_prelaunch_verification**: RULE 98: Pre-Launch MVP Verification Protocol
 - **rule_99_acquisition_tracker**: RULE 99: Acquisition Tracker â€” MÃ©moire des Posts Marketing
+- **rule_107_upstream_pr_strategy**: RULE 107: Upstream PR Strategy - Credibility Through Merged Contributions
