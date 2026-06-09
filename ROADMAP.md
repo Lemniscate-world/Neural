@@ -2,15 +2,29 @@
 
 > The complete toolkit for diagnosing and fixing deep learning training failures.
 
+## Écosystème (Multi-Repo)
+
+NeuralDBG fait partie d'un écosystème à 4 composants. Voir aussi :
+- [docs/ecosystem.md](file:///c:/Users/Utilisateur/Documents/NeuralDBG/docs/ecosystem.md) — Contrat d'intégration (MID ECO-001)
+- [COMPATIBILITY_MATRIX.md](file:///c:/Users/Utilisateur/Documents/NeuralDBG/COMPATIBILITY_MATRIX.md) — Matrice SemVer inter-repos
+
+| Composant | Rôle | Statut |
+|---|---|---|
+| **NeuralDBG** (ce repo) | Moteur de diagnostic causal | v1.3.2 ✅ |
+| **Neural-Agent** | Auto-correcteur | Pipeline built (closed beta) |
+| **Aquarium** | Visualiseur IDE (Tauri) | MVP livré, dormant |
+| **neuraldbg-engine** | Inférence causale avancée (optionnel) | v1.0.0 (registry privé) |
+
 ## What is NeuralSuite?
 
-NeuralSuite is a three-part system that catches training problems before they waste your GPU hours:
+NeuralSuite is a four-part system that catches training problems before they waste your GPU hours:
 
 | Component | What it does | Install |
 |-----------|-------------|---------|
 | **NeuralDBG** | Causal diagnostic engine — hooks into PyTorch, captures gradient/activation events, detects root causes | `pip install neuraldbg` |
 | **Neural-Agent** | Auto-corrector — diagnoses failures and applies source-level fixes to training scripts | `pip install neural-agent` |
 | **Aquarium** | Visualizer — interactive causal tree viewer for NeuralDBG exports | Desktop app (Tauri) |
+| **neuraldbg-engine** *(optional)* | Advanced causal inference — adds data anomaly, optimizer instability, cross-arch coupling detection | Private registry (closed beta) |
 
 ## Why NeuralSuite?
 
@@ -61,6 +75,17 @@ print(dbg.explain_failure())
 - [x] Tool comparison v2: NeuralDBG vs W&B vs MLflow vs TensorBoard
 - [ ] First upstream PR submitted
 
+### Upstream PR Tracker
+
+| Bug | Upstream Issue | PR Status | Merge Date |
+|-----|---------------|-----------|------------|
+| BUG-001 | pytorch/pytorch#41508 | Comment posted | - |
+| BUG-002 | pytorch/pytorch#176793 | PR #186786 submitted, comment posted | - |
+| BUG-003 | pytorch/pytorch#177116 | Comment posted | - |
+| BUG-004 | huggingface/transformers#44928 | Comment posted | - |
+
+**Comments posted**: 4 | **PRs submitted**: 1 | **Merged**: 0 | **Merge rate**: 0%
+
 ### v1.4.5 — Catalog Expansion (July-August 2026)
 - [ ] 10 real bugs cataloged (MHA, GNN, LSTM, GAN, diffusion, transformers, RL)
 - [ ] Reproducible public benchmark on 5+ real scenarios
@@ -77,7 +102,7 @@ print(dbg.explain_failure())
 
 ## Benchmark Results (v1.3.2)
 
-4 scenarios, healthy excluded from averages:
+5 scenarios, healthy excluded from averages:
 
 | Tool | Detection (loss-only) | Detection (+grad norms) | Localization |
 |------|:---------------------:|:-----------------------:|:------------:|

@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-06-09
+
+### Added
+- **Multi-Repo Ecosystem cartography** (R105): NeuralDBG-Engine added as optional 4th component in [`docs/ecosystem.md`](docs/ecosystem.md); cross-repo SemVer tracking via new [`COMPATIBILITY_MATRIX.md`](COMPATIBILITY_MATRIX.md); "Écosystème (Multi-Repo)" section in `ROADMAP.md`.
+- **Composite-module hook support**: `dbg.register_composite_hook(module)` for `nn.MultiheadAttention` and other modules with no leaf submodules.
+- **Silent-loss and zero-leaf warnings**: detects loss=0 with non-zero gradients, and `register_full_backward_hook` no-op setups.
+- **MHA fully-masked-row remediation rule**: `apply_mha_mask_workaround()` in Neural-Agent, wired to NeuralDBG events.
+- **End-to-end Neural-Agent pipeline**: `diagnose -> fix -> validate -> apply -> re-run`, 87 tests passing.
+- **Bug catalog BUG-001..004**: MHA NaN, varlen_attn NaN, MPS gradients, Qwen3.5 SDPA gradient explosion.
+- **Public benchmark** (5 scenarios): all at 1.0 accuracy; comparison v2 vs W&B / MLflow / TensorBoard.
+- **Aquarium JSON export**: full schema (`schema/events.json`), 14 unit tests in `test_aquarium_export.py`.
+- **Phase 7 — Two-Package Architecture**: conditional import of `neuraldbg-engine` with seamless fallback in `neuraldbg` core.
+- **Zero-Warnings Policy**: `filterwarnings` in `pyproject.toml` drops warnings 616 → 5.
+- **Cross-repo contract**: `dbg.explain_failure()` and `events.json` schema v1 stable; `dbg` works without engine and without agent.
+
+### Changed
+- **PUBLIC → multi-repo narrative**: `ROADMAP.md` updated from "three-part" to "four-part" system (NeuralDBG, Neural-Agent, Aquarium, neuraldbg-engine).
+- **Upstream PR tracker** updated: 4 comments posted, 1 PR submitted (pytorch/pytorch#186786, OPEN).
+- **Benchmark table** expanded from 4 → 5 scenarios.
+
+### Fixed
+- Unicode/emoji terminal rendering encoding crash on Windows consoles for `quickstart.py`.
+- Mock comparison removed from `benchmark_public/` — replaced by real `real_comparison.py` (R79 honesty).
+- Deduplication of logical causal couplings in `detect_coupled_failures()` and Mermaid graph export.
+
+### Security
+- `assert` removed from production code paths (R39 compliance).
+- Bandit scan wired to pre-commit (skips B101 — acceptable for tests).
+
 ## [1.3.1] - 2026-05-20
 
 ### Added

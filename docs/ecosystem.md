@@ -3,11 +3,11 @@
 > MID: ECO-001
 > Owner: LambdaSection
 > Status: ACTIVE
-> Last updated: 2026-06-07
+> Last updated: 2026-06-09
 
 ## Vision
 
-**NeuralSuite** is the unified brand for three complementary tools that diagnose and fix deep learning training failures.
+**NeuralSuite** is the unified brand for the toolkit that diagnoses and fixes deep learning training failures.
 
 ```
 ┌─────────────────┐    events JSON    ┌─────────────────┐
@@ -23,15 +23,21 @@
          │ remediation rules
          ▼
    training loop patched
+
+         ▲ optional upgrade
+┌─────────────────┐
+│ neuraldbg-engine│  (advanced causal inference, proprietary)
+└─────────────────┘
 ```
 
-## The Three Components
+## The Components
 
 ### 1. NeuralDBG — Diagnostic Engine
 - **Package**: `neuraldbg` (PyPI)
 - **Role**: Instrument PyTorch training, capture semantic events, produce causal hypotheses + JSON export
 - **Output**: `dbg.explain_failure()` -> list[CausalHypothesis], `dbg.export_json()` -> events.json
 - **Status**: v1.3.1 published, v1.3.2 in dev
+- **Works without**: `neural-agent`, `neuraldbg-engine` (core fallbacks cover common cases)
 
 ### 2. Neural-Agent — Auto-Corrector
 - **Package**: `neural-agent` (PyPI)
@@ -39,12 +45,20 @@
 - **Input**: `dbg.explain_failure()` (Python objects, in-process)
 - **Output**: `remediation_applied` event + patched optimizer/model state
 - **Status**: Pipeline built (87 tests), model not yet trained
+- **Distribution**: Closed beta (not on public PyPI yet)
 
 ### 3. Aquarium — Visualizer
 - **Package**: Desktop app (Tauri)
 - **Role**: Consume NeuralDBG JSON exports, render interactive causal trees
 - **Input**: `events.json` (stable, versioned schema)
 - **Status**: Export validated, MVP delivered, dormant
+
+### 4. neuraldbg-engine — Advanced Causal Inference (optional)
+- **Package**: `neuraldbg-engine` (GitHub Packages, private registry)
+- **Role**: Pluggable upgrade for NeuralDBG. Adds advanced heuristics: data anomaly detection, optimizer instability, cross-architecture coupling logic. Powers the closed-beta diagnostics.
+- **Interface**: Same `dbg.explain_failure()` API — no user code change required
+- **Status**: v1.0.0 packaged, distributed via private registry
+- **Discovery**: NeuralDBG uses it opportunistically (`importlib` conditional import). Core fallbacks cover the open-source path.
 
 ## Inter-Component Contracts
 
@@ -68,8 +82,15 @@ python train.py --neuraldbg-export events.json
 # Open Aquarium, drag events.json, view causal graph
 ```
 
+### NeuralDBG <-> neuraldbg-engine (optional, in-process)
+```python
+# NeuralDBG auto-detects neuraldbg-engine if installed.
+# When present: richer hypotheses (coupling, transitions, optimizer instability).
+# When absent:  fallbacks return [] (no crash) — see cdp_protocol_definition.md.
+```
+
 ### Dependency Direction
-`neural-agent` depends on `neuraldbg`. Not the other way around. NeuralDBG MUST remain usable without Neural-Agent installed.
+`neural-agent` depends on `neuraldbg`. `neuraldbg-engine` is loaded optionally by `neuraldbg`. Neither is required for the others to work.
 
 ## Branding Rules
 
