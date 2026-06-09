@@ -102,7 +102,9 @@ def reproduce_lstm_batch_pollution() -> None:
         print("This may happen on CPU; the original bug is CUDA-specific.")
         print("Try a different polluter_value or platform.")
     else:
-        print("UNEXPECTED: single-sample also produces NaN. Try a smaller polluter_value.")
+        print(
+            "UNEXPECTED: single-sample also produces NaN. Try a smaller polluter_value."
+        )
     print("=" * 60)
 
     # 6. Show what NeuralDBG would capture
@@ -128,7 +130,9 @@ def reproduce_lstm_batch_pollution() -> None:
         print(f"    out_batch_nan={nan_b}, out_single_nan={nan_s}")
         print("    result=batched_equals_individual (no violation on this platform)")
         print("  [note]")
-        print("    To reproduce the original CUDA-only bug, run on an RTX 3090 or similar")
+        print(
+            "    To reproduce the original CUDA-only bug, run on an RTX 3090 or similar"
+        )
         print("    with the original bundle.pt from the issue, or tune polluter_value.")
 
 

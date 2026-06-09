@@ -97,7 +97,9 @@ def test_nan_gradient_detection():
             if has_nan or has_inf:
                 status = "NaN" if has_nan else "Inf"
                 print(f"  [DETECTED] Pattern '{pattern_name}': {status}")
-                print(f"    Events: {len(events)} total, {len(nan_events)} anomaly-related")
+                print(
+                    f"    Events: {len(events)} total, {len(nan_events)} anomaly-related"
+                )
                 for e in nan_events[:3]:
                     print(f"      {e.event_type.value}: {e.layer_name}")
                 return True
@@ -122,12 +124,16 @@ def test_on_real_varlen():
 
         with torch.autocast(device):
             q, k, v = qkv(x).chunk(3, dim=-1)
-            attn_out = torch.nn.functional.scaled_dot_product_attention(q, k, v, is_causal=False)
+            attn_out = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, is_causal=False
+            )
             loss = attn_out[: cu_seqlens[-1]].abs().sum()
             loss.backward()
 
         has_nan = any(
-            torch.isnan(p.grad).any().item() for p in qkv.parameters() if p.grad is not None
+            torch.isnan(p.grad).any().item()
+            for p in qkv.parameters()
+            if p.grad is not None
         )
 
         if has_nan:

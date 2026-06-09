@@ -14,8 +14,6 @@ Strategy:
 If/when MPS hardware is available, the same test runs with real MPS.
 """
 
-import sys
-
 import torch
 import torch.nn as nn
 
@@ -83,7 +81,7 @@ def test_neuraldbg_detects_gradient_discrepancy():
     We check that NeuralDBG's SemanticEvent log contains gradient-related events
     with the right severity when we inject bad gradients.
     """
-    from neuraldbg import EventType, NeuralDbg
+    from neuraldbg import NeuralDbg
 
     grad_norm, grad_mean, correct_grad = get_cpu_ground_truth()
     patterns = simulate_mps_wrong_gradient(correct_grad)

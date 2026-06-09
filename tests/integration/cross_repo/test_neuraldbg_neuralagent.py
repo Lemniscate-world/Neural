@@ -126,10 +126,17 @@ class TestNeuralDbgNeuralAgentContract:
         """Verify classification keywords cover the standard failure types."""
         from neuralagent import classify_hypothesis
 
-        assert classify_hypothesis("gradient explosion in layer X") == "gradient_explosion"
-        assert classify_hypothesis("vanishing gradient in layer Y") == "gradient_vanishing"
+        assert (
+            classify_hypothesis("gradient explosion in layer X") == "gradient_explosion"
+        )
+        assert (
+            classify_hypothesis("vanishing gradient in layer Y") == "gradient_vanishing"
+        )
         assert classify_hypothesis("dead neurons in layer Z") == "dead_neurons"
-        assert classify_hypothesis("saturated activation in conv") == "saturated_activations"
+        assert (
+            classify_hypothesis("saturated activation in conv")
+            == "saturated_activations"
+        )
         assert classify_hypothesis("data anomaly: NaN detected") == "data_anomaly"
         # Unknown description -> default fallback
         assert classify_hypothesis("completely unknown failure") == "gradient_explosion"
@@ -156,7 +163,7 @@ class TestNeuralDbgNeuralAgentContract:
             for s in range(seq_len):
                 assert (
                     merged[b, s, s].item() == 0.0
-                ), f"Diagonal [{b},{s},{s}] should be 0, got {merged[b,s,s].item()}"
+                ), f"Diagonal [{b}, {s}, {s}] should be 0, got {merged[b, s, s].item()}"
 
     def test_engine_optional_fallback_returns_empty(self):
         """Without neuraldbg-engine, detect_coupled_failures() MUST return [].

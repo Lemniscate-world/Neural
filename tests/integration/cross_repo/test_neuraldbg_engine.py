@@ -70,7 +70,9 @@ class TestFallbackContract:
     def test_detect_coupled_failures_returns_empty_without_engine(self):
         """Per cdp_protocol_definition.md: detect_coupled_failures() w/o engine returns []."""
         if HAS_ENGINE:
-            pytest.skip("Engine is installed — this test validates the fallback path only")
+            pytest.skip(
+                "Engine is installed — this test validates the fallback path only"
+            )
         torch.manual_seed(42)
         model = nn.Sequential(nn.Linear(8, 16), nn.ReLU(), nn.Linear(16, 2))
         x = torch.randn(4, 8)
@@ -89,7 +91,9 @@ class TestFallbackContract:
         """explain_failure() MUST work without the engine (may return [] or
         a basic hypothesis, but no crash)."""
         if HAS_ENGINE:
-            pytest.skip("Engine is installed — this test validates the fallback path only")
+            pytest.skip(
+                "Engine is installed — this test validates the fallback path only"
+            )
         torch.manual_seed(42)
         model = nn.Sequential(nn.Linear(8, 16), nn.Tanh(), nn.Linear(16, 2))
         x = torch.randn(4, 8)
@@ -106,7 +110,9 @@ class TestFallbackContract:
         assert isinstance(hypotheses, list)
 
 
-@pytest.mark.skipif(not HAS_ENGINE, reason="neuraldbg-engine not installed (closed beta)")
+@pytest.mark.skipif(
+    not HAS_ENGINE, reason="neuraldbg-engine not installed (closed beta)"
+)
 class TestEngineRichness:
     """When the engine IS installed, hypotheses SHOULD be richer / more confident."""
 

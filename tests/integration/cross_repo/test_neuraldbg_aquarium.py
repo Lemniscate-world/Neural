@@ -97,5 +97,6 @@ class TestAquariumJSONContract:
         assert isinstance(graph, str)
         # Mermaid graph types: flowchart, sequenceDiagram, etc.
         assert any(
-            kw in graph for kw in ("flowchart", "graph", "sequenceDiagram", "graph TD", "graph LR")
+            kw in graph
+            for kw in ("flowchart", "graph", "sequenceDiagram", "graph TD", "graph LR")
         ), f"Output does not look like Mermaid: {graph[:200]!r}"
