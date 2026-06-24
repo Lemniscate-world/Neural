@@ -89,14 +89,17 @@ print(dbg.explain_failure())
 | BUG-005 | pytorch/pytorch#173334 | Repro posted, issue closed (awaiting reopen) | - |
 | BUG-006 | pytorch/pytorch#187759 | **PR #188053 submitted** (Jun 24) | - |
 | BUG-007 | pytorch/pytorch#186799 | Cataloged (reported by @ezyang) | - |
+| BUG-008 | pytorch/pytorch#184575 | Cataloged (F.normalize gradient corruption) | - |
+| BUG-009 | pytorch/pytorch#187227 | Cataloged (SDPA int32 overflow) | - |
+| BUG-010 | pytorch/pytorch#185543 | Cataloged (quantile gradient mismatch) | - |
 
-**Bugs cataloged**: 7 | **Comments posted**: 6 | **PRs submitted**: 2 | **Merged**: 0 | **Merge rate**: 0%
+**Bugs cataloged**: 10 ✅ | **Comments posted**: 6 | **PRs submitted**: 2 | **Merged**: 0 | **Merge rate**: 0%
 
 ### v1.4.5 — Catalog Expansion (July-August 2026)
-- [x] 7/10 real bugs cataloged (MHA, GNN, LSTM, GAN, diffusion, transformers, RL)
+- [x] 10/10 real bugs cataloged ✅ M2 OBJECTIVE REACHED
 - [ ] Reproducible public benchmark on 5+ real scenarios
 - [ ] Comparison vs Captum (explainability)
-- [x] 2/3 upstream PRs submitted (at least 1 merged)
+- [x] 2/3 upstream PRs submitted
 - [ ] Detection accuracy >= 0.90
 
 ### v1.5.0 — Obligation (August-September 2026)
