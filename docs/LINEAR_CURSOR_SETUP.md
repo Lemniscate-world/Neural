@@ -43,7 +43,7 @@ Creer un fichier secret local (hors repo) et le charger automatiquement:
 ```bash
 mkdir -p ~/.config/secrets
 cat > ~/.config/secrets/linear.env <<'EOF'
-export LINEAR_API_KEY='lin_api_xxx'
+export LINEAR_API_KEY='your_linear_api_key_here'  # pragma: allowlist secret
 EOF
 chmod 600 ~/.config/secrets/linear.env
 ```
