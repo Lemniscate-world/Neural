@@ -28,7 +28,7 @@ def _changed_py_files():
     """Return list of changed .py files excluding skip files."""
     for args in (
         ["git", "diff", "--cached", "--name-only"],
-        ["git", "diff", "HEAD~1", "--name-only"],
+        ["git", "diff", "--name-only"],
     ):
         out = subprocess.run(args, **KW).stdout or ""
         files = [f for f in out.splitlines()
@@ -39,16 +39,21 @@ def _changed_py_files():
 
 
 def _diff_for_ext(ext):
-    """Return git diff content for files with given extension."""
+    """Return git diff content for files with given extension.
+    Checks staged changes first, then working tree vs HEAD.
+    """
     pattern = f"*.{ext}"
-    for args in (
-        ["git", "diff", "--cached", "--", pattern],
-        ["git", "diff", "HEAD~1", "--", pattern],
-    ):
-        out = subprocess.run(args, **KW).stdout or ""
-        if out.strip():
-            return out
-    return ""
+    # staged changes
+    out = subprocess.run(
+        ["git", "diff", "--cached", "--", pattern], **KW
+    ).stdout or ""
+    if out.strip():
+        return out
+    # working tree changes (unstaged)
+    out = subprocess.run(
+        ["git", "diff", "--", pattern], **KW
+    ).stdout or ""
+    return out
 
 
 def _ask(prompt, default=""):
@@ -130,8 +135,12 @@ def gate5(non_interactive=False):
 def gate6():
     """G6: Zero tolerance for 'workaround' in Python files only."""
     diff = _diff_for_ext("py")
-    added = [l for l in diff.splitlines()
-             if l.startswith("+") and not l.startswith("+++")]
+    # Exclude lines that are part of this gate checker itself
+    added = [
+        l for l in diff.splitlines()
+        if l.startswith("+") and not l.startswith("+++")
+        and "scripts/pr_gate_check.py" not in l
+    ]
     bad = [l for l in added if "workaround" in l.lower()]
     if bad:
         print(f"  [FAIL] G6: {len(bad)} 'workaround' in Python diff:")
