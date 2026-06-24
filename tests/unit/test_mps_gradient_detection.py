@@ -116,9 +116,9 @@ def test_neuraldbg_detects_gradient_discrepancy():
 
             if ratio > 10.0 or ratio < 0.1 or torch.isnan(model.weight.grad).any():
                 print(f"  [DETECTED] Pattern '{pattern_name}': ratio={ratio:.2f}")
-                print(
-                    f"    Events captured: {len(events)} total, {len(grad_events)} gradient-related"
-                )
+                n_total = len(events)
+                n_grad = len(grad_events)
+                print(f"    Events: {n_total} total, {n_grad} gradient-related")
                 for e in grad_events[:3]:
                     print(f"      {e.event_type.value}: {e.layer_name}")
                 return True

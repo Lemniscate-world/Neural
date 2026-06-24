@@ -45,7 +45,7 @@ class TestEngineDiscovery:
 
     def test_neuraldbg_imports_without_engine(self):
         """Core MUST import cleanly when engine is absent (cdp_protocol_definition)."""
-        from neuraldbg import _HAS_ENGINE, NeuralDbg  # type: ignore
+        from neuraldbg import NeuralDbg, _HAS_ENGINE  # type: ignore
 
         # If engine is installed, _HAS_ENGINE is True; else False.
         # Either way, NeuralDbg is importable.
@@ -68,11 +68,9 @@ class TestFallbackContract:
     """When the engine is absent, the fallbacks MUST behave per cdp_protocol."""
 
     def test_detect_coupled_failures_returns_empty_without_engine(self):
-        """Per cdp_protocol_definition.md: detect_coupled_failures() w/o engine returns []."""
+        """Per cdp_protocol: detect_coupled_failures() w/o engine returns []."""
         if HAS_ENGINE:
-            pytest.skip(
-                "Engine is installed — this test validates the fallback path only"
-            )
+            pytest.skip("Engine installed — fallback-only test")
         torch.manual_seed(42)
         model = nn.Sequential(nn.Linear(8, 16), nn.ReLU(), nn.Linear(16, 2))
         x = torch.randn(4, 8)
@@ -91,9 +89,7 @@ class TestFallbackContract:
         """explain_failure() MUST work without the engine (may return [] or
         a basic hypothesis, but no crash)."""
         if HAS_ENGINE:
-            pytest.skip(
-                "Engine is installed — this test validates the fallback path only"
-            )
+            pytest.skip("Engine installed — fallback-only test")
         torch.manual_seed(42)
         model = nn.Sequential(nn.Linear(8, 16), nn.Tanh(), nn.Linear(16, 2))
         x = torch.randn(4, 8)
@@ -151,9 +147,7 @@ class TestEngineRichness:
             assert hasattr(engine, "classify_gradient_health")
             assert hasattr(engine, "classify_activation_health")
             # Smoke test: call with sane inputs
-            assert engine.classify_gradient_health(1.0) in (
-                "healthy",
-                "stable",
-                "vanishing",
-                "exploding",
-            )
+            # classify_gradient_health returns enum; extract .value
+            result = engine.classify_gradient_health(1.0)
+            valid = ("healthy", "stable", "vanishing", "exploding")
+            assert getattr(result, "value", result) in valid

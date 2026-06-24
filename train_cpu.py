@@ -160,16 +160,18 @@ def train_on_cpu():
     test_prompt = (
         "### Instruction:\n"
         "Tu es un agent IA de diagnostic ML. Voici les événements NeuralDBG:\n"
-        "- gradient_health_transition at fc1.weight step 2: NORMAL -> EXPLODING (confidence 1.0)\n"
+        "- gradient_health_transition at fc1.weight step 2: "
+        "NORMAL -> EXPLODING (confidence 1.0)\n"
         "- nan_detected at loss step 3: 0.0 -> nan (confidence 1.0)\n\n"
-        "Quelle est la catégorie de défaillance et quel fix recommandes-tu ?\n\n"
+        "Catégorie de défaillance et fix recommandé ?\n\n"
         "### Response:\n"
     )
     input_ids = tokenizer(test_prompt, return_tensors="pt").input_ids
     with torch.no_grad():
         output = model.generate(input_ids, max_new_tokens=100, do_sample=False)
+    start_pos = input_ids.shape[1]
     response = tokenizer.decode(
-        output[0][input_ids.shape[1] :], skip_special_tokens=True
+        output[0][start_pos:], skip_special_tokens=True
     )
     print(f"Input: {test_prompt[:80]}...")
     print(f"Output: {response[:200]}")

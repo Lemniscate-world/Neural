@@ -17,6 +17,7 @@ nn = pytest.importorskip("torch.nn")
 
 from neuraldbg import NeuralDbg  # noqa: E402
 
+
 # Schema location (canonical, per COMPATIBILITY_MATRIX.md)
 SCHEMA_PATH = Path(__file__).parents[3] / "neuraldbg" / "schema" / "events.json"
 

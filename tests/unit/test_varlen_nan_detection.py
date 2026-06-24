@@ -97,9 +97,9 @@ def test_nan_gradient_detection():
             if has_nan or has_inf:
                 status = "NaN" if has_nan else "Inf"
                 print(f"  [DETECTED] Pattern '{pattern_name}': {status}")
-                print(
-                    f"    Events: {len(events)} total, {len(nan_events)} anomaly-related"
-                )
+                n_total = len(events)
+                n_anom = len(nan_events)
+                print(f"    Events: {n_total} total, {n_anom} anomaly-related")
                 for e in nan_events[:3]:
                     print(f"      {e.event_type.value}: {e.layer_name}")
                 return True

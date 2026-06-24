@@ -42,14 +42,15 @@ class TestNeuralDbgNeuralAgentContract:
     """Verify the `dbg.explain_failure()` -> `Remediator.remediate()` pipeline."""
 
     def test_neuralagent_imports_cleanly(self):
-        """Sanity check: neural-agent package is importable and exposes its public API."""
-        assert hasattr(neuralagent, "Remediator")
-        assert hasattr(neuralagent, "RemediationRunner")
-        assert hasattr(neuralagent, "apply_mha_mask_workaround")
-        assert hasattr(neuralagent, "REMEDIATION_STRATEGIES")
+        """Sanity: neural-agent package is importable, exposes public API."""
+        for attr in (
+            "Remediator", "RemediationRunner",
+            "apply_mha_mask_workaround", "REMEDIATION_STRATEGIES"
+        ):
+            assert hasattr(neuralagent, attr)
 
     def test_vanishing_gradients_triggers_gradient_vanishing_remediation(self):
-        """Induce vanishing gradients (Sigmoid + small init) -> Remediator swaps activation."""
+        """Vanishing gradients (Sigmoid+small init) -> Remediator swaps activation."""
         torch.manual_seed(SEED)
         # Sigmoid + small init -> known vanishing gradient regime
         model = nn.Sequential(nn.Linear(8, 16), nn.Sigmoid(), nn.Linear(16, 2))
@@ -68,7 +69,9 @@ class TestNeuralDbgNeuralAgentContract:
 
         # NeuralDBG MUST return at least one hypothesis
         assert isinstance(hypotheses, list)
-        assert len(hypotheses) >= 1, "Expected NeuralDBG to produce a hypothesis"
+        assert len(hypotheses) >= 1, (
+            "Expected NeuralDBG to produce a hypothesis"
+        )
 
         # Feed hypotheses into Neural-Agent's Remediator
         remediator = neuralagent.Remediator({"lr": 1e-3, "activation": "Sigmoid"})
@@ -83,7 +86,7 @@ class TestNeuralDbgNeuralAgentContract:
         assert "activation" in patched
 
     def test_exploding_gradients_triggers_lr_reduction(self):
-        """Induce exploding gradients (high LR + large init) -> Remediator reduces LR."""
+        """Exploding gradients (high LR+large init) -> Remediator reduces LR."""
         torch.manual_seed(SEED)
         # High LR + large init + 1 epoch -> known exploding regime
         model = nn.Sequential(nn.Linear(8, 32), nn.ReLU(), nn.Linear(32, 2))

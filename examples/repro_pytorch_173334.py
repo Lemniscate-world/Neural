@@ -1,4 +1,4 @@
-"""BUG-005 / pytorch#173334 — CUDA nn.LSTM batch pollution (Sample Independence Violation)
+"""BUG-005 / pytorch#173334 — CUDA LSTM batch pollution (Sample Independence)
 
 A sample that produces a valid output when processed alone produces a NaN
 when included in a batch. This is a fundamental contract violation: the
@@ -79,13 +79,13 @@ def reproduce_lstm_batch_pollution() -> None:
     # 3. Run on the full batch
     with torch.no_grad():
         out_batch, _ = lstm(x_batch)
-        res_from_batch = out_batch[polluter_idx : polluter_idx + 1]
+        res_from_batch = out_batch[polluter_idx: polluter_idx + 1]
         nan_b, max_b = check_status(res_from_batch)
         print(f"\n[lstm batch mode] NaN={nan_b}, max={max_b:.2e}")
 
     # 4. Run on the polluter sample individually
     with torch.no_grad():
-        x_single = x_batch[polluter_idx : polluter_idx + 1]
+        x_single = x_batch[polluter_idx: polluter_idx + 1]
         res_single, _ = lstm(x_single)
         nan_s, max_s = check_status(res_single)
         print(f"[lstm single-sample mode] NaN={nan_s}, max={max_s:.2e}")
