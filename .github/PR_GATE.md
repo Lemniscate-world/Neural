@@ -18,11 +18,13 @@ QUESTION: Does this PR FIX the bug or just DETECT/WARN about it?
 | Adds `print()` / logging | ❌ **REJECTED** | Same. Detection without correction = 0 value upstream. |
 | Catches an exception and warns | ❌ **REJECTED** | Exception is already a signal. What does your PR ADD? |
 | Changes behavior to PREVENT the bug | ✅ **PASS** | Proceed to Gate 2. |
-| Adds input validation that raises early | ✅ **PASS** | Proceed to Gate 2. |
+| Adds input validation that raises early | ⚠️ **CHECK PERF** | Does it do GPU→CPU sync (`.item()`, `.cpu()`)? If yes in a hot path → REJECTED. |
 | Fixes numerical stability (eps, scaling) | ✅ **PASS** | Proceed to Gate 2. |
 | Adds a new test that verifies the fix | ✅ **PASS** | Proceed to Gate 2. |
 
-**Lesson from PR #186631**: A `warnings.warn()` in MultiheadAttention was closed by the CEO because PyTorch maintainers won't merge detection-only PRs. They want BEHAVIOR CHANGES.
+**Lesson from PR #186631**: A `warnings.warn()` was closed — maintainers want behavior changes, not detection.
+
+**Lesson from PR #186786**: Input validation with `.item()` triggers GPU→CPU sync in the hot path. Maintainer (@drisspg) rejected: *"no, not doing d2h sync for error checking here sorry"*. **Check: does your fix introduce device-to-host synchronization in a performance-critical code path?**
 
 ---
 
