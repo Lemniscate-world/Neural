@@ -68,19 +68,29 @@ grep -r "workaround" docs/ examples/ --include="*.md" --include="*.py"
 
 ---
 
-## Règle D4 : PRs upstream = pipeline complet NeuralDBG + Neural-Agent
+## Règle D4 : PRs upstream = pipeline complet + PR Gate obligatoire
 
-**Problème** : PR #186631 (pytorch) fermée car c'était juste un `warnings.warn()`. Pas de valeur NeuralSuite.
+**Problème** : PR #186631 (pytorch) fermée car c'était juste un `warnings.warn()`. PR #186786: bon fix mais 0 reviews en 16 jours. BUG-001 v2: pipeline prêt mais jamais de PR créée.
 
-**Solution** : Chaque PR upstream doit contenir :
+**Solution** : AVANT toute PR upstream, passer les 6 gates de `.github/PR_GATE.md` :
+1. **G1 FIX** : C'est un fix, pas un warning/log
+2. **G2 EXISTS** : La PR est réellement ouverte sur l'upstream
+3. **G3 REPRO** : Reproduction CPU ou GPU gratuit
+4. **G4 CITE** : NeuralDBG cité dans la description
+5. **G5 FOLLOW-UP** : Plan de relance défini (J+3, J+7, J+14)
+6. **G6 NO-WORKAROUND** : Zéro occurrence du mot "workaround"
+
+**Contenu de la PR** (en plus des gates) :
 1. **Detection** : montrer que NeuralDBG détecte le bug (ex: output de `explain_failure()`)
 2. **Resolution** : montrer que Neural-Agent propose/applique le fix
 3. **Preuve** : script de reproduction + log NeuralDBG avant/après fix
 4. **Code fix** : le vrai patch dans le code upstream
 
-**Template** : `.github/PR_TEMPLATES/upstream-fix.md`
+**Templates** :
+- Gate checklist : `.github/PR_GATE.md`
+- PR description : `.github/PR_TEMPLATES/upstream-fix.md`
 
-**Enforcement** : IF PR upstream sans démo NeuralDBG+Agent -> NE PAS SOUMETTRE.
+**Enforcement** : IF PR upstream sans les 6 gates cochées -> NE PAS SOUMETTRE. IF PR soumise sans follow-up plan -> ajouter le plan IMMÉDIATEMENT après soumission.
 
 ---
 
