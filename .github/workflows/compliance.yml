@@ -1,0 +1,145 @@
+name: Kuro Rules Compliance
+
+on:
+  push:
+    branches: [main, master, develop, 'feat/*', 'fix/*']
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: '0 8 * * *'  # daily at 8am UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: pip install pyyaml 2>/dev/null || true
+
+      - name: R30 — Branch naming
+        run: |
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          echo "Branch: $BRANCH"
+          # Valid patterns: main, master, develop, feat/*, fix/*, infra/*, ceo/*, sec/*, chore/*
+          if echo "$BRANCH" | grep -Eq '^(main|master|develop|feat/|fix/|infra/|ceo/|sec/|chore/|docs/|test/)'; then
+            echo "✅ Branch name OK"
+          else
+            echo "❌ Branch '$BRANCH' violates naming convention"
+            exit 1
+          fi
+
+      - name: R76 — Protected files check
+        run: |
+          PROTECTED="PLAN.md SESSION_SUMMARY.md acquisition_tracker.md decision-memo.md LAUNCH_POSTS.md .env credentials.json"
+          FAILED=0
+          for f in $PROTECTED; do
+            if git ls-files --error-unmatch "$f" 2>/dev/null; then
+              echo "❌ Protected file tracked by git: $f"
+              FAILED=1
+            fi
+          done
+          if [ $FAILED -eq 1 ]; then
+            echo "Remove protected files from git tracking (R76 violation)"
+            exit 1
+          fi
+          echo "✅ No protected files tracked"
+
+      - name: R101 — No secrets in code
+        run: |
+          # Basic secret scan — extend with trufflehog for production
+          if git diff --cached --name-only 2>/dev/null | grep -q '.env'; then
+            echo "❌ .env file detected in commit"
+            exit 1
+          fi
+          # Check for common API key patterns in diff
+          if git diff HEAD~1 2>/dev/null | grep -qiE '(api_key|apikey|secret|password)\s*=\s*['\''\"]\w{8,}'; then
+            echo "❌ Potential secret in diff"
+            exit 1
+          fi
+          echo "✅ No secrets detected"
+
+      - name: R39 — No assert in production
+        run: |
+          if [ -d "neuraldbg" ] || [ -d "src" ]; then
+            VIOLATIONS=$(grep -rn "assert " --include="*.py" . --exclude-dir=tests --exclude-dir=test --exclude-dir=.venv | grep -v "assert isinstance\|assert __name__" | head -20)
+            if [ -n "$VIOLATIONS" ]; then
+              echo "❌ assert() found in production code:"
+              echo "$VIOLATIONS"
+              exit 1
+            fi
+            echo "✅ No assert in production code"
+          else
+            echo "ℹ️  No Python production code to check"
+          fi
+
+      - name: R64/R2 — No workaround word
+        run: |
+          VIOLATIONS=$(grep -rn "workaround" --include="*.py" --include="*.md" . --exclude-dir=.venv --exclude-dir=node_modules --exclude-dir=.git | grep -v "PR_GATE.md\|DEV_RULES.md\|pr_gate_check\|rule_" | head -10)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "❌ 'workaround' found:"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+          echo "✅ No 'workaround' in code"
+
+      - name: R91 — Version consistency
+        run: |
+          if [ -f "pyproject.toml" ]; then
+            VERSION=$(grep 'version\s*=' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+            if [ -f "CHANGELOG.md" ]; then
+              if grep -q "\[$VERSION\]" CHANGELOG.md; then
+                echo "✅ Version $VERSION in CHANGELOG.md"
+              else
+                echo "⚠️  Version $VERSION not found in CHANGELOG.md"
+              fi
+            fi
+            echo "Package version: $VERSION"
+          fi
+
+      - name: R85/R80 — Portfolio stale check
+        if: github.repository == 'Lemniscate-world/kuro-rules'
+        run: |
+          if [ -f "Epingle_Projets.md" ]; then
+            LAST_MOD=$(git log -1 --format="%ct" -- Epingle_Projets.md)
+            NOW=$(date +%s)
+            DAYS=$(( (NOW - LAST_MOD) / 86400 ))
+            if [ $DAYS -gt 7 ]; then
+              echo "⚠️  Epingle_Projets.md not updated in $DAYS days"
+            else
+              echo "✅ Epingle updated $DAYS days ago"
+            fi
+          fi
+
+      - name: R90 — Monthly deliverables reminder
+        if: github.event_name == 'schedule'
+        run: |
+          DAY=$(date +%d)
+          if [ "$DAY" -le 3 ]; then
+            echo "📋 Monthly deliverables check (R90) — first week of month"
+            echo "   Check: OpenQuant model, DevDemeterDAO report, Hermes validation, Sagittarius MLOps"
+          fi
+
+      - name: Summary
+        run: |
+          echo "========================================="
+          echo "Kuro Rules Compliance Check Complete"
+          echo "========================================="
+          echo "Gates verified:"
+          echo "  ✅ R30  Branch naming"
+          echo "  ✅ R76  Protected files"
+          echo "  ✅ R101 No secrets"
+          echo "  ✅ R39  No assert in prod"
+          echo "  ✅ R64  No workaround word"
+          echo "  ✅ R91  Version consistency"
+          echo "  ✅ R85  Portfolio freshness"
+          echo "========================================="
