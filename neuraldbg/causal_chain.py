@@ -88,6 +88,12 @@ CAUSAL_COMPATIBILITY = {
     ("nan_detected", "activation_regime_shift"): 0.7,
     # Gradient propagation: low confidence, filtered by quality gate if all healthy
     ("gradient_health_transition", "gradient_health_transition"): 0.25,
+    # Cross-type propagation (important for RNN/hybrid architectures)
+    ("data_anomaly", "data_anomaly"): 0.5,
+    ("activation_regime_shift", "optimizer_instability"): 0.6,
+    ("gradient_health_transition", "activation_regime_shift"): 0.4,
+    ("optimizer_instability", "activation_regime_shift"): 0.4,
+    ("nan_detected", "nan_detected"): 0.3,
 }
 
 
