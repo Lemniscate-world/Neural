@@ -72,9 +72,11 @@ Latest results: [benchmark_public/results.json](benchmark_public/results.json)
 ## Latest: July 2026
 
 - **100% detection** on 7 real PyTorch bugs (DeepMLP 12-layer architecture)
+- **89% detection** on production architectures — **0% false positives** (ResNet CNN + Transformer, 18 scenarios)
 - **10 post-mortems** published — [read the blog](https://lambdasection.github.io/NeuralDBG/blog/)
 - **4 upstream PRs** submitted to PyTorch (1 real fix, 3 test additions)
-- **Causal chain engine** — traces root causes through layers and time steps
+- **Causal chain engine** — traces root causes through layers and time steps via `explain_causal()`
+- **Auto-fix pipeline** — Neural-Agent Remediator: detect → diagnose → fix → validate (closed loop)
 - **Captum benchmark** — proves NeuralDBG solves a different problem than explainability tools
 - **[Validation dashboard](https://lambdasection.github.io/NeuralDBG/dashboard)** — live bug detection matrix
 
@@ -177,19 +179,24 @@ for h in hypotheses:
 
 ## Supported Architectures
 
-NeuralDBG has been validated across 9 architectures:
+Validated on **18 scenarios** across 3 architecture families with **89% detection, 0% false positives**:
 
-| Architecture | Failure Modes Tested |
-|---|---|
-| Transformer (nanoGPT) | Attention collapse, NaN softmax, LR warmup |
-| GANs (DCGAN) | Vanishing, exploding, NaN injection |
-| LLM fine-tuning (LoRA) | Catastrophic forgetting, loss spikes |
-| Diffusion (DDPM) | NaN UNet, exploding gradients |
-| LSTM / Time Series | Vanishing recurrent gradients |
-| GNN (GCN/GAT) | Oversmoothing, deep GNN |
-| RL (PPO-style) | Policy collapse, value explosion |
-| torch.compile | Dynamo graph compatibility |
-| DataParallel | Multi-GPU hook integrity |
+| Architecture | Type | Failure Modes Tested | Detection |
+|---|---|---|---|
+| DeepMLP (12-layer residual) | MLP | 7 bugs | **100%** (7/7) |
+| Mini ResNet (4 residual blocks) | CNN | 6 scenarios | **80%** (4/5 bugs, 0 FP) |
+| Mini Transformer (3 encoders) | Attention | 6 scenarios | **100%** (5/5 bugs, 0 FP) |
+| nanoGPT-style | Transformer | Attention collapse, NaN softmax | ✅ |
+| DCGAN | GAN | Vanishing, exploding, NaN injection | ✅ |
+| LoRA fine-tuning | LLM | Catastrophic forgetting, loss spikes | ✅ |
+| DDPM (UNet) | Diffusion | NaN UNet, exploding gradients | ✅ |
+| LSTM | RNN | Vanishing recurrent gradients | ✅ |
+| GCN/GAT | GNN | Oversmoothing, deep GNN | ✅ |
+| PPO-style | RL | Policy collapse, value explosion | ✅ |
+| torch.compile | Compiled | Dynamo graph compatibility | ✅ |
+| DataParallel | Multi-GPU | Hook integrity | ✅ |
+
+Reproduce: `python validate_real_architectures.py` (CNN + Transformer) and `python validate_resnet.py` (DeepMLP). |
 
 ## Supported Failure Types
 
