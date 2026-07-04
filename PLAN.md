@@ -44,8 +44,8 @@
 
 | # | Action | Impact | Effort |
 |---|--------|--------|--------|
-| C1 | **PyTorch Dev Discussions** (poster analyses) | Visibilité maintainers | 1h |
-| C2 | **Reddit r/MachineLearning** (trouver proxy) | Visibilité large | 1h |
+| C1 | **PyTorch Dev Discussions** (poster analyses) | Visibilité maintainers | 1h | ✅ **Rédigé** |
+| C2 | **Reddit r/MachineLearning** (trouver proxy) | Visibilité large | 1h | ✅ **Rédigé** |
 | C3 | **Hacker News** (build karma → Show HN) | Visibilité tech | Continu |
 
 ### Bloc D : PRs (en attente — suivi passif)
