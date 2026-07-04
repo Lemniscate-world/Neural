@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-07-04
+
+### Added
+- **RNN/LSTM/GRU support**: forward hooks now unwrap RNN output tuples `(output, (h_n, c_n))`. Hidden state capture with BPTT gradient health tracking. RNN detection: 49%→65% (+16%), Hybrid: 34%→85% (+51%), Global: 75%→87%.
+- **Combinatorial architecture validation** (`validate_combinatorial.py`): 200 architecture configs × 6 bugs × 5 families (MLP/CNN/RNN/Transformer/Hybrid). 1200 evaluations. RNN-aware bug injectors (forget gate corruption, BPTT sequence extension).
+- **Paper architecture scraper** (`scrape_paper_archs.py`): 60 novel architectures from papers (Mamba, KAN, xLSTM, MoE, Hyena, RWKV, RetNet, BitNet, etc.).
+- **Aquarium web dashboard** (`docs/aquarium.html`): zero-dependency HTML causal viewer. Drag-drop NeuralDBG JSON exports. Replaces dormant Tauri app.
+- **GPU v4 model**: Qwen2-0.5B fp16 + LoRA r=8, 538 training examples from all 5 families (6.1× increase). 92.3% accuracy, 4.3MB adapter. Agent bridge updated.
+- **E2E RNN pipeline** (`e2e_rnn_pipeline.py`): closed loop on LSTM bugs. 2/4 auto-fixed with causal chain tracing. Aquarium JSON export.
+- **CI benchmark workflow** (`.github/workflows/benchmark.yml`): runs combinatorial benchmark on every push/PR. Fails if detection < 80%.
+- **Causal chain compatibility**: added 5 cross-type compatibility pairs for RNN event linking (data_anomaly→data_anomaly, activation→optimizer, etc.).
+
 ### Added (July 2026)
 - **Causal chain engine** (`neuraldbg/causal_chain.py`): builds directed causal graphs from events, extracts ranked chains via DFS. Shows root cause → propagation → final symptom. Integrated via `dbg.explain_causal()`.
 - **DeepMLP validation** (`validate_resnet.py`): 12-layer residual architecture achieving 100% detection (7/7) vs 57% on shallow models. Median gap: +17 anomalies.
