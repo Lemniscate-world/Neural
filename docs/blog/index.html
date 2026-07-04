@@ -108,6 +108,40 @@
 
             <article class="post">
                 <div class="meta">
+                    <span class="badge badge-real">Real Bug</span>
+                    <span>2026-07-04</span>
+                    <span style="margin-left:0.5rem">POST-005</span>
+                </div>
+                <h2><a href="post-005-bug-005-postmortem.html">LSTM Batch Pollution: One Bad Sample Corrupts the Entire Batch</a></h2>
+                <p>CUDA nn.LSTM silently corrupts ALL samples when one sample has NaN input — a sample independence violation. NeuralDBG detects it with +24 anomaly gap, traces the causal chain (nan_detected → gradient_exploding → optimizer_diverging), and the fix returns anomalies to 0. Perfect 0→24→0 detection.</p>
+                <div>
+                    <span class="tag">pytorch</span>
+                    <span class="tag">lstm</span>
+                    <span class="tag">causal-chain</span>
+                    <span class="tag">BUG-005</span>
+                    <span class="tag">pipeline</span>
+                </div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
+                    <span class="badge badge-real">Real Bug</span>
+                    <span>2026-07-04</span>
+                    <span style="margin-left:0.5rem">POST-003</span>
+                </div>
+                <h2><a href="post-003-bug-003-postmortem.html">Gradient Explosion: When Your Model Produces 100,000x Gradients</a></h2>
+                <p>MPS backend (Apple Silicon) produces gradients 100x-100,000x too large — finite but wrong, invisible to NaN monitoring. NeuralDBG catches the NORMAL→EXPLODING gradient health transition, traces the causal chain, and the full pipeline (detect→chain→fix→validate) achieves PASS. Includes comparison vs W&B, TensorBoard, and MLflow.</p>
+                <div>
+                    <span class="tag">pytorch</span>
+                    <span class="tag">mps</span>
+                    <span class="tag">causal-chain</span>
+                    <span class="tag">BUG-003</span>
+                    <span class="tag">pipeline</span>
+                </div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
                     <span class="badge badge-synthetic">Synthetic Scenario</span>
                     <span>2026-06-06</span>
                 </div>
