@@ -31,10 +31,9 @@ except ImportError:
         return fn
 
 
-# Try to import the proprietary engine (optional)
+# Import the causal engine (now bundled in neuraldbg/engine/)
 try:
-    from neuraldbg_engine import CausalEngine
-
+    from .engine import CausalEngine
     _HAS_ENGINE = True
 except ImportError:
     CausalEngine = None  # type: ignore
