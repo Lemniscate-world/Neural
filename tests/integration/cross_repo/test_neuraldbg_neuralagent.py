@@ -45,7 +45,7 @@ class TestNeuralDbgNeuralAgentContract:
         """Sanity: neural-agent package is importable, exposes public API."""
         for attr in (
             "Remediator", "RemediationRunner",
-            "apply_mha_mask_workaround", "REMEDIATION_STRATEGIES"
+            "apply_mha_mask_fix", "REMEDIATION_STRATEGIES"
         ):
             assert hasattr(neuralagent, attr)
 
@@ -108,10 +108,11 @@ class TestNeuralDbgNeuralAgentContract:
         remediator = neuralagent.Remediator({"lr": 1.0, "activation": "ReLU"})
         patched, info = remediator.remediate(hypotheses)
 
-        # If NeuralDBG detected the explosion and matched a rule, LR should drop
-        # (factor of 0.1 per REMEDIATION_STRATEGIES). If no match, LR stays the same.
+        # If NeuralDBG detected the explosion and matched a rule, LR should drop.
+        # gradient_explosion -> lr*0.1, dead_neurons -> lr*0.5, unknown -> unchanged.
         assert patched["lr"] in (
             0.1,  # reduced (matched gradient_explosion)
+            0.5,  # reduced (matched dead_neurons — ReLU can trigger both)
             1.0,  # unchanged (no match — fine, graceful)
         )
 
@@ -141,10 +142,10 @@ class TestNeuralDbgNeuralAgentContract:
             == "saturated_activations"
         )
         assert classify_hypothesis("data anomaly: NaN detected") == "data_anomaly"
-        # Unknown description -> default fallback
-        assert classify_hypothesis("completely unknown failure") == "gradient_explosion"
+        # Unknown description -> no automatic misclassification
+        assert classify_hypothesis("completely unknown failure") == "unknown"
 
-    def test_apply_mha_mask_workaround_merges_masks(self):
+    def test_apply_mha_mask_fix_merges_masks(self):
         """Verify the BUG-001 workaround: merge key_padding_mask into attn_mask
         and force the diagonal to 0."""
         seq_len, batch = 4, 2
@@ -156,7 +157,7 @@ class TestNeuralDbgNeuralAgentContract:
         # Pad the last token in sequence 0
         key_padding_mask[0, -1] = True
 
-        merged = neuralagent.apply_mha_mask_workaround(attn_mask, key_padding_mask)
+        merged = neuralagent.apply_mha_mask_fix(attn_mask, key_padding_mask)
 
         # Output shape: (B, S, S)
         assert merged.shape == (batch, seq_len, seq_len)
@@ -190,3 +191,38 @@ class TestNeuralDbgNeuralAgentContract:
 
         # Per cdp_protocol_definition.md: no engine -> empty list, no crash
         assert couplings == []
+
+    def test_bridge_remediates_from_exported_package(self, tmp_path):
+        """NeuralDBG export -> neuralagent.bridge.remediate_from_package()."""
+        from neuralagent.bridge import remediate_from_package
+
+        torch.manual_seed(SEED)
+        model = nn.Sequential(nn.Linear(8, 32), nn.ReLU(), nn.Linear(32, 2))
+        for p in model.parameters():
+            p.data *= 5.0
+
+        x = torch.randn(4, 8)
+        target = torch.randint(0, 2, (4,))
+        optimizer = torch.optim.SGD(model.parameters(), lr=1.0)
+
+        with NeuralDbg(model) as dbg:
+            for _ in range(3):
+                _train_step(model, x, target, dbg, optimizer, nn.CrossEntropyLoss())
+            export_path = tmp_path / "pkg.json"
+            dbg.export_aquarium_package(str(export_path))
+
+        import json
+
+        with open(export_path) as f:
+            package = json.load(f)
+
+        result = remediate_from_package(package, initial_config={"lr": 1.0, "activation": "ReLU"})
+        assert "patched_config" in result
+        assert "remediation_info" in result
+        assert result["category"] in (
+            "gradient_explosion",
+            "unknown",
+            "gradient_vanishing",
+            "dead_neurons",
+            "saturated_activations",
+        )

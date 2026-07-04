@@ -44,7 +44,7 @@ def test_mermaid_graph_generated():
     dbg = scenario_vanishing_gradients(num_steps=10)
     results = analyze_results(dbg)
     assert results["mermaid"].startswith("graph TD")
-    assert "E0" in results["mermaid"]
+    assert "E_" in results["mermaid"]  # UUID-based event IDs
 
 
 def test_couplings_detected():

@@ -78,9 +78,21 @@ with NeuralDbg(model) as dbg:
 
 ### NeuralDBG -> Aquarium (out-of-process, JSON)
 ```bash
-python train.py --neuraldbg-export events.json
-# Open Aquarium, drag events.json, view causal graph
+python train.py  # with NeuralDbg wrapper
+dbg.export_aquarium_package("aquarium_exports/events.json")
+# Open Aquarium → Causal Diagnostics → select package → Run Neural-Agent Fix
 ```
+
+### NeuralDBG -> Neural-Agent -> Aquarium (full pipeline)
+```bash
+# CLI
+neuralagent remediate-package aquarium_exports/events.json
+
+# Or in Aquarium UI: load package → "Run Neural-Agent Fix"
+# Optional: set model path for LLM-enhanced diagnosis
+```
+
+Environment: `AQUARIUM_EXPORTS_DIR` or `NEURALDBG_EXPORTS_DIR` for custom export location.
 
 ### NeuralDBG <-> neuraldbg-engine (optional, in-process)
 ```python

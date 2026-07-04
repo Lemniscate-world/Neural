@@ -6,6 +6,30 @@
 
 ---
 
+## GATE 0: NEURALSUITE PRODUCT FIX EXISTS (MANDATORY)
+
+```
+QUESTION: Does NeuralSuite already FIX this bug for the user BEFORE we open an upstream PR?
+```
+
+| Status | Gate Result | Action |
+|--------|-------------|--------|
+| No NeuralDBG detection test | ❌ **REJECTED** | Write detection + `explain_failure()` first |
+| No Neural-Agent remediation rule | ❌ **REJECTED** | Add rule in `remediation_rules.py` + test |
+| Only upstream patch, no product path | ❌ **REJECTED** | **STOP.** This is the mistake we must not repeat. |
+| NeuralDBG detects + Neural-Agent fixes + E2E test passes | ✅ **PASS** | Proceed to Gate 1 |
+
+**Required evidence before ANY upstream PR:**
+
+1. `tests/integration/test_product_pipeline.py` (or bug-specific test) passes
+2. `neuralagent remediate-package` returns a valid fix for the export
+3. Entry in `docs/SOLUTIONS.md` marked "product validated"
+
+**Anti-pattern (FORBIDDEN):** Opening a PyTorch test-only PR without a NeuralSuite remediation path.
+That builds portfolio credit but does NOT fix user pain — and wastes review cycles.
+
+---
+
 ## GATE 1: FIX vs WORKAROUND
 
 ```
@@ -116,6 +140,7 @@ grep -ri "workaround" --include="*.py" --include="*.md" .
 
 Before clicking "Create Pull Request", verify ALL of these:
 
+- [ ] **G0**: NeuralDBG detects + Neural-Agent remediates + E2E test passes
 - [ ] **G1**: This is a FIX, not a warning/log/print
 - [ ] **G2**: The PR is actually open on the upstream repo (URL: _________)
 - [ ] **G3**: Reproduction works on CPU or free GPU (Colab/Kaggle)

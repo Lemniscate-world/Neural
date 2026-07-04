@@ -48,6 +48,7 @@ class EventType(Enum):
     ACTIVATION_REGIME_SHIFT = "activation_regime_shift"
     OPTIMIZER_INSTABILITY = "optimizer_instability"
     DATA_ANOMALY = "data_anomaly"
+    SAMPLE_INDEPENDENCE_VIOLATION = "sample_independence_violation"
 
 
 class GradientHealth(Enum):
@@ -424,6 +425,76 @@ class NeuralDbg:
             )
             self.events.append(event)
             self.previous_optimizer_health = current_health
+
+    def record_sample_independence_violation(
+        self,
+        layer_name: str,
+        sample_idx: int,
+        batched_has_nan: bool = True,
+        single_is_valid: bool = True,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Record a batch vs single-sample output mismatch (BUG-005 / pytorch#173334).
+
+        Call when a sample produces valid output alone but NaN/invalid in batch.
+        """
+        meta = dict(metadata or {})
+        meta.update(
+            {
+                "sample_idx": sample_idx,
+                "batched_has_nan": batched_has_nan,
+                "single_is_valid": single_is_valid,
+                "failure_type": "lstm_sample_independence_violation",
+            }
+        )
+        self._track_first_occurrence("sample_independence_violation", layer_name)
+        event = SemanticEvent(
+            event_type=EventType.SAMPLE_INDEPENDENCE_VIOLATION,
+            layer_name=layer_name,
+            step=self.step,
+            from_state="independent",
+            to_state="violated",
+            confidence=0.95,
+            metadata=meta,
+        )
+        self.events.append(event)
+
+    def record_gradient_anomaly(
+        self,
+        layer_name: str,
+        kind: str = "nan",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Record an external gradient anomaly (NaN/Inf/explosion) on a layer.
+
+        Use when simulating upstream bugs (varlen_attn, MPS) or when hooks
+        miss a composite module. Feeds Neural-Agent remediation pipeline.
+        """
+        meta = dict(metadata or {})
+        meta["anomaly_kind"] = kind
+        if kind in ("nan", "inf"):
+            self._track_first_occurrence("data_anomaly", layer_name)
+            event = SemanticEvent(
+                event_type=EventType.DATA_ANOMALY,
+                layer_name=layer_name,
+                step=self.step,
+                from_state="normal",
+                to_state=f"{kind}_detected",
+                confidence=0.95,
+                metadata=meta,
+            )
+        else:
+            self._track_first_occurrence(f"gradient_{kind}", layer_name)
+            event = SemanticEvent(
+                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                layer_name=layer_name,
+                step=self.step,
+                from_state="healthy",
+                to_state=kind,
+                confidence=0.92,
+                metadata=meta,
+            )
+        self.events.append(event)
 
     def _classify_optimizer_health(self) -> OptimizerHealth:
         """Classify optimizer stability from loss history."""
@@ -977,6 +1048,20 @@ class NeuralDbg:
                 )
         return hypotheses
 
+    def explain_causal(self) -> List:
+        """Build causal chains from captured events (true causal inference).
+
+        Unlike explain_failure() which returns flat hypotheses,
+        this method constructs directed causal chains showing
+        how events propagate through layers and time steps.
+
+        Returns:
+            List of CausalChain objects, ranked by confidence * length.
+        """
+        from neuraldbg.causal_chain import explain_causal as _explain
+        events = self.dump_events()
+        return _explain(events)
+
     def _explain_vanishing_gradients(self) -> List[CausalHypothesis]:
         """Generate hypotheses for vanishing — delegates to engine."""
         if self._causal_engine is not None:
@@ -1005,7 +1090,63 @@ class NeuralDbg:
         """Get all current causal hypotheses — delegates to engine."""
         if self._causal_engine is not None:
             return self._engine.explain.get_causal_hypotheses()
-        return []
+        hypotheses: List[CausalHypothesis] = []
+        seen: set = set()
+        for event in self.events:
+            key = (event.event_type.value, event.layer_name, event.step)
+            if key in seen:
+                continue
+            seen.add(key)
+            desc = self._event_to_hypothesis_description(event)
+            hypotheses.append(
+                CausalHypothesis(
+                    description=desc,
+                    confidence=event.confidence,
+                    evidence=[event],
+                    causal_chain=[f"{event.layer_name}@step {event.step}"],
+                )
+            )
+        return sorted(hypotheses, key=lambda h: h.confidence, reverse=True)
+
+    def _event_to_hypothesis_description(self, event: SemanticEvent) -> str:
+        """Map a semantic event to a Neural-Agent classifiable description."""
+        meta = event.metadata or {}
+        bug = str(meta.get("bug", ""))
+        source = str(meta.get("source", ""))
+
+        if "BUG-002" in bug or source == "varlen_attn":
+            return (
+                f"Gradient explosion / NaN in varlen_attn at layer '{event.layer_name}' "
+                f"step {event.step} (BUG-002 / pytorch/pytorch#176793)"
+            )
+        if "BUG-003" in bug or source == "mps_backend":
+            return (
+                f"Gradient explosion on MPS backend at layer '{event.layer_name}' "
+                f"step {event.step} (BUG-003 / pytorch/pytorch#177116)"
+            )
+
+        et = event.event_type.value
+        if et == "sample_independence_violation":
+            idx = event.metadata.get("sample_idx", "?")
+            return (
+                f"Sample independence violation in layer '{event.layer_name}' "
+                f"at step {event.step}: sample {idx} valid alone but invalid in batch "
+                f"(BUG-005 / pytorch/pytorch#173334)"
+            )
+        if et == "gradient_health_transition":
+            return (
+                f"Gradient {event.to_state} in layer '{event.layer_name}' "
+                f"at step {event.step}"
+            )
+        if et == "data_anomaly":
+            return (
+                f"Data anomaly ({event.to_state}) in layer '{event.layer_name}' "
+                f"at step {event.step}"
+            )
+        return (
+            f"{et} at layer '{event.layer_name}' (step {event.step}): "
+            f"{event.from_state} -> {event.to_state}"
+        )
 
     def trace_causal_chain(self, event_type: str) -> List[str]:
         """Trace the causal chain — delegates to engine."""
@@ -1157,6 +1298,28 @@ class NeuralDbg:
         if self._causal_engine is not None:
             return self._engine.explain.collapse_events()
         return self.events
+
+    def dump_events(self) -> list:
+        """Return all captured events as JSON-serializable dicts.
+
+        Used by the CLI wrapper (``neuraldbg run``) and external consumers.
+        """
+        return [
+            {
+                "event_type": e.event_type.value,
+                "layer_name": e.layer_name,
+                "step": e.step,
+                "from_state": str(e.from_state),
+                "to_state": str(e.to_state),
+                "confidence": e.confidence,
+                "metadata": {
+                    k: v
+                    for k, v in e.metadata.items()
+                    if isinstance(v, (str, int, float, bool, type(None)))
+                },
+            }
+            for e in self.events
+        ]
 
     def export_aquarium_package(self, package_path: str) -> str:
         """Export JSON package for Aquarium — delegates to engine."""
