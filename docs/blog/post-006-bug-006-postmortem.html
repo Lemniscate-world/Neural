@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Silent NaN Swallowing: When svdvals Lies About Your Data - NeuralDBG Blog</title>
+<link rel="icon" href="../assets/neuraldbg-logo.svg" type="image/svg+xml">
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--accent2:#a371f7;--success:#3fb950;--danger:#f85149;--border:#30363d}
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;line-height:1.7}
+.container{max-width:760px;margin:0 auto;padding:0 1.5rem}
+header{padding:2.5rem 0 1.5rem;border-bottom:1px solid var(--border)}
+.breadcrumb{color:var(--muted);font-size:.9rem}.breadcrumb a{color:var(--accent);text-decoration:none}
+h1{font-size:2.1rem;margin:.5rem 0 .75rem}
+h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:var(--accent2);border-bottom:1px solid var(--border);padding-bottom:.3rem}
+h3{font-size:1.2rem;margin:1.8rem 0 .8rem}
+.meta{color:var(--muted);font-size:.9rem;margin:.5rem 0 1.5rem}
+a{color:var(--accent)}pre{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.9rem}
+code{font-family:"SF Mono","Fira Code",monospace;font-size:.88em}
+pre code{background:transparent;padding:0}
+table{width:100%;border-collapse:collapse;margin:1.5rem 0}
+th,td{padding:.6rem .8rem;border:1px solid var(--border);text-align:left}
+th{background:var(--surface)}tr:nth-child(even){background:var(--surface)}
+.highlight{background:var(--surface);border-left:3px solid var(--accent2);padding:1rem;margin:1rem 0;border-radius:0 8px 8px 0}
+blockquote{border-left:3px solid var(--accent);padding:.5rem 1rem;margin:1rem 0;color:var(--muted)}
+footer{margin-top:4rem;padding:2rem 0;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+<div class="container">
+<div class="breadcrumb"><a href="index.html">NeuralDBG Blog</a> / POST-006</div>
+<h1>Silent NaN Swallowing: When svdvals Lies About Your Data</h1>
+<div class="meta"><span>2026-07-04</span> · <span style="color:var(--accent2)">BUG-006</span> · <span style="color:var(--success)">Gap: +2 / PR #188053</span></div>
+</div>
+</header>
+<article class="container">
+<p># POST-006 — Silent NaN Swallowing: When svdvals Lies About Your Data</p>
+<blockquote>**BUG-006** | **Source**: pytorch/pytorch#187759 | **PR**: #188053 (1ère review humaine — albanD)</blockquote>
+<blockquote>**Date**: 2026-07-04 | **Detection**: DeepMLP | **Gap**: +2 | **Causal Chain**: ✅</blockquote>
+<p>---</p>
+<h3>1. The Bug</h3>
+<p>**What**: `torch.linalg.svdvals()` silently returns finite singular values for matrices containing NaN. `torch.linalg.svd()` correctly propagates NaN. The two should be consistent — they're not.</p>
+<p>**Upstream**: [pytorch#187759](https://github.com/pytorch/pytorch/issues/187759) — OPEN.</p>
+<p>This is a **silent correctness bug**: NaN goes in, finite numbers come out. No error, no warning, no NaN. The computation appears to succeed while being mathematically wrong.</p>
+<h3>2. Reproduction</h3>
+<pre><code>
+import torch
+A = torch.tensor([[1., 2., 3.],
+                  [4., float('nan'), 6.],
+                  [7., 8., 9.]])
+result = torch.linalg.svdvals(A)
+print(result)  # tensor([16.8481, 1.0684, 0.0000]) — WRONG
+# Should be: NaN (because input has NaN)
+</code></pre>
+<p>Compare with `svd()`:</p>
+<pre><code>
+U, S, Vh = torch.linalg.svd(A)
+print(S)  # tensor([nan, nan, nan]) — CORRECT
+</code></pre>
+<h3>3. Why It Matters</h3>
+<p>`svdvals` is used in production for:</p>
+<li>**Spectral normalization** (GAN training)</li>
+<li>**Condition number estimation** (numerical stability checks)</li>
+<li>**Low-rank approximations** (model compression)</li>
+<p>When a NaN sneaks into the input (from a dead neuron, corrupted data, or buggy normalization), `svdvals` silently returns values that look reasonable. The training continues with corrupted gradients — **invisible to standard monitoring**.</p>
+<h3>4. NeuralDBG Diagnosis (DeepMLP)</h3>
+<p><code>| Phase | Anomalies | Events |</code></p>
+<p>|-------|-----------|--------|</p>
+<p><code>| Healthy | 2 | 48 |</code></p>
+<p><code>| Bug (NaN input) | 4 | 50 |</code></p>
+<p><code>| After fix | 0 | 46 |</code></p>
+<p>**Causal Chain**:</p>
+<pre><code>
+data_anomaly[distribution_shift] → activation_regime_shift[saturated] → gradient_health_transition[healthy]
+</code></pre>
+<p>The chain shows: NaN in data → saturation in activations → gradient appears healthy but is silently wrong.</p>
+<h3>5. PR Status</h3>
+<li>**#188053** submitted with minimal test (< 30 lines)</li>
+<li>**albanD** (PyTorch collaborator) reviewed — process feedback given</li>
+<li>Issue #187759 has actionable request posted</li>
+<li>Test validates NaN propagation consistency</li>
+<h3>6. The Fix</h3>
+<p>`svdvals` should propagate NaN when the input matrix contains NaN — same behavior as `svd()`:</p>
+<pre><code>
+# Expected: svdvals(nan_matrix) → contains NaN
+assert torch.isnan(torch.linalg.svdvals(A)).any()
+</code></pre>
+<p>---</p>
+<p>*Detected by [NeuralDBG](https://github.com/LambdaSection/NeuralDBG). See all [post-mortems](index.html).*</p>
+<div class="highlight"><strong>Detected by <a href="https://github.com/LambdaSection/NeuralDBG">NeuralDBG</a></strong> - causal diagnostic engine for PyTorch training. <a href="index.html">All post-mortems</a></div>
+</article>
+<footer><div class="container"><p>MIT License · <a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a></p></div></footer>
+</body>
+</html>

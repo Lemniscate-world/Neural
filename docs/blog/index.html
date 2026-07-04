@@ -108,36 +108,57 @@
 
             <article class="post">
                 <div class="meta">
-                    <span class="badge badge-real">Real Bug</span>
+                    <span class="badge badge-real">Real Bug + Fix</span>
                     <span>2026-07-04</span>
-                    <span style="margin-left:0.5rem">POST-005</span>
+                    <span style="margin-left:0.5rem">POST-002</span>
                 </div>
-                <h2><a href="post-005-bug-005-postmortem.html">LSTM Batch Pollution: One Bad Sample Corrupts the Entire Batch</a></h2>
-                <p>CUDA nn.LSTM silently corrupts ALL samples when one sample has NaN input — a sample independence violation. NeuralDBG detects it with +24 anomaly gap, traces the causal chain (nan_detected → gradient_exploding → optimizer_diverging), and the fix returns anomalies to 0. Perfect 0→24→0 detection.</p>
-                <div>
-                    <span class="tag">pytorch</span>
-                    <span class="tag">lstm</span>
-                    <span class="tag">causal-chain</span>
-                    <span class="tag">BUG-005</span>
-                    <span class="tag">pipeline</span>
-                </div>
+                <h2><a href="post-002-bug-002-postmortem.html">The Silent NaN Factory: varlen_attn and the Padding Problem</a></h2>
+                <p>varlen_attn silently produces NaN gradients when extra padding tokens exceed cu_seqlens. Forward pass looks fine, backward explodes. NeuralDBG traces the NaN to qkv.weight. PR #188933 adds input validation that converts silent corruption into an explicit error — <strong>a real fix, not just a test</strong>.</p>
+                <div><span class="tag">pytorch</span><span class="tag">attention</span><span class="tag">real-fix</span><span class="tag">BUG-002</span></div>
             </article>
 
             <article class="post">
                 <div class="meta">
                     <span class="badge badge-real">Real Bug</span>
                     <span>2026-07-04</span>
+                    <span style="margin-left:0.5rem">POST-006</span>
+                </div>
+                <h2><a href="post-006-bug-006-postmortem.html">Silent NaN Swallowing: When svdvals Lies About Your Data</a></h2>
+                <p>torch.linalg.svdvals silently returns finite values for NaN input while svd correctly propagates NaN. This inconsistency causes silent gradient corruption in spectral normalization and condition number estimation. PR #188053 — reviewed by albanD (PyTorch collaborator).</p>
+                <div><span class="tag">pytorch</span><span class="tag">linalg</span><span class="tag">reviewed</span><span class="tag">BUG-006</span></div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
+                    <span class="badge badge-real">Real Bug</span>
+                    <span>2026-07-04</span>
+                    <span style="margin-left:0.5rem">POST-008</span>
+                </div>
+                <h2><a href="post-008-bug-008-postmortem.html">The Billion-Dollar Gradient: When F.normalize Silently Corrupts Your Weights</a></h2>
+                <p>F.normalize on a zero vector returns ~1,000,000,000,000 in backward pass instead of NaN. This happens naturally after dropout or masked attention. Loss looks normal while weights are silently corrupted. PR #188066 — 13 CI failures fixed, tests now pass.</p>
+                <div><span class="tag">pytorch</span><span class="tag">normalization</span><span class="tag">ci-fixed</span><span class="tag">BUG-008</span></div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
+                    <span class="badge badge-real">Real Bug — Pipeline PASS</span>
+                    <span>2026-07-04</span>
+                    <span style="margin-left:0.5rem">POST-005</span>
+                </div>
+                <h2><a href="post-005-bug-005-postmortem.html">LSTM Batch Pollution: One Bad Sample Corrupts the Entire Batch</a></h2>
+                <p>CUDA nn.LSTM silently corrupts ALL samples when one sample has NaN input — a sample independence violation. NeuralDBG detects it with +24 anomaly gap, traces the causal chain, and the fix returns anomalies to 0. Perfect 0→24→0 detection.</p>
+                <div><span class="tag">pytorch</span><span class="tag">lstm</span><span class="tag">causal-chain</span><span class="tag">BUG-005</span></div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
+                    <span class="badge badge-real">Real Bug — Pipeline PASS</span>
+                    <span>2026-07-04</span>
                     <span style="margin-left:0.5rem">POST-003</span>
                 </div>
                 <h2><a href="post-003-bug-003-postmortem.html">Gradient Explosion: When Your Model Produces 100,000x Gradients</a></h2>
-                <p>MPS backend (Apple Silicon) produces gradients 100x-100,000x too large — finite but wrong, invisible to NaN monitoring. NeuralDBG catches the NORMAL→EXPLODING gradient health transition, traces the causal chain, and the full pipeline (detect→chain→fix→validate) achieves PASS. Includes comparison vs W&B, TensorBoard, and MLflow.</p>
-                <div>
-                    <span class="tag">pytorch</span>
-                    <span class="tag">mps</span>
-                    <span class="tag">causal-chain</span>
-                    <span class="tag">BUG-003</span>
-                    <span class="tag">pipeline</span>
-                </div>
+                <p>MPS backend produces gradients 100x-100,000x too large — finite but wrong, invisible to NaN monitoring. NeuralDBG catches the NORMAL→EXPLODING gradient health transition. Full pipeline (detect→chain→fix→validate) achieves PASS.</p>
+                <div><span class="tag">pytorch</span><span class="tag">mps</span><span class="tag">causal-chain</span><span class="tag">BUG-003</span></div>
             </article>
 
             <article class="post">

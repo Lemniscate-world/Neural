@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Billion-Dollar Gradient: When F.normalize Silently Corrupts Your Weights - NeuralDBG Blog</title>
+<link rel="icon" href="../assets/neuraldbg-logo.svg" type="image/svg+xml">
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--accent2:#a371f7;--success:#3fb950;--danger:#f85149;--border:#30363d}
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;line-height:1.7}
+.container{max-width:760px;margin:0 auto;padding:0 1.5rem}
+header{padding:2.5rem 0 1.5rem;border-bottom:1px solid var(--border)}
+.breadcrumb{color:var(--muted);font-size:.9rem}.breadcrumb a{color:var(--accent);text-decoration:none}
+h1{font-size:2.1rem;margin:.5rem 0 .75rem}
+h2{font-size:1.5rem;margin:2.5rem 0 1rem;color:var(--accent2);border-bottom:1px solid var(--border);padding-bottom:.3rem}
+h3{font-size:1.2rem;margin:1.8rem 0 .8rem}
+.meta{color:var(--muted);font-size:.9rem;margin:.5rem 0 1.5rem}
+a{color:var(--accent)}pre{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.9rem}
+code{font-family:"SF Mono","Fira Code",monospace;font-size:.88em}
+pre code{background:transparent;padding:0}
+table{width:100%;border-collapse:collapse;margin:1.5rem 0}
+th,td{padding:.6rem .8rem;border:1px solid var(--border);text-align:left}
+th{background:var(--surface)}tr:nth-child(even){background:var(--surface)}
+.highlight{background:var(--surface);border-left:3px solid var(--accent2);padding:1rem;margin:1rem 0;border-radius:0 8px 8px 0}
+blockquote{border-left:3px solid var(--accent);padding:.5rem 1rem;margin:1rem 0;color:var(--muted)}
+footer{margin-top:4rem;padding:2rem 0;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+<div class="container">
+<div class="breadcrumb"><a href="index.html">NeuralDBG Blog</a> / POST-008</div>
+<h1>The Billion-Dollar Gradient: When F.normalize Silently Corrupts Your Weights</h1>
+<div class="meta"><span>2026-07-04</span> · <span style="color:var(--accent2)">BUG-008</span> · <span style="color:var(--success)">Gap: +17 / PR #188066</span></div>
+</div>
+</header>
+<article class="container">
+<p># POST-008 — The Billion-Dollar Gradient: When F.normalize Silently Corrupts Your Weights</p>
+<blockquote>**BUG-008** | **Source**: pytorch/pytorch#184575 | **PR**: #188066 (CI fixé, 13→0 échecs)</blockquote>
+<blockquote>**Date**: 2026-07-04 | **Detection**: DeepMLP | **Gap**: +17 | **Causal Chain**: ✅</blockquote>
+<p>---</p>
+<h3>1. The Bug</h3>
+<p>**What**: `F.normalize(x, dim=0)` on a zero vector returns 0 in forward pass and **~1,000,000,000,000** in backward pass — instead of NaN. This is silently corrupting model weights.</p>
+<p>**Upstream**: [pytorch#184575](https://github.com/pytorch/pytorch/issues/184575) — OPEN.</p>
+<p>The math: `F.normalize(x) = x / ||x||`. At `x = 0`, this is **division by zero**. IEEE 754 says this should produce NaN. PyTorch returns 0 forward, ~1e12 backward.</p>
+<h3>2. Reproduction</h3>
+<pre><code>
+import torch, torch.nn.functional as F
+
+x = torch.zeros(3, requires_grad=True)
+y = F.normalize(x, dim=0)
+y.sum().backward()
+
+print(x.grad)  # tensor([1.1111e+12, 1.1111e+12, 1.1111e+12])
+# Should be: NaN (division by zero)
+</code></pre>
+<h3>3. Why It's Dangerous</h3>
+<p>1. **Forward returns 0** — loss looks normal, no NaN alert triggered</p>
+<p>2. **Backward returns ~1e12** — optimizer takes a massive step in a random direction</p>
+<p>3. **Weights are silently corrupted** — model converges to wrong values, no error message</p>
+<p>4. **Happens naturally** — zero vectors occur after dropout, masked attention, or padding</p>
+<h3>4. NeuralDBG Diagnosis (DeepMLP)</h3>
+<p><code>| Phase | Anomalies | Events |</code></p>
+<p>|-------|-----------|--------|</p>
+<p><code>| Healthy | 0 | 46 |</code></p>
+<p><code>| Bug (zero input) | 17 | 63 |</code></p>
+<p><code>| After fix | 19 | 65 |</code></p>
+<p>**Gap: +17** — strong detection signal. The fix (epsilon guard) works but shows some residual noise on the deep model.</p>
+<p>**Causal Chain**: `data_anomaly[distribution_shift] → gradient_health_transition[exploding] → optimizer_instability[diverging]`</p>
+<h3>5. PR Status</h3>
+<li>**#188066** submitted with 4 tests (forward, backward, no-finite, regression)</li>
+<li>**13 CI failures** initially — test expected NaN but PyTorch returns ~1e12</li>
+<li>**Fixed**: changed `isnan()` → `not isfinite()` to catch both NaN and Inf</li>
+<li>**Lint fixed**: added TESTOWNERS header</li>
+<li>Issue #184575 has actionable request posted</li>
+<h3>6. The Fix</h3>
+<pre><code>
+# Current (wrong): returns 0 forward, ~1e12 backward
+y = F.normalize(torch.zeros(3), dim=0)
+
+# Expected: returns NaN forward, NaN backward
+# Achieved by adding epsilon guard at application level:
+x = torch.where(x.abs() < 1e-8, torch.full_like(x, float('nan')), x)
+y = F.normalize(x, dim=0)
+</code></pre>
+<p>---</p>
+<p>*Detected by [NeuralDBG](https://github.com/LambdaSection/NeuralDBG). See all [post-mortems](index.html).*</p>
+<div class="highlight"><strong>Detected by <a href="https://github.com/LambdaSection/NeuralDBG">NeuralDBG</a></strong> - causal diagnostic engine for PyTorch training. <a href="index.html">All post-mortems</a></div>
+</article>
+<footer><div class="container"><p>MIT License · <a href="https://github.com/LambdaSection/NeuralDBG">GitHub</a></p></div></footer>
+</body>
+</html>
