@@ -1,0 +1,77 @@
+name: Combinatorial Benchmark
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * *'  # daily at 06:00 UTC
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e .
+
+      - name: Run combinatorial benchmark
+        id: benchmark
+        run: |
+          python validate_combinatorial.py --quick 2>&1 | tee benchmark_output.txt
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Parse results
+        id: parse
+        run: |
+          python -c "
+          import json
+          with open('combinatorial_results.json') as f:
+              d = json.load(f)
+          overall = d['overall_detection']
+          detected, total = overall.split('/')
+          pct = 100 * int(detected) // int(total)
+          print(f'Detection: {overall} ({pct}%)')
+          for fam, v in d['by_family'].items():
+              print(f'  {fam}: {v[\"detection\"]}')
+          # Fail if below 80%
+          if pct < 80:
+              print(f'FAIL: Detection {pct}% below 80% threshold')
+              exit(1)
+          else:
+              print(f'PASS: Detection {pct}% >= 80%')
+          "
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            combinatorial_results.json
+            benchmark_output.txt
+
+      - name: Generate badge
+        if: success()
+        run: |
+          python -c "
+          import json
+          with open('combinatorial_results.json') as f:
+              d = json.load(f)
+          detected, total = d['overall_detection'].split('/')
+          pct = 100 * int(detected) // int(total)
+          color = 'green' if pct >= 90 else ('yellow' if pct >= 80 else 'red')
+          print(f'Benchmark: {pct}% detection — {color}')
+          "

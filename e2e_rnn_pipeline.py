@@ -162,6 +162,26 @@ def pipeline(bug_name, bug_fn, steps=12):
         detail = f"Anomalies increased: {n_anomalies} -> {n_after}"
 
     print(f"    Status: {status} | {detail}")
+    
+    # Export Aquarium-compatible JSON
+    export = {
+        "events": [{k: v for k, v in e.items() if k != '_sa_instance_state'} if isinstance(e, dict) else {
+            "event_type": e.event_type.value, "layer_name": e.layer_name,
+            "step": e.step, "from_state": e.from_state, "to_state": e.to_state,
+            "confidence": e.confidence
+        } for e in events],
+        "causal_chains": [{"root_cause": c.root_cause, "final_symptom": c.final_symptom,
+                           "confidence": c.confidence, "nodes": len(c.links)}
+                          for c in chains] if chains else [],
+        "hypotheses": [{"description": h.description, "confidence": h.confidence} for h in hyps] if hyps else [],
+        "loss_history": [],
+        "meta": {"arch": "LSTM", "family": "RNN", "steps": steps, "bug": bug_name}
+    }
+    json_path = f"aquarium_export_{bug_name.replace(' ','_').replace('(','').replace(')','')}.json"
+    with open(json_path, 'w') as f:
+        json.dump(export, f, indent=2, default=str)
+    print(f"    Exported: {json_path} (drag into docs/aquarium.html)")
+    
     return {"bug": bug_name, "status": status, "before": n_anomalies, "after": n_after, "chain": top_chain}
 
 
