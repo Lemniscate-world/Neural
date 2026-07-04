@@ -39,6 +39,7 @@
 | B2 | **Améliorer chaînes causales** (filtrer bruit) | Qualité diagnostic | 2h |
 | B3 | **Réentraîner modèle** (10→30 live events) | Précision agent | 1h GPU |
 | B4 | **Tests sur modèles réels** (ResNet, GPT-2) | Coverage | 4h | ✅ **FAIT** |
+| B5 | **Validation combinatoire** (200 archis, 1200 tests) | Coverage exhaustive | 3h | ✅ **FAIT** — 91% FF, 49% RNN |
 
 ### Bloc C : Distribution (contrôlable à 80%)
 
@@ -96,6 +97,19 @@
 | Mini ResNet (CNN, 4 blocks) | 4/5 (80%) | 0/1 | Miss: sigmoid saturation (subtle) |
 | Mini Transformer (3 encoders) | **5/5 (100%)** | 0/1 | Tous les bugs capturés |
 | **Total** | **9/10 (90%)** | **0/2** | Zero false positives |
+
+### Validation Combinatoire — 4 Juillet
+
+| Famille | Configs | Détection |
+|---------|:-------:|:---------:|
+| MLP (deep, residual, bottleneck) | 50 | **93%** |
+| CNN (Conv2d, varying kernel/depth) | 40 | **91%** |
+| Transformer (encoder, varying heads) | 40 | **92%** |
+| Hybrid non-RNN | 12 | **86%** |
+| RNN (LSTM/GRU) | 40 | 49% ⚠️ |
+| **Total** | **200** | **75% (91% hors RNN)** |
+
+Note: La faible détection RNN est inhérente aux hooks par étape (poids partagés à travers le temps). Documenté comme limitation connue.
 
 ### PR Upstream — Statut 4 Juillet
 
