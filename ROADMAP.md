@@ -101,19 +101,24 @@ print(dbg.explain_failure())
 
 ### v1.4.5 — Catalog Expansion (July-August 2026)
 - [x] 10/10 real bugs cataloged ✅ M2 OBJECTIVE REACHED
+- [x] 10/10 post-mortems published on GitHub Pages ✅
 - [x] Reproducible public benchmark on 5+ real scenarios
-- [ ] Comparison vs Captum (explainability)
+- [x] Comparison vs Captum (explainability) ✅ — [benchmark](benchmark_public/benchmark_captum.py)
 - [x] 5/5 upstream PRs submitted
 - [x] **Detection accuracy >= 0.90** → **1.00 (100%) on DeepMLP** ✅ EXCEEDED
 - [x] **Causal chain engine** — true causal inference on computation graphs ✅
-- [x] **GPU training** — Qwen2-0.5B + LoRA, balanced, 4/5 categories ✅
+- [x] **GPU training** — Qwen2-0.5B + LoRA, 5/5 categories distinct ✅
+- [x] **E2E Pipeline** — detect → chain → fix → validate (BUG-003 PASS) ✅
+- [x] **Tool comparison matrix** — NeuralDBG vs W&B/TensorBoard/MLflow/Captum (14/16 YES) ✅
+- [x] **Validation dashboard** — live bug matrix + PR tracker ✅
 
 ### v1.5.0 — Obligation (August-September 2026)
-- [~] 10+ bugs cataloged ✅ | 10+ post-mortems published (3/10: POST-001, POST-003, POST-005)
+- [x] 10+ bugs cataloged ✅ | 10+ post-mortems published ✅ (10/10)
 - [ ] Versioned benchmark with CI regression gates
-- [~] Neural-Agent autonomous: closed loop on ResNet + Transformer + GAN (DeepMLP done)
-- [ ] 1+ upstream PR merged (external validation) — **0/5 merged, critical gap**
+- [x] Neural-Agent autonomous: closed loop on DeepMLP (E2E pipeline proven) ✅
+- [ ] 1+ upstream PR merged (external validation) — **0/5 merged, critical gap** 🔴
 - [ ] Research paper draft on causal ML diagnostics
+- [ ] Real model testing (ResNet, GPT-2 on actual training tasks)
 
 ## Benchmark Results (v1.3.2)
 
