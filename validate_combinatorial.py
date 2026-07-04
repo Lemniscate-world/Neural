@@ -467,10 +467,9 @@ def bug_vanishing(x, y, opt, model):
             if isinstance(child, (nn.ReLU, nn.GELU, nn.SiLU, nn.Tanh, nn.LeakyReLU, nn.ELU)):
                 setattr(m, name, nn.Sigmoid())
     
-    # For RNNs: also increase sequence length to exacerbate vanishing
+    # For RNNs: double sequence length to exacerbate BPTT vanishing
     if is_rnn and x.dim() == 3:
-        # Repeat the sequence to make it longer (BPTT vanishing)
-        x = x.repeat(1, 4, 1)  # 16 -> 64 sequence length
+        x = x.repeat(1, 2, 1)  # 16 -> 32 sequence length
     
     return x, y, opt, model
 

@@ -1,45 +1,60 @@
 # PLAN.md -- NeuralDBG Strategic Plan
 
-> Last Updated: 2026-07-04 — **Repensé : focus sur l'indépendant, les PRs attendent.**
+> Last Updated: 2026-07-04 18:00 — **RNN fix deployed, 200-arch sweep running.**
 
 ---
 
-## 📊 Dashboard — 4 Juillet 2026
+## 📊 Dashboard — 4 Juillet 2026 (Evening)
 
-| Pilier | Status | Dépend de nous ? |
+| Pilier | Status | Depend de nous ? |
 |--------|--------|:-----------------:|
-| **Détection** | 🟢 100% | ✅ Oui |
-| **Causal Chains** | 🟢 Opérationnel | ✅ Oui |
+| **Detection (FF)** | 🟢 93% (MLP/CNN/TF) | ✅ Oui |
+| **Detection (RNN)** | 🟡 68% (was 49%, +19%) | ✅ Oui |
+| **Detection (200 arch)** | 🟡 Running... | ✅ Oui |
+| **Causal Chains** | 🟢 Operationnel | ✅ Oui |
 | **GPU Model** | 🟢 v3 (5/5) | ✅ Oui |
-| **Pipeline E2E** | 🟢 Prouvé | ✅ Oui |
-| **Blog** | 🟡 3/10 posts | ✅ Oui |
+| **Pipeline E2E** | 🟢 Prouve | ✅ Oui |
+| **Paper Archs** | 🟢 60 novel archs | ✅ Oui |
+| **Blog** | 🟢 10/10 posts | ✅ Oui |
+| **Community Posts** | 🟢 Rediges (PTD+Reddit) | ✅ Oui |
 | **PRs** | 🔴 4 actives, 0 merges | ❌ Non (maintainers) |
-| **Stars** | 🔴 24 | ❌ Non (communauté) |
+| **Stars** | 🔴 24 | ❌ Non (communaute) |
 
-**Principe** : Investir 80% du temps sur ce qu'on contrôle. Les PRs et les stars suivront.
+**Principe** : Investir 80% du temps sur ce qu'on controle. Les PRs et les stars suivront.
 
 ---
 
-## 🎯 Plan Révisé — Ce qu'on fait MAINTENANT (sans dépendre des PRs)
+## �️ NeuralSuite Ecosystem — Merged & Simplified (4 July)
 
-### Bloc A : Contenu & Crédibilité (contrôlable à 100%)
+| Repo | Status | Role |
+|------|--------|------|
+| **NeuralDBG** (public, MIT) | 🟢 v1.4.0-dev | Engine merged. RNN fix +19%. 200-arch sweep running. |
+| **Neural-Agent** (private) | 🟢 Active | Auto-corrector. Remediator v2. Monetizable. |
+| **Aquarium** (public) | 🟡 Dormant | To reboot as web dashboard (no Tauri dep). |
 
-| # | Action | Impact | Effort |
-|---|--------|--------|--------|
-| A1 | **7 post-mortems restants** → 10/10 | Blog riche = crédibilité | 2h/pièce |
-| A2 | **Benchmark vs Captum** | Comparaison académique | 4h |
-| A3 | **Vidéo démo 3 min** | "NeuralDBG in action" | 3h |
-| A4 | **1 bug par jour sur X/Reddit** | Visibilité quotidienne | 30min/j |
+> Engine was merged into NeuralDBG core. No more separate NeuralDBG-Engine package.
+> Neural-Agent stays private — that's the paid tier if needed.
+> Aquarium gets simplified to a single-page HTML dashboard.
 
-### Bloc B : Produit (contrôlable à 100%)
+| # | Action | Impact | Effort | Statut |
+|---|--------|--------|--------|--------|
+| A1 | **7 post-mortems restants** → 10/10 | Blog riche = credibilite | 2h | ✅ |
+| A2 | **Benchmark vs Captum** | Comparaison academique | 4h | ✅ |
+| A3 | **Video demo 3 min** | "NeuralDBG in action" | 3h | — |
+| A4 | **1 bug/jour X/Reddit** | Visibilite quotidienne | 30min/j | 🔄 |
 
-| # | Action | Impact | Effort |
-|---|--------|--------|--------|
-| B1 | **Dashboards de validation** (HTML interactif) | Preuve visuelle | 3h |
-| B2 | **Améliorer chaînes causales** (filtrer bruit) | Qualité diagnostic | 2h |
-| B3 | **Réentraîner modèle** (10→30 live events) | Précision agent | 1h GPU |
-| B4 | **Tests sur modèles réels** (ResNet, GPT-2) | Coverage | 4h | ✅ **FAIT** |
-| B5 | **Validation combinatoire** (200 archis, 1200 tests) | Coverage exhaustive | 3h | ✅ **FAIT** — 91% FF, 49% RNN |
+### Bloc B : Produit (controllable a 100%)
+
+| # | Action | Impact | Effort | Statut |
+|---|--------|--------|--------|--------|
+| B1 | **Dashboards validation** (HTML interactif) | Preuve visuelle | 3h | ✅ |
+| B2 | **Chaines causales** (filtrer bruit) | Qualite diagnostic | 2h | ✅ |
+| B3 | **Reentrainer modele** (10→30 live events) | Precision agent | 1h GPU | ✅ |
+| B4 | **Tests modeles reels** (ResNet, GPT-2) | Coverage | 4h | ✅ |
+| B5 | **Validation combinatoire** (200 archis, 1200 tests) | Coverage exhaustive | 3h | ✅ |
+| B6 | **Fix RNN detection** (49%→68%, +19%) | Core engine fix | 2h | ✅ |
+| B7 | **Scraper paper archs** (60 novel archs) | Research coverage | 2h | ✅ |
+| B8 | **Merge Engine** → NeuralDBG core | Ecosystem simplifie | 1h | ✅ |
 
 ### Bloc C : Distribution (contrôlable à 80%)
 
