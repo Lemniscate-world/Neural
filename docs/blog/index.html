@@ -163,6 +163,46 @@
 
             <article class="post">
                 <div class="meta">
+                    <span class="badge badge-real">Real Bug — HF</span>
+                    <span>2026-07-04</span><span style="margin-left:0.5rem">POST-004</span>
+                </div>
+                <h2><a href="post-004-bug-004-postmortem.html">When Transformers Explode: SDPA Gradient Instability in Qwen3.5</a></h2>
+                <p>Qwen3.5 experiences SDPA gradient explosion. Our only HuggingFace bug — demonstrates cross-ecosystem detection. PR #47024 was our first HF contribution.</p>
+                <div><span class="tag">huggingface</span><span class="tag">qwen</span><span class="tag">BUG-004</span></div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
+                    <span class="badge badge-real">Real Bug — Compiler</span>
+                    <span>2026-07-04</span><span style="margin-left:0.5rem">POST-007</span>
+                </div>
+                <h2><a href="post-007-bug-007-postmortem.html">The Compiler Lies: torch.compile Silent Gradient Corruption</a></h2>
+                <p>torch.compile silently produces wrong gradients for atan2 — reported by @ezyang. Gap +24. Compiler bugs: no crash, no NaN, just wrong results.</p>
+                <div><span class="tag">pytorch</span><span class="tag">compiler</span><span class="tag">BUG-007</span></div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
+                    <span class="badge badge-real">Real Bug — Edge Case</span>
+                    <span>2026-07-04</span><span style="margin-left:0.5rem">POST-010</span>
+                </div>
+                <h2><a href="post-010-bug-010-postmortem.html">When Tied Values Break Gradients: Inductor Quantile Mismatch</a></h2>
+                <p>torch.quantile with Inductor produces wrong gradients for tied values. Gap +16.</p>
+                <div><span class="tag">pytorch</span><span class="tag">inductor</span><span class="tag">BUG-010</span></div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
+                    <span class="badge badge-real">Real Bug — Scale</span>
+                    <span>2026-07-04</span><span style="margin-left:0.5rem">POST-009</span>
+                </div>
+                <h2><a href="post-009-bug-009-postmortem.html">The 32-Bit Time Bomb: SDPA Offset Overflow</a></h2>
+                <p>SDPA 32-bit offset overflow for long sequences. Silent corruption, critical as context windows scale.</p>
+                <div><span class="tag">pytorch</span><span class="tag">sdpa</span><span class="tag">BUG-009</span></div>
+            </article>
+
+            <article class="post">
+                <div class="meta">
                     <span class="badge badge-synthetic">Synthetic Scenario</span>
                     <span>2026-06-06</span>
                 </div>
