@@ -549,20 +549,27 @@ class NeuralDbg:
                     self._check_data_anomaly(input[0], layer_name)
                 except NotImplementedError:
                     pass
-            if isinstance(output, torch.Tensor):
+            # Unwrap RNN output tuples (LSTM/GRU return (output, (h_n, c_n)))
+            _output = output
+            _rnn_hidden = None
+            if isinstance(output, tuple) and len(output) >= 1 and isinstance(output[0], torch.Tensor):
+                _output = output[0]  # the sequence output tensor
+                if len(output) >= 2:
+                    _rnn_hidden = output[1]  # (h_n, c_n) for LSTM or h_n for GRU
+            if isinstance(_output, torch.Tensor):
                 try:
-                    self._check_data_anomaly(output, layer_name)
+                    self._check_data_anomaly(_output, layer_name)
                 except NotImplementedError:
                     pass
 
             # Extract activation regime information
-            if isinstance(output, torch.Tensor):
-                activation_stats = self._compute_activation_stats(output)
+            if isinstance(_output, torch.Tensor):
+                activation_stats = self._compute_activation_stats(_output)
                 current_health = self._classify_activation_health(activation_stats)
 
                 # Sample resources once per step (outside transition check to build baseline)
                 resource_snapshot, resource_baseline = self._get_step_resource_snapshot(
-                    output.device
+                    _output.device
                 )
 
                 # Detect activation regime shifts
@@ -622,6 +629,10 @@ class NeuralDbg:
                         )
 
                 self.previous_activation_stats[layer_name] = activation_stats
+
+                # --- RNN hidden state capture ---
+                if _rnn_hidden is not None:
+                    self._capture_rnn_hidden_state(layer_name, _rnn_hidden)
 
         # Track modules where backward hooks fail so we warn only once
         _backward_hook_failures: Dict[str, bool] = {}
@@ -943,6 +954,81 @@ class NeuralDbg:
             "norm": norm_val,
             "saturation_ratio": saturation_ratio,
         }
+
+    def _capture_rnn_hidden_state(self, layer_name: str, hidden):
+        """Capture RNN hidden state statistics for BPTT gradient health analysis.
+
+        Args:
+            layer_name: Name of the RNN layer.
+            hidden: (h_n, c_n) tuple for LSTM, or h_n tensor for GRU.
+                h_n shape: (num_layers * num_directions, batch, hidden_size)
+                c_n shape: (num_layers * num_directions, batch, hidden_size)
+        """
+        if isinstance(hidden, tuple):
+            h_n, c_n = hidden[0], hidden[1] if len(hidden) > 1 else None
+        else:
+            h_n, c_n = hidden, None
+
+        if not isinstance(h_n, torch.Tensor):
+            return
+
+        h = h_n.detach()
+        hidden_stats = self._compute_activation_stats(h)
+
+        # Check for saturated gates (RNN internal activations are sigmoid/tanh)
+        sat_ratio = hidden_stats.get("saturation_ratio", 0.0)
+        dead_ratio = hidden_stats.get("dead_ratio", 0.0)
+
+        # Generate events for problematic hidden states
+        if sat_ratio > 0.7:
+            event = SemanticEvent(
+                event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                layer_name=f"{layer_name}.hidden_state",
+                step=self.step,
+                from_state="normal",
+                to_state="saturated_activations",
+                confidence=0.85,
+                metadata={
+                    "hidden_mean": hidden_stats["mean"],
+                    "hidden_std": hidden_stats["std"],
+                    "saturation_ratio": sat_ratio,
+                    "gate_type": "rnn_hidden",
+                },
+            )
+            self.events.append(event)
+
+        # Track gate saturation over time (BPTT gradient health)
+        if not hasattr(self, "_rnn_hidden_history"):
+            self._rnn_hidden_history = {}
+        if layer_name not in self._rnn_hidden_history:
+            self._rnn_hidden_history[layer_name] = []
+        self._rnn_hidden_history[layer_name].append({
+            "step": self.step,
+            "hidden_norm": hidden_stats["norm"],
+            "saturation_ratio": sat_ratio,
+        })
+        # Keep only last 10 entries
+        if len(self._rnn_hidden_history[layer_name]) > 10:
+            self._rnn_hidden_history[layer_name].pop(0)
+
+        # Detect vanishing: hidden state norm consistently dropping
+        history = self._rnn_hidden_history[layer_name]
+        if len(history) >= 3:
+            norms = [h["hidden_norm"] for h in history[-3:]]
+            if norms[-1] < norms[0] * 0.1 and norms[-1] < 1e-3:
+                event = SemanticEvent(
+                    event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                    layer_name=f"{layer_name}.hidden_state",
+                    step=self.step,
+                    from_state="normal",
+                    to_state="vanishing",
+                    confidence=0.8,
+                    metadata={
+                        "hidden_norms": norms,
+                        "hidden_norm_drop_ratio": norms[-1] / max(norms[0], 1e-10),
+                    },
+                )
+                self.events.append(event)
 
     def _classify_activation_health(self, stats: Dict[str, float]) -> ActivationHealth:
         """Classify activation regime — delegates to engine when available."""

@@ -439,11 +439,39 @@ def bug_exploding(x, y, opt, model):
     return x, y, opt, model
 
 def bug_vanishing(x, y, opt, model):
-    """Replace all activations with sigmoid in-place."""
+    """Replace all activations with sigmoid. For RNNs, corrupt forget gate bias."""
+    is_rnn = False
     for m in model.modules():
+        if isinstance(m, (nn.LSTM, nn.GRU)):
+            is_rnn = True
+            # Corrupt forget gate bias (bias_ih + bias_hh for LSTM)
+            # LSTM bias layout: [input, forget, cell, output] * num_layers * directions
+            if hasattr(m, 'bias_ih_l0') and m.bias_ih_l0 is not None:
+                with torch.no_grad():
+                    hidden_size = m.hidden_size
+                    # Set forget gate bias to -10 (cause vanishing)
+                    for layer_idx in range(m.num_layers):
+                        for direction in range(1 + int(m.bidirectional)):
+                            idx = layer_idx * (1 + int(m.bidirectional)) + direction
+                            bias_key_ih = f'bias_ih_l{layer_idx}'
+                            bias_key_hh = f'bias_hh_l{layer_idx}'
+                            if hasattr(m, bias_key_ih):
+                                b_ih = getattr(m, bias_key_ih)
+                                b_ih[hidden_size:2*hidden_size] = -10.0  # forget gate
+                            if hasattr(m, bias_key_hh):
+                                b_hh = getattr(m, bias_key_hh)
+                                b_hh[hidden_size:2*hidden_size] = -10.0  # forget gate
+        
+        # Replace activations in non-RNN components
         for name, child in list(m.named_children()):
             if isinstance(child, (nn.ReLU, nn.GELU, nn.SiLU, nn.Tanh, nn.LeakyReLU, nn.ELU)):
                 setattr(m, name, nn.Sigmoid())
+    
+    # For RNNs: also increase sequence length to exacerbate vanishing
+    if is_rnn and x.dim() == 3:
+        # Repeat the sequence to make it longer (BPTT vanishing)
+        x = x.repeat(1, 4, 1)  # 16 -> 64 sequence length
+    
     return x, y, opt, model
 
 def bug_zero(x, y, opt, model):
@@ -459,8 +487,16 @@ def bug_nan(x, y, opt, model):
     return x, y, opt, model
 
 def bug_dead(x, y, opt, model):
+    """Set all biases to -10. For RNNs, kill all gates."""
     for m in model.modules():
-        if hasattr(m, 'bias') and m.bias is not None:
+        if isinstance(m, (nn.LSTM, nn.GRU)):
+            with torch.no_grad():
+                for attr in dir(m):
+                    if attr.startswith('bias_'):
+                        bias = getattr(m, attr)
+                        if bias is not None:
+                            bias.fill_(-10.0)
+        elif hasattr(m, 'bias') and m.bias is not None:
             nn.init.constant_(m.bias, -10.0)
     return x, y, opt, model
 

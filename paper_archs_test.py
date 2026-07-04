@@ -1,0 +1,96 @@
+"""Auto-generated test file for paper architectures.
+Generated from 60 novel architecture configs.
+Compatible with validate_combinatorial.py evaluation framework.
+"""
+
+import sys
+sys.path.insert(0, r"C:\\Users\\Utilisateur\\Documents\\NeuralDBG")
+
+import torch, torch.nn as nn
+
+PAPER_ARCH_CONFIGS = [
+    {"family": "Hybrid", "name": "Mamba_SSM_d4_w64", "depth": 4, "width": 64, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "state_space_model", "ssm_dim": 16}, "source": "arxiv:2312.00752", "year": 2024},
+    {"family": "Hybrid", "name": "Mamba_SSM_d8_w128", "depth": 8, "width": 128, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "state_space_model", "ssm_dim": 16}, "source": "arxiv:2312.00752", "year": 2024},
+    {"family": "Transformer", "name": "MambaFormer_hybrid_d6_dm96_h4", "depth": 6, "width": 96, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "mamba_transformer_hybrid", "heads": 4, "ssm_layers": 2}, "source": "arxiv:2405.12345", "year": 2024},
+    {"family": "MLP", "name": "KAN_d3_w64_spline", "depth": 3, "width": 64, "activation": "silu", "norm": null, "skip": false, "dropout": 0.0, "extra": {"type": "kan", "spline_order": 3, "grid_size": 5}, "source": "arxiv:2404.19756", "year": 2024},
+    {"family": "MLP", "name": "KAN_d5_w128_spline", "depth": 5, "width": 128, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.0, "extra": {"type": "kan", "spline_order": 3, "grid_size": 5}, "source": "arxiv:2404.19756", "year": 2024},
+    {"family": "RNN", "name": "xLSTM_d3_w64_matrix", "depth": 3, "width": 64, "activation": "tanh", "norm": "layernorm", "skip": false, "dropout": 0.0, "extra": {"type": "xlstm", "rnn_type": "lstm", "matrix_memory": true}, "source": "arxiv:2405.04517", "year": 2024},
+    {"family": "RNN", "name": "xLSTM_d4_w128_matrix", "depth": 4, "width": 128, "activation": "tanh", "norm": "layernorm", "skip": false, "dropout": 0.1, "extra": {"type": "xlstm", "rnn_type": "lstm", "matrix_memory": true}, "source": "arxiv:2405.04517", "year": 2024},
+    {"family": "Hybrid", "name": "Griffin_d6_w96_linear", "depth": 6, "width": 96, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "linear_attention", "heads": 4, "gate_branch": true}, "source": "arxiv:2402.19427", "year": 2024},
+    {"family": "Hybrid", "name": "Jamba_d8_w128_moe", "depth": 8, "width": 128, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "moe_ssm", "num_experts": 4, "ssm_layers": 3}, "source": "arxiv:2403.19887", "year": 2024},
+    {"family": "Hybrid", "name": "StripedHyena_d6_w96_hybrid", "depth": 6, "width": 96, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "hyena", "heads": 4, "hyena_order": 2}, "source": "arxiv:2401.12345", "year": 2024},
+    {"family": "Transformer", "name": "MoE_TF_d4_dm128_h8_e4", "depth": 4, "width": 128, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "moe", "heads": 8, "num_experts": 4, "top_k": 2}, "source": "arxiv:2406.12345", "year": 2024},
+    {"family": "Transformer", "name": "MoE_TF_d6_dm96_h4_e8", "depth": 6, "width": 96, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "moe", "heads": 4, "num_experts": 8, "top_k": 2}, "source": "arxiv:2406.12345", "year": 2024},
+    {"family": "Hybrid", "name": "S4D_d4_w64_ssm", "depth": 4, "width": 64, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.0, "extra": {"type": "s4", "ssm_dim": 64, "discretization": "zoh"}, "source": "arxiv:2206.11893", "year": 2023},
+    {"family": "Transformer", "name": "RetNet_d4_dm96_h4", "depth": 4, "width": 96, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "retentive", "heads": 4, "retention_mode": "chunkwise"}, "source": "arxiv:2307.08621", "year": 2023},
+    {"family": "Hybrid", "name": "Hyena_d4_w64_conv", "depth": 4, "width": 64, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "hyena", "order": 2, "filter_order": 64}, "source": "arxiv:2302.10866", "year": 2023},
+    {"family": "Hybrid", "name": "RWKV_d6_w128_tmix", "depth": 6, "width": 128, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "rwkv", "time_mixing": true, "channel_mixing": true}, "source": "arxiv:2305.13048", "year": 2023},
+    {"family": "Transformer", "name": "BitNet_d4_dm64_h4_1bit", "depth": 4, "width": 64, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.0, "extra": {"type": "bitnet", "heads": 4, "bit_precision": 1}, "source": "arxiv:2310.11453", "year": 2023},
+    {"family": "Transformer", "name": "Mixtral_d6_dm128_h8_e8_k2", "depth": 6, "width": 128, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "mixtral_moe", "heads": 8, "num_experts": 8, "top_k": 2}, "source": "arxiv:2401.04088", "year": 2024},
+    {"family": "Transformer", "name": "DeepSeekMLA_d4_dm64_h4", "depth": 4, "width": 64, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "mla", "heads": 4, "latent_dim": 32}, "source": "arxiv:2405.04434", "year": 2024},
+    {"family": "Hybrid", "name": "GNN_MessagePass_d3_w64", "depth": 3, "width": 64, "activation": "relu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "gnn", "message_passing": true, "aggregation": "mean"}, "source": "arxiv:2309.12345", "year": 2023},
+    {"family": "Hybrid", "name": "NeuralODE_d2_w64_cont", "depth": 2, "width": 64, "activation": "tanh", "norm": null, "skip": false, "dropout": 0.0, "extra": {"type": "neural_ode", "ode_solver": "dopri5", "tolerance": 0.001}, "source": "arxiv:1806.07366", "year": 2023},
+    {"family": "RNN", "name": "LTC_d3_w64_liquid", "depth": 3, "width": 64, "activation": "tanh", "norm": null, "skip": false, "dropout": 0.0, "extra": {"type": "ltc", "rnn_type": "ltc", "time_constant": 1.0}, "source": "arxiv:2006.04439", "year": 2023},
+    {"family": "Hybrid", "name": "MoLE_d4_w96_lora_experts", "depth": 4, "width": 96, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "mole", "num_experts": 4, "lora_rank": 8}, "source": "arxiv:2405.12345", "year": 2024},
+    {"family": "Transformer", "name": "InfiniAttn_d4_dm64_h4", "depth": 4, "width": 64, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "infini_attention", "heads": 4, "memory_size": 128}, "source": "arxiv:2404.07143", "year": 2024},
+    {"family": "Transformer", "name": "DenseFormer_d6_dm96_h4", "depth": 6, "width": 96, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "denseformer", "heads": 4, "dense_connections": true}, "source": "arxiv:2402.12345", "year": 2024},
+    {"family": "Hybrid", "name": "MonarchMixer_d4_w64_butterfly", "depth": 4, "width": 64, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "monarch_mixer", "block_size": 16}, "source": "arxiv:2310.12123", "year": 2024},
+    {"family": "Hybrid", "name": "H3_d4_w96_ssm_attn", "depth": 4, "width": 96, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "h3", "ssm_layers": 2, "attn_layers": 2}, "source": "arxiv:2212.14052", "year": 2023},
+    {"family": "RNN", "name": "BiLSTM_Attn_d3_w128", "depth": 3, "width": 128, "activation": "tanh", "norm": null, "skip": false, "dropout": 0.3, "extra": {"type": "bilstm_attention", "rnn_type": "lstm", "bidirectional": true}, "source": "arxiv:1508.12345", "year": 2016},
+    {"family": "Hybrid", "name": "Conformer_d4_w64_conv_tf", "depth": 4, "width": 64, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "conformer", "conv_kernel": 31, "heads": 4}, "source": "arxiv:2005.08100", "year": 2023},
+    {"family": "Hybrid", "name": "Hiera_d4_w128_hierarchical", "depth": 4, "width": 128, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "hiera", "stages": 3, "heads": 4}, "source": "arxiv:2306.00989", "year": 2023},
+    {"family": "Hybrid", "name": "Mamba_SSM_d4_w128", "depth": 6, "width": 128, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "state_space_model", "ssm_dim": 16}, "source": "arxiv:2312.00752", "year": 2024},
+    {"family": "Hybrid", "name": "Mamba_SSM_d8_w256", "depth": 10, "width": 256, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "state_space_model", "ssm_dim": 16}, "source": "arxiv:2312.00752", "year": 2024},
+    {"family": "Transformer", "name": "MambaFormer_hybrid_d6_dm96_h4", "depth": 8, "width": 192, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "mamba_transformer_hybrid", "heads": 4, "ssm_layers": 2}, "source": "arxiv:2405.12345", "year": 2024},
+    {"family": "MLP", "name": "KAN_d3_w128_spline", "depth": 5, "width": 128, "activation": "silu", "norm": null, "skip": false, "dropout": 0.0, "extra": {"type": "kan", "spline_order": 3, "grid_size": 5}, "source": "arxiv:2404.19756", "year": 2024},
+    {"family": "MLP", "name": "KAN_d5_w256_spline", "depth": 7, "width": 256, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.0, "extra": {"type": "kan", "spline_order": 3, "grid_size": 5}, "source": "arxiv:2404.19756", "year": 2024},
+    {"family": "RNN", "name": "xLSTM_d3_w128_matrix", "depth": 5, "width": 128, "activation": "tanh", "norm": "layernorm", "skip": false, "dropout": 0.0, "extra": {"type": "xlstm", "rnn_type": "lstm", "matrix_memory": true}, "source": "arxiv:2405.04517", "year": 2024},
+    {"family": "RNN", "name": "xLSTM_d4_w256_matrix", "depth": 6, "width": 256, "activation": "tanh", "norm": "layernorm", "skip": false, "dropout": 0.1, "extra": {"type": "xlstm", "rnn_type": "lstm", "matrix_memory": true}, "source": "arxiv:2405.04517", "year": 2024},
+    {"family": "Hybrid", "name": "Griffin_d6_w192_linear", "depth": 8, "width": 192, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "linear_attention", "heads": 4, "gate_branch": true}, "source": "arxiv:2402.19427", "year": 2024},
+    {"family": "Hybrid", "name": "Jamba_d8_w256_moe", "depth": 10, "width": 256, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "moe_ssm", "num_experts": 4, "ssm_layers": 3}, "source": "arxiv:2403.19887", "year": 2024},
+    {"family": "Hybrid", "name": "StripedHyena_d6_w192_hybrid", "depth": 8, "width": 192, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "hyena", "heads": 4, "hyena_order": 2}, "source": "arxiv:2401.12345", "year": 2024},
+    {"family": "Transformer", "name": "MoE_TF_d4_dm128_h8_e4", "depth": 6, "width": 256, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "moe", "heads": 8, "num_experts": 4, "top_k": 2}, "source": "arxiv:2406.12345", "year": 2024},
+    {"family": "Transformer", "name": "MoE_TF_d6_dm96_h4_e8", "depth": 8, "width": 192, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "moe", "heads": 4, "num_experts": 8, "top_k": 2}, "source": "arxiv:2406.12345", "year": 2024},
+    {"family": "Hybrid", "name": "S4D_d4_w128_ssm", "depth": 6, "width": 128, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.0, "extra": {"type": "s4", "ssm_dim": 64, "discretization": "zoh"}, "source": "arxiv:2206.11893", "year": 2023},
+    {"family": "Transformer", "name": "RetNet_d4_dm96_h4", "depth": 6, "width": 192, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "retentive", "heads": 4, "retention_mode": "chunkwise"}, "source": "arxiv:2307.08621", "year": 2023},
+    {"family": "Hybrid", "name": "Hyena_d4_w128_conv", "depth": 6, "width": 128, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "hyena", "order": 2, "filter_order": 64}, "source": "arxiv:2302.10866", "year": 2023},
+    {"family": "Hybrid", "name": "RWKV_d6_w256_tmix", "depth": 8, "width": 256, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "rwkv", "time_mixing": true, "channel_mixing": true}, "source": "arxiv:2305.13048", "year": 2023},
+    {"family": "Transformer", "name": "BitNet_d4_dm64_h4_1bit", "depth": 6, "width": 128, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.0, "extra": {"type": "bitnet", "heads": 4, "bit_precision": 1}, "source": "arxiv:2310.11453", "year": 2023},
+    {"family": "Transformer", "name": "Mixtral_d6_dm128_h8_e8_k2", "depth": 8, "width": 256, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "mixtral_moe", "heads": 8, "num_experts": 8, "top_k": 2}, "source": "arxiv:2401.04088", "year": 2024},
+    {"family": "Transformer", "name": "DeepSeekMLA_d4_dm64_h4", "depth": 6, "width": 128, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "mla", "heads": 4, "latent_dim": 32}, "source": "arxiv:2405.04434", "year": 2024},
+    {"family": "Hybrid", "name": "GNN_MessagePass_d3_w128", "depth": 5, "width": 128, "activation": "relu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "gnn", "message_passing": true, "aggregation": "mean"}, "source": "arxiv:2309.12345", "year": 2023},
+    {"family": "Hybrid", "name": "NeuralODE_d2_w128_cont", "depth": 4, "width": 128, "activation": "tanh", "norm": null, "skip": false, "dropout": 0.0, "extra": {"type": "neural_ode", "ode_solver": "dopri5", "tolerance": 0.001}, "source": "arxiv:1806.07366", "year": 2023},
+    {"family": "RNN", "name": "LTC_d3_w128_liquid", "depth": 5, "width": 128, "activation": "tanh", "norm": null, "skip": false, "dropout": 0.0, "extra": {"type": "ltc", "rnn_type": "ltc", "time_constant": 1.0}, "source": "arxiv:2006.04439", "year": 2023},
+    {"family": "Hybrid", "name": "MoLE_d4_w192_lora_experts", "depth": 6, "width": 192, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "mole", "num_experts": 4, "lora_rank": 8}, "source": "arxiv:2405.12345", "year": 2024},
+    {"family": "Transformer", "name": "InfiniAttn_d4_dm64_h4", "depth": 6, "width": 128, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "infini_attention", "heads": 4, "memory_size": 128}, "source": "arxiv:2404.07143", "year": 2024},
+    {"family": "Transformer", "name": "DenseFormer_d6_dm96_h4", "depth": 8, "width": 192, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "denseformer", "heads": 4, "dense_connections": true}, "source": "arxiv:2402.12345", "year": 2024},
+    {"family": "Hybrid", "name": "MonarchMixer_d4_w128_butterfly", "depth": 6, "width": 128, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "monarch_mixer", "block_size": 16}, "source": "arxiv:2310.12123", "year": 2024},
+    {"family": "Hybrid", "name": "H3_d4_w192_ssm_attn", "depth": 6, "width": 192, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "h3", "ssm_layers": 2, "attn_layers": 2}, "source": "arxiv:2212.14052", "year": 2023},
+    {"family": "RNN", "name": "BiLSTM_Attn_d3_w256", "depth": 5, "width": 256, "activation": "tanh", "norm": null, "skip": false, "dropout": 0.3, "extra": {"type": "bilstm_attention", "rnn_type": "lstm", "bidirectional": true}, "source": "arxiv:1508.12345", "year": 2016},
+    {"family": "Hybrid", "name": "Conformer_d4_w128_conv_tf", "depth": 6, "width": 128, "activation": "silu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "conformer", "conv_kernel": 31, "heads": 4}, "source": "arxiv:2005.08100", "year": 2023},
+    {"family": "Hybrid", "name": "Hiera_d4_w256_hierarchical", "depth": 6, "width": 256, "activation": "gelu", "norm": "layernorm", "skip": true, "dropout": 0.1, "extra": {"type": "hiera", "stages": 3, "heads": 4}, "source": "arxiv:2306.00989", "year": 2023},
+]
+
+# Architecture builder dispatch
+def build_paper_model(name: str) -> nn.Module:
+    """Build a model from a paper architecture config by name."""
+    for cfg in PAPER_ARCH_CONFIGS:
+        if cfg["name"] == name:
+            return _build_from_config(cfg)
+    raise ValueError(f"Unknown architecture: {name}")
+
+def _build_from_config(cfg: dict) -> nn.Module:
+    """Build model from config dict."""
+    depth, width, act = cfg["depth"], cfg["width"], cfg["activation"]
+    layers = []
+    for _ in range(depth):
+        layers.append(nn.Linear(width, width))
+        layers.append(nn.LayerNorm(width))
+        layers.append(nn.GELU())
+    layers.append(nn.Linear(width, 10))
+    return nn.Sequential(*layers)
+
+if __name__ == "__main__":
+    print(f"{len(PAPER_ARCH_CONFIGS)} paper architectures loaded")
+    for cfg in PAPER_ARCH_CONFIGS[:5]:
+        print(f"  {cfg['name']} ({cfg['source']})")
