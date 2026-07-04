@@ -73,7 +73,11 @@
             <div class="metric-card"><div class="value">0%</div><div class="label">False positives</div></div>
         </div>
 
-        
+        <div style="text-align:center;margin:1.5rem 0;">
+            <img src="chart_003_bar.svg" alt="BUG-003 Anomaly Chart" style="max-width:100%;border-radius:8px;">
+            <p style="color:var(--muted);font-size:0.85rem;margin-top:0.5rem;">Anomalies detected: 0 (healthy) → 24 (bug) → 1 (fixed)</p>
+        </div>
+
         <h2>1. The Bug</h2>
         <p>The MPS backend (Apple Silicon GPU) produces gradients that are 100x–100,000x too large. The gradients are <strong>finite</strong> (no NaN), so standard monitoring doesn't catch them — the model silently converges to wrong weights.</p>
         <p><strong>Upstream:</strong> <a href="https://github.com/pytorch/pytorch/issues/177116">pytorch#177116</a> — OPEN, labeled <code>module: mps</code>, <code>triaged</code>.</p>

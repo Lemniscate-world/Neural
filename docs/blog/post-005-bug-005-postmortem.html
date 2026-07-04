@@ -73,7 +73,11 @@
             <div class="metric-card"><div class="value">0%</div><div class="label">False positives</div></div>
         </div>
 
-        
+        <div style="text-align:center;margin:1.5rem 0;">
+            <img src="chart_005_bar.svg" alt="BUG-005 Anomaly Chart" style="max-width:100%;border-radius:8px;">
+            <p style="color:var(--muted);font-size:0.85rem;margin-top:0.5rem;">Anomalies detected: 0 (healthy) → 24 (bug) → 0 (fixed). Perfect resolution.</p>
+        </div>
+
         <h2>1. The Bug</h2>
         <p><code>nn.LSTM</code> on CUDA produces NaN in batch mode but correct output in single-sample mode. This is a <strong>sample independence violation</strong> — one corrupted sample poisons the entire batch.</p>
         <p><strong>Upstream:</strong> <a href="https://github.com/pytorch/pytorch/issues/173334">pytorch#173334</a> — OPEN since June 2025.</p>
