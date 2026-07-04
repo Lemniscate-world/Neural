@@ -1,0 +1,39 @@
+<svg width="800" height="300" xmlns="http://www.w3.org/2000/svg" style="background:#161b22;border-radius:8px;">
+    <text x="400.0" y="25" text-anchor="middle" fill="#e6edf3" font-size="16" font-weight="bold">Anomaly Gap per Bug — DeepMLP (12 layers)</text>
+    
+        <g>
+            <rect x="60" y="76.66666666666666" width="60" height="183.33333333333334" fill="#8b949e" rx="4" opacity="0.85"/>
+            <text x="90.0" y="66.66666666666666" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">24</text>
+            <text x="90.0" y="285" text-anchor="middle" fill="#8b949e" font-size="12">BUG-001</text>
+        </g>
+        <g>
+            <rect x="160" y="76.66666666666666" width="60" height="183.33333333333334" fill="#8b949e" rx="4" opacity="0.85"/>
+            <text x="190.0" y="66.66666666666666" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">24</text>
+            <text x="190.0" y="285" text-anchor="middle" fill="#8b949e" font-size="12">BUG-003</text>
+        </g>
+        <g>
+            <rect x="260" y="76.66666666666666" width="60" height="183.33333333333334" fill="#8b949e" rx="4" opacity="0.85"/>
+            <text x="290.0" y="66.66666666666666" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">24</text>
+            <text x="290.0" y="285" text-anchor="middle" fill="#8b949e" font-size="12">BUG-005</text>
+        </g>
+        <g>
+            <rect x="360" y="229.44444444444446" width="60" height="30.555555555555557" fill="#8b949e" rx="4" opacity="0.85"/>
+            <text x="390.0" y="219.44444444444446" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">4</text>
+            <text x="390.0" y="285" text-anchor="middle" fill="#8b949e" font-size="12">BUG-006</text>
+        </g>
+        <g>
+            <rect x="460" y="76.66666666666666" width="60" height="183.33333333333334" fill="#8b949e" rx="4" opacity="0.85"/>
+            <text x="490.0" y="66.66666666666666" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">24</text>
+            <text x="490.0" y="285" text-anchor="middle" fill="#8b949e" font-size="12">BUG-007</text>
+        </g>
+        <g>
+            <rect x="560" y="130.13888888888889" width="60" height="129.86111111111111" fill="#8b949e" rx="4" opacity="0.85"/>
+            <text x="590.0" y="120.13888888888889" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">17</text>
+            <text x="590.0" y="285" text-anchor="middle" fill="#8b949e" font-size="12">BUG-008</text>
+        </g>
+        <g>
+            <rect x="660" y="137.77777777777777" width="60" height="122.22222222222223" fill="#8b949e" rx="4" opacity="0.85"/>
+            <text x="690.0" y="127.77777777777777" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">16</text>
+            <text x="690.0" y="285" text-anchor="middle" fill="#8b949e" font-size="12">BUG-010</text>
+        </g>
+</svg>

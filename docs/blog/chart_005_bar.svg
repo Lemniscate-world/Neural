@@ -1,0 +1,19 @@
+<svg width="600" height="250" xmlns="http://www.w3.org/2000/svg" style="background:#161b22;border-radius:8px;">
+    <text x="300.0" y="25" text-anchor="middle" fill="#e6edf3" font-size="16" font-weight="bold">Anomalies Detected — BUG-005 (LSTM Batch Pollution)</text>
+    
+        <g>
+            <rect x="60" y="210.0" width="80" height="0.0" fill="#3fb950" rx="4" opacity="0.85"/>
+            <text x="100.0" y="200.0" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">0</text>
+            <text x="100.0" y="235" text-anchor="middle" fill="#8b949e" font-size="12">Healthy</text>
+        </g>
+        <g>
+            <rect x="180" y="68.33333333333331" width="80" height="141.66666666666669" fill="#f85149" rx="4" opacity="0.85"/>
+            <text x="220.0" y="58.333333333333314" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">24</text>
+            <text x="220.0" y="235" text-anchor="middle" fill="#8b949e" font-size="12">Bug</text>
+        </g>
+        <g>
+            <rect x="300" y="210.0" width="80" height="0.0" fill="#58a6ff" rx="4" opacity="0.85"/>
+            <text x="340.0" y="200.0" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="bold">0</text>
+            <text x="340.0" y="235" text-anchor="middle" fill="#8b949e" font-size="12">Fix</text>
+        </g>
+</svg>
