@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (July 2026)
+- **Causal chain engine** (`neuraldbg/causal_chain.py`): builds directed causal graphs from events, extracts ranked chains via DFS. Shows root cause → propagation → final symptom. Integrated via `dbg.explain_causal()`.
+- **DeepMLP validation** (`validate_resnet.py`): 12-layer residual architecture achieving 100% detection (7/7) vs 57% on shallow models. Median gap: +17 anomalies.
+- **GPU-trained Neural-Agent v3** (`train_balanced.py`): Qwen2-0.5B + LoRA, 5/5 categories distinct, trained on 10 live events + 30 real bug triplets.
+- **End-to-end pipeline** (`e2e_pipeline.py`): detect → causal chain → AI diagnose → fix → validate. BUG-003 achieves PASS (0→24→1).
+- **10 post-mortems published** on [GitHub Pages](https://lambdasection.github.io/NeuralDBG/blog/): complete catalog of real PyTorch/HF bugs with reproduction, diagnosis, and causal chains.
+- **Validation dashboard** (`docs/dashboard.html`): live bug detection matrix, PR tracker, model versions.
+- **Tool comparison matrix** (`docs/comparison.html`): NeuralDBG vs W&B/TensorBoard/MLflow/Captum across 16 capabilities. NeuralDBG: 14/16 YES.
+- **Captum benchmark** (`benchmark_public/benchmark_captum.py`): proves NeuralDBG solves a different problem than explainability tools.
+- **4 upstream PRs submitted**: #188933 (real fix), #188923 (+59/-0 test), #188053 (albanD reviewed), #188066 (CI fixed).
+- **CLI wrapper**: `neuraldbg run script.py --agent --export`.
+- **Live event capture** (`scripts/capture_live_events.py`): 10 live triplets from actual NeuralDBG sessions.
+- **GPU agent bridge** (`agent_bridge.py` in Neural-Agent): subprocess-callable AI diagnosis.
+
+### Changed
+- **Agent model**: CPU distilgpt2 → GPU Qwen2-0.5B fp16 + LoRA (Quadro M4000, 8.6 GB).
+- **PR creation**: moved from fork-clone to GitHub API direct (SHA-based) to avoid fork corruption.
+- **Plan restructured**: focus on independent activities (content, product, distribution) while PRs await review.
+- **Kaggle**: abandoned in favor of local GPU training.
+
+### Fixed
+- Causal chain engine: filter logic (AND/OR bug), node key collisions, DFS combinatorial explosion (45K→30 chains).
+- PR #188066: 13 CI failures resolved (isnan→isfinite, TESTOWNERS header).
+- PR #188797/#188922: closed corrupted PRs, replaced with clean #188923 (+59/-0).
+
 ## [1.3.2] - 2026-06-09
 
 ### Added
