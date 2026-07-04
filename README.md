@@ -69,6 +69,15 @@ Latest results: [benchmark_public/results.json](benchmark_public/results.json)
 
 > "TensorBoard tells you *when* it failed. NeuralDBG tells you *why*."
 
+## Latest: July 2026
+
+- **100% detection** on 7 real PyTorch bugs (DeepMLP 12-layer architecture)
+- **10 post-mortems** published — [read the blog](https://lambdasection.github.io/NeuralDBG/blog/)
+- **4 upstream PRs** submitted to PyTorch (1 real fix, 3 test additions)
+- **Causal chain engine** — traces root causes through layers and time steps
+- **Captum benchmark** — proves NeuralDBG solves a different problem than explainability tools
+- **[Validation dashboard](https://lambdasection.github.io/NeuralDBG/dashboard)** — live bug detection matrix
+
 ## Key Features
 
 - **Semantic Event Extraction**: Detects meaningful transitions in training dynamics
