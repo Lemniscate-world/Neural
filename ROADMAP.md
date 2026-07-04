@@ -12,8 +12,8 @@ NeuralDBG fait partie d'un écosystème à 4 composants. Voir aussi :
 |---|---|---|
 | **NeuralDBG** (ce repo) | Moteur de diagnostic causal | v1.3.2 ✅ |
 | **Neural-Agent** | Auto-correcteur | Pipeline built (closed beta) |
-| **Aquarium** | Visualiseur IDE (Tauri) | MVP livré, dormant |
-| **neuraldbg-engine** | Inférence causale avancée (optionnel) | v1.0.0 (registry privé) |
+| **Aquarium** | Visualiseur web (HTML) | Dashboard interactif, zero dep |
+| **neuraldbg-engine** | Inférence causale | Merge dans core (v1.5.5) |
 
 ## What is NeuralSuite?
 
@@ -23,8 +23,8 @@ NeuralSuite is a four-part system that catches training problems before they was
 |-----------|-------------|---------|
 | **NeuralDBG** | Causal diagnostic engine — hooks into PyTorch, captures gradient/activation events, detects root causes | `pip install neuraldbg` |
 | **Neural-Agent** | Auto-corrector — diagnoses failures and applies source-level fixes to training scripts | `pip install neural-agent` |
-| **Aquarium** | Visualizer — interactive causal tree viewer for NeuralDBG exports | Desktop app (Tauri) |
-| **neuraldbg-engine** *(optional)* | Advanced causal inference — adds data anomaly, optimizer instability, cross-arch coupling detection | Private registry (closed beta) |
+| **Aquarium** | Visualizer — interactive causal viewer, drag-drop JSON exports | [Online dashboard](docs/aquarium.html) |
+| **Neural-Agent** *(private)* | Auto-corrector — GPU-powered diagnosis + fix | Private (closed beta) |
 
 ## Why NeuralSuite?
 
@@ -100,8 +100,7 @@ print(dbg.explain_failure())
 **PRs submitted**: 7 | **Active**: 4 (#188933 fix, #188923 test, #188053 test, #188066 test) | **Merged**: 0
 
 ### v1.4.5 — Catalog Expansion (July-August 2026)
-- [x] 10/10 real bugs cataloged ✅ M2 OBJECTIVE REACHED
-- [x] 10/10 post-mortems published on GitHub Pages ✅
+- [x] 10/10 real bugs cataloged ✅ M2 OBJECTIVE REA- [x] 10/10 post-mortems published on GitHub Pages ✅
 - [x] Reproducible public benchmark on 5+ real scenarios
 - [x] Comparison vs Captum (explainability) ✅ — [benchmark](benchmark_public/benchmark_captum.py)
 - [x] 5/5 upstream PRs submitted
@@ -119,6 +118,17 @@ print(dbg.explain_failure())
 - [ ] 1+ upstream PR merged (external validation) — **0/5 merged, critical gap** 🔴
 - [ ] Research paper draft on causal ML diagnostics
 - [x] **Real model testing** — ResNet + Transformer: 90% detection, 0% FP ✅
+
+### v1.5.5 — Combinatorial Validation (4 July 2026)
+- [x] **Combinatorial sweep** — 50 archs, 300 evals, 87% global detection (+12% from 75%)
+- [x] **RNN core fix** — LSTM/GRU output tuple unwrap, hidden state capture. RNN: 49%→65%, Hybrid: 34%→85%
+- [x] **Paper scraper** — 60 novel architectures (Mamba, KAN, xLSTM, MoE, Hyena, RWKV, etc.)
+- [x] **Engine merge** — NeuralDBG-Engine bundled into neuraldbg/engine/, no separate package
+- [x] **GPU v4 model** — Qwen2-0.5B fp16 + LoRA r=8, 538 examples, 5 families, 92.3% accuracy, 4.3MB adapter
+- [x] **Aquarium web dashboard** — Zero-dependency HTML causal viewer (replaces Tauri app)
+- [x] **E2E RNN pipeline** — Detect→Diagnose→Fix→Validate on LSTM, 2/4 bugs auto-fixed
+- [x] **Community posts** — PyTorch Dev Discussions + Reddit r/ML drafted
+- [x] **Real-architecture validation** — ResNet 80%, Transformer 100%, combined 90%, 0% FP
 
 ## Benchmark Results (v1.3.2)
 
