@@ -150,19 +150,21 @@ def generate_example(cfg: ArchConfig, bug_name: str, bug_fn, events):
 
 
 def main():
-    print("Generating RNN-enriched training data...")
+    print("Generating training data from ALL architectures (MLP/CNN/RNN/TF/Hybrid)...")
     
-    # Focus on RNN + Hybrid configs (the ones that were broken before the fix)
+    # Cover all 5 families
+    mlp_cfgs = mlp_configs(15)
+    cnn_cfgs = cnn_configs(15)
     rnn_cfgs = rnn_configs(15)
-    hybrid_cfgs = hybrid_configs(10)
-    all_cfgs = rnn_cfgs + hybrid_cfgs
+    tf_cfgs = transformer_configs(15)
+    hybrid_cfgs = hybrid_configs(15)
+    all_cfgs = mlp_cfgs + cnn_cfgs + rnn_cfgs + tf_cfgs + hybrid_cfgs
     
     examples = []
     skipped = 0
     
     for cfg in all_cfgs:
         try:
-            model = cfg.make_model()
             data_fn = cfg.make_data
             
             # Run with each bug type
@@ -171,7 +173,7 @@ def main():
                     model2 = cfg.make_model()
                     ev, _, _ = train_with_dbg(model2, data_fn, steps=8, bug=bug_fn)
                     
-                    # Convert SemanticEvent objects to dicts if needed
+                    # Convert SemanticEvent objects
                     event_list = []
                     for e in ev:
                         if hasattr(e, 'event_type'):
@@ -179,7 +181,7 @@ def main():
                         elif isinstance(e, dict):
                             event_list.append(e)
                     
-                    if len(event_list) >= 5:  # Need enough events to be meaningful
+                    if len(event_list) >= 3:  # Need enough events to be meaningful
                         ex = generate_example(cfg, bug_name, bug_fn, event_list)
                         examples.append(ex)
                     else:
@@ -190,12 +192,12 @@ def main():
             skipped += 1
     
     # Write output
-    out_path = "rnn_enriched_train.jsonl"
+    out_path = "all_archs_train.jsonl"
     with open(out_path, "w", encoding="utf-8") as f:
         for ex in examples:
             f.write(json.dumps(ex, ensure_ascii=False) + "\n")
     
-    print(f"  Generated {len(examples)} RNN-enriched training examples")
+    print(f"  Generated {len(examples)} training examples from all 5 families")
     print(f"  Skipped {skipped} (not enough events or errors)")
     print(f"  Saved to: {out_path}")
     
