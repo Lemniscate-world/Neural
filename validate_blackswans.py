@@ -249,15 +249,16 @@ def build_diffusion(cfg: ArchConfig) -> nn.Module:
 
 BLACKSWAN_BUILDERS = {
     "GNN": (lambda cfg: GNNModel(in_dim=16, hidden=cfg.width, num_layers=cfg.depth),
-            lambda batch=8: make_gnn_data(batch=batch)),
-    "MoE": (build_moe, lambda batch=16, width=64: make_moe_data(batch=batch, width=width)),
-    "Diffusion": (build_diffusion, lambda batch=4: make_diffusion_data(batch=batch)),
+            lambda batch=8, cfg=None: make_gnn_data(batch=batch)),
+    "MoE": (build_moe, lambda batch=16, cfg=None: make_moe_data(batch=batch, width=cfg.width if cfg else 64)),
+    "Diffusion": (build_diffusion, lambda batch=4, cfg=None: make_diffusion_data(batch=batch)),
 }
 
 
 def train_blackswan(cfg, steps=8, bug=None):
-    builder, data_fn = BLACKSWAN_BUILDERS[cfg.family]
+    builder, data_fn_raw = BLACKSWAN_BUILDERS[cfg.family]
     model = builder(cfg)
+    data_fn = lambda: data_fn_raw(cfg=cfg)  # bind config
     
     if cfg.family == "Diffusion":
         return _train_diffusion(model, data_fn, steps, bug)
