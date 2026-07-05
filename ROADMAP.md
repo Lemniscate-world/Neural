@@ -2,52 +2,50 @@
 
 > The complete toolkit for diagnosing and fixing deep learning training failures.
 
-## Écosystème (Multi-Repo)
+## Dashboard (July 5, 2026)
 
-NeuralDBG fait partie d'un écosystème à 4 composants. Voir aussi :
-- [docs/ecosystem.md](file:///c:/Users/Utilisateur/Documents/NeuralDBG/docs/ecosystem.md) — Contrat d'intégration (MID ECO-001)
-- [COMPATIBILITY_MATRIX.md](file:///c:/Users/Utilisateur/Documents/NeuralDBG/COMPATIBILITY_MATRIX.md) — Matrice SemVer inter-repos
+| Metric | Score |
+|--------|-------|
+| Tier 1 Black-Swan detection | **96%** (104/108) |
+| Tier 2 Black-Swan detection | **94%** (102/108) |
+| Combinatorial (200 archs) | 79% (958/1200) |
+| Stress tests | 100% (15/15) |
+| GPU v4 accuracy | 92.3% |
+| Architecture fuzzer | 94% crash rate |
+| PyTorch PRs | 4 submitted, 0 merged |
 
-| Composant | Rôle | Statut |
+## Ecosystem (Multi-Repo)
+
+| Component | Role | Status |
 |---|---|---|
-| **NeuralDBG** (ce repo) | Moteur de diagnostic causal | v1.3.2 ✅ |
-| **Neural-Agent** | Auto-correcteur | Pipeline built (closed beta) |
-| **Aquarium** | Visualiseur web (HTML) | Dashboard interactif, zero dep |
-| **neuraldbg-engine** | Inférence causale | Merge dans core (v1.5.5) |
+| **NeuralDBG** (this repo) | Causal diagnostic engine | v1.5.0 ✅ |
+| **Neural-Agent** | Auto-corrector (GPU) | v4 92.3%, v5 pending |
+| **Aquarium** | Visualizer (HTML dashboard) | Live ✅ |
+| **neuraldbg-engine** | Advanced causal inference | Merged into core |
 
-## What is NeuralSuite?
+## Black-Swan Detection (3 Tiers)
 
-NeuralSuite is a four-part system that catches training problems before they waste your GPU hours:
+| Tier | Families | Detection |
+|------|----------|-----------|
+| 1 | GNN, MoE, Diffusion | 96% (104/108) |
+| 2 | FlashAttention, NeuralODE, Quantized | 94% (102/108) |
+| 3 | Predictive anomaly detection | MVP |
 
-| Component | What it does | Install |
-|-----------|-------------|---------|
-| **NeuralDBG** | Causal diagnostic engine — hooks into PyTorch, captures gradient/activation events, detects root causes | `pip install neuraldbg` |
-| **Neural-Agent** | Auto-corrector — diagnoses failures and applies source-level fixes to training scripts | `pip install neural-agent` |
-| **Aquarium** | Visualizer — interactive causal viewer, drag-drop JSON exports | [Online dashboard](docs/aquarium.html) |
-| **Neural-Agent** *(private)* | Auto-corrector — GPU-powered diagnosis + fix | Private (closed beta) |
+## NeuralPrune — Model Optimization
 
-## Why NeuralSuite?
+Non-destructive redundancy diagnostic:
+- Dead neuron detection (99%+ zero activations)
+- Redundant weight identification (50%+ near-zero)
+- Low-rank matrix decomposition opportunities
+- Quantization readiness (INT8/INT4 compatibility)
+- Static weight detection (vanished gradients)
 
-Existing tools (W&B, MLflow, TensorBoard) are **dashboards** — they show you what happened. NeuralSuite tells you **why** it happened and **how to fix it**.
+## Upcoming
 
-```
-Training fails
-    │
-    ▼
-NeuralDBG: "Vanishing gradients in layer_3, caused by Sigmoid saturation"
-    │
-    ▼
-Neural-Agent: "Swap Sigmoid → LeakyReLU, increase LR by 2x"
-    │
-    ▼
-Training runs successfully
-```
-
-## Quick Start
-
-```python
-from neuraldbg import NeuralDbg
-import torch.nn as nn
+- [ ] v5 GPU training (8 families: +GNN, MoE, Diffusion)
+- [ ] Community launch (Reddit, Discord, HN)
+- [ ] Paper submission (arXiv)
+- [ ] Real-world beta testing (3+ users)
 
 model = nn.Sequential(nn.Linear(10, 64), nn.Sigmoid(), nn.Linear(64, 2))
 

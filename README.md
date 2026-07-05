@@ -69,15 +69,19 @@ Latest results: [benchmark_public/results.json](benchmark_public/results.json)
 
 > "TensorBoard tells you *when* it failed. NeuralDBG tells you *why*."
 
-## Latest: v1.4.0 (July 5, 2026)
+## Latest: v1.5.0 (July 5, 2026)
 
-- **200-architecture validation** — 79% global detection across 5 families (MLP/CNN/RNN/Transformer/Hybrid). RNN detection: 49%→70% (+21%).
-- **LSTM/GRU support** — forward hooks now unwrap RNN output tuples. Per-gate gradient tracking (input/forget/cell/output). Hidden state capture with BPTT analysis.
-- **GPU v4 model** — Qwen2-0.5B + LoRA trained on 538 examples from all 5 architecture families. 92.3% accuracy.
-- **Aquarium web dashboard** — zero-dependency HTML causal viewer. Drag-drop NeuralDBG JSON exports. [Open Aquarium](https://lambdasection.github.io/NeuralDBG/docs/aquarium.html).
-- **Trend-based vanishing detection** — 5-step gradient norm history. Vanishing detection improved 58%→68%→88% across iterations.
-- **Causal chains on RNN** — 27 chains extracted per failure (was 0). Added cross-type compatibility for RNN events.
-- **100% detection** on DeepMLP (7/7 bugs) | **90% detection** on ResNet+Transformer (0% FP) | **10 post-mortems** published
+- **Tier 1 Black-Swan detection: 96%** — GNN 88%, MoE 100%, Diffusion 100% (104/108 bugs detected)
+- **Tier 2 Black-Swan detection: 94%** — FlashAttention 100%, Neural ODE 100%, Quantized 83% (102/108)
+- **200-architecture validation** — 79% global detection across 5 families (MLP/CNN/RNN/Transformer/Hybrid)
+- **NeuralPrune v0.1** — Non-destructive redundancy diagnostic: dead neurons, low-rank weights, quantization opportunities
+- **LSTM/GRU support** — Forward hooks unwrap RNN output tuples. Per-gate gradient tracking (input/forget/cell/output)
+- **Architecture fuzzer** — 94% crash rate across 50 randomly generated architectures
+- **Stress test suite** — 15/15 tests pass: 10x gradients, NaN/Inf, fp16, 100-layer depth, 1K token attention
+- **GPU v4 model** — Qwen2-0.5B + LoRA trained on 538 examples across 5 architecture families, 92.3% accuracy
+- **Aquarium web dashboard** — Zero-dependency HTML causal viewer. [Open Aquarium](https://lambdasection.github.io/NeuralDBG/docs/aquarium.html)
+- **4 upstream PyTorch PRs** — svdvals NaN, F.normalize zero-input, gradient health tests, varlen_attn NaN fix
+- **100% detection** on DeepMLP (6/6 bugs) | **96% Tier 1** black-swans | **94% Tier 2** black-swans
 - **4 upstream PRs** submitted to PyTorch | **CI benchmark workflow** on GitHub Actions
 - **E2E RNN pipeline** — detect→diagnose→fix→validate on LSTM. 2/4 bugs auto-fixed.
 
