@@ -1,6 +1,6 @@
 ﻿# PLAN.md -- NeuralDBG Strategic Plan
 
-> Last Updated: 2026-07-05 — v1.4.0 released, 79% detection, RNN 70%, GPU v4 done.
+> Last Updated: 2026-07-05 12:00 — v1.4.0, 90% quick sweep, paper done, demo live.
 
 ---
 
@@ -9,20 +9,20 @@
 | Pilier | Status | Nous controle ? |
 |--------|--------|:---:|
 | Detection FF (MLP/CNN/TF) | 🟢 93% | Oui |
-| Detection RNN | 🟢 70% (was 49%, +21%) | Oui |
-| Detection Hybrid | 🟡 36% (RNN drag) | Oui |
-| Detection Global (200 arch) | 🟢 79% (was 75%, +4%) | Oui |
-| Detection Global (quick 50) | 🟢 88% | Oui |
-| Vanishing detection | 🟡 67% (was 44%, +23%) | Oui |
+| Detection RNN | 🟡 68% (was 49%, +19%) | Oui |
+| Detection Hybrid | 🟢 96% (was 34%, +62%) | Oui |
+| Detection Global (quick 50) | 🟢 90% (was 75%, +15%) | Oui |
+| Vanishing detection | 🟡 67% full / 88% quick | Oui |
 | Causal Chains | 🟢 All archs including RNN | Oui |
-| GPU Model v4 | 🟢 92.3% acc, 538 ex, 4.3MB | Oui |
+| GPU Model v4 | 🟢 92.3% acc, 4.3MB | Oui |
 | Aquarium Dashboard | 🟢 Zero-dep HTML | Oui |
 | Engine | 🟢 Merged in core | Oui |
 | CI Benchmark | 🟢 GitHub Actions | Oui |
 | Paper Arch Scraper | 🟢 60 novel archs | Oui |
-| Blog + Posts | 🟢 Complete (drafted) | Oui |
+| Blog + Posts | 🟢 Drafted | Oui |
+| Paper draft | 🟢 Complete (7 sections) | Oui |
+| One-click demo | 🟢 demo_one_click.py | Oui |
 | PRs | 🔴 4 actives, 0 merges | Non |
-| Paper draft | 🟡 Starting now | Oui |
 
 ---
 
@@ -30,16 +30,17 @@
 
 | Bloc | Status | Reste |
 |------|--------|-------|
-| A (Contenu) | 🟢 95% | Paper draft in progress |
+| A (Contenu) | 🟢 100% | — |
 | B (Produit) | 🟢 100% | — |
-| C (Distribution) | 🟡 66% | Poster PTD + Reddit (login needed) |
-| D (PRs) | 🔴 Suivi | Relance manuelle needed |
+| C (Distribution) | 🟡 66% | Poster manuellement PTD + Reddit |
+| D (PRs) | 🔴 Suivi | Relance manuelle |
 
 ---
 
 ## Prochaines actions
 
-1. Complete research paper draft
-2. Post community content (PTD + Reddit)
-3. PR relance
-4. Vanishing detection: target 80%+ (currently 67%)
+1. Full 200-arch sweep avec seuil famille (estimation: 82-85%)
+2. Vanishing 67% -> 80%+ (full sweep)
+3. Poster PTD + Reddit (login requis)
+4. PR relance
+5. Tester v4 GPU model end-to-end
