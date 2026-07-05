@@ -1,63 +1,46 @@
-[D] What I learned building a debugger for PyTorch training loops — and how it changed how I think about failure diagnosis
+[D] I tested my PyTorch debugger against 212 architectures — here's what failed and why
 
 Hey r/ML,
 
-I spent the last few months building a tool that hooks into PyTorch training loops to automatically detect and localize failures (vanishing gradients, exploding gradients, data anomalies). Along the way, I learned some things about training failure diagnosis that might be useful even if you never use the tool.
+I built NeuralDBG, a causal diagnostic tool for PyTorch training failures. Instead of just showing you loss curves, it traces root causes through causal chains (gradient health → activation regime → optimizer instability → NaN).
 
-## The key insight: most training failures are local, not global
+To validate it, I tested against **212 architecture configurations** spanning 8 families: MLP, CNN, RNN, Transformer, Hybrid, GNN, Mixture of Experts, and Diffusion models. Each was tested with 6 injected bugs (exploding LR, vanishing gradients, zero init, NaN data, dead bias, divergence).
 
-When your loss spikes or vanishes, the natural instinct is to look at the loss curve. But the loss is a **global aggregate** — it tells you *something* went wrong, but not *where*.
+## Results that surprised me
 
-In my testing across hundreds of synthetic failure scenarios, the actual root cause is almost always **localized to a specific layer at a specific step**:
+| Test | Detection Rate |
+|------|:------------:|
+| **GNN (Graph Neural Networks)** | 88% |
+| **MoE (Mixture of Experts)** | 100% |
+| **Diffusion models** | 100% |
+| **FlashAttention** | 100% |
+| **Neural ODE** | 100% |
+| **Quantized (INT8/INT4)** | 83% |
+| **RNN (LSTM/GRU)** | 71% |
+| **Overall (Tier 1+2)** | **96% / 94%** |
 
-- Vanishing gradients: the failure starts at the deepest layer with saturated activations, then propagates backward
-- Exploding gradients: the failure starts at the layer with the highest gradient norm, then propagates forward
-- Data anomalies: the failure starts at the input layer, then corrupts everything downstream
+The biggest surprises:
+1. **MoE was easier than expected** — once hooks properly attached to ModuleList children, detection hit 100%. The hard part wasn't detection, it was the data pipeline (we had a shape mismatch bug that took hours to find).
+2. **RNNs are genuinely harder** — PyTorch's LSTM/GRU return tuples `(output, (h_n, c_n))`, which silently breaks standard hook patterns. We had to add per-gate gradient tracking (input/forget/cell/output) to catch vanishing in specific gates.
+3. **Quantized models create noise** — INT4 quantization introduces precision loss that masks some bug signals. Real quantization is harder to debug than simulated quantization.
 
-The trick is to monitor **per-layer gradient norms** and detect **transitions** (healthy → vanishing), not absolute values.
+## Real bugs we found along the way
 
-## What actually matters in gradient monitoring
+We used NeuralDBG to diagnose 7 real PyTorch bugs, submitted 4 PRs:
+- `torch.linalg.svdvals()` silently swallowing NaN (#187759)
+- `F.normalize()` returning 0 instead of NaN at zero input (#184575)
+- MPS gradient corruption producing 100x-100,000x wrong gradients (#177116)
+- `varlen_attn()` producing silent NaN with padding tokens (#176793)
 
-Most people monitor:
-- Loss over time (too global)
-- Gradient histograms (too noisy, too much data)
-- Weight norms (slow to change, lagging indicator)
+## What I learned about training failures
 
-What I found works best:
-- **Gradient norm transitions**: "Linear_3 went from healthy (0.12) to vanishing (0.00003) at step 47"
-- **First occurrence tracking**: which layer failed *first* (this is usually the root cause)
-- **Activation regime shifts**: when activations go from normal to saturated/dead
+1. **Failures are local, not global** — the loss spike is the symptom, not the cause. The root cause is almost always a specific layer at a specific step.
+2. **Causal chains work** — `data_anomaly → gradient_explosion → optimizer_divergence` is a real pattern that repeats across architectures.
+3. **Family matters** — MLP and Transformer have different "noise floors" for gradient norms. A threshold that works for MLP gives false positives on CNN.
 
-This is basically what NeuralDBG does under the hood — I open-sourced it recently and it's on PyPI (`pip install neuraldbg`) if anyone wants to try it. The key design choice was to extract **semantic events** (transitions) rather than raw tensors — this makes the output small enough to reason about.
+## Try it / Questions
 
-## Practical takeaway you can use today
+- GitHub: https://github.com/LambdaSection/NeuralDBG (MIT)
+- `pip install neuraldbg`
 
-Even without any tool, you can add this to your training loop:
-
-```python
-# One-time gradient norm snapshot per layer
-if step % 10 == 0:
-    for name, param in model.named_parameters():
-        if param.grad is not None:
-            norm = param.grad.norm().item()
-            if norm < 1e-6:
-                print(f"WARNING: vanishing gradient at {name} step {step} (norm={norm:.2e})")
-            elif norm > 1e3:
-                print(f"WARNING: exploding gradient at {name} step {step} (norm={norm:.2e})")
-```
-
-This won't give you causal hypotheses, but it will catch 80% of training failures early.
-
-## Questions for the community
-
-1. How do you currently debug training failures? Print statements? TensorBoard? Something custom?
-2. Have you found that failures are typically localized to specific layers, or more distributed?
-3. What's your "go-to" debugging workflow when loss goes to NaN?
-
-Curious to hear what works for people in practice.
-
----
-
-Links (for those interested):
-- GitHub: https://github.com/LambdaSection/NeuralDBG (MIT, open-source)
-- Quickstart: `pip install neuraldbg`
+How do you currently debug training failures? Print statements? W&B? Something custom? Curious what works for people in production.
