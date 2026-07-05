@@ -1,59 +1,59 @@
 {
-  "configs": 50,
-  "total_evaluations": 300,
-  "overall_detection": "270/300",
-  "elapsed_seconds": 128,
+  "configs": 200,
+  "total_evaluations": 1200,
+  "overall_detection": "958/1200",
+  "elapsed_seconds": 315,
   "by_family": {
     "MLP": {
-      "configs": 10,
-      "detection": "59/60",
+      "configs": 50,
+      "detection": "280/300",
       "errors": 0
     },
     "CNN": {
-      "configs": 10,
-      "detection": "56/60",
+      "configs": 40,
+      "detection": "216/240",
       "errors": 0
     },
     "RNN": {
-      "configs": 10,
-      "detection": "41/60",
+      "configs": 40,
+      "detection": "172/240",
       "errors": 0
     },
     "Transformer": {
-      "configs": 10,
-      "detection": "56/60",
+      "configs": 40,
+      "detection": "220/240",
       "errors": 0
     },
     "Hybrid": {
-      "configs": 10,
-      "detection": "58/60",
+      "configs": 30,
+      "detection": "70/180",
       "errors": 0
     }
   },
   "by_bug": {
     "exploding": {
-      "detected": 50,
-      "total": 50
+      "detected": 182,
+      "total": 200
     },
     "vanishing": {
-      "detected": 44,
-      "total": 50
+      "detected": 134,
+      "total": 200
     },
     "zero_init": {
-      "detected": 40,
-      "total": 50
+      "detected": 143,
+      "total": 200
     },
     "nan_data": {
-      "detected": 39,
-      "total": 50
+      "detected": 145,
+      "total": 200
     },
     "dead_bias": {
-      "detected": 47,
-      "total": 50
+      "detected": 172,
+      "total": 200
     },
     "divergence": {
-      "detected": 50,
-      "total": 50
+      "detected": 182,
+      "total": 200
     }
   },
   "results": [
@@ -518,6 +518,1386 @@
       "total": 6
     },
     {
+      "name": "MLP_d2_w16_gelu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 29,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 7,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 37,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 32,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_gelu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 13,
+      "threshold": 16,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 6,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 10,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 10,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 40,
+          "detected": true
+        }
+      ],
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_gelu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 32,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 32,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_gelu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 44,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 63,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_gelu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 34,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 17,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 40,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_gelu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 38,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 53,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 53,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_silu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "silu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 27,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 33,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_silu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "silu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 3,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 41,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 6,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 18,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 51,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_silu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "silu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 30,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 21,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 7,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 21,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 38,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_silu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "silu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 46,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 5,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 50,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_silu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "silu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 19,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 36,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_silu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "silu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 46,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 5,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 53,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_silu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "silu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 34,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 20,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 36,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_silu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "silu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 52,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 4,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 24,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 59,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_relu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 24,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 21,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 39,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_relu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 41,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 46,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 49,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_relu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 31,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 27,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_relu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 20,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 50,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_relu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 31,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 5,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 36,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_relu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 45,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 26,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 52,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_relu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 34,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 35,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_relu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 52,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_gelu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 30,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 28,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_gelu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 45,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 51,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_gelu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 31,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 21,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 37,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 32,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_gelu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 45,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 7,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 50,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_gelu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 33,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 19,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 34,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_gelu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 38,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 51,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 51,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_gelu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 27,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 46,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 40,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w32_gelu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 58,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
       "name": "CNN_d2_w16_k3_relu_None_skipFalse",
       "family": "CNN",
       "depth": 2,
@@ -526,22 +1906,22 @@
       "norm": "None",
       "skip": false,
       "dropout": 0.0,
-      "baseline": 32,
-      "threshold": 35,
+      "baseline": 31,
+      "threshold": 34,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 99,
+          "anomalies": 122,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 52,
+          "anomalies": 56,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 53,
+          "anomalies": 45,
           "detected": true
         },
         {
@@ -556,7 +1936,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 120,
+          "anomalies": 121,
           "detected": true
         }
       ],
@@ -572,22 +1952,22 @@
       "norm": "None",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 16,
-      "threshold": 19,
+      "baseline": 15,
+      "threshold": 18,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 118,
+          "anomalies": 110,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 57,
+          "anomalies": 48,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 57,
+          "anomalies": 61,
           "detected": true
         },
         {
@@ -602,7 +1982,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 119,
+          "anomalies": 126,
           "detected": true
         }
       ],
@@ -618,22 +1998,22 @@
       "norm": "batchnorm",
       "skip": false,
       "dropout": 0.0,
-      "baseline": 4,
-      "threshold": 7,
+      "baseline": 2,
+      "threshold": 5,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 54,
+          "anomalies": 61,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 9,
+          "anomalies": 19,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 129,
+          "anomalies": 116,
           "detected": true
         },
         {
@@ -643,12 +2023,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 75,
+          "anomalies": 79,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 66,
+          "anomalies": 76,
           "detected": true
         }
       ],
@@ -664,17 +2044,17 @@
       "norm": "batchnorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 2,
-      "threshold": 5,
+      "baseline": 6,
+      "threshold": 9,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 60,
+          "anomalies": 58,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 7,
+          "anomalies": 10,
           "detected": true
         },
         {
@@ -689,12 +2069,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 87,
+          "anomalies": 75,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 84,
+          "anomalies": 82,
           "detected": true
         }
       ],
@@ -710,17 +2090,17 @@
       "norm": "None",
       "skip": false,
       "dropout": 0.0,
-      "baseline": 42,
-      "threshold": 45,
+      "baseline": 45,
+      "threshold": 48,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 125,
+          "anomalies": 132,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 61,
+          "anomalies": 70,
           "detected": true
         },
         {
@@ -735,12 +2115,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 92,
+          "anomalies": 90,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 131,
+          "anomalies": 124,
           "detected": true
         }
       ],
@@ -756,41 +2136,41 @@
       "norm": "None",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 16,
-      "threshold": 19,
+      "baseline": 17,
+      "threshold": 20,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 100,
+          "anomalies": 115,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 37,
+          "anomalies": 46,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 51,
+          "anomalies": 58,
           "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 22,
-          "detected": true
+          "anomalies": 17,
+          "detected": false
         },
         {
           "bug": "dead_bias",
-          "anomalies": 80,
+          "anomalies": 87,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 113,
+          "anomalies": 119,
           "detected": true
         }
       ],
-      "detected": 6,
+      "detected": 5,
       "total": 6
     },
     {
@@ -812,7 +2192,53 @@
         },
         {
           "bug": "vanishing",
-          "anomalies": 8,
+          "anomalies": 6,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 113,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 20,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 81,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 77,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w16_k3_gelu_batchnorm_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 16,
+      "threshold": 19,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 68,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
           "detected": false
         },
         {
@@ -822,17 +2248,17 @@
         },
         {
           "bug": "nan_data",
-          "anomalies": 21,
+          "anomalies": 22,
           "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 87,
+          "anomalies": 82,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 71,
+          "anomalies": 96,
           "detected": true
         }
       ],
@@ -840,7 +2266,329 @@
       "total": 6
     },
     {
-      "name": "CNN_d2_w16_k3_gelu_batchnorm_skipTrue",
+      "name": "CNN_d2_w16_k5_relu_None_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 34,
+      "threshold": 37,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 119,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 54,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 53,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 27,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 85,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 128,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w16_k5_relu_None_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 16,
+      "threshold": 19,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 123,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 19,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 60,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 21,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 81,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 126,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w16_k5_relu_batchnorm_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 4,
+      "threshold": 7,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 66,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 6,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 125,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 77,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 62,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w16_k5_relu_batchnorm_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 70,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 133,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 18,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 80,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 76,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w16_k5_gelu_None_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 46,
+      "threshold": 49,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 143,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 71,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 64,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 35,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 101,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 134,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w16_k5_gelu_None_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 17,
+      "threshold": 20,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 99,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 45,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 58,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 79,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 119,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w16_k5_gelu_batchnorm_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 17,
+      "threshold": 20,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 68,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 123,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 80,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 75,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w16_k5_gelu_batchnorm_skipTrue",
       "family": "CNN",
       "depth": 2,
       "width": 16,
@@ -858,27 +2606,27 @@
         },
         {
           "bug": "vanishing",
-          "anomalies": 19,
-          "detected": true
-        },
-        {
-          "bug": "zero_init",
-          "anomalies": 138,
-          "detected": true
-        },
-        {
-          "bug": "nan_data",
           "anomalies": 18,
           "detected": true
         },
         {
+          "bug": "zero_init",
+          "anomalies": 141,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
           "bug": "dead_bias",
-          "anomalies": 87,
+          "anomalies": 85,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 94,
+          "anomalies": 96,
           "detected": true
         }
       ],
@@ -886,10 +2634,10 @@
       "total": 6
     },
     {
-      "name": "CNN_d2_w16_k5_relu_None_skipFalse",
+      "name": "CNN_d2_w32_k3_relu_None_skipFalse",
       "family": "CNN",
       "depth": 2,
-      "width": 16,
+      "width": 32,
       "activation": "relu",
       "norm": "None",
       "skip": false,
@@ -899,7 +2647,375 @@
       "results": [
         {
           "bug": "exploding",
+          "anomalies": 122,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 67,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 53,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 27,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 85,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 123,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k3_relu_None_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 19,
+      "threshold": 22,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 114,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 52,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 55,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 22,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 79,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 104,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k3_relu_batchnorm_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 58,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 117,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 18,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 79,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 61,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k3_relu_batchnorm_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 64,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 133,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 20,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 75,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 79,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k3_gelu_None_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 42,
+      "threshold": 45,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 137,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 64,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 58,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 36,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 94,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 123,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k3_gelu_None_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 17,
+      "threshold": 20,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 119,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 37,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 52,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 75,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 111,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k3_gelu_batchnorm_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 4,
+      "threshold": 7,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 69,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 125,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 92,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 72,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k3_gelu_batchnorm_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 16,
+      "threshold": 19,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 58,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 8,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 137,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 20,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
           "anomalies": 84,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 84,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k5_relu_None_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 32,
+      "threshold": 35,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 131,
           "detected": true
         },
         {
@@ -909,7 +3025,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 57,
+          "anomalies": 69,
           "detected": true
         },
         {
@@ -924,7 +3040,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 115,
+          "anomalies": 119,
           "detected": true
         }
       ],
@@ -932,30 +3048,30 @@
       "total": 6
     },
     {
-      "name": "CNN_d2_w16_k5_relu_None_skipTrue",
+      "name": "CNN_d2_w32_k5_relu_None_skipTrue",
       "family": "CNN",
       "depth": 2,
-      "width": 16,
+      "width": 32,
       "activation": "relu",
       "norm": "None",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 17,
-      "threshold": 20,
+      "baseline": 16,
+      "threshold": 19,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 123,
+          "anomalies": 116,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 43,
+          "anomalies": 37,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 61,
+          "anomalies": 62,
           "detected": true
         },
         {
@@ -965,12 +3081,656 @@
         },
         {
           "bug": "dead_bias",
+          "anomalies": 83,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 132,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k5_relu_batchnorm_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 67,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 121,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 18,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 75,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 64,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k5_relu_batchnorm_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 66,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 25,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 133,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 18,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 79,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 84,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k5_gelu_None_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 46,
+      "threshold": 49,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 117,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 64,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 65,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 33,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 95,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 131,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k5_gelu_None_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 17,
+      "threshold": 20,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 111,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 47,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 58,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 85,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 97,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k5_gelu_batchnorm_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 17,
+      "threshold": 20,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 72,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 14,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 123,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 87,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 73,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w32_k5_gelu_batchnorm_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 8,
+      "threshold": 11,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 69,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 8,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 152,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 18,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 101,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 82,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w64_k3_relu_None_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "relu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 31,
+      "threshold": 34,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 126,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 60,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 79,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 28,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 85,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 123,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w64_k3_relu_None_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "relu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 17,
+      "threshold": 20,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 121,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 38,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 70,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 21,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 85,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 127,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w64_k3_relu_batchnorm_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 17,
+      "threshold": 20,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 62,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 128,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 18,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 75,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 78,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w64_k3_relu_batchnorm_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 55,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 146,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 18,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 80,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 76,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w64_k3_gelu_None_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 41,
+      "threshold": 44,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 120,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 63,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 58,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 33,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 97,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 133,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w64_k3_gelu_None_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 17,
+      "threshold": 20,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 101,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 53,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 58,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
           "anomalies": 81,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 126,
+          "anomalies": 119,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w64_k3_gelu_batchnorm_skipFalse",
+      "family": "CNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 51,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 125,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 93,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 73,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "CNN_d2_w64_k3_gelu_batchnorm_skipTrue",
+      "family": "CNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 68,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 7,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 133,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 18,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 105,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 82,
           "detected": true
         }
       ],
@@ -1037,7 +3797,7 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 48,
+          "anomalies": 46,
           "detected": true
         },
         {
@@ -1047,7 +3807,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 18,
+          "anomalies": 19,
           "detected": false
         },
         {
@@ -1078,27 +3838,27 @@
       "norm": "None",
       "skip": false,
       "dropout": 0.0,
-      "baseline": 3,
-      "threshold": 5,
+      "baseline": 2,
+      "threshold": 4,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 10,
+          "anomalies": 12,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 14,
+          "anomalies": 10,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 4,
+          "anomalies": 3,
           "detected": false
         },
         {
           "bug": "nan_data",
-          "anomalies": 7,
+          "anomalies": 6,
           "detected": true
         },
         {
@@ -1108,7 +3868,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 18,
+          "anomalies": 14,
           "detected": true
         }
       ],
@@ -1154,7 +3914,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 38,
+          "anomalies": 34,
           "detected": true
         }
       ],
@@ -1262,8 +4022,8 @@
       "norm": "None",
       "skip": false,
       "dropout": 0.0,
-      "baseline": 3,
-      "threshold": 5,
+      "baseline": 1,
+      "threshold": 3,
       "results": [
         {
           "bug": "exploding",
@@ -1277,13 +4037,13 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 3,
-          "detected": false
+          "anomalies": 4,
+          "detected": true
         },
         {
           "bug": "nan_data",
           "anomalies": 5,
-          "detected": false
+          "detected": true
         },
         {
           "bug": "dead_bias",
@@ -1292,11 +4052,11 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 14,
+          "anomalies": 12,
           "detected": true
         }
       ],
-      "detected": 4,
+      "detected": 6,
       "total": 6
     },
     {
@@ -1323,7 +4083,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 12,
+          "anomalies": 13,
           "detected": false
         },
         {
@@ -1359,7 +4119,7 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 8,
+          "anomalies": 10,
           "detected": true
         },
         {
@@ -1405,7 +4165,7 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 50,
+          "anomalies": 48,
           "detected": true
         },
         {
@@ -1438,6 +4198,1386 @@
       "total": 6
     },
     {
+      "name": "RNN_gru_d1_w128",
+      "family": "RNN",
+      "depth": 1,
+      "width": 128,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 4,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 5,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 36,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 12,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d1_w128_bi",
+      "family": "RNN",
+      "depth": 1,
+      "width": 128,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 25,
+      "threshold": 27,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 34,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 36,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 12,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 65,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 38,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d1_w256",
+      "family": "RNN",
+      "depth": 1,
+      "width": 256,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 26,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 8,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d1_w256_bi",
+      "family": "RNN",
+      "depth": 1,
+      "width": 256,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 42,
+      "threshold": 44,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 48,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 52,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 18,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 21,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 41,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 48,
+          "detected": true
+        }
+      ],
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d1_w256",
+      "family": "RNN",
+      "depth": 1,
+      "width": 256,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 5,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 36,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 10,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d1_w256_bi",
+      "family": "RNN",
+      "depth": 1,
+      "width": 256,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 25,
+      "threshold": 27,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 34,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 36,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 12,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 66,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 36,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d2_w32",
+      "family": "RNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 26,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 30,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d2_w32_bi",
+      "family": "RNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 42,
+      "threshold": 44,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 62,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 19,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 21,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 41,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 72,
+          "detected": true
+        }
+      ],
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d2_w32",
+      "family": "RNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 28,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 23,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d2_w32_bi",
+      "family": "RNN",
+      "depth": 2,
+      "width": 32,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 27,
+      "threshold": 29,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 39,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 45,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 12,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 16,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 126,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 57,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d2_w64",
+      "family": "RNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 26,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 11,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d2_w64_bi",
+      "family": "RNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 42,
+      "threshold": 44,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 62,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 18,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 21,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 41,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 63,
+          "detected": true
+        }
+      ],
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d2_w64",
+      "family": "RNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 55,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 20,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d2_w64_bi",
+      "family": "RNN",
+      "depth": 2,
+      "width": 64,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 26,
+      "threshold": 28,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 47,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 12,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 15,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 125,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 49,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d2_w128",
+      "family": "RNN",
+      "depth": 2,
+      "width": 128,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 26,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 16,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d2_w128_bi",
+      "family": "RNN",
+      "depth": 2,
+      "width": 128,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 42,
+      "threshold": 44,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 62,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 18,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 21,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 41,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 61,
+          "detected": true
+        }
+      ],
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d2_w128",
+      "family": "RNN",
+      "depth": 2,
+      "width": 128,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 66,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 14,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d2_w128_bi",
+      "family": "RNN",
+      "depth": 2,
+      "width": 128,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 26,
+      "threshold": 28,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 47,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 12,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 15,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 129,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 50,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d2_w256",
+      "family": "RNN",
+      "depth": 2,
+      "width": 256,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 26,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 13,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d2_w256_bi",
+      "family": "RNN",
+      "depth": 2,
+      "width": 256,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 42,
+      "threshold": 44,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 48,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 62,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 18,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 21,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 41,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 48,
+          "detected": true
+        }
+      ],
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d2_w256",
+      "family": "RNN",
+      "depth": 2,
+      "width": 256,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 66,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 22,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d2_w256_bi",
+      "family": "RNN",
+      "depth": 2,
+      "width": 256,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 26,
+      "threshold": 28,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 46,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 47,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 12,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 15,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 127,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 46,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d3_w32",
+      "family": "RNN",
+      "depth": 3,
+      "width": 32,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 7,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 32,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 26,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 16,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d3_w32_bi",
+      "family": "RNN",
+      "depth": 3,
+      "width": 32,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 42,
+      "threshold": 44,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 85,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 18,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 21,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 41,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 118,
+          "detected": true
+        }
+      ],
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d3_w32",
+      "family": "RNN",
+      "depth": 3,
+      "width": 32,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 34,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 79,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 35,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d3_w32_bi",
+      "family": "RNN",
+      "depth": 3,
+      "width": 32,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 26,
+      "threshold": 28,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 57,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 12,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 15,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 186,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 65,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d3_w64",
+      "family": "RNN",
+      "depth": 3,
+      "width": 64,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 32,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 26,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 14,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_lstm_d3_w64_bi",
+      "family": "RNN",
+      "depth": 3,
+      "width": 64,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 42,
+      "threshold": 44,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 52,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 79,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 18,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 21,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 41,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 139,
+          "detected": true
+        }
+      ],
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d3_w64",
+      "family": "RNN",
+      "depth": 3,
+      "width": 64,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 32,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 96,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 14,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "RNN_gru_d3_w64_bi",
+      "family": "RNN",
+      "depth": 3,
+      "width": 64,
+      "activation": "tanh",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 26,
+      "threshold": 28,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 56,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 12,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 15,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 185,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 56,
+          "detected": true
+        }
+      ],
+      "detected": 4,
+      "total": 6
+    },
+    {
       "name": "TF_d1_dm32_h2_relu",
       "family": "Transformer",
       "depth": 1,
@@ -1451,32 +5591,32 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 63,
+          "anomalies": 65,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 11,
+          "anomalies": 9,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 18,
+          "anomalies": 20,
           "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 12,
+          "anomalies": 13,
           "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 39,
+          "anomalies": 38,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 72,
+          "anomalies": 65,
           "detected": true
         }
       ],
@@ -1492,12 +5632,12 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.1,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 3,
+      "threshold": 6,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 60,
+          "anomalies": 63,
           "detected": true
         },
         {
@@ -1507,22 +5647,22 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 24,
+          "anomalies": 18,
           "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 13,
+          "anomalies": 12,
           "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 47,
+          "anomalies": 44,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 70,
+          "anomalies": 63,
           "detected": true
         }
       ],
@@ -1538,22 +5678,22 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 2,
+      "threshold": 5,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 57,
+          "anomalies": 67,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 15,
+          "anomalies": 11,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 19,
+          "anomalies": 18,
           "detected": true
         },
         {
@@ -1563,12 +5703,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 45,
+          "anomalies": 40,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 72,
+          "anomalies": 57,
           "detected": true
         }
       ],
@@ -1584,12 +5724,12 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.1,
-      "baseline": 6,
-      "threshold": 9,
+      "baseline": 3,
+      "threshold": 6,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 61,
+          "anomalies": 57,
           "detected": true
         },
         {
@@ -1604,17 +5744,17 @@
         },
         {
           "bug": "nan_data",
-          "anomalies": 12,
+          "anomalies": 13,
           "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 49,
+          "anomalies": 48,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 63,
+          "anomalies": 75,
           "detected": true
         }
       ],
@@ -1645,7 +5785,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 18,
+          "anomalies": 17,
           "detected": true
         },
         {
@@ -1655,12 +5795,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 36,
+          "anomalies": 37,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 64,
+          "anomalies": 65,
           "detected": true
         }
       ],
@@ -1676,22 +5816,22 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.1,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 1,
+      "threshold": 4,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 62,
+          "anomalies": 63,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 4,
-          "detected": true
+          "anomalies": 0,
+          "detected": false
         },
         {
           "bug": "zero_init",
-          "anomalies": 16,
+          "anomalies": 19,
           "detected": true
         },
         {
@@ -1701,16 +5841,16 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 42,
+          "anomalies": 46,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 62,
+          "anomalies": 58,
           "detected": true
         }
       ],
-      "detected": 6,
+      "detected": 5,
       "total": 6
     },
     {
@@ -1722,17 +5862,17 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 3,
+      "threshold": 6,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 64,
+          "anomalies": 62,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 13,
+          "anomalies": 9,
           "detected": true
         },
         {
@@ -1747,12 +5887,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 44,
+          "anomalies": 38,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 69,
+          "anomalies": 66,
           "detected": true
         }
       ],
@@ -1768,12 +5908,840 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 60,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 51,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 71,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm32_h8_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 32,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 3,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 60,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 17,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 70,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm32_h8_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 32,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 4,
+      "threshold": 7,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 65,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 60,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm32_h8_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 61,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 17,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 46,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 68,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm32_h8_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 63,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 21,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 65,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h2_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 3,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 59,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 20,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 37,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 59,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h2_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 63,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 20,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 50,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 59,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h2_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
       "baseline": 1,
       "threshold": 4,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 57,
+          "anomalies": 68,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 20,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 38,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 66,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h2_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 6,
+      "threshold": 9,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 66,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 21,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 45,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 71,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h4_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 61,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 20,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 39,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 69,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h4_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 4,
+      "threshold": 7,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 60,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 24,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 48,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 64,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h4_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 62,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 21,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 39,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 73,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h4_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 3,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 61,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 20,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 46,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 60,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h8_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 61,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 39,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 65,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h8_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 4,
+      "threshold": 7,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 58,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 47,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 62,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h8_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 68,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 25,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 38,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 66,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm64_h8_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 60,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 27,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 45,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 70,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h2_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 59,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 75,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h2_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 65,
           "detected": true
         },
         {
@@ -1793,12 +6761,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 45,
+          "anomalies": 42,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 64,
+          "anomalies": 61,
           "detected": true
         }
       ],
@@ -1806,20 +6774,112 @@
       "total": 6
     },
     {
-      "name": "TF_d1_dm32_h8_relu",
+      "name": "TF_d1_dm96_h2_gelu",
       "family": "Transformer",
       "depth": 1,
-      "width": 32,
+      "width": 96,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 61,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 39,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 68,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h2_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 3,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 61,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 2,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 24,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 47,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 57,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h4_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
       "activation": "relu",
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 2,
+      "threshold": 5,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 59,
+          "anomalies": 65,
           "detected": true
         },
         {
@@ -1829,12 +6889,12 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 25,
+          "anomalies": 24,
           "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 12,
+          "anomalies": 13,
           "detected": true
         },
         {
@@ -1844,7 +6904,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 61,
+          "anomalies": 65,
           "detected": true
         }
       ],
@@ -1852,10 +6912,378 @@
       "total": 6
     },
     {
-      "name": "TF_d1_dm32_h8_relu",
+      "name": "TF_d1_dm96_h4_relu",
       "family": "Transformer",
       "depth": 1,
-      "width": 32,
+      "width": 96,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 6,
+      "threshold": 9,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 59,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 44,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 61,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h4_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 2,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 67,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 39,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 58,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h4_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 63,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 23,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 45,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 65,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h8_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 63,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 66,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h8_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 3,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 56,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 47,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 66,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h8_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 3,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 62,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 70,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm96_h8_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 96,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 3,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 61,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 47,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 69,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm128_h2_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 128,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 51,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 68,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm128_h2_relu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 128,
       "activation": "relu",
       "norm": "layernorm",
       "skip": true,
@@ -1875,22 +7303,114 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 19,
+          "anomalies": 22,
           "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 12,
+          "anomalies": 13,
           "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 40,
+          "anomalies": 44,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 57,
+          "anomalies": 65,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm128_h2_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 128,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 65,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 26,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 65,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "TF_d1_dm128_h2_gelu",
+      "family": "Transformer",
+      "depth": 1,
+      "width": 128,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 60,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 13,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 48,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 69,
           "detected": true
         }
       ],
@@ -1911,12 +7431,12 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 89,
+          "anomalies": 96,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 43,
+          "anomalies": 45,
           "detected": true
         },
         {
@@ -1936,7 +7456,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 99,
+          "anomalies": 90,
           "detected": true
         }
       ],
@@ -1952,41 +7472,41 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 18,
-      "threshold": 20,
+      "baseline": 17,
+      "threshold": 19,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 94,
+          "anomalies": 91,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 42,
+          "anomalies": 41,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 48,
+          "anomalies": 47,
           "detected": true
         },
         {
           "bug": "nan_data",
           "anomalies": 20,
-          "detected": false
+          "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 75,
+          "anomalies": 77,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 85,
+          "anomalies": 84,
           "detected": true
         }
       ],
-      "detected": 5,
+      "detected": 6,
       "total": 6
     },
     {
@@ -1998,41 +7518,41 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 17,
-      "threshold": 19,
+      "baseline": 24,
+      "threshold": 26,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 91,
+          "anomalies": 83,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 43,
+          "anomalies": 50,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 55,
+          "anomalies": 49,
           "detected": true
         },
         {
           "bug": "nan_data",
           "anomalies": 20,
-          "detected": true
+          "detected": false
         },
         {
           "bug": "dead_bias",
-          "anomalies": 75,
+          "anomalies": 71,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 85,
+          "anomalies": 111,
           "detected": true
         }
       ],
-      "detected": 6,
+      "detected": 5,
       "total": 6
     },
     {
@@ -2049,17 +7569,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 99,
+          "anomalies": 97,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 44,
+          "anomalies": 43,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 47,
+          "anomalies": 48,
           "detected": true
         },
         {
@@ -2069,12 +7589,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 72,
+          "anomalies": 71,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 82,
+          "anomalies": 84,
           "detected": true
         }
       ],
@@ -2090,17 +7610,17 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 19,
-      "threshold": 21,
+      "baseline": 18,
+      "threshold": 20,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 95,
+          "anomalies": 89,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 46,
+          "anomalies": 43,
           "detected": true
         },
         {
@@ -2115,7 +7635,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 74,
+          "anomalies": 76,
           "detected": true
         },
         {
@@ -2141,7 +7661,7 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 96,
+          "anomalies": 98,
           "detected": true
         },
         {
@@ -2151,7 +7671,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 54,
+          "anomalies": 52,
           "detected": true
         },
         {
@@ -2166,7 +7686,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 89,
+          "anomalies": 92,
           "detected": true
         }
       ],
@@ -2187,12 +7707,12 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 57,
+          "anomalies": 73,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 17,
+          "anomalies": 12,
           "detected": true
         },
         {
@@ -2207,12 +7727,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 73,
+          "anomalies": 82,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 66,
+          "anomalies": 58,
           "detected": true
         }
       ],
@@ -2233,17 +7753,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 64,
+          "anomalies": 59,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 20,
+          "anomalies": 8,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 39,
+          "anomalies": 40,
           "detected": true
         },
         {
@@ -2253,12 +7773,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 74,
+          "anomalies": 76,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 56,
+          "anomalies": 54,
           "detected": true
         }
       ],
@@ -2279,17 +7799,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 67,
+          "anomalies": 57,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 11,
+          "anomalies": 17,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 41,
+          "anomalies": 46,
           "detected": true
         },
         {
@@ -2299,12 +7819,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 72,
+          "anomalies": 76,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 64,
+          "anomalies": 68,
           "detected": true
         }
       ],
@@ -2325,7 +7845,7 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 57,
+          "anomalies": 70,
           "detected": true
         },
         {
@@ -2335,7 +7855,53 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 46,
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 73,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 68,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_attn+mlp_w128_relu",
+      "family": "Hybrid",
+      "depth": 5,
+      "width": 128,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 72,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 18,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 48,
           "detected": true
         },
         {
@@ -2350,7 +7916,1341 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 57,
+          "anomalies": 59,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_attn+mlp_w128_gelu",
+      "family": "Hybrid",
+      "depth": 5,
+      "width": 128,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 68,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 48,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 75,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 65,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_rnn+mlp_w32_relu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 32,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 1,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_rnn+mlp_w32_gelu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 1,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_rnn+mlp_w64_relu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 64,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 1,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_rnn+mlp_w64_gelu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 1,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_rnn+mlp_w128_relu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 128,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 1,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_rnn+mlp_w128_gelu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 128,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 1,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 1,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_cnn+rnn+mlp_w32_relu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 32,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 3,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 3,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_cnn+rnn+mlp_w32_gelu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 3,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 3,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_cnn+rnn+mlp_w64_relu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 64,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 3,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 3,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_cnn+rnn+mlp_w64_gelu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 3,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 3,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_cnn+rnn+mlp_w128_relu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 128,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 3,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 3,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_cnn+rnn+mlp_w128_gelu",
+      "family": "Hybrid",
+      "depth": 4,
+      "width": 128,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 3,
+      "threshold": 5,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 3,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_all_w32_relu",
+      "family": "Hybrid",
+      "depth": 5,
+      "width": 32,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 4,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 5,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_all_w32_gelu",
+      "family": "Hybrid",
+      "depth": 5,
+      "width": 32,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 5,
+      "threshold": 7,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 4,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_all_w64_relu",
+      "family": "Hybrid",
+      "depth": 5,
+      "width": 64,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 4,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 4,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_all_w64_gelu",
+      "family": "Hybrid",
+      "depth": 5,
+      "width": 64,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 5,
+      "threshold": 7,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 5,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_all_w128_relu",
+      "family": "Hybrid",
+      "depth": 5,
+      "width": 128,
+      "activation": "relu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 4,
+      "threshold": 6,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 5,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "Hybrid_all_w128_gelu",
+      "family": "Hybrid",
+      "depth": 5,
+      "width": 128,
+      "activation": "gelu",
+      "norm": "layernorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 5,
+      "threshold": 7,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 5,
+          "detected": false
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 4,
+          "detected": false
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 4,
+          "detected": false
+        }
+      ],
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_relu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 34,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 28,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_relu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 44,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 45,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_relu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 30,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 34,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_relu_None_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "None",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 39,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 14,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 47,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_relu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 29,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 3,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 16,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 37,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_relu_batchnorm_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 39,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 51,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 50,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_relu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.0,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 43,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 36,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_relu_batchnorm_skipTrue",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "relu",
+      "norm": "batchnorm",
+      "skip": true,
+      "dropout": 0.1,
+      "baseline": 0,
+      "threshold": 3,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 42,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 0,
+          "detected": false
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 22,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 11,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 54,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 54,
+          "detected": true
+        }
+      ],
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_gelu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.0,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 29,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 7,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 35,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 34,
+          "detected": true
+        }
+      ],
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "name": "MLP_d2_w16_gelu_None_skipFalse",
+      "family": "MLP",
+      "depth": 2,
+      "width": 16,
+      "activation": "gelu",
+      "norm": "None",
+      "skip": false,
+      "dropout": 0.1,
+      "baseline": 1,
+      "threshold": 4,
+      "results": [
+        {
+          "bug": "exploding",
+          "anomalies": 56,
+          "detected": true
+        },
+        {
+          "bug": "vanishing",
+          "anomalies": 6,
+          "detected": true
+        },
+        {
+          "bug": "zero_init",
+          "anomalies": 8,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 12,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 44,
+          "detected": true
+        },
+        {
+          "bug": "divergence",
+          "anomalies": 52,
           "detected": true
         }
       ],
