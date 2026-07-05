@@ -1,0 +1,123 @@
+{
+  "families": [
+    "GNN",
+    "MoE",
+    "Diffusion"
+  ],
+  "overall": "39/108",
+  "by_family": {
+    "GNN": "18/36",
+    "MoE": "4/36",
+    "Diffusion": "17/36"
+  },
+  "results": [
+    {
+      "family": "GNN",
+      "name": "GNN_d2_w32_relu",
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "family": "GNN",
+      "name": "GNN_d2_w32_gelu",
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "family": "GNN",
+      "name": "GNN_d2_w64_relu",
+      "detected": 2,
+      "total": 6
+    },
+    {
+      "family": "GNN",
+      "name": "GNN_d2_w64_gelu",
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "family": "GNN",
+      "name": "GNN_d2_w128_relu",
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "family": "GNN",
+      "name": "GNN_d2_w128_gelu",
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "family": "MoE",
+      "name": "MoE_d2_w32_e4",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "MoE",
+      "name": "MoE_d2_w32_e8",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "MoE",
+      "name": "MoE_d2_w64_e4",
+      "detected": 2,
+      "total": 6
+    },
+    {
+      "family": "MoE",
+      "name": "MoE_d2_w64_e8",
+      "detected": 2,
+      "total": 6
+    },
+    {
+      "family": "MoE",
+      "name": "MoE_d2_w128_e4",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "MoE",
+      "name": "MoE_d2_w128_e8",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "Diffusion",
+      "name": "Diffusion_b16_t32",
+      "detected": 2,
+      "total": 6
+    },
+    {
+      "family": "Diffusion",
+      "name": "Diffusion_b16_t64",
+      "detected": 2,
+      "total": 6
+    },
+    {
+      "family": "Diffusion",
+      "name": "Diffusion_b32_t32",
+      "detected": 2,
+      "total": 6
+    },
+    {
+      "family": "Diffusion",
+      "name": "Diffusion_b32_t64",
+      "detected": 4,
+      "total": 6
+    },
+    {
+      "family": "Diffusion",
+      "name": "Diffusion_b64_t32",
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "family": "Diffusion",
+      "name": "Diffusion_b64_t64",
+      "detected": 2,
+      "total": 6
+    }
+  ]
+}
