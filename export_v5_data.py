@@ -28,7 +28,8 @@ import torch.nn.functional as F
 # Import our test infrastructure
 from validate_combinatorial import (
     BUGS, bug_exploding, bug_vanishing, bug_zero, bug_nan, bug_dead, bug_divergence,
-    ALL_ARCHS, ArchConfig, make_model, train_arch, n_problematic,
+    ArchConfig, build_model, make_data_for, train_with_dbg, n_problematic,
+    mlp_configs, cnn_configs, rnn_configs, transformer_configs, hybrid_configs,
 )
 from validate_blackswans import (
     BLACKSWAN_BUILDERS, gnn_configs, moe_configs, diffusion_configs,
@@ -151,9 +152,9 @@ def generate_examples_for_family(
                 if family in ("GNN", "MoE", "Diffusion"):
                     events, _, _ = train_blackswan(cfg, steps=steps, bug=bug_fn)
                 else:
-                    model = make_model(cfg)
-                    events, _, _ = train_arch(model, cfg, data_fn=None,
-                                              steps=steps, bug=bug_fn)
+                    model = build_model(cfg)
+                    data_fn = lambda: make_data_for(cfg, batch=16)
+                    events, _, _ = train_with_dbg(model, data_fn, steps=steps, bug=bug_fn)
 
                 # Only include if we have meaningful events
                 if len(events) >= 2:
@@ -223,7 +224,18 @@ def main():
                 configs = diffusion_configs(args.per_family)
         else:
             # Standard families from combinatorial tester
-            configs = [c for c in ALL_ARCHS if c.family == family][:args.per_family]
+            config_map = {
+                "MLP": mlp_configs,
+                "CNN": cnn_configs,
+                "RNN": rnn_configs,
+                "TF": transformer_configs,
+                "Hybrid": hybrid_configs,
+            }
+            gen_fn = config_map.get(family)
+            if gen_fn:
+                configs = gen_fn(args.per_family)
+            else:
+                configs = []
 
         if not configs:
             print(f"  No configs found for {family}")
