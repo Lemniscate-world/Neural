@@ -46,6 +46,42 @@ class PaperArchConfig:
 
 ARXIV_API = "http://export.arxiv.org/api/query"
 
+# Black-swan focused search queries — papers that could reveal new failure modes
+BLACK_SWAN_QUERIES = [
+    # Training stability & failure modes
+    "cat:cs.LG AND (training stability OR gradient explosion OR vanishing gradient OR dead neuron)",
+    # Novel architectures with potential unknown failure modes
+    "cat:cs.LG AND (state space model OR mamba OR selective scan OR linear attention)",
+    # Hardware-specific numerical issues
+    "cat:cs.LG AND (mixed precision OR fp16 underflow OR bfloat16 stability OR gradient corruption)",
+    # Architecture interactions
+    "cat:cs.LG AND (mixture of experts training instability OR expert collapse OR load balancing failure)",
+    # Graph neural network training issues
+    "cat:cs.LG AND (graph neural network oversmoothing OR oversquashing OR message passing vanishing)",
+    # Diffusion model training
+    "cat:cs.LG AND (diffusion model training instability OR score matching divergence)",
+    # Quantized model issues
+    "cat:cs.LG AND (quantization aware training instability OR INT4 gradient OR GPTQ failure)",
+    # Compiler-induced failures
+    "cat:cs.LG AND (torch.compile dynamo guard failure OR XLA numerical divergence OR recompilation)",
+]
+
+def search_arxiv_black_swan(max_results=10):
+    """Search arXiv for black-swan relevant papers across multiple queries."""
+    all_papers = []
+    seen_ids = set()
+    
+    for query in BLACK_SWAN_QUERIES[:4]:  # Limit to 4 queries to avoid rate limits
+        papers = search_arxiv(query, max_results=max_results)
+        for p in papers:
+            if p["arxiv_id"] not in seen_ids:
+                seen_ids.add(p["arxiv_id"])
+                all_papers.append(p)
+    
+    print(f"  Total unique papers: {len(all_papers)}")
+    return all_papers
+
+
 def search_arxiv(query="cat:cs.LG AND (architecture OR novel architecture OR new model)", max_results=30):
     """Search arXiv for papers with novel architectures."""
     params = {
@@ -506,6 +542,13 @@ if __name__ == "__main__":
     
     include_arxiv = "--arxiv" in sys.argv
     configs = scrape_architectures(max_papers=50, include_arxiv=include_arxiv)
+    
+    # Auto-scrape arxiv for black-swan papers if requested
+    if include_arxiv:
+        print(f"\n[arXiv] Searching black-swan queries...")
+        papers = search_arxiv_black_swan(max_results=5)
+        for p in papers[:10]:
+            print(f"  {p['arxiv_id']}: {p['title'][:80]}")
     
     # Save as JSON
     out_json = "paper_arch_configs.json"
