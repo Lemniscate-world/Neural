@@ -69,16 +69,17 @@ Latest results: [benchmark_public/results.json](benchmark_public/results.json)
 
 > "TensorBoard tells you *when* it failed. NeuralDBG tells you *why*."
 
-## Latest: July 2026
+## Latest: v1.4.0 (July 5, 2026)
 
-- **100% detection** on 7 real PyTorch bugs (DeepMLP 12-layer architecture)
-- **89% detection** on production architectures — **0% false positives** (ResNet CNN + Transformer, 18 scenarios)
-- **10 post-mortems** published — [read the blog](https://lambdasection.github.io/NeuralDBG/blog/)
-- **4 upstream PRs** submitted to PyTorch (1 real fix, 3 test additions)
-- **Causal chain engine** — traces root causes through layers and time steps via `explain_causal()`
-- **Auto-fix pipeline** — Neural-Agent Remediator: detect → diagnose → fix → validate (closed loop)
-- **Captum benchmark** — proves NeuralDBG solves a different problem than explainability tools
-- **[Validation dashboard](https://lambdasection.github.io/NeuralDBG/dashboard)** — live bug detection matrix
+- **200-architecture validation** — 79% global detection across 5 families (MLP/CNN/RNN/Transformer/Hybrid). RNN detection: 49%→70% (+21%).
+- **LSTM/GRU support** — forward hooks now unwrap RNN output tuples. Per-gate gradient tracking (input/forget/cell/output). Hidden state capture with BPTT analysis.
+- **GPU v4 model** — Qwen2-0.5B + LoRA trained on 538 examples from all 5 architecture families. 92.3% accuracy.
+- **Aquarium web dashboard** — zero-dependency HTML causal viewer. Drag-drop NeuralDBG JSON exports. [Open Aquarium](https://lambdasection.github.io/NeuralDBG/docs/aquarium.html).
+- **Trend-based vanishing detection** — 5-step gradient norm history. Vanishing detection improved 58%→68%→88% across iterations.
+- **Causal chains on RNN** — 27 chains extracted per failure (was 0). Added cross-type compatibility for RNN events.
+- **100% detection** on DeepMLP (7/7 bugs) | **90% detection** on ResNet+Transformer (0% FP) | **10 post-mortems** published
+- **4 upstream PRs** submitted to PyTorch | **CI benchmark workflow** on GitHub Actions
+- **E2E RNN pipeline** — detect→diagnose→fix→validate on LSTM. 2/4 bugs auto-fixed.
 
 ## Key Features
 
