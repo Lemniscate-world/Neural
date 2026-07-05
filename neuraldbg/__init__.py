@@ -716,6 +716,38 @@ class NeuralDbg:
 
                 self.previous_gradient_norms[layer_name] = grad_norm
 
+                # --- Trend-based vanishing detection ---
+                # Track gradient norm history per layer (last 5 steps)
+                if not hasattr(self, '_grad_norm_history'):
+                    self._grad_norm_history = {}
+                if layer_name not in self._grad_norm_history:
+                    self._grad_norm_history[layer_name] = []
+                history = self._grad_norm_history[layer_name]
+                history.append(grad_norm)
+                if len(history) > 5:
+                    history.pop(0)
+
+                # Detect vanishing trend: norms consistently decreasing >80%
+                if len(history) >= 4:
+                    recent = history[-4:]
+                    if all(recent[i] > recent[i+1] for i in range(len(recent)-1)):
+                        drop_ratio = recent[-1] / max(recent[0], 1e-12)
+                        if drop_ratio < 0.2 and recent[-1] < 1e-2:
+                            event = SemanticEvent(
+                                event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                                layer_name=layer_name,
+                                step=self.step,
+                                from_state="healthy",
+                                to_state="vanishing",
+                                confidence=min(0.95, 1.0 - drop_ratio),
+                                metadata={
+                                    "gradient_norms": recent,
+                                    "drop_ratio": drop_ratio,
+                                    "detection": "trend_based",
+                                },
+                            )
+                            self.events.append(event)
+
         def safe_backward_hook(
             module: nn.Module,
             grad_input: Tuple[torch.Tensor],

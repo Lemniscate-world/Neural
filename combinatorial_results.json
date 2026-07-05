@@ -1,8 +1,8 @@
 {
   "configs": 50,
   "total_evaluations": 300,
-  "overall_detection": "261/300",
-  "elapsed_seconds": 173,
+  "overall_detection": "264/300",
+  "elapsed_seconds": 65,
   "by_family": {
     "MLP": {
       "configs": 10,
@@ -26,7 +26,7 @@
     },
     "Hybrid": {
       "configs": 10,
-      "detection": "51/60",
+      "detection": "54/60",
       "errors": 0
     }
   },
@@ -36,7 +36,7 @@
       "total": 50
     },
     "vanishing": {
-      "detected": 29,
+      "detected": 34,
       "total": 50
     },
     "zero_init": {
@@ -44,7 +44,7 @@
       "total": 50
     },
     "nan_data": {
-      "detected": 42,
+      "detected": 40,
       "total": 50
     },
     "dead_bias": {
@@ -91,7 +91,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 37,
+          "anomalies": 39,
           "detected": true
         },
         {
@@ -168,7 +168,7 @@
         },
         {
           "bug": "vanishing",
-          "anomalies": 12,
+          "anomalies": 14,
           "detected": true
         },
         {
@@ -229,7 +229,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 46,
+          "anomalies": 47,
           "detected": true
         },
         {
@@ -255,7 +255,7 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 30,
+          "anomalies": 32,
           "detected": true
         },
         {
@@ -275,7 +275,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 43,
+          "anomalies": 44,
           "detected": true
         },
         {
@@ -367,7 +367,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 43,
+          "anomalies": 46,
           "detected": true
         },
         {
@@ -413,7 +413,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 50,
+          "anomalies": 56,
           "detected": true
         },
         {
@@ -526,41 +526,41 @@
       "norm": "None",
       "skip": false,
       "dropout": 0.0,
-      "baseline": 16,
-      "threshold": 19,
+      "baseline": 32,
+      "threshold": 35,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 91,
+          "anomalies": 99,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 38,
+          "anomalies": 52,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 46,
+          "anomalies": 53,
           "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 21,
-          "detected": true
+          "anomalies": 27,
+          "detected": false
         },
         {
           "bug": "dead_bias",
-          "anomalies": 79,
+          "anomalies": 85,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 112,
+          "anomalies": 120,
           "detected": true
         }
       ],
-      "detected": 6,
+      "detected": 5,
       "total": 6
     },
     {
@@ -582,7 +582,7 @@
         },
         {
           "bug": "vanishing",
-          "anomalies": 45,
+          "anomalies": 57,
           "detected": true
         },
         {
@@ -628,12 +628,12 @@
         },
         {
           "bug": "vanishing",
-          "anomalies": 4,
-          "detected": false
+          "anomalies": 9,
+          "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 121,
+          "anomalies": 129,
           "detected": true
         },
         {
@@ -652,7 +652,7 @@
           "detected": true
         }
       ],
-      "detected": 5,
+      "detected": 6,
       "total": 6
     },
     {
@@ -674,8 +674,8 @@
         },
         {
           "bug": "vanishing",
-          "anomalies": 4,
-          "detected": false
+          "anomalies": 7,
+          "detected": true
         },
         {
           "bug": "zero_init",
@@ -689,7 +689,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 77,
+          "anomalies": 87,
           "detected": true
         },
         {
@@ -698,7 +698,7 @@
           "detected": true
         }
       ],
-      "detected": 5,
+      "detected": 6,
       "total": 6
     },
     {
@@ -710,37 +710,37 @@
       "norm": "None",
       "skip": false,
       "dropout": 0.0,
-      "baseline": 26,
-      "threshold": 29,
+      "baseline": 42,
+      "threshold": 45,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 115,
+          "anomalies": 125,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 55,
+          "anomalies": 61,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 51,
+          "anomalies": 58,
           "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 27,
+          "anomalies": 33,
           "detected": false
         },
         {
           "bug": "dead_bias",
-          "anomalies": 86,
+          "anomalies": 92,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 123,
+          "anomalies": 131,
           "detected": true
         }
       ],
@@ -766,7 +766,7 @@
         },
         {
           "bug": "vanishing",
-          "anomalies": 28,
+          "anomalies": 37,
           "detected": true
         },
         {
@@ -781,7 +781,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 79,
+          "anomalies": 80,
           "detected": true
         },
         {
@@ -807,17 +807,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 66,
+          "anomalies": 67,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 6,
+          "anomalies": 8,
           "detected": false
         },
         {
           "bug": "zero_init",
-          "anomalies": 125,
+          "anomalies": 133,
           "detected": true
         },
         {
@@ -827,7 +827,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 83,
+          "anomalies": 87,
           "detected": true
         },
         {
@@ -863,7 +863,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 133,
+          "anomalies": 138,
           "detected": true
         },
         {
@@ -894,41 +894,41 @@
       "norm": "None",
       "skip": false,
       "dropout": 0.0,
-      "baseline": 16,
-      "threshold": 19,
+      "baseline": 32,
+      "threshold": 35,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 76,
+          "anomalies": 84,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 45,
+          "anomalies": 55,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 48,
+          "anomalies": 57,
           "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 22,
-          "detected": true
+          "anomalies": 28,
+          "detected": false
         },
         {
           "bug": "dead_bias",
-          "anomalies": 79,
+          "anomalies": 85,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 107,
+          "anomalies": 115,
           "detected": true
         }
       ],
-      "detected": 6,
+      "detected": 5,
       "total": 6
     },
     {
@@ -950,12 +950,12 @@
         },
         {
           "bug": "vanishing",
-          "anomalies": 33,
+          "anomalies": 43,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 56,
+          "anomalies": 61,
           "detected": true
         },
         {
@@ -965,7 +965,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 79,
+          "anomalies": 81,
           "detected": true
         },
         {
@@ -1093,7 +1093,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 3,
+          "anomalies": 4,
           "detected": false
         },
         {
@@ -1461,7 +1461,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 17,
+          "anomalies": 18,
           "detected": true
         },
         {
@@ -1476,7 +1476,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 70,
+          "anomalies": 72,
           "detected": true
         }
       ],
@@ -1507,7 +1507,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 16,
+          "anomalies": 24,
           "detected": true
         },
         {
@@ -1517,7 +1517,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 43,
+          "anomalies": 47,
           "detected": true
         },
         {
@@ -1553,7 +1553,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 16,
+          "anomalies": 19,
           "detected": true
         },
         {
@@ -1563,12 +1563,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 44,
+          "anomalies": 45,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 68,
+          "anomalies": 72,
           "detected": true
         }
       ],
@@ -1589,7 +1589,7 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 59,
+          "anomalies": 61,
           "detected": true
         },
         {
@@ -1599,7 +1599,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 18,
+          "anomalies": 20,
           "detected": true
         },
         {
@@ -1655,12 +1655,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 35,
+          "anomalies": 36,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 63,
+          "anomalies": 64,
           "detected": true
         }
       ],
@@ -1783,7 +1783,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 18,
+          "anomalies": 22,
           "detected": true
         },
         {
@@ -1798,7 +1798,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 62,
+          "anomalies": 64,
           "detected": true
         }
       ],
@@ -1829,7 +1829,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 18,
+          "anomalies": 25,
           "detected": true
         },
         {
@@ -1875,7 +1875,7 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 18,
+          "anomalies": 19,
           "detected": true
         },
         {
@@ -1911,17 +1911,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 86,
+          "anomalies": 89,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 34,
+          "anomalies": 43,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 51,
+          "anomalies": 54,
           "detected": true
         },
         {
@@ -1936,7 +1936,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 97,
+          "anomalies": 99,
           "detected": true
         }
       ],
@@ -1957,17 +1957,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 90,
+          "anomalies": 94,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 34,
+          "anomalies": 42,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 43,
+          "anomalies": 48,
           "detected": true
         },
         {
@@ -1977,12 +1977,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 71,
+          "anomalies": 75,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 82,
+          "anomalies": 85,
           "detected": true
         }
       ],
@@ -2003,17 +2003,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 84,
+          "anomalies": 91,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 34,
+          "anomalies": 43,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 46,
+          "anomalies": 55,
           "detected": true
         },
         {
@@ -2028,7 +2028,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 84,
+          "anomalies": 85,
           "detected": true
         }
       ],
@@ -2049,17 +2049,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 96,
+          "anomalies": 99,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 36,
+          "anomalies": 44,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 46,
+          "anomalies": 47,
           "detected": true
         },
         {
@@ -2069,12 +2069,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 71,
+          "anomalies": 72,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 81,
+          "anomalies": 82,
           "detected": true
         }
       ],
@@ -2095,17 +2095,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 93,
+          "anomalies": 95,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 36,
+          "anomalies": 46,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 48,
+          "anomalies": 49,
           "detected": true
         },
         {
@@ -2115,12 +2115,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 71,
+          "anomalies": 74,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 97,
+          "anomalies": 105,
           "detected": true
         }
       ],
@@ -2141,17 +2141,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 94,
+          "anomalies": 96,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 34,
+          "anomalies": 44,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 46,
+          "anomalies": 54,
           "detected": true
         },
         {
@@ -2166,7 +2166,7 @@
         },
         {
           "bug": "divergence",
-          "anomalies": 85,
+          "anomalies": 89,
           "detected": true
         }
       ],
@@ -2187,13 +2187,13 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 56,
+          "anomalies": 57,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 4,
-          "detected": false
+          "anomalies": 17,
+          "detected": true
         },
         {
           "bug": "zero_init",
@@ -2207,16 +2207,16 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 72,
+          "anomalies": 73,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 64,
+          "anomalies": 66,
           "detected": true
         }
       ],
-      "detected": 5,
+      "detected": 6,
       "total": 6
     },
     {
@@ -2233,17 +2233,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 62,
+          "anomalies": 64,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 5,
+          "anomalies": 20,
           "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 30,
+          "anomalies": 39,
           "detected": true
         },
         {
@@ -2253,7 +2253,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 72,
+          "anomalies": 74,
           "detected": true
         },
         {
@@ -2279,17 +2279,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 66,
+          "anomalies": 67,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 2,
-          "detected": false
+          "anomalies": 11,
+          "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 40,
+          "anomalies": 41,
           "detected": true
         },
         {
@@ -2308,7 +2308,7 @@
           "detected": true
         }
       ],
-      "detected": 5,
+      "detected": 6,
       "total": 6
     },
     {
@@ -2325,17 +2325,17 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 55,
+          "anomalies": 57,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 2,
-          "detected": false
+          "anomalies": 16,
+          "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 40,
+          "anomalies": 46,
           "detected": true
         },
         {
@@ -2345,7 +2345,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 72,
+          "anomalies": 77,
           "detected": true
         },
         {
@@ -2354,7 +2354,7 @@
           "detected": true
         }
       ],
-      "detected": 5,
+      "detected": 6,
       "total": 6
     }
   ]
