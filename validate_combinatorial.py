@@ -439,7 +439,7 @@ def bug_exploding(x, y, opt, model):
     return x, y, opt, model
 
 def bug_vanishing(x, y, opt, model):
-    """Replace all activations with sigmoid. For RNNs, corrupt forget gate bias."""
+    """Replace all activations with sigmoid + scale down weights. For RNNs, corrupt forget gate bias."""
     is_rnn = False
     for m in model.modules():
         if isinstance(m, (nn.LSTM, nn.GRU)):
@@ -467,8 +467,15 @@ def bug_vanishing(x, y, opt, model):
             if isinstance(child, (nn.ReLU, nn.GELU, nn.SiLU, nn.Tanh, nn.LeakyReLU, nn.ELU)):
                 setattr(m, name, nn.Sigmoid())
     
+    # For non-RNN models: scale down all weights to force near-zero gradients
+    if not is_rnn:
+        with torch.no_grad():
+            for p in model.parameters():
+                if p.dim() >= 2:
+                    p.mul_(0.001)  # 1000x reduction
+    
     # For RNNs: double sequence length to exacerbate BPTT vanishing
-    if is_rnn and x.dim() == 3:
+    if is_rnn and isinstance(x, torch.Tensor) and x.dim() == 3:
         x = x.repeat(1, 2, 1)  # 16 -> 32 sequence length
     
     return x, y, opt, model
@@ -480,9 +487,18 @@ def bug_zero(x, y, opt, model):
     return x, y, opt, model
 
 def bug_nan(x, y, opt, model):
-    x = x.clone()
-    if x.dim() >= 2:
-        x[0, 0] = float('nan')
+    """Inject NaN into input data. Handles tuple inputs (e.g., GNN)."""
+    if isinstance(x, tuple):
+        # GNN-style: (nodes, adj) — inject NaN into features tensor
+        x_list = list(x)
+        if isinstance(x_list[0], torch.Tensor) and x_list[0].dim() >= 2:
+            x_list[0] = x_list[0].clone()
+            x_list[0][0, 0] = float('nan')
+        x = tuple(x_list)
+    elif isinstance(x, torch.Tensor):
+        x = x.clone()
+        if x.dim() >= 2:
+            x[0, 0] = float('nan')
     return x, y, opt, model
 
 def bug_dead(x, y, opt, model):

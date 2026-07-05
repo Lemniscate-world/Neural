@@ -4,23 +4,23 @@
     "MoE",
     "Diffusion"
   ],
-  "overall": "91/108",
+  "overall": "104/108",
   "by_family": {
-    "GNN": "24/36",
+    "GNN": "32/36",
     "MoE": "36/36",
-    "Diffusion": "31/36"
+    "Diffusion": "36/36"
   },
   "results": [
     {
       "family": "GNN",
       "name": "GNN_d2_w32_relu",
-      "detected": 4,
+      "detected": 6,
       "total": 6
     },
     {
       "family": "GNN",
       "name": "GNN_d2_w32_gelu",
-      "detected": 3,
+      "detected": 5,
       "total": 6
     },
     {
@@ -32,19 +32,19 @@
     {
       "family": "GNN",
       "name": "GNN_d2_w64_gelu",
-      "detected": 4,
+      "detected": 6,
       "total": 6
     },
     {
       "family": "GNN",
       "name": "GNN_d2_w128_relu",
-      "detected": 4,
+      "detected": 5,
       "total": 6
     },
     {
       "family": "GNN",
       "name": "GNN_d2_w128_gelu",
-      "detected": 4,
+      "detected": 5,
       "total": 6
     },
     {
@@ -86,7 +86,7 @@
     {
       "family": "Diffusion",
       "name": "Diffusion_b16_t32",
-      "detected": 5,
+      "detected": 6,
       "total": 6
     },
     {
@@ -98,25 +98,25 @@
     {
       "family": "Diffusion",
       "name": "Diffusion_b32_t32",
-      "detected": 5,
+      "detected": 6,
       "total": 6
     },
     {
       "family": "Diffusion",
       "name": "Diffusion_b32_t64",
-      "detected": 5,
+      "detected": 6,
       "total": 6
     },
     {
       "family": "Diffusion",
       "name": "Diffusion_b64_t32",
-      "detected": 5,
+      "detected": 6,
       "total": 6
     },
     {
       "family": "Diffusion",
       "name": "Diffusion_b64_t64",
-      "detected": 5,
+      "detected": 6,
       "total": 6
     }
   ]
