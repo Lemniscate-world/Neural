@@ -1,0 +1,136 @@
+{
+  "tier": 2,
+  "families": [
+    "FlashAttn",
+    "NeuralODE",
+    "Quantized"
+  ],
+  "overall_pct": 94.44444444444444,
+  "by_family": {
+    "FlashAttn": {
+      "detected": 36,
+      "total": 36,
+      "pct": 100.0
+    },
+    "NeuralODE": {
+      "detected": 36,
+      "total": 36,
+      "pct": 100.0
+    },
+    "Quantized": {
+      "detected": 30,
+      "total": 36,
+      "pct": 83.33333333333334
+    }
+  },
+  "details": [
+    {
+      "family": "FlashAttn",
+      "name": "FlashAttn_d32_l2",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "FlashAttn",
+      "name": "FlashAttn_d32_l3",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "FlashAttn",
+      "name": "FlashAttn_d32_l4",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "FlashAttn",
+      "name": "FlashAttn_d64_l2",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "FlashAttn",
+      "name": "FlashAttn_d64_l3",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "FlashAttn",
+      "name": "FlashAttn_d64_l4",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "NeuralODE",
+      "name": "NeuralODE_d32_l2",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "NeuralODE",
+      "name": "NeuralODE_d32_l3",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "NeuralODE",
+      "name": "NeuralODE_d32_l4",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "NeuralODE",
+      "name": "NeuralODE_d64_l2",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "NeuralODE",
+      "name": "NeuralODE_d64_l3",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "NeuralODE",
+      "name": "NeuralODE_d64_l4",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "Quantized",
+      "name": "Quantized_d32_l2_int8",
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "family": "Quantized",
+      "name": "Quantized_d32_l2_int4",
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "family": "Quantized",
+      "name": "Quantized_d32_l3_int8",
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "family": "Quantized",
+      "name": "Quantized_d32_l3_int4",
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "family": "Quantized",
+      "name": "Quantized_d32_l4_int8",
+      "detected": 5,
+      "total": 6
+    },
+    {
+      "family": "Quantized",
+      "name": "Quantized_d32_l4_int4",
+      "detected": 5,
+      "total": 6
+    }
+  ]
+}
