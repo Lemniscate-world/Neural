@@ -270,8 +270,10 @@ class NeuralDbg:
         return self._causal_engine
 
     def step_iteration(self):
-        """Increment the internal step counter."""
+        """Increment the internal step counter and run post-backward checks."""
         self.step += 1
+        # Check RNN parameter gradients (available after backward, before optimizer.step)
+        self._track_rnn_gate_gradients()
 
     def get_events(self) -> List[SemanticEvent]:
         """Return all captured semantic events."""
@@ -985,6 +987,78 @@ class NeuralDbg:
             "norm": norm_val,
             "saturation_ratio": saturation_ratio,
         }
+
+    def _track_rnn_gate_gradients(self, module: nn.Module = None, layer_name: str = None, grad_tensor: torch.Tensor = None):
+        """Track per-gate gradient norms for LSTM/GRU using parameter .grad attributes.
+
+        Called from step_iteration() after backward() populates .grad on parameters.
+        Walks all model modules to find RNN layers and checks their weight gradients.
+        """
+        # Walk all modules to find RNN layers
+        target_modules = []
+        if module is not None:
+            target_modules = [(module, layer_name or self._get_layer_name(module))]
+        else:
+            # Called from step_iteration() — scan all modules
+            for m in self.model.modules():
+                if isinstance(m, (nn.LSTM, nn.GRU)):
+                    target_modules.append((m, self._get_layer_name(m)))
+
+        for mod, lname in target_modules:
+            try:
+                hidden_size = mod.hidden_size
+            except AttributeError:
+                continue
+
+            is_lstm = isinstance(mod, nn.LSTM)
+            num_gates = 4 if is_lstm else 3
+            gate_names = (["input", "forget", "cell", "output"] if is_lstm
+                          else ["reset", "update", "new"])
+
+            all_gate_norms = {}
+            for layer_idx in range(mod.num_layers):
+                for direction in range(1 + int(mod.bidirectional)):
+                    suffix = f"_l{layer_idx}"
+                    if mod.bidirectional and direction == 1:
+                        suffix += "_reverse"
+                    ih_key = f"weight_ih{suffix}"
+                    hh_key = f"weight_hh{suffix}"
+
+                    for weight_key in [ih_key, hh_key]:
+                        weight = getattr(mod, weight_key, None)
+                        if weight is None or weight.grad is None:
+                            continue
+                        grad = weight.grad
+                        gate_size = grad.size(0) // num_gates
+                        if gate_size < 1 or grad.size(0) % num_gates != 0:
+                            continue
+
+                        for i in range(num_gates):
+                            gname = f"{gate_names[i]}_{weight_key}"
+                            gate_slice = grad[i * gate_size : (i+1) * gate_size]
+                            all_gate_norms[gname] = gate_slice.norm().item()
+
+            if not all_gate_norms:
+                continue
+
+            max_norm = max(all_gate_norms.values())
+            if max_norm > 1e-8:
+                for gname, gnorm in all_gate_norms.items():
+                    if gnorm < max_norm * 0.1 and gnorm < 1e-4:
+                        event = SemanticEvent(
+                            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                            layer_name=f"{lname}.{gname}",
+                            step=self.step,
+                            from_state="healthy",
+                            to_state="vanishing",
+                            confidence=0.85,
+                            metadata={
+                                "gate_norm": gnorm,
+                                "max_gate_norm": max_norm,
+                                "ratio": gnorm / max(max_norm, 1e-12),
+                            },
+                        )
+                        self.events.append(event)
 
     def _capture_rnn_hidden_state(self, layer_name: str, hidden):
         """Capture RNN hidden state statistics for BPTT gradient health analysis.
