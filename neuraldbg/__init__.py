@@ -839,7 +839,12 @@ class NeuralDbg:
             forward_hook = self._forward_hook_impl
             backward_hook = self._backward_hook_impl
         self.hooks.append(module.register_forward_hook(forward_hook))
-        self.hooks.append(module.register_backward_hook(backward_hook))
+        # Use full_backward_hook for RNN modules (LSTM/GRU return tuples,
+        # which register_backward_hook doesn't handle properly)
+        if isinstance(module, (nn.LSTM, nn.GRU, nn.RNN)):
+            self.hooks.append(module.register_full_backward_hook(backward_hook))
+        else:
+            self.hooks.append(module.register_backward_hook(backward_hook))
 
         # Check for DataParallel/DDP and warn/handle
         if isinstance(
