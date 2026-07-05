@@ -160,7 +160,7 @@ class NeuralDbg:
     def __init__(
         self,
         model: nn.Module,
-        threshold_vanishing: float = 1e-6,
+        threshold_vanishing: float = 1e-4,
         threshold_exploding: float = 1e3,
     ):
         """
