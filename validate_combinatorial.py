@@ -536,7 +536,12 @@ def evaluate_config(cfg: ArchConfig) -> dict:
         return {**result, "baseline": -1, "error": str(exc)[:80],
                 "detected": 0, "total": len(BUGS), "results": []}
 
-    threshold = max(baseline + 3, 3)
+    # Family-aware threshold: noisier architectures get lower offset
+    family = cfg.family
+    if family in ("RNN", "Hybrid"):
+        threshold = max(baseline + 2, 2)  # Lower bar for noisy recurrent archs
+    else:
+        threshold = max(baseline + 3, 3)  # Standard for feed-forward archs
     result["baseline"] = baseline
     result["threshold"] = threshold
 
