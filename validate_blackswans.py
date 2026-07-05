@@ -271,21 +271,17 @@ def _train_classification(model, data_fn, steps, bug):
     loss_fn = nn.CrossEntropyLoss()
     
     with NeuralDbg(model) as dbg:
+        bug_applied = False  # apply bug once
         for s in range(steps):
             x, y = data_fn()
-            if isinstance(x, tuple):
-                x_in = x[0]
-            else:
-                x_in = x
             if bug and s >= 3:
-                if bug == bug_exploding:
-                    for g in opt.param_groups: g['lr'] = 50.0
-                elif bug == bug_nan:
-                    x_in = x_in.clone()
-                    x_in[0, 0] = float('nan')
-                elif bug == bug_zero:
-                    for p in model.parameters():
-                        if p.dim() >= 2: nn.init.zeros_(p)
+                if not bug_applied:
+                    # Use the imported bug functions from validate_combinatorial
+                    # which handle RNN-specific gate corruption
+                    x_mod, y_mod, opt, model = bug(x, y, opt, model)
+                    if isinstance(x_mod, torch.Tensor):
+                        x = x_mod
+                    bug_applied = True
             
             opt.zero_grad()
             try:
@@ -309,13 +305,15 @@ def _train_diffusion(model, data_fn, steps, bug):
     loss_fn = nn.MSELoss()
     
     with NeuralDbg(model) as dbg:
+        bug_applied = False
         for s in range(steps):
             x, t = data_fn()
             if bug and s >= 3:
-                if bug == bug_exploding:
-                    for g in opt.param_groups: g['lr'] = 50.0
-                elif bug == bug_nan:
-                    x[0, 0, 0, 0] = float('nan')
+                if not bug_applied:
+                    x_mod, _, opt, _ = bug(x, torch.zeros(1), opt, model)
+                    if isinstance(x_mod, torch.Tensor):
+                        x = x_mod
+                    bug_applied = True
             
             opt.zero_grad()
             try:
