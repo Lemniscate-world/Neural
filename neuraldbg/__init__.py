@@ -1044,7 +1044,7 @@ class NeuralDbg:
             max_norm = max(all_gate_norms.values())
             if max_norm > 1e-8:
                 for gname, gnorm in all_gate_norms.items():
-                    if gnorm < max_norm * 0.1 and gnorm < 1e-4:
+                    if gnorm < max_norm * 0.05 and gnorm < 1e-5:
                         event = SemanticEvent(
                             event_type=EventType.GRADIENT_HEALTH_TRANSITION,
                             layer_name=f"{lname}.{gname}",
