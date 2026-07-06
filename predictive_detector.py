@@ -51,8 +51,8 @@ def collect_healthy_profiles(n_configs=30):
     
     for i, cfg in enumerate(configs):
         try:
-            model = cfg.make_model()
-            data_fn = cfg.make_data
+            model = build_model(cfg)
+            data_fn = lambda: make_data_for(cfg, batch=16)
             
             with NeuralDbg(model) as dbg:
                 opt = torch.optim.SGD(model.parameters(), lr=0.01)
@@ -72,19 +72,20 @@ def collect_healthy_profiles(n_configs=30):
                     # Collect per-step statistics from dbg
                     events = dbg.dump_events()
                     grad_norms = []
-                    act_means = []
+                    act_sats = []
                     for e in events:
-                        meta = getattr(e, 'metadata', {})
+                        # events are dicts from dump_events(), not objects
+                        meta = e.get('metadata', {})
                         if 'current_norm' in meta:
                             grad_norms.append(meta['current_norm'])
-                        if hasattr(e, 'metadata') and 'current_saturation' in meta:
-                            act_means.append(meta.get('current_saturation', 0))
+                        if 'current_saturation' in meta:
+                            act_sats.append(meta['current_saturation'])
                     
                     step_stats = {
                         "step": s,
                         "loss": loss.item(),
                         "grad_norms": grad_norms[-5:] if grad_norms else [],
-                        "act_saturation": act_means[-5:] if act_means else [],
+                        "act_saturation": act_sats[-5:] if act_sats else [],
                         "n_events": len(events),
                     }
                     run_stats["steps"].append(step_stats)
@@ -108,27 +109,14 @@ def collect_healthy_profiles(n_configs=30):
 
 
 def _compute_profile(all_stats):
-    """Compute statistical profile from collected runs."""
-    # Aggregate across all steps and runs
-    losses = []
-    grad_norms = []
-    act_sats = []
-    n_events = []
-    
-    for run in all_stats:
-        for step in run["steps"]:
-            losses.append(step["loss"])
-            grad_norms.extend(step["grad_norms"])
-            act_sats.extend(step["act_saturation"])
-            n_events.append(step["n_events"])
-    
+    """Compute statistical profile from collected runs — global + per-family."""
     def stats(arr):
         if not arr:
-            return {"mean": 0, "std": 0, "min": 0, "max": 0}
+            return {"mean": 0, "std": 0, "min": 0, "max": 0, "n_samples": 0}
         a = np.array(arr)
-        a = a[np.isfinite(a)]  # remove NaN/Inf
+        a = a[np.isfinite(a)]
         if len(a) == 0:
-            return {"mean": 0, "std": 0, "min": 0, "max": 0}
+            return {"mean": 0, "std": 0, "min": 0, "max": 0, "n_samples": 0}
         return {
             "mean": float(np.mean(a)),
             "std": float(np.std(a)),
@@ -138,21 +126,58 @@ def _compute_profile(all_stats):
             "n_samples": len(a),
         }
     
-    return {
-        "loss": stats(losses),
-        "grad_norm": stats(grad_norms),
-        "act_saturation": stats(act_sats),
-        "n_events": stats(n_events),
+    # Global aggregation
+    all_losses, all_gn, all_as, all_ne = [], [], [], []
+    by_family: dict = {}
+    
+    for run in all_stats:
+        fam = run["family"]
+        if fam not in by_family:
+            by_family[fam] = {"losses": [], "grad_norms": [], "act_sats": [], "n_events": []}
+        
+        for step in run["steps"]:
+            all_losses.append(step["loss"])
+            all_gn.extend(step["grad_norms"])
+            all_as.extend(step["act_saturation"])
+            all_ne.append(step["n_events"])
+            
+            by_family[fam]["losses"].append(step["loss"])
+            by_family[fam]["grad_norms"].extend(step["grad_norms"])
+            by_family[fam]["act_sats"].extend(step["act_saturation"])
+            by_family[fam]["n_events"].append(step["n_events"])
+    
+    profile = {
+        "loss": stats(all_losses),
+        "grad_norm": stats(all_gn),
+        "act_saturation": stats(all_as),
+        "n_events": stats(all_ne),
         "n_architectures": len(all_stats),
+        "by_family": {},
     }
+    
+    for fam, data in by_family.items():
+        profile["by_family"][fam] = {
+            "loss": stats(data["losses"]),
+            "grad_norm": stats(data["grad_norms"]),
+            "act_saturation": stats(data["act_sats"]),
+            "n_events": stats(data["n_events"]),
+        }
+    
+    return profile
 
 
 # ============================================================
 # Anomaly detection
 # ============================================================
 
-def detect_anomalies(export_path, profile=None):
-    """Detect anomalies in a NeuralDBG export using learned profile."""
+def detect_anomalies(export_path, profile=None, family=None):
+    """Detect anomalies in a NeuralDBG export using learned profile.
+    
+    Args:
+        export_path: Path to JSON export from NeuralDBG
+        profile: Pre-loaded profile dict (or None to load from disk)
+        family: Optional architecture family for per-family baseline
+    """
     if profile is None:
         try:
             with open(PROFILE_PATH) as f:
@@ -168,6 +193,14 @@ def detect_anomalies(export_path, profile=None):
     if not events:
         return []
     
+    # Choose profile: family-specific if available, else global
+    if family and "by_family" in profile and family in profile["by_family"]:
+        prof = profile["by_family"][family]
+        prof_source = f"family={family}"
+    else:
+        prof = profile
+        prof_source = "global"
+    
     # Extract metrics from export
     grad_norms = []
     act_sats = []
@@ -179,49 +212,39 @@ def detect_anomalies(export_path, profile=None):
             act_sats.append(meta["current_saturation"])
     
     n_events = len(events)
-    
-    # Compute z-scores
     anomalies = []
     
     def check_metric(name, value, prof_key, threshold=3.0):
-        p = profile.get(prof_key, {})
+        p = prof.get(prof_key, {})
         mean = p.get("mean", 0)
         std = p.get("std", 1)
         if std == 0:
             return None
         z = abs(value - mean) / std
         if z > threshold:
-            return {"metric": name, "value": value, "mean": mean, "std": std, "z_score": round(z, 1)}
+            return {"metric": name, "value": value, "mean": mean, "std": std,
+                    "z_score": round(z, 1), "profile": prof_source}
         return None
     
     # Check event count
-    r = check_metric("event_count", n_events, "n_events")
-    if r:
-        anomalies.append(r)
+    r = check_metric("event_count", n_events, "n_events", threshold=2.5)
+    if r: anomalies.append(r)
     
     # Check mean gradient norm
     if grad_norms:
         mean_gn = sum(grad_norms) / len(grad_norms)
-        r = check_metric("grad_norm_mean", mean_gn, "grad_norm")
-        if r:
-            anomalies.append(r)
+        r = check_metric("grad_norm_mean", mean_gn, "grad_norm", threshold=2.5)
+        if r: anomalies.append(r)
         
-        # Check max gradient norm
         max_gn = max(grad_norms)
-        r = check_metric("grad_norm_max", max_gn, "grad_norm", threshold=5.0)
-        if r:
-            anomalies.append(r)
+        r = check_metric("grad_norm_max", max_gn, "grad_norm", threshold=4.0)
+        if r: anomalies.append(r)
     
     # Check activation saturation
     if act_sats:
         mean_as = sum(act_sats) / len(act_sats)
-        r = check_metric("act_saturation", mean_as, "act_saturation")
-        if r:
-            anomalies.append(r)
-    
-    # Add profile metadata
-    for a in anomalies:
-        a["profile_n_archs"] = profile.get("n_architectures", 0)
+        r = check_metric("act_saturation", mean_as, "act_saturation", threshold=2.5)
+        if r: anomalies.append(r)
     
     return anomalies
 
