@@ -1,0 +1,1684 @@
+{
+  "events": [
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "Conv2d_conv1",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": 0.037028297781944275,
+        "std": 0.5660982728004456,
+        "min": -2.5306172370910645,
+        "max": 2.9936861991882324,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 290.46075439453125,
+        "saturation_ratio": 0.09332275390625,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 0,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 8.623391155470602e-09,
+      "metadata": {
+        "prev_mean": 0.2434564232826233,
+        "current_mean": 0.24345643818378448,
+        "prev_std": 0.34559863805770874,
+        "current_std": 0.06117682158946991,
+        "mean_shift_sigma": 4.311695577735301e-08,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_ac767d7448f04fb98dd940925c636933.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": 0.24345643818378448,
+        "std": 0.06117682158946991,
+        "min": 0.11841323971748352,
+        "max": 0.37061887979507446,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 4.015936374664307,
+        "saturation_ratio": 0.0,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv2",
+      "step": 0,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.8077017543143881,
+      "metadata": {
+        "prev_mean": 0.24345643818378448,
+        "current_mean": -0.003606692422181368,
+        "prev_std": 0.06117682158946991,
+        "current_std": 0.064520463347435,
+        "mean_shift_sigma": 4.03850877157194,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_Conv2d_conv2_5a8fbb31fd2b49a5af1a9ce45c939f29.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "Conv2d_conv2",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": -0.003606692422181368,
+        "std": 0.064520463347435,
+        "min": -0.1634472757577896,
+        "max": 0.19199228286743164,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 1.4607864618301392,
+        "saturation_ratio": 0.0,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "BatchNorm2d_bn2",
+      "step": 0,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.011180294300583503,
+      "metadata": {
+        "prev_mean": -0.003606692422181368,
+        "current_mean": 9.642099030315876e-08,
+        "prev_std": 0.064520463347435,
+        "current_std": 0.40414053201675415,
+        "mean_shift_sigma": 0.05590147150291751,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_BatchNorm2d_bn2_31cc1093c7ce4c119ffb1c4f2a28ae14.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "BatchNorm2d_bn2",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": 9.642099030315876e-08,
+        "std": 0.40414053201675415,
+        "min": -1.3159127235412598,
+        "max": 1.193171501159668,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 9.135721206665039,
+        "saturation_ratio": 0.021484375,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "Conv2d_conv3",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": 0.0019350246293470263,
+        "std": 0.058243490755558014,
+        "min": -0.16141562163829803,
+        "max": 0.23060791194438934,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 1.8639103174209595,
+        "saturation_ratio": 0.0,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "BatchNorm2d_bn3",
+      "step": 0,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.006644590908776921,
+      "metadata": {
+        "prev_mean": 0.0019350246293470263,
+        "current_mean": 3.7834979593753815e-09,
+        "prev_std": 0.058243490755558014,
+        "current_std": 0.9969742894172668,
+        "mean_shift_sigma": 0.0332229545438846,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_BatchNorm2d_bn3_36602ab58da74562a34d3d56fad6548e.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "BatchNorm2d_bn3",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": 3.7834979593753815e-09,
+        "std": 0.9969742894172668,
+        "min": -2.4658544063568115,
+        "max": 2.4587790966033936,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 31.887592315673828,
+        "saturation_ratio": 0.39453125,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "Conv2d_conv4a",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": 0.03927924484014511,
+        "std": 0.45305535197257996,
+        "min": -1.5176140069961548,
+        "max": 1.3569782972335815,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 10.279950141906738,
+        "saturation_ratio": 0.03515625,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "Conv2d_conv4b",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": -0.05807468667626381,
+        "std": 0.4299982488155365,
+        "min": -1.5127291679382324,
+        "max": 1.3380322456359863,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 9.808666229248047,
+        "saturation_ratio": 0.03515625,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 0,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "Linear_fc",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": -0.02364165708422661,
+        "std": 0.4895988404750824,
+        "min": -1.2166005373001099,
+        "max": 0.7662309408187866,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 4.356783866882324,
+        "saturation_ratio": 0.0125,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "activation_regime_shift",
+      "layer_name": "root",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "mean": -0.02364165708422661,
+        "std": 0.4895988404750824,
+        "min": -1.2166005373001099,
+        "max": 0.7662309408187866,
+        "sparsity": 0.0,
+        "dead_ratio": 0.0,
+        "norm": 4.356783866882324,
+        "saturation_ratio": 0.0125,
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Linear_fc",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 0.33871209621429443,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "root",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 0.33871209621429443,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 0.19277754426002502,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv4b",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 0.13638664782047272,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv4a",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 0.04595881700515747,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "BatchNorm2d_bn3",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 0.05848228186368942,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv3",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 1.2557034492492676,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "BatchNorm2d_bn2",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 0.16737821698188782,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv2",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 45.97246551513672,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv1",
+      "step": 0,
+      "from_state": "NONE",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "current_norm": 0.20247037708759308,
+        "transition_type": "baseline",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 1,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.0,
+      "metadata": {
+        "prev_mean": 0.2426188886165619,
+        "current_mean": 0.2426188886165619,
+        "prev_std": 0.3447349965572357,
+        "current_std": 0.06250317394733429,
+        "mean_shift_sigma": 0.0,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_40b290812cf944fbb0757c409adac641.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv3",
+      "step": 1,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.6265444385177816,
+      "metadata": {
+        "prev_mean": 0.0019350246293470263,
+        "current_mean": 0.1843957006931305,
+        "prev_std": 0.058243490755558014,
+        "current_std": 0.2725159525871277,
+        "mean_shift_sigma": 3.1327221925889077,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_Conv2d_conv3_f1a18c648f8742e4bcd2f67c5891db89.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv3",
+      "step": 1,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 1,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 2,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 8.702212885714709e-09,
+      "metadata": {
+        "prev_mean": 0.24134889245033264,
+        "current_mean": 0.24134887754917145,
+        "prev_std": 0.3424683213233948,
+        "current_std": 0.06210806593298912,
+        "mean_shift_sigma": 4.3511064428573544e-08,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_7d96fba2482f4754b4638a8eed81e4d4.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv3",
+      "step": 2,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.6285057258949758,
+      "metadata": {
+        "prev_mean": 0.0016894068103283644,
+        "current_mean": 0.21795183420181274,
+        "prev_std": 0.06881796568632126,
+        "current_std": 0.3264020085334778,
+        "mean_shift_sigma": 3.142528629474879,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_Conv2d_conv3_2c420ed056e14bbea7d802dcc2278a8b.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv3",
+      "step": 2,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 2,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 3,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.0,
+      "metadata": {
+        "prev_mean": 0.24132202565670013,
+        "current_mean": 0.24132202565670013,
+        "prev_std": 0.34176650643348694,
+        "current_std": 0.06145479902625084,
+        "mean_shift_sigma": 0.0,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_fa4e227fd856484c95edc46f69fa0637.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 3,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 4,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.0,
+      "metadata": {
+        "prev_mean": 0.24460141360759735,
+        "current_mean": 0.24460141360759735,
+        "prev_std": 0.34763237833976746,
+        "current_std": 0.061603106558322906,
+        "mean_shift_sigma": 0.0,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_7a8916f52470421bb82acfd8ed97c700.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 4,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv1",
+      "step": 5,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.007208328213033176,
+      "metadata": {
+        "prev_mean": 0.0016658523818477988,
+        "current_mean": 0.0377323143184185,
+        "prev_std": 1.0006886720657349,
+        "current_std": 0.09832075238227844,
+        "mean_shift_sigma": 0.03604164106516588,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_Conv2d_conv1_0148aa9c38cf4ba1b73835229ad1fe33.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv2",
+      "step": 5,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv3",
+      "step": 5,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.0004883675551248591,
+      "metadata": {
+        "prev_mean": 0.00031972426222637296,
+        "current_mean": 0.00013683890574611723,
+        "prev_std": 0.07489660382270813,
+        "current_std": 0.000197047003894113,
+        "mean_shift_sigma": 0.0024418377756242953,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_Conv2d_conv3_03def923415441c182e181e9f5a94e95.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv4a",
+      "step": 5,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.016135071598418302,
+      "metadata": {
+        "prev_mean": 0.03481914848089218,
+        "current_mean": 3.48074572684709e-05,
+        "prev_std": 0.43116438388824463,
+        "current_std": 6.258113717194647e-05,
+        "mean_shift_sigma": 0.08067535799209151,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_Conv2d_conv4a_3ea79acf1e694f65b385daf879794c5b.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Conv2d_conv4b",
+      "step": 5,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.028306089065474185,
+      "metadata": {
+        "prev_mean": -0.058813177049160004,
+        "current_mean": 3.48074572684709e-05,
+        "prev_std": 0.4157973527908325,
+        "current_std": 6.258113717194647e-05,
+        "mean_shift_sigma": 0.1415304453273709,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_Conv2d_conv4b_2f370a4d93764bdaa182fb315c1d0ed5.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 5,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.0628659799695015,
+        "current_mean": 0.5210352540016174,
+        "prev_std": 0.06402377039194107,
+        "current_std": 0.03086863085627556,
+        "mean_shift_sigma": 7.1562369917812205,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_538dabc8445348cea82221c3d73d21a5.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 5,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "Linear_fc",
+      "step": 5,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.24275441671021444,
+      "metadata": {
+        "prev_mean": -0.0036624670028686523,
+        "current_mean": 0.5210352540016174,
+        "prev_std": 0.4322868585586548,
+        "current_std": 0.03086863085627556,
+        "mean_shift_sigma": 1.2137720835510721,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_Linear_fc_3d32b7c531434ab0932e1d5ceaf1a767.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "root",
+      "step": 5,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 0.008918924045842847,
+      "metadata": {
+        "prev_mean": 0.0016658523818477988,
+        "current_mean": 0.046291183680295944,
+        "prev_std": 1.0006886720657349,
+        "current_std": 0.05177846923470497,
+        "mean_shift_sigma": 0.04459462022921423,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_root_3dbca61d57f5463dbcdabacd6cc6c5fc.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv4a",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "saturated",
+      "confidence": 0.0998955852422605,
+      "metadata": {
+        "prev_norm": 0.04564378410577774,
+        "current_norm": 4.765884659718722e-05,
+        "transition_type": "healthy_to_saturated",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv4a",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.95,
+      "metadata": {
+        "drop_ratio": 0.001025511217071327,
+        "detection": "trend_based"
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "BatchNorm2d_bn3",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999990388291184,
+      "metadata": {
+        "prev_norm": 0.05299760028719902,
+        "current_norm": 5.0939750195766464e-08,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "BatchNorm2d_bn3",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.95,
+      "metadata": {
+        "drop_ratio": 8.718487662087906e-07,
+        "detection": "trend_based"
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv3",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "saturated",
+      "confidence": 0.09999837125935263,
+      "metadata": {
+        "prev_norm": 0.9239950776100159,
+        "current_norm": 1.5049483408802189e-05,
+        "transition_type": "healthy_to_saturated",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "BatchNorm2d_bn2",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999999865274614,
+      "metadata": {
+        "prev_norm": 0.14039771258831024,
+        "current_norm": 1.89151361240647e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "BatchNorm2d_bn2",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.95,
+      "metadata": {
+        "drop_ratio": 1.2092425048930342e-08,
+        "detection": "trend_based"
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv2",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.099999998360005,
+      "metadata": {
+        "prev_norm": 36.47635269165039,
+        "current_norm": 5.982103630230995e-07,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv2",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.95,
+      "metadata": {
+        "drop_ratio": 1.4836151173235142e-08,
+        "detection": "trend_based"
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999993647139788,
+      "metadata": {
+        "prev_norm": 0.00019076073658652604,
+        "current_norm": 1.2118762937607386e-10,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv1",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999999999834042,
+      "metadata": {
+        "prev_norm": 0.17564702033996582,
+        "current_norm": 2.9150082955092804e-12,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv1",
+      "step": 5,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.95,
+      "metadata": {
+        "drop_ratio": 1.591549173579081e-11,
+        "detection": "trend_based"
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 6,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.5210352540016174,
+        "current_mean": 0.06286604702472687,
+        "prev_std": 0.03086863085627556,
+        "current_std": 0.0639001727104187,
+        "mean_shift_sigma": 14.842550325932104,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_bcfb6b45242e49a9be7e0b918aaaba93.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 6,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 6,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.06286604702472687,
+        "current_mean": 0.5210351943969727,
+        "prev_std": 0.06402347981929779,
+        "current_std": 0.030868664383888245,
+        "mean_shift_sigma": 7.156267492260638,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_375c40cc8912414eac697118fb5a1379.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 6,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 6,
+      "from_state": "vanishing",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_norm": 1.2118762937607386e-10,
+        "current_norm": 0.0015733210602775216,
+        "transition_type": "vanishing_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv4a",
+      "step": 6,
+      "from_state": "saturated",
+      "to_state": "healthy",
+      "confidence": 0.7247182139366509,
+      "metadata": {
+        "prev_norm": 4.765884659718722e-05,
+        "current_norm": 0.0003930511884391308,
+        "transition_type": "saturated_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv3",
+      "step": 6,
+      "from_state": "saturated",
+      "to_state": "healthy",
+      "confidence": 0.8467562196162443,
+      "metadata": {
+        "prev_norm": 1.5049483408802189e-05,
+        "current_norm": 0.00014248192019294947,
+        "transition_type": "saturated_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "Conv2d_conv2",
+      "step": 6,
+      "from_state": "vanishing",
+      "to_state": "saturated",
+      "confidence": 0.834971571181133,
+      "metadata": {
+        "prev_norm": 5.982103630230995e-07,
+        "current_norm": 5.5930968301254325e-06,
+        "transition_type": "vanishing_to_saturated",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 6,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999993615733598,
+      "metadata": {
+        "prev_norm": 0.0015733210602775216,
+        "current_norm": 1.0044500786676736e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 7,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.5210351943969727,
+        "current_mean": 0.06286650896072388,
+        "prev_std": 0.030868664383888245,
+        "current_std": 0.06390085816383362,
+        "mean_shift_sigma": 14.842517309410633,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_e9a69c1efd204551a21abfcbce3b00b9.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 7,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 7,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.06286650896072388,
+        "current_mean": 0.5210350751876831,
+        "prev_std": 0.06402415782213211,
+        "current_std": 0.03086855448782444,
+        "mean_shift_sigma": 7.156182631871775,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_ee0c3b0689ed4726a2b61059e604aad3.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 7,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 7,
+      "from_state": "vanishing",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_norm": 1.0044500786676736e-09,
+        "current_norm": 0.0020583169534802437,
+        "transition_type": "vanishing_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 7,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999993852545148,
+      "metadata": {
+        "prev_norm": 0.0020583169534802437,
+        "current_norm": 1.2653410541574317e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 8,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.5210350751876831,
+        "current_mean": 0.06286575645208359,
+        "prev_std": 0.03086855448782444,
+        "current_std": 0.06390046328306198,
+        "mean_shift_sigma": 14.842590666703114,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_571fa94eca2a4960805c62a6c54f3a7c.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 8,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 8,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.06286575645208359,
+        "current_mean": 0.5210361480712891,
+        "prev_std": 0.06402374804019928,
+        "current_std": 0.03086932934820652,
+        "mean_shift_sigma": 7.156256945962131,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_eebc08b4e5314ac5aff4f132f301e0cd.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 8,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 8,
+      "from_state": "vanishing",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_norm": 1.2653410541574317e-09,
+        "current_norm": 0.0034069549292325974,
+        "transition_type": "vanishing_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 8,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.0999999375491385,
+      "metadata": {
+        "prev_norm": 0.0034069549292325974,
+        "current_norm": 2.127672704688166e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 9,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.5210361480712891,
+        "current_mean": 0.06286640465259552,
+        "prev_std": 0.03086932934820652,
+        "current_std": 0.06390071660280228,
+        "mean_shift_sigma": 14.842231855785775,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_8a715a7bd519425dbacce838b278e255.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 9,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 9,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.06286640465259552,
+        "current_mean": 0.5210375189781189,
+        "prev_std": 0.06402406096458435,
+        "current_std": 0.030870351940393448,
+        "mean_shift_sigma": 7.156233257040131,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_827c4c64a6014d9c983dbcb72b93cdb3.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 9,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 9,
+      "from_state": "vanishing",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_norm": 2.127672704688166e-09,
+        "current_norm": 0.003016101196408272,
+        "transition_type": "vanishing_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 9,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999993580103399,
+      "metadata": {
+        "prev_norm": 0.003016101196408272,
+        "current_norm": 1.936305782379577e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 10,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.5210375189781189,
+        "current_mean": 0.06286613643169403,
+        "prev_std": 0.030870351940393448,
+        "current_std": 0.06390130519866943,
+        "mean_shift_sigma": 14.841793298343115,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_32786e6cd40c4bd6ba76cab79b9523fd.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 10,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 10,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.06286613643169403,
+        "current_mean": 0.5210374593734741,
+        "prev_std": 0.06402464956045151,
+        "current_std": 0.03087027370929718,
+        "mean_shift_sigma": 7.156170726232227,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_1290680dd5dd4b5d8f9642b39eea289e.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 10,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 10,
+      "from_state": "vanishing",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_norm": 1.936305782379577e-09,
+        "current_norm": 0.004591038450598717,
+        "transition_type": "vanishing_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "BatchNorm2d_bn3",
+      "step": 10,
+      "from_state": "vanishing",
+      "to_state": "saturated",
+      "confidence": 0.05288037603874889,
+      "metadata": {
+        "prev_norm": 8.562639095544e-07,
+        "current_norm": 1.3090594848108594e-06,
+        "transition_type": "vanishing_to_saturated",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 10,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.0999999362693551,
+      "metadata": {
+        "prev_norm": 0.004591038450598717,
+        "current_norm": 2.925898412442507e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 11,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.5210374593734741,
+        "current_mean": 0.06286558508872986,
+        "prev_std": 0.03087027370929718,
+        "current_std": 0.06390253454446793,
+        "mean_shift_sigma": 14.84184683943236,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_b10db731d537428ba2aa7c1e53a3ee7f.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 11,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 11,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.06286558508872986,
+        "current_mean": 0.5210385918617249,
+        "prev_std": 0.0640258640050888,
+        "current_std": 0.030871087685227394,
+        "mean_shift_sigma": 7.156061286991444,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_6457f1bf50724d54a35b70f3d28c29f0.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 11,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 11,
+      "from_state": "vanishing",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_norm": 2.925898412442507e-09,
+        "current_norm": 0.005274052731692791,
+        "transition_type": "vanishing_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 11,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999994035207717,
+      "metadata": {
+        "prev_norm": 0.005274052731692791,
+        "current_norm": 3.1458629035086005e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 12,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.5210385918617249,
+        "current_mean": 0.0628657341003418,
+        "prev_std": 0.030871087685227394,
+        "current_std": 0.06390070915222168,
+        "mean_shift_sigma": 14.841487362968119,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_fa7b337189464917b0e5185aaf63d31a.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 12,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 12,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.0628657341003418,
+        "current_mean": 0.5210423469543457,
+        "prev_std": 0.06402405351400375,
+        "current_std": 0.030873890966176987,
+        "mean_shift_sigma": 7.1563199720522,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_02042048861e4da7a34d5ff4eab1b67d.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 12,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 12,
+      "from_state": "vanishing",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_norm": 3.1458629035086005e-09,
+        "current_norm": 0.005441364366561174,
+        "transition_type": "vanishing_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 12,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999993594350293,
+      "metadata": {
+        "prev_norm": 0.005441364366561174,
+        "current_norm": 3.4855474062567282e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 13,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.5210423469543457,
+        "current_mean": 0.06286603212356567,
+        "prev_std": 0.030873890966176987,
+        "current_std": 0.06390101462602615,
+        "mean_shift_sigma": 14.840251762653502,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_ca9da903e3c04179ab658d6c74820eec.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 13,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 13,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.06286602467298508,
+        "current_mean": 0.5210413336753845,
+        "prev_std": 0.06402430683374405,
+        "current_std": 0.030873166397213936,
+        "mean_shift_sigma": 7.1562712922792295,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_28d16e794da347ea86899b436d236cc1.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 13,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 13,
+      "from_state": "vanishing",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_norm": 3.4855474062567282e-09,
+        "current_norm": 0.005116846412420273,
+        "transition_type": "vanishing_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 13,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999993646651016,
+      "metadata": {
+        "prev_norm": 0.005116846412420273,
+        "current_norm": 3.2509110958756082e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 14,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.5210413336753845,
+        "current_mean": 0.0628652274608612,
+        "prev_std": 0.030873166397213936,
+        "current_std": 0.06389985978603363,
+        "mean_shift_sigma": 14.840593294501538,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_39cfd0a8871b4368ad1bba478c609ff5.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 14,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 14,
+      "from_state": "normal",
+      "to_state": "distribution_shift",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_mean": 0.06286522001028061,
+        "current_mean": 0.5210429430007935,
+        "prev_std": 0.06402315944433212,
+        "current_std": 0.030874336138367653,
+        "mean_shift_sigma": 7.156437248132006,
+        "tensor_cache_path": "C:/Users/Utilisateur/Documents/NeuralDBG/artifacts/tensor_cache/anomaly_AdaptiveAvgPool2d_pool_481993cd97df4e5a9d6d388bb20fc636.pt",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "data_anomaly",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 14,
+      "from_state": "distribution_shift",
+      "to_state": "normal",
+      "confidence": 1.0,
+      "metadata": {
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 14,
+      "from_state": "vanishing",
+      "to_state": "healthy",
+      "confidence": 1.0,
+      "metadata": {
+        "prev_norm": 3.2509110958756082e-09,
+        "current_norm": 0.0064408425241708755,
+        "transition_type": "vanishing_to_healthy",
+        "memory_spike": false
+      }
+    },
+    {
+      "event_type": "gradient_health_transition",
+      "layer_name": "AdaptiveAvgPool2d_pool",
+      "step": 14,
+      "from_state": "healthy",
+      "to_state": "vanishing",
+      "confidence": 0.09999993854534853,
+      "metadata": {
+        "prev_norm": 0.0064408425241708755,
+        "current_norm": 3.958197325459878e-09,
+        "transition_type": "healthy_to_vanishing",
+        "memory_spike": false
+      }
+    }
+  ],
+  "model": "RealisticCNN",
+  "bug": "vanishing_weights"
+}
