@@ -3,7 +3,7 @@ bug_id: PM-001
 title: svdvals silently swallows NaN
 pytorch_issue: #187759
 pr: #188053
-date: 2026-07-05
+date: 2026-07-06
 ---
 
 # PM-001: svdvals silently swallows NaN

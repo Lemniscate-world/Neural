@@ -179,7 +179,7 @@ def reproduce_gradient_explosion():
         "explosion_events": len(explosion_events),
         "causal_chain": str(chains[0]) if chains else "No chain extracted",
         "root_cause": "LR=50.0 causes gradient norm to exceed stable bounds",
-        "symptom": "Gradient health transition: stable → exploding",
+        "symptom": "Gradient health transition: stable -> exploding",
         "fix": "Add gradient clipping (max_norm=1.0) or reduce LR to ≤0.01",
     }
 
@@ -233,7 +233,7 @@ def reproduce_vanishing_sigmoid():
         "chains": len(chains),
         "vanishing_events": len(vanishing_events),
         "causal_chain": str(chains[0]) if chains else "No chain extracted",
-        "root_cause": "Sigmoid activation saturates at extremes, gradient → 0",
+        "root_cause": "Sigmoid activation saturates at extremes, gradient -> 0",
         "symptom": "Gradient norm < 1e-6 in deeper layers, no learning",
         "fix": "Replace Sigmoid with ReLU/LeakyReLU, use BatchNorm",
     }
@@ -286,7 +286,7 @@ def reproduce_dead_relu():
         "events": len(events),
         "chains": len(chains),
         "causal_chain": str(chains[0]) if chains else "No chain extracted",
-        "root_cause": "Zero weights + negative bias → all ReLU outputs = 0",
+        "root_cause": "Zero weights + negative bias -> all ReLU outputs = 0",
         "symptom": "Zero gradients or constant output, no learning",
         "fix": "Use nn.init.kaiming_uniform_ or Xavier initialization",
     }
@@ -385,9 +385,83 @@ def reproduce_divergence():
         "chains": len(chains),
         "causal_chain": str(chains[0]) if chains else "No chain extracted",
         "root_cause": "LR=500 causes loss to diverge to inf in <8 steps",
-        "symptom": "Loss spikes → inf, optimizer instability",
+        "symptom": "Loss spikes -> inf, optimizer instability",
         "fix": "Reduce LR to ≤0.01, add gradient clipping, use learning rate scheduler",
     }
+
+
+# ============================================================
+# Post-Mortem 8: Gradient clipping too aggressive
+# ============================================================
+
+def reproduce_clip_underflow():
+    """Reproduce: gradient clipping set too low causes zero gradients."""
+    model = nn.Sequential(nn.Linear(16, 64), nn.ReLU(), nn.Linear(64, 10))
+    x, y = torch.randn(8, 16), torch.randint(0, 10, (8,))
+    with NeuralDbg(model) as dbg:
+        opt = torch.optim.SGD(model.parameters(), lr=0.01)
+        for s in range(10):
+            opt.zero_grad()
+            loss = nn.CrossEntropyLoss()(model(x), y); loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1e-8)
+            dbg.step_iteration(); dbg.record_loss(loss.item()); opt.step()
+        events, chains = dbg.dump_events(), dbg.explain_causal()
+    return {"bug_id": "PM-008", "title": "Gradient clipping too aggressive",
+            "events": len(events), "chains": len(chains),
+            "causal_chain": str(chains[0]) if chains else "No chain",
+            "root_cause": "max_norm=1e-8 clips all gradients to near-zero",
+            "symptom": "Model stops learning, loss plateaus immediately",
+            "fix": "Set max_norm=1.0 or higher. Typical values: 0.5-5.0"}
+
+
+# ============================================================
+# Post-Mortem 9: AdamW weight decay + LayerNorm instability
+# ============================================================
+
+def reproduce_adamw_layernorm():
+    """Reproduce: AdamW weight decay destabilizes LayerNorm."""
+    model = nn.Sequential(nn.Linear(16, 64), nn.LayerNorm(64), nn.ReLU(),
+                          nn.Linear(64, 10))
+    x, y = torch.randn(8, 16), torch.randint(0, 10, (8,))
+    with NeuralDbg(model) as dbg:
+        opt = torch.optim.AdamW(model.parameters(), lr=0.01, weight_decay=10.0)
+        for s in range(15):
+            opt.zero_grad()
+            loss = nn.CrossEntropyLoss()(model(x), y); loss.backward()
+            dbg.step_iteration(); dbg.record_loss(loss.item()); opt.step()
+        events, chains = dbg.dump_events(), dbg.explain_causal()
+    return {"bug_id": "PM-009", "title": "AdamW weight decay + LayerNorm",
+            "events": len(events), "chains": len(chains),
+            "causal_chain": str(chains[0]) if chains else "No chain",
+            "root_cause": "weight_decay=10.0 excessive on LayerNorm weights",
+            "symptom": "LayerNorm activations oscillate, loss unstable",
+            "fix": "Reduce weight_decay to <=0.1 or exclude LN from decay"}
+
+
+# ============================================================
+# Post-Mortem 10: fp16 mixed precision softmax underflow
+# ============================================================
+
+def reproduce_fp16_softmax_underflow():
+    """Reproduce: fp16 softmax underflow with large inputs."""
+    model = nn.Sequential(nn.Linear(64, 128), nn.ReLU(), nn.Linear(128, 10))
+    x = torch.randn(8, 64) * 100.0; y = torch.randint(0, 10, (8,))
+    with NeuralDbg(model.half()) as dbg:
+        opt = torch.optim.SGD(model.parameters(), lr=0.01)
+        for s in range(8):
+            opt.zero_grad()
+            try:
+                loss = nn.CrossEntropyLoss()(model(x.half()).float(), y)
+                loss.backward(); dbg.step_iteration(); dbg.record_loss(loss.item()); opt.step()
+            except RuntimeError:
+                dbg.record_loss(float('nan')); break
+        events, chains = dbg.dump_events(), dbg.explain_causal()
+    return {"bug_id": "PM-010", "title": "fp16 softmax underflow",
+            "events": len(events), "chains": len(chains),
+            "causal_chain": str(chains[0]) if chains else "No chain",
+            "root_cause": "Large inputs (x100) cause fp16 softmax underflow",
+            "symptom": "NaN gradients in fp16 with large activations",
+            "fix": "Use fp32 softmax or scale inputs to [-10, 10]"}
 
 
 # ============================================================
@@ -402,6 +476,9 @@ ALL_POST_MORTEMS = [
     ("dead_relu", reproduce_dead_relu),
     ("nan_propagation", reproduce_nan_propagation),
     ("divergence", reproduce_divergence),
+    ("clip_underflow", reproduce_clip_underflow),
+    ("adamw_layernorm", reproduce_adamw_layernorm),
+    ("fp16_softmax_underflow", reproduce_fp16_softmax_underflow),
 ]
 
 
@@ -483,7 +560,7 @@ def main():
     # Summary for paper
     print(f"\n--- Paper Summary ---")
     for r in results:
-        chains_str = "✅" if r['chains'] > 0 else "❌"
+        chains_str = "CHAINS" if r['chains'] > 0 else "NO_CHAINS"
         print(f"  {r['bug_id']}: {r['events']} events, {r['chains']} chains {chains_str}")
 
 

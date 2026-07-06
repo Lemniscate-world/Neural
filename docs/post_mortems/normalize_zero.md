@@ -3,7 +3,7 @@ bug_id: PM-002
 title: F.normalize returns 0 instead of NaN at zero input
 pytorch_issue: #184575
 pr: #188066
-date: 2026-07-05
+date: 2026-07-06
 ---
 
 # PM-002: F.normalize returns 0 instead of NaN at zero input

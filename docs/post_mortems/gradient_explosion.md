@@ -3,7 +3,7 @@ bug_id: PM-003
 title: Gradient explosion via extreme learning rate
 pytorch_issue: Generic (common failure mode)
 pr: N/A
-date: 2026-07-05
+date: 2026-07-06
 ---
 
 # PM-003: Gradient explosion via extreme learning rate
@@ -18,7 +18,7 @@ date: 2026-07-05
 LR=50.0 causes gradient norm to exceed stable bounds
 
 ## Symptom
-Gradient health transition: stable → exploding
+Gradient health transition: stable -> exploding
 
 ## Causal Chain (NeuralDBG)
 ```
