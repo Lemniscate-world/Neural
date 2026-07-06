@@ -1,0 +1,94 @@
+{
+  "tier": 4,
+  "families": [
+    "RL",
+    "RAG"
+  ],
+  "overall_pct": 50.0,
+  "by_family": {
+    "RL": {
+      "detected": 0,
+      "total": 36,
+      "pct": 0.0
+    },
+    "RAG": {
+      "detected": 36,
+      "total": 36,
+      "pct": 100.0
+    }
+  },
+  "details": [
+    {
+      "family": "RL",
+      "name": "RL_d32_l2",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "RL",
+      "name": "RL_d32_l3",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "RL",
+      "name": "RL_d64_l2",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "RL",
+      "name": "RL_d64_l3",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "RL",
+      "name": "RL_d128_l2",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "RL",
+      "name": "RL_d128_l3",
+      "detected": 0,
+      "total": 6
+    },
+    {
+      "family": "RAG",
+      "name": "RAG_d32_k3",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "RAG",
+      "name": "RAG_d32_k4",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "RAG",
+      "name": "RAG_d64_k3",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "RAG",
+      "name": "RAG_d64_k4",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "RAG",
+      "name": "RAG_d128_k3",
+      "detected": 6,
+      "total": 6
+    },
+    {
+      "family": "RAG",
+      "name": "RAG_d128_k4",
+      "detected": 6,
+      "total": 6
+    }
+  ]
+}
