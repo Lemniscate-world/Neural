@@ -60,8 +60,8 @@ Alternative (when FA2 is unavailable): implement SDPA varlen path with `cu_seqle
 - [x] BUG-004 tracking file (this file)
 - [x] Detection script (`examples/repro_huggingface_44928.py`)
 - [x] Upstream comment draft (`docs/posts/huggingface_44928_comment.md`)
-- [ ] Comment posted on huggingface/transformers#44928 (CEO manual)
-- [ ] Neural-Agent remediation rule for SDPA fallback detection
+- [x] Comment posted on huggingface/transformers#44928 (CEO manual)
+- [x] Neural-Agent remediation rule for SDPA fallback detection (`sdpa_gradient_explosion` in `remediation_rules.py`, `attn_implementation=flash_attention_2` patched to config)
 - [ ] Verification on GPU hardware
 
 ## Mom Test R2
