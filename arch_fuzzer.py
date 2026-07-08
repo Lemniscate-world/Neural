@@ -29,14 +29,49 @@ LAYER_TYPES = [
 
 ACTIVATIONS = ["ReLU", "GELU", "SiLU", "Tanh", "LeakyReLU", "ELU", "Sigmoid"]
 
+def _bug_exploding(opt):
+    """Set a huge LR to cause gradient explosion."""
+    opt.param_groups[0]['lr'] = random.uniform(10, 500)
+
+def _bug_divergence(opt):
+    """Set an extreme LR to cause training divergence."""
+    opt.param_groups[0]['lr'] = random.uniform(100, 1000)
+
+def _bug_mixed_precision(model):
+    """Convert model to fp16 (data must be converted separately)."""
+    model.half()
+    return True  # signal that data also needs half()
+
+def _bug_nan_data(x):
+    """Inject NaN into input data."""
+    if x.dim() >= 2:
+        return x.index_put_([torch.tensor([0]), torch.tensor([0])], torch.tensor(float('nan')))
+    return x
+
+def _bug_zero_init(model):
+    """Zero-initialize all weights to simulate init failure."""
+    for p in model.parameters():
+        if p.dim() >= 2:
+            nn.init.zeros_(p)
+
+def _bug_dead_bias(model):
+    """Set extreme negative bias to kill neurons."""
+    for p in model.parameters():
+        if p.dim() == 1:
+            nn.init.constant_(p, -random.uniform(1, 20))
+
+def _bug_vanishing(model):
+    """Replace activations with Sigmoid to cause vanishing."""
+    _saturate_model(model)
+
 BUGS = [
-    ("exploding", lambda opt: setattr(opt.param_groups[0], 'lr', random.uniform(10, 500))),
-    ("vanishing", lambda m: _saturate_model(m)),
-    ("nan_data", lambda x: x.index_put_([torch.tensor([0]), torch.tensor([0])], torch.tensor(float('nan'))) if x.dim() >= 2 else x),
-    ("zero_init", lambda m: [nn.init.zeros_(p) for p in m.parameters() if p.dim() >= 2]),
-    ("dead_bias", lambda m: [nn.init.constant_(p, -random.uniform(1, 20)) for p in m.parameters() if p.dim() == 1 and 'bias' in str(type(p)).lower()] or None),
-    ("divergence", lambda opt: setattr(opt.param_groups[0], 'lr', random.uniform(100, 1000))),
-    ("mixed_precision", lambda m: m.half()),
+    ("exploding", _bug_exploding, "opt"),
+    ("vanishing", _bug_vanishing, "model"),
+    ("nan_data", _bug_nan_data, "data"),
+    ("zero_init", _bug_zero_init, "model"),
+    ("dead_bias", _bug_dead_bias, "model"),
+    ("divergence", _bug_divergence, "opt"),
+    ("mixed_precision", _bug_mixed_precision, "model"),
 ]
 
 def _saturate_model(model):
@@ -299,22 +334,28 @@ def fuzz_one(seed=None):
 
     try:
 
-        bug_name, bug_fn = random.choice(BUGS)
+        bug_name, bug_fn, bug_type = random.choice(BUGS)
+        is_half = False  # track mixed_precision for data conversion
 
         with NeuralDbg(model) as dbg:
             opt = torch.optim.SGD(model.parameters(), lr=random.uniform(0.001, 0.1))
             for s in range(8):
                 x, y = data_fn()
                 if s >= 3:
-                    if bug_name == "exploding" or bug_name == "divergence":
+                    if bug_type == "opt":
                         bug_fn(opt)
-                    elif bug_name == "nan_data":
+                    elif bug_type == "data":
                         x = bug_fn(x)
-                    elif bug_name in ("zero_init", "dead_bias", "mixed_precision"):
+                    elif bug_type == "model":
                         if s == 3:
-                            bug_fn(model)
+                            result = bug_fn(model)
+                            if result is True:  # mixed_precision signals data conversion needed
+                                is_half = True
                     elif bug_name == "vanishing":
                         bug_fn(model)
+
+                if is_half:
+                    x = x.half()  # only convert inputs, labels stay Long
 
                 opt.zero_grad()
                 try:

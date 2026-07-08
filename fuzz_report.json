@@ -1,14 +1,14 @@
 {
   "runs": 20,
   "seed": 42,
-  "elapsed": 1,
-  "crashes": 10,
-  "detected": 10,
+  "elapsed": 2,
+  "crashes": 4,
+  "detected": 16,
   "ok": 0,
   "bug_stats": {
     "?": {
-      "total": 8,
-      "crashed": 8,
+      "total": 4,
+      "crashed": 4,
       "detected": 0
     },
     "nan_data": {
@@ -18,8 +18,8 @@
     },
     "mixed_precision": {
       "total": 2,
-      "crashed": 2,
-      "detected": 0
+      "crashed": 0,
+      "detected": 2
     },
     "dead_bias": {
       "total": 4,
@@ -31,10 +31,20 @@
       "crashed": 0,
       "detected": 2
     },
+    "exploding": {
+      "total": 2,
+      "crashed": 0,
+      "detected": 2
+    },
     "vanishing": {
       "total": 1,
       "crashed": 0,
       "detected": 1
+    },
+    "divergence": {
+      "total": 2,
+      "crashed": 0,
+      "detected": 2
     }
   },
   "crash_details": [
@@ -49,44 +59,14 @@
       "layers": "?"
     },
     {
-      "bug": "mixed_precision",
-      "error": "mat1 and mat2 must have the same dtype, but got Float and Half",
-      "layers": "[('linear', {'in': 8, 'out': 256}), ('activation', {'type': 'GELU'}), ('activation', {'type': 'LeakyReLU'}), ('ln', {'dim': 256}), ('linear', {'in': 256, 'out': 16}), ('activation', {'type': 'SiLU'})]"
-    },
-    {
       "bug": "?",
       "error": "invalid_spec_after_5_retries",
       "layers": "?"
     },
     {
       "bug": "?",
-      "error": "'dict' object has no attribute 'lr' and no __dict__ for setting new attributes",
-      "layers": "?"
-    },
-    {
-      "bug": "?",
       "error": "invalid_spec_after_5_retries",
       "layers": "?"
-    },
-    {
-      "bug": "?",
-      "error": "'dict' object has no attribute 'lr' and no __dict__ for setting new attributes",
-      "layers": "?"
-    },
-    {
-      "bug": "?",
-      "error": "'dict' object has no attribute 'lr' and no __dict__ for setting new attributes",
-      "layers": "?"
-    },
-    {
-      "bug": "?",
-      "error": "'dict' object has no attribute 'lr' and no __dict__ for setting new attributes",
-      "layers": "?"
-    },
-    {
-      "bug": "mixed_precision",
-      "error": "mat1 and mat2 must have the same dtype, but got Float and Half",
-      "layers": "[('linear', {'in': 16, 'out': 32}), ('linear', {'in': 32, 'out': 128}), ('gru', {'input': 128, 'hidden': 32}), ('activation', {'type': 'LeakyReLU'})]"
     }
   ]
 }
