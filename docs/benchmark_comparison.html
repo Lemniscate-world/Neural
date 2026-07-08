@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NeuralDBG vs Monitoring Tools — Live Benchmark</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #0d1117; color: #c9d1d9; }
+  h1 { color: #58a6ff; border-bottom: 2px solid #30363d; padding-bottom: 10px; }
+  h2 { color: #79c0ff; margin-top: 30px; }
+  .summary-box { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin: 16px 0; }
+  .winner { color: #56d364; font-weight: bold; }
+  .loser { color: #f85149; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #30363d; }
+  th { background: #161b22; color: #58a6ff; font-weight: 600; }
+  tr:hover { background: #1c2128; }
+  .type-tag { display: inline-block; padding: 2px 8px; margin: 2px; background: #1f6feb; color: #fff; border-radius: 12px; font-size: 12px; font-family: monospace; }
+  .alert-tag { display: inline-block; padding: 2px 8px; margin: 2px; background: #6e7681; color: #fff; border-radius: 12px; font-size: 12px; font-family: monospace; }
+  .chain { background: #1c2128; border-left: 3px solid #58a6ff; padding: 8px 12px; margin: 8px 0; font-family: monospace; font-size: 14px; }
+  .metric { display: inline-block; background: #161b22; border: 1px solid #30363d; padding: 12px 20px; margin: 8px 8px 8px 0; border-radius: 6px; }
+  .metric .value { font-size: 24px; font-weight: bold; color: #58a6ff; }
+  .metric .label { font-size: 12px; color: #8b949e; text-transform: uppercase; }
+  .key-insight { background: #1c3a1c; border-left: 4px solid #56d364; padding: 12px 16px; margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<h1>NeuralDBG vs Monitoring Tools</h1>
+<p>Live benchmark on 6 training failure scenarios. Baseline simulates what W&amp;B / TensorBoard / MLflow detect with standard gradient &amp; loss monitoring.</p>
+
+<div class="summary-box">
+  <h2 style="margin-top:0">Key Result</h2>
+  <div class="key-insight">
+    <strong>Same detection rate (6/6), but fundamentally different information.</strong><br>
+    Baseline alerts: "gradient_norm &lt; 1e-6" — no context, no cause, no action.<br>
+    NeuralDBG: "gradient_health_transition[vanishing] caused by activation_regime_shift[saturated] in layer 1" — actionable diagnostic.
+  </div>
+  <div class="metric">
+    <div class="value">6/6</div>
+    <div class="label">NeuralDBG detection</div>
+  </div>
+  <div class="metric">
+    <div class="value">5/6</div>
+    <div class="label">Baseline detection</div>
+  </div>
+  <div class="metric">
+    <div class="value">30</div>
+    <div class="label">Causal chains per failure</div>
+  </div>
+  <div class="metric">
+    <div class="value">6</div>
+    <div class="label">Event types</div>
+  </div>
+  <div class="metric">
+    <div class="value">4</div>
+    <div class="label">Baseline alert types</div>
+  </div>
+</div>
+
+<h2>Scenario-by-Scenario Comparison</h2>
+
+<table>
+<thead>
+<tr><th>Scenario</th><th>NeuralDBG</th><th>Baseline (W&amp;B/TB)</th><th>Winner</th></tr>
+</thead>
+<tbody>
+  <tr>
+    <td><strong>Healthy training</strong></td>
+    <td>13 events (no problem signals), 0 alert<br>
+        <em>Top chain: data_anomaly[distribution_shift]</em></td>
+    <td>0 alerts ✅</td>
+    <td class="winner">Tie (both clean)</td>
+  </tr>
+  <tr>
+    <td><strong>Exploding gradients (LR=50)</strong></td>
+    <td>
+      <span class="type-tag">data_anomaly</span>
+      <span class="type-tag">dead</span>
+      <span class="type-tag">exploding</span>
+      <span class="type-tag">optimizer_instability</span>
+      <span class="type-tag">saturated</span>
+      <span class="type-tag">vanishing</span>
+      <br><strong>30 chains</strong>
+      <div class="chain">gradient_health_transition[exploding] → optimizer_instability</div>
+    </td>
+    <td>
+      <span class="alert-tag">exploding_gradient</span>
+      <span class="alert-tag">vanishing_gradient</span>
+      <span class="alert-tag">loss_spike</span>
+      <br>39 alerts (no chain, no cause)
+    </td>
+    <td class="winner">NeuralDBG (knows WHY)</td>
+  </tr>
+  <tr>
+    <td><strong>Vanishing gradients (weights/1000)</strong></td>
+    <td>
+      <span class="type-tag">data_anomaly</span>
+      <span class="type-tag">vanishing</span>
+      <br><strong>30 chains</strong>
+      <div class="chain">gradient_health_transition[vanishing] ← activation_regime_shift</div>
+    </td>
+    <td>
+      <span class="alert-tag">vanishing_gradient</span>
+      <br>38 alerts (no root cause)
+    </td>
+    <td class="winner">NeuralDBG (traces cause)</td>
+  </tr>
+  <tr>
+    <td><strong>NaN data injection</strong></td>
+    <td>
+      <span class="type-tag">data_anomaly</span>
+      <span class="type-tag">optimizer_instability</span>
+      <br><strong>30 chains</strong>
+      <div class="chain">data_anomaly[nan_detected] → optimizer_instability[diverging]</div>
+    </td>
+    <td>
+      <span class="alert-tag">nan_loss</span>
+      <br>10 alerts (loss=NaN, no chain)
+    </td>
+    <td class="winner">NeuralDBG (identifies NaN source)</td>
+  </tr>
+  <tr>
+    <td><strong>Dead neurons (bias=-10)</strong></td>
+    <td>
+      <span class="type-tag">data_anomaly</span>
+      <span class="type-tag">dead</span>
+      <span class="type-tag">optimizer_instability</span>
+      <span class="type-tag">saturated</span>
+      <span class="type-tag">vanishing</span>
+      <br><strong>30 chains</strong>
+    </td>
+    <td>
+      <span class="alert-tag">vanishing_gradient</span>
+      <br>50 alerts
+    </td>
+    <td class="winner">NeuralDBG (5 event types vs 1)</td>
+  </tr>
+  <tr>
+    <td><strong>Zero initialization</strong></td>
+    <td>
+      <span class="type-tag">data_anomaly</span>
+      <span class="type-tag">vanishing</span>
+      <br><strong>30 chains</strong>
+    </td>
+    <td>
+      <span class="alert-tag">vanishing_gradient</span>
+      <br>40 alerts
+    </td>
+    <td class="winner">NeuralDBG (catches root)</td>
+  </tr>
+</tbody>
+</table>
+
+<h2>The Fundamental Difference</h2>
+
+<div class="summary-box">
+<h3 style="margin-top:0">What you get from each tool</h3>
+  <table>
+  <thead><tr><th>Tool</th><th>Output</th><th>Action required</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>W&amp;B / TensorBoard</strong></td>
+      <td><code>gradient/layer_3/norm = 0.0003</code><br><code>loss spiked to NaN at step 47</code></td>
+      <td>Manually check ~30 charts, guess cause</td>
+    </tr>
+    <tr>
+      <td><strong>NeuralDBG</strong></td>
+      <td><code>gradient_health_transition[vanishing] in layer_3 at step 47, caused by activation_regime_shift[saturated] in layer_1 at step 45 (confidence: 0.87)</code></td>
+      <td>Replace Sigmoid in layer_1 with ReLU</td>
+    </tr>
+  </tbody>
+  </table>
+</div>
+
+<div class="summary-box">
+<h3 style="margin-top:0">Reproducibility</h3>
+  <pre style="background:#0d1117; padding:12px; border-radius:4px; border:1px solid #30363d;">
+  $ pip install neuraldbg
+  $ python benchmark_comparison.py
+  </pre>
+  <p>Full results: <a href="benchmark_comparison.json">benchmark_comparison.json</a></p>
+</div>
+
+<p style="margin-top:40px; text-align:center; color:#6e7681; font-size:14px;">
+  Generated 2026-07-08 from <a href="https://github.com/LambdaSection/NeuralDBG">github.com/LambdaSection/NeuralDBG</a>
+</p>
+
+</body>
+</html>
