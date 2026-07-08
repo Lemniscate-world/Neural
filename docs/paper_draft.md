@@ -1,14 +1,14 @@
 # Causal Debugging of Deep Learning Training Failures
 
 **Authors**: Jacques-Charles Gad Senouvo (LambdaSection)
-**Date**: July 5, 2026
-**Status**: Draft v2 — Updated with Tier 1/2 Black-Swan results, NeuralPrune, 10 post-mortems
+**Date**: July 8, 2026
+**Status**: Draft v3 — Tier 4, v5 GPU 93.7%, Colab notebook, PyPI v1.5.0
 
 ---
 
 ## Abstract
 
-Training deep neural networks fails silently more often than practitioners realize. Vanishing gradients, exploding gradients, dead neurons, and data corruption waste an estimated 30% of GPU hours in research labs. Existing monitoring tools (TensorBoard, W&B, MLflow) are passive dashboards — they show WHAT happened, not WHY. We present NeuralDBG, a causal diagnostic engine that hooks into PyTorch's autograd to extract semantic events and construct causal chains linking root causes to final symptoms. On a combinatorial sweep of 200 architectures across 5 standard families, NeuralDBG achieves 79% detection with 0% false positives. On novel black-swan architectures (GNN, Mixture of Experts, Diffusion), it reaches 96% (Tier 1). On advanced architectures (FlashAttention, Neural ODE, Quantized models), it reaches 94% (Tier 2). We introduce NeuralPrune, a non-destructive redundancy diagnostic that identifies dead neurons, low-rank weight matrices, and quantization opportunities without modifying the model. We present 7 real PyTorch bugs discovered and diagnosed using NeuralDBG, with 4 upstream PRs submitted. Our stress test suite achieves 100% pass rate across 15 extreme scenarios, and our architecture fuzzer exposes crashes in 94% of randomly generated models. We demonstrate that causal chain extraction provides actionable diagnoses enabling rule-based auto-fix in 50% of cases.
+Training deep neural networks fails silently more often than practitioners realize. Vanishing gradients, exploding gradients, dead neurons, and data corruption waste an estimated 30% of GPU hours in research labs. Existing monitoring tools (TensorBoard, W&B, MLflow) are passive dashboards — they show WHAT happened, not WHY. We present NeuralDBG, a causal diagnostic engine that hooks into PyTorch's autograd to extract semantic events and construct causal chains linking root causes to final symptoms. On a combinatorial sweep of 200 architectures across 5 standard families, NeuralDBG achieves 79% detection with 0% false positives. On novel black-swan architectures (GNN, Mixture of Experts, Diffusion), it reaches 96% (Tier 1). On advanced architectures (FlashAttention, Neural ODE, Quantized), 94% (Tier 2). On retrieval-augmented and reinforcement learning architectures, 50% (Tier 4 — RAG 100%, RL 0%, a documented blind spot). A family-aware predictive detector (Tier 3) flags anomalies via per-family z-scores across 30 healthy profiles. We introduce NeuralPrune, a non-destructive redundancy diagnostic identifying dead neurons, low-rank matrices, and quantization opportunities. We present 10 post-mortems — 7 real PyTorch bugs with causal chains. A fine-tuned Qwen2-0.5B LoRA model achieves 93.7% diagnostic accuracy across 6 families in 37 minutes. A self-contained Colab notebook and PyPI package (v1.5.0) enable zero-install adoption.
 
 ---
 
