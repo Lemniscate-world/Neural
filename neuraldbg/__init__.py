@@ -162,6 +162,8 @@ class NeuralDbg:
         model: nn.Module,
         threshold_vanishing: float = 1e-6,
         threshold_exploding: float = 1e3,
+        strict_mode: bool = False,
+        family: str = None,
     ):
         """
         Initialize the causal inference engine.
@@ -170,10 +172,28 @@ class NeuralDbg:
             model: The PyTorch model to monitor
             threshold_vanishing: Gradient norm threshold for vanishing detection
             threshold_exploding: Gradient norm threshold for exploding detection
+            strict_mode: If True, higher thresholds (fewer false positives, lower sensitivity)
+            family: Architecture family for calibrated thresholds (MLP/CNN/RNN/TF/Hybrid)
         """
         self.model = model
-        self.threshold_vanishing = threshold_vanishing
-        self.threshold_exploding = threshold_exploding
+        self.strict_mode = strict_mode
+        self.family = family
+
+        # Per-family calibration multipliers (from healthy profile analysis)
+        _family_mult = {
+            "MLP": 1.0, "CNN": 1.5, "RNN": 0.8, "TF": 1.0, "Hybrid": 1.2,
+            "GNN": 1.3, "MoE": 1.0, "Diffusion": 1.0, "FlashAttn": 1.0,
+            "NeuralODE": 1.0, "Quantized": 1.2, "RAG": 1.0, "RL": 1.5, "Federated": 1.3,
+        }
+        family_mult = _family_mult.get(family, 1.0)
+
+        if strict_mode:
+            # Strict: higher thresholds = fewer FPs, lower sensitivity
+            self.threshold_vanishing = threshold_vanishing * 0.1 * family_mult  # 10x stricter
+            self.threshold_exploding = threshold_exploding * 10.0 * family_mult  # 10x stricter
+        else:
+            self.threshold_vanishing = threshold_vanishing * family_mult
+            self.threshold_exploding = threshold_exploding / family_mult
 
         # Verify if model is already compiled
         if hasattr(torch, "_dynamo") and isinstance(

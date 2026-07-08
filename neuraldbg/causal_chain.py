@@ -233,20 +233,55 @@ def extract_chains(links: List[CausalLink], min_length: int = 2, max_chains: int
             return  # skip chains that are pure healthy propagation
 
         chain = CausalChain(links=list(path))
-        # Better root cause: first problematic event, not just first event
-        chain.root_cause = path[0].source_event.get("event_type", "?")
-        chain.final_symptom = path[-1].target_event.get("event_type", "?")
-        # Override root/final with actual problematic states
-        for l in path:
-            src_st = l.source_event.get("to_state", "")
-            if _state_is_problematic(src_st):
-                chain.root_cause = f"{l.source_event.get('event_type','?')}[{src_st}]"
+        # Smart root cause: prioritize gradient/activation issues over data anomalies
+        # Data anomalies are symptoms; gradient/activation issues are root causes
+        root_cause_priority = [
+            "gradient_health_transition",   # Best: actual gradient problem
+            "activation_regime_shift",      # Good: activation problem
+            "optimizer_instability",        # OK: optimizer problem
+            "data_anomaly",                 # Last resort: data symptom
+            "nan_detected",
+            "silent_corruption",
+        ]
+        
+        # Find first event matching highest priority type
+        best_root = None
+        for priority_type in root_cause_priority:
+            for l in path:
+                src_et = l.source_event.get("event_type", "")
+                src_st = l.source_event.get("to_state", "")
+                if src_et == priority_type and _state_is_problematic(src_st):
+                    best_root = f"{src_et}[{src_st}]"
+                    break
+            if best_root:
                 break
-        for l in reversed(path):
-            tgt_st = l.target_event.get("to_state", "")
-            if _state_is_problematic(tgt_st):
-                chain.final_symptom = f"{l.target_event.get('event_type','?')}[{tgt_st}]"
+        
+        if best_root:
+            chain.root_cause = best_root
+        else:
+            # Fallback to first event
+            chain.root_cause = path[0].source_event.get("event_type", "?")
+        
+        # Final symptom: last event with highest severity
+        symptom_priority = [
+            "nan_detected", "silent_corruption", "optimizer_instability",
+            "gradient_health_transition", "activation_regime_shift", "data_anomaly",
+        ]
+        best_symptom = None
+        for priority_type in symptom_priority:
+            for l in reversed(path):
+                tgt_et = l.target_event.get("event_type", "")
+                tgt_st = l.target_event.get("to_state", "")
+                if tgt_et == priority_type and _state_is_problematic(tgt_st):
+                    best_symptom = f"{tgt_et}[{tgt_st}]"
+                    break
+            if best_symptom:
                 break
+        
+        if best_symptom:
+            chain.final_symptom = best_symptom
+        else:
+            chain.final_symptom = path[-1].target_event.get("event_type", "?")
 
         chain.confidence = sum(l.confidence for l in path) / len(path)
         # Compact fingerprint for dedup
