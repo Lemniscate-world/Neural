@@ -1,0 +1,45 @@
+{
+  "tier": "4b",
+  "family": "Federated",
+  "detected": 18,
+  "total": 36,
+  "pct": 50.0,
+  "details": [
+    {
+      "family": "Federated",
+      "name": "FL_d32_c3",
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "family": "Federated",
+      "name": "FL_d32_c5",
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "family": "Federated",
+      "name": "FL_d64_c3",
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "family": "Federated",
+      "name": "FL_d64_c5",
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "family": "Federated",
+      "name": "FL_d128_c3",
+      "detected": 3,
+      "total": 6
+    },
+    {
+      "family": "Federated",
+      "name": "FL_d128_c5",
+      "detected": 3,
+      "total": 6
+    }
+  ]
+}
