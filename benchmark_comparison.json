@@ -1,0 +1,134 @@
+[
+  {
+    "scenario": "Healthy training",
+    "neuraldbg": {
+      "events": 13,
+      "chains": 30,
+      "hypotheses": 1,
+      "detected_types": [
+        "data_anomaly"
+      ],
+      "top_chain": "data_anomaly[distribution_shift]",
+      "top_hypothesis": "Root cause candidate: data distribution shift originated in 'root' at step 0"
+    },
+    "baseline": {
+      "total_alerts": 0,
+      "alert_types": [],
+      "final_loss": 2.315049409866333
+    }
+  },
+  {
+    "scenario": "Exploding gradients (LR=50)",
+    "neuraldbg": {
+      "events": 54,
+      "chains": 30,
+      "hypotheses": 8,
+      "detected_types": [
+        "data_anomaly",
+        "dead",
+        "exploding",
+        "optimizer_instability",
+        "saturated",
+        "vanishing"
+      ],
+      "top_chain": "gradient_health_transition[exploding]",
+      "top_hypothesis": "Root cause candidate: data distribution shift originated in 'root' at step 0"
+    },
+    "baseline": {
+      "total_alerts": 39,
+      "alert_types": [
+        "exploding_gradient",
+        "vanishing_gradient",
+        "loss_spike"
+      ],
+      "final_loss": 18.670379638671875
+    }
+  },
+  {
+    "scenario": "Vanishing gradients (weights/1000)",
+    "neuraldbg": {
+      "events": 27,
+      "chains": 30,
+      "hypotheses": 3,
+      "detected_types": [
+        "data_anomaly",
+        "vanishing"
+      ],
+      "top_chain": "gradient_health_transition[vanishing]",
+      "top_hypothesis": "Root cause candidate: data distribution shift originated in 'root' at step 0"
+    },
+    "baseline": {
+      "total_alerts": 38,
+      "alert_types": [
+        "vanishing_gradient"
+      ],
+      "final_loss": 2.2867658138275146
+    }
+  },
+  {
+    "scenario": "NaN data injection",
+    "neuraldbg": {
+      "events": 20,
+      "chains": 30,
+      "hypotheses": 3,
+      "detected_types": [
+        "data_anomaly",
+        "optimizer_instability"
+      ],
+      "top_chain": "data_anomaly[nan_detected]",
+      "top_hypothesis": "Root cause candidate: data distribution shift originated in 'root' at step 0"
+    },
+    "baseline": {
+      "total_alerts": 10,
+      "alert_types": [
+        "nan_loss"
+      ],
+      "final_loss": NaN
+    }
+  },
+  {
+    "scenario": "Dead neurons (bias=-10)",
+    "neuraldbg": {
+      "events": 69,
+      "chains": 30,
+      "hypotheses": 7,
+      "detected_types": [
+        "data_anomaly",
+        "dead",
+        "optimizer_instability",
+        "saturated",
+        "vanishing"
+      ],
+      "top_chain": "gradient_health_transition[vanishing]",
+      "top_hypothesis": "Root cause candidate: data distribution shift originated in 'root' at step 0"
+    },
+    "baseline": {
+      "total_alerts": 50,
+      "alert_types": [
+        "vanishing_gradient"
+      ],
+      "final_loss": 2.3025853633880615
+    }
+  },
+  {
+    "scenario": "Zero initialization",
+    "neuraldbg": {
+      "events": 20,
+      "chains": 30,
+      "hypotheses": 3,
+      "detected_types": [
+        "data_anomaly",
+        "vanishing"
+      ],
+      "top_chain": "gradient_health_transition[vanishing]",
+      "top_hypothesis": "Root cause candidate: data distribution shift originated in 'root' at step 0"
+    },
+    "baseline": {
+      "total_alerts": 40,
+      "alert_types": [
+        "vanishing_gradient"
+      ],
+      "final_loss": 2.327707529067993
+    }
+  }
+]
