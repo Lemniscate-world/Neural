@@ -42,10 +42,10 @@ def step_scrape():
     print("[1/7] SCRAPE — Searching arxiv for novel architectures...")
     result = subprocess.run(
         [CPU_PYTHON, str(BASE_DIR / "scrape_paper_archs.py"), "--arxiv"],
-        capture_output=True, text=True, timeout=120,
+        capture_output=False, text=True, timeout=60,
         cwd=str(BASE_DIR)
     )
-    papers_found = result.stdout.count("Querying arXiv") * 5  # estimate
+    papers_found = result.stdout.count("Querying arXiv") * 5 if result.stdout else 0
     return {"papers_found": papers_found, "success": result.returncode == 0}
 
 
@@ -54,7 +54,7 @@ def step_fuzz():
     print("[2/7] FUZZ — Random architecture fuzzing...")
     result = subprocess.run(
         [CPU_PYTHON, str(BASE_DIR / "arch_fuzzer.py"), "--runs", "20"],
-        capture_output=True, text=True, timeout=120,
+        capture_output=False, text=True, timeout=60,
         cwd=str(BASE_DIR)
     )
     try:
@@ -67,11 +67,11 @@ def step_fuzz():
 
 
 def step_test():
-    """Step 3: Run combinatorial sweep."""
-    print("[3/7] TEST — Combinatorial sweep (50 archs)...")
+    """Step 3: Run combinatorial sweep (quick mode, 20 archs)."""
+    print("[3/7] TEST — Combinatorial sweep (20 archs)...")
     result = subprocess.run(
         [CPU_PYTHON, str(BASE_DIR / "validate_combinatorial.py"), "--quick"],
-        capture_output=True, text=True, timeout=600,
+        capture_output=False, text=True, timeout=300,
         cwd=str(BASE_DIR)
     )
     try:
