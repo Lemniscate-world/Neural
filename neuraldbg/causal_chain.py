@@ -92,6 +92,8 @@ CAUSAL_COMPATIBILITY = {
     ("data_anomaly", "data_anomaly"): 0.5,
     ("activation_regime_shift", "optimizer_instability"): 0.6,
     ("gradient_health_transition", "activation_regime_shift"): 0.4,
+    ("gradient_health_transition", "data_anomaly"): 0.5,
+    ("gradient_health_transition", "optimizer_instability"): 0.5,
     ("optimizer_instability", "activation_regime_shift"): 0.4,
     ("nan_detected", "nan_detected"): 0.3,
 }

@@ -749,12 +749,14 @@ class NeuralDbg:
                 if len(history) > 5:
                     history.pop(0)
 
-                # Detect vanishing trend: norms consistently decreasing >80%
+                # Detect vanishing trend: norms consistently decreasing
                 if len(history) >= 4:
                     recent = history[-4:]
                     if all(recent[i] > recent[i+1] for i in range(len(recent)-1)):
                         drop_ratio = recent[-1] / max(recent[0], 1e-12)
-                        if drop_ratio < 0.2 and recent[-1] < 1e-2:
+                        # 50%+ drop with absolute norm < 0.1, OR 80%+ drop (any norm)
+                        is_vanishing = (drop_ratio < 0.5 and recent[-1] < 0.1) or (drop_ratio < 0.2)
+                        if is_vanishing:
                             event = SemanticEvent(
                                 event_type=EventType.GRADIENT_HEALTH_TRANSITION,
                                 layer_name=layer_name,
