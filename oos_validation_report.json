@@ -1,0 +1,174 @@
+{
+  "validation_type": "out-of-sample",
+  "architecture": "ResNet-18 (torchvision)",
+  "data": "CIFAR-10",
+  "device": "cpu",
+  "date": "2026-07-08",
+  "neuraldbg_version": "1.5.0",
+  "elapsed_seconds": 86.54150533676147,
+  "detection_rate": "6/6",
+  "results": [
+    {
+      "scenario": "01_Healthy_Baseline",
+      "bug_type": "none",
+      "architecture": "ResNet-18 (torchvision)",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 142,
+      "anomaly_events": 142,
+      "event_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition"
+      ],
+      "anomaly_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition"
+      ],
+      "chains": 30,
+      "top_chain": "data_anomaly(Linear_fc)[distribution_shift] -> gradient_health_transition(root)[healthy] -> data_anomaly(Linear_fc)[distribution_shift]",
+      "final_loss": 3.2919836044311523,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "02_Exploding_LR",
+      "bug_type": "opt",
+      "architecture": "ResNet-18 (torchvision)",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 405,
+      "anomaly_events": 405,
+      "event_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "anomaly_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "chains": 30,
+      "top_chain": "data_anomaly(BatchNorm2d_bn1)[distribution_shift] -> optimizer_instability(optimizer)[loss_spike] -> activation_regime_shift(BatchNorm2d_bn1)[saturate",
+      "final_loss": 830.8057861328125,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "03_Vanishing_Sigmoid",
+      "bug_type": "model",
+      "architecture": "ResNet-18 (torchvision)",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 170,
+      "anomaly_events": 170,
+      "event_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition"
+      ],
+      "anomaly_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition"
+      ],
+      "chains": 30,
+      "top_chain": "data_anomaly(Conv2d_layer4.0.downsample.0)[distribution_shift] -> gradient_health_transition(Linear_fc)[healthy] -> data_anomaly(AdaptiveAvgPool2d_avg",
+      "final_loss": 3.0325891971588135,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "04_NaN_Data",
+      "bug_type": "data",
+      "architecture": "ResNet-18 (torchvision)",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 225,
+      "anomaly_events": 225,
+      "event_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "anomaly_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "chains": 30,
+      "top_chain": "data_anomaly(Conv2d_conv1)[nan_detected] -> data_anomaly(BatchNorm2d_bn1)[nan_detected] -> data_anomaly(ReLU_relu)[nan_detected] -> data_anomaly(Ident",
+      "final_loss": NaN,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "05_Zero_Init_Layer4",
+      "bug_type": "model",
+      "architecture": "ResNet-18 (torchvision)",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 262,
+      "anomaly_events": 262,
+      "event_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition"
+      ],
+      "anomaly_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition"
+      ],
+      "chains": 30,
+      "top_chain": "data_anomaly(Conv2d_layer4.0.conv1)[distribution_shift] -> gradient_health_transition(BatchNorm2d_layer4.1.bn2)[vanishing] -> data_anomaly(Conv2d_laye",
+      "final_loss": 2.3020901679992676,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "06_Divergence_LR100",
+      "bug_type": "opt",
+      "architecture": "ResNet-18 (torchvision)",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 649,
+      "anomaly_events": 649,
+      "event_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "anomaly_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "chains": 30,
+      "top_chain": "data_anomaly(ReLU_relu)[distribution_shift] -> optimizer_instability(optimizer)[loss_spike] -> gradient_health_transition(ReLU_layer1.1.relu)[vanishin",
+      "final_loss": NaN,
+      "crashed": false,
+      "crash_error": ""
+    }
+  ]
+}
