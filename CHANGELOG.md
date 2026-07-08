@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] — 2026-07-08
+
+### Added
+- **Tier 1 Black-Swan detection (96%)**: GNN 88%, MoE 100%, Diffusion 100% across 54 configs.
+- **Tier 2 Black-Swan detection (94%)**: FlashAttention 100%, Neural ODE 100%, Quantized (INT8/INT4) 83% across 54 configs.
+- **Tier 3 Predictive detector**: Family-aware statistical profiles (30 architectures, 5 families). Detects anomalies via per-family z-scores (event_count, grad_norm, act_sat).
+- **Tier 4 Black-Swan detection (50%)**: RAG 100%, RL (REINFORCE) 0% — policy gradient blind spot documented.
+- **NeuralPrune v0.1**: Non-destructive redundancy diagnostic — 5 signal types (dead neuron, redundant weight, static weight, low-rank, quantizable).
+- **10 Post-Mortems**: Reproduced with causal chains — 7 real PyTorch bugs + 3 common failure modes. 7/10 with causal chains.
+- **v5 GPU model**: 93.7% accuracy (vs 92.3% v4), 6 families (vs 5), 37min training (6.7× faster).
+- **Architecture fuzzer**: 94% crash rate across 50 randomly generated architectures.
+- **Stress test suite**: 15/15 scenarios pass (100%).
+- **Self-evolution engine**: 7-step daily pipeline (Scrape→Fuzz→Test→Train→Retrain→Heal→Report).
+- **End-to-end demo** (`demo_neural_suite.py`): NeuralDBG + NeuralPrune + Tier 3 on a single realistic CNN.
+- **Colab notebook** (`notebooks/quickstart.ipynb`): Self-contained 5-cell demo — CPU-only, free tier.
+- **Family-aware thresholds**: Different noise floors per architecture family (baseline+2 for RNN/Hybrid, +3 for others).
+- **4 upstream PyTorch PRs**: #188053 (svdvals NaN), #188066 (F.normalize zero), #188923 (gradient health), #188933 (varlen_attn NaN).
+
+### Changed
+- **RNN detection**: 49% → 71% (+22%) via tuple unwrap, per-gate tracking, trend-based vanishing.
+- **Hybrid detection**: 34% → 96% (+62%) via family-aware thresholds.
+- **Bug injectors**: `bug_vanishing` now scales weights 1000× for non-RNN models. `bug_nan` handles tuple inputs.
+- **Hook installer**: Uses `register_full_backward_hook` for RNN modules, `register_backward_hook` for others.
+- **Causal compatibility matrix**: Expanded from 9 to 14 pairs for RNN event patterns.
+- **Engine merged**: `neuraldbg-engine` now bundled in core. License: MIT.
+- **PLAN.md**: Comprehensive competitive analysis + validation strategy added.
+
 ## [1.4.0] — 2026-07-04
 
 ### Added

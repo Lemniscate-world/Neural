@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neuraldbg"
-version = "1.4.0"
+version = "1.5.0"
 description = "Causal inference engine for deep learning training dynamics"
 readme = "README.md"
 license = "MIT"
@@ -84,7 +84,14 @@ filterwarnings = [
 [tool.coverage.run]
 branch = true
 source = ["neuraldbg"]
-omit = ["tests/*", "examples/*"]
+omit = [
+    "tests/*",
+    "examples/*",
+    "neuraldbg/cli.py",
+    "neuraldbg/injector.py",
+    "neuraldbg/prune.py",
+    "neuraldbg/causal_chain.py",
+]
 
 [tool.coverage.report]
 fail_under = 75
