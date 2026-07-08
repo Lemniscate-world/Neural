@@ -103,8 +103,9 @@ class TestBUG004SdpaExplosionProduct:
         path = tmp_path / "bug004.json"
         path.write_text(json.dumps(package))
         result = remediate_from_package(load_package(path), initial_config={"lr": 1.0})
-        assert result["category"] == "gradient_explosion"
+        assert result["category"] == "sdpa_gradient_explosion"
         assert result["patched_config"]["clip_grad_norm"] == 1.0
+        assert result["patched_config"]["attn_implementation"] == "flash_attention_2"
 
 
 class TestBUG005LstmSampleIndependenceProduct:

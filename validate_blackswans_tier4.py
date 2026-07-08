@@ -23,43 +23,25 @@ random.seed(42)
 # 1. RL Actor-Critic
 # ============================================================
 
-class ActorCritic(nn.Module):
-    """Simple Actor-Critic for discrete action spaces.
+class PolicyNetwork(nn.Module):
+    """REINFORCE policy network — single head, pure policy gradient.
 
-    Shared backbone with two heads:
-    - Actor: policy logits over actions
-    - Critic: state value estimate
+    No value baseline to avoid gradient redundancy that masked
+    bug signals in the Actor-Critic version.
     """
 
-    def __init__(self, state_dim=16, hidden_dim=64, num_actions=4):
+    def __init__(self, state_dim=16, hidden_dim=64, num_actions=4, num_layers=2):
         super().__init__()
-        self.shared = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-        )
-        self.actor = nn.Linear(hidden_dim, num_actions)
-        self.critic = nn.Linear(hidden_dim, 1)
+        layers = []
+        in_dim = state_dim
+        for _ in range(num_layers):
+            layers.extend([nn.Linear(in_dim, hidden_dim), nn.ReLU()])
+            in_dim = hidden_dim
+        self.backbone = nn.Sequential(*layers)
+        self.policy_head = nn.Linear(hidden_dim, num_actions)
 
     def forward(self, state):
-        features = self.shared(state)
-        logits = self.actor(features)
-        value = self.critic(features)
-        return logits, value
-
-
-class RLModel(nn.Module):
-    """Wrapper for Actor-Critic compatible with NeuralDBG testing."""
-
-    def __init__(self, state_dim=16, hidden_dim=64, num_actions=4):
-        super().__init__()
-        self.ac = ActorCritic(state_dim, hidden_dim, num_actions)
-
-    def forward(self, x):
-        # x: [B, state_dim] — return policy logits for classification loss
-        logits, _ = self.ac(x)
-        return logits
+        return self.policy_head(self.backbone(state))
 
 
 def rl_configs(n=6):
@@ -156,8 +138,9 @@ def train_tier4(cfg: ArchConfig, steps=8, bug=None):
     family = cfg.family
 
     if family == "RL":
-        model = RLModel(state_dim=cfg.width, hidden_dim=cfg.width,
-                        num_actions=cfg.extra.get("num_actions", 4))
+        model = PolicyNetwork(state_dim=cfg.width, hidden_dim=cfg.width,
+                              num_actions=cfg.extra.get("num_actions", 4),
+                              num_layers=cfg.depth)
     elif family == "RAG":
         model = RAGModel(dim=cfg.width,
                          num_docs=cfg.extra.get("num_docs", 16),
@@ -183,11 +166,16 @@ def train_tier4(cfg: ArchConfig, steps=8, bug=None):
             opt.zero_grad()
             try:
                 if family == "RL":
-                    # Real RL loss: policy gradient + value loss
-                    logits, value = model.ac(x)
-                    policy_loss = nn.CrossEntropyLoss()(logits, y)
-                    value_loss = F.mse_loss(value.squeeze(), torch.zeros_like(value.squeeze()))
-                    loss = policy_loss + 0.5 * value_loss
+                    # REINFORCE: policy gradient with simulated rewards
+                    logits = model(x)
+                    # Sample actions and compute log-probabilities
+                    probs = F.softmax(logits, dim=-1)
+                    log_probs = F.log_softmax(logits, dim=-1)
+                    # Simulated rewards: higher for "correct" actions (y)
+                    rewards = torch.zeros_like(probs)
+                    rewards.scatter_(1, y.unsqueeze(1), 1.0)
+                    # Policy gradient loss: -E[log_prob * reward]
+                    loss = -(log_probs * rewards).sum(dim=-1).mean()
                 else:
                     out = model(x)
                     loss = nn.CrossEntropyLoss()(out, y)
@@ -224,11 +212,8 @@ if __name__ == "__main__":
     for family, cfg in all_configs:
         print(f"\n  [{family}] {cfg.name}")
 
-        # RL needs more steps for bugs to manifest (two-headed gradient redundancy)
-        rl_steps = 14 if family == "RL" else 8
-
         try:
-            ev, _, _ = train_tier4(cfg, steps=rl_steps)
+            ev, _, _ = train_tier4(cfg, steps=8)
             baseline = n_problematic(ev)
         except Exception as e:
             print(f"    Baseline error: {e}")
@@ -240,7 +225,7 @@ if __name__ == "__main__":
 
         for bug_name, bug_fn in bugs_to_test:
             try:
-                ev, _, _ = train_tier4(cfg, steps=rl_steps, bug=bug_fn)
+                ev, _, _ = train_tier4(cfg, steps=8, bug=bug_fn)
                 n = n_problematic(ev)
                 if n > threshold:
                     detected += 1

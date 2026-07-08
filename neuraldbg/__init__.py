@@ -1320,6 +1320,11 @@ class NeuralDbg:
                 f"Gradient explosion on MPS backend at layer '{event.layer_name}' "
                 f"step {event.step} (BUG-003 / pytorch/pytorch#177116)"
             )
+        if "BUG-004" in bug or source == "sdpa_attention":
+            return (
+                f"Gradient explosion in Qwen3.5/SDPA at layer '{event.layer_name}' "
+                f"step {event.step} (BUG-004 / transformers#44928)"
+            )
 
         et = event.event_type.value
         if et == "sample_independence_violation":
