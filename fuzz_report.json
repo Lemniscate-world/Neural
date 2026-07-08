@@ -1,72 +1,52 @@
 {
   "runs": 20,
   "seed": 42,
-  "elapsed": 0,
-  "crashes": 19,
-  "detected": 1,
+  "elapsed": 1,
+  "crashes": 10,
+  "detected": 10,
   "ok": 0,
   "bug_stats": {
-    "exploding": {
+    "?": {
+      "total": 8,
+      "crashed": 8,
+      "detected": 0
+    },
+    "nan_data": {
+      "total": 3,
+      "crashed": 0,
+      "detected": 3
+    },
+    "mixed_precision": {
       "total": 2,
       "crashed": 2,
       "detected": 0
     },
     "dead_bias": {
-      "total": 3,
-      "crashed": 2,
-      "detected": 1
-    },
-    "nan_data": {
-      "total": 3,
-      "crashed": 3,
-      "detected": 0
-    },
-    "divergence": {
-      "total": 2,
-      "crashed": 2,
-      "detected": 0
-    },
-    "mixed_precision": {
-      "total": 3,
-      "crashed": 3,
-      "detected": 0
-    },
-    "?": {
-      "total": 2,
-      "crashed": 2,
-      "detected": 0
-    },
-    "vanishing": {
-      "total": 3,
-      "crashed": 3,
-      "detected": 0
+      "total": 4,
+      "crashed": 0,
+      "detected": 4
     },
     "zero_init": {
       "total": 2,
-      "crashed": 2,
-      "detected": 0
+      "crashed": 0,
+      "detected": 2
+    },
+    "vanishing": {
+      "total": 1,
+      "crashed": 0,
+      "detected": 1
     }
   },
   "crash_details": [
     {
-      "bug": "exploding",
-      "error": "input.size(-1) must be equal to input_size. Expected 8, got 1",
-      "layers": "[('gru', {'input': 8, 'hidden': 32}), ('activation', {'type': 'ELU'}), ('conv1d', {'in': 32, 'out': 64, 'kernel': 7})]"
+      "bug": "?",
+      "error": "invalid_spec_after_5_retries",
+      "layers": "?"
     },
     {
-      "bug": "dead_bias",
-      "error": "Given groups=1, weight of size [32, 8, 7], expected input[8, 16, 1] to have 8 channels, but got 16 c",
-      "layers": "[('activation', {'type': 'ELU'}), ('conv1d', {'in': 8, 'out': 32, 'kernel': 7}), ('activation', {'type': 'ReLU'}), ('ln', {'dim': 32}), ('activation', {'type': 'SiLU'})]"
-    },
-    {
-      "bug": "nan_data",
-      "error": "Given normalized_shape=[64], expected input with shape [*, 64], but got input of size[8, 16, 1]",
-      "layers": "[('ln', {'dim': 64}), ('conv1d', {'in': 64, 'out': 16, 'kernel': 5}), ('activation', {'type': 'ReLU'}), ('lstm', {'input': 16, 'hidden': 16}), ('activation', {'type': 'ReLU'}), ('conv2d', {'in': 16, 'out': 64, 'kernel': 5}), ('bn1d', {'dim': 64}), ('activation', {'type': 'Sigmoid'}), ('activation', {'type': 'ReLU'})]"
-    },
-    {
-      "bug": "divergence",
-      "error": "was expecting embedding dimension of 32, but got 1",
-      "layers": "[('activation', {'type': 'SiLU'}), ('mha', {'embed_dim': 32, 'heads': 2}), ('activation', {'type': 'ReLU'}), ('conv1d', {'in': 32, 'out': 32, 'kernel': 3}), ('activation', {'type': 'LeakyReLU'}), ('conv1d', {'in': 32, 'out': 16, 'kernel': 5})]"
+      "bug": "?",
+      "error": "invalid_spec_after_5_retries",
+      "layers": "?"
     },
     {
       "bug": "mixed_precision",
@@ -74,24 +54,9 @@
       "layers": "[('linear', {'in': 8, 'out': 256}), ('activation', {'type': 'GELU'}), ('activation', {'type': 'LeakyReLU'}), ('ln', {'dim': 256}), ('linear', {'in': 256, 'out': 16}), ('activation', {'type': 'SiLU'})]"
     },
     {
-      "bug": "dead_bias",
-      "error": "running_mean should contain 16 elements not 32",
-      "layers": "[('bn1d', {'dim': 32}), ('activation', {'type': 'LeakyReLU'}), ('mha', {'embed_dim': 32, 'heads': 4}), ('activation', {'type': 'Tanh'})]"
-    },
-    {
-      "bug": "mixed_precision",
-      "error": "Given normalized_shape=[128], expected input with shape [*, 128], but got input of size[8, 16]",
-      "layers": "[('ln', {'dim': 128}), ('gru', {'input': 128, 'hidden': 32}), ('bn1d', {'dim': 32}), ('activation', {'type': 'Sigmoid'})]"
-    },
-    {
-      "bug": "divergence",
-      "error": "running_mean should contain 16 elements not 8",
-      "layers": "[('bn1d', {'dim': 8}), ('mha', {'embed_dim': 8, 'heads': 8}), ('activation', {'type': 'ReLU'}), ('activation', {'type': 'ELU'}), ('gru', {'input': 8, 'hidden': 32}), ('activation', {'type': 'ReLU'})]"
-    },
-    {
-      "bug": "nan_data",
-      "error": "was expecting embedding dimension of 64, but got 16",
-      "layers": "[('mha', {'embed_dim': 64, 'heads': 8}), ('mha', {'embed_dim': 64, 'heads': 2}), ('activation', {'type': 'GELU'}), ('activation', {'type': 'GELU'})]"
+      "bug": "?",
+      "error": "invalid_spec_after_5_retries",
+      "layers": "?"
     },
     {
       "bug": "?",
@@ -99,34 +64,9 @@
       "layers": "?"
     },
     {
-      "bug": "vanishing",
-      "error": "Given normalized_shape=[32], expected input with shape [*, 32], but got input of size[8, 16]",
-      "layers": "[('ln', {'dim': 32}), ('activation', {'type': 'SiLU'}), ('bn1d', {'dim': 32}), ('activation', {'type': 'GELU'})]"
-    },
-    {
-      "bug": "nan_data",
-      "error": "Given normalized_shape=[128], expected input with shape [*, 128], but got input of size[8, 16]",
-      "layers": "[('activation', {'type': 'Tanh'}), ('ln', {'dim': 128}), ('activation', {'type': 'Tanh'}), ('linear', {'in': 128, 'out': 16})]"
-    },
-    {
-      "bug": "mixed_precision",
-      "error": "input.size(-1) must be equal to input_size. Expected 8, got 16",
-      "layers": "[('gru', {'input': 8, 'hidden': 16}), ('gru', {'input': 16, 'hidden': 16}), ('activation', {'type': 'ELU'})]"
-    },
-    {
-      "bug": "exploding",
-      "error": "input.size(-1) must be equal to input_size. Expected 128, got 16",
-      "layers": "[('gru', {'input': 128, 'hidden': 128})]"
-    },
-    {
-      "bug": "vanishing",
-      "error": "running_mean should contain 16 elements not 8",
-      "layers": "[('dropout', {'p': 0.3421178639510596}), ('activation', {'type': 'SiLU'}), ('activation', {'type': 'Tanh'}), ('bn1d', {'dim': 8}), ('activation', {'type': 'ELU'})]"
-    },
-    {
-      "bug": "zero_init",
-      "error": "input.size(-1) must be equal to input_size. Expected 128, got 16",
-      "layers": "[('lstm', {'input': 128, 'hidden': 32}), ('activation', {'type': 'Tanh'}), ('bn1d', {'dim': 32}), ('activation', {'type': 'SiLU'}), ('gru', {'input': 32, 'hidden': 128})]"
+      "bug": "?",
+      "error": "invalid_spec_after_5_retries",
+      "layers": "?"
     },
     {
       "bug": "?",
@@ -134,14 +74,19 @@
       "layers": "?"
     },
     {
-      "bug": "vanishing",
-      "error": "mat1 and mat2 shapes cannot be multiplied (8x16 and 32x16)",
-      "layers": "[('dropout', {'p': 0.16165473242288242}), ('activation', {'type': 'Tanh'}), ('linear', {'in': 32, 'out': 16})]"
+      "bug": "?",
+      "error": "'dict' object has no attribute 'lr' and no __dict__ for setting new attributes",
+      "layers": "?"
     },
     {
-      "bug": "zero_init",
-      "error": "Given normalized_shape=[64], expected input with shape [*, 64], but got input of size[8, 16]",
-      "layers": "[('ln', {'dim': 64}), ('activation', {'type': 'SiLU'}), ('gru', {'input': 64, 'hidden': 64}), ('linear', {'in': 64, 'out': 128}), ('activation', {'type': 'ReLU'})]"
+      "bug": "?",
+      "error": "'dict' object has no attribute 'lr' and no __dict__ for setting new attributes",
+      "layers": "?"
+    },
+    {
+      "bug": "mixed_precision",
+      "error": "mat1 and mat2 must have the same dtype, but got Float and Half",
+      "layers": "[('linear', {'in': 16, 'out': 32}), ('linear', {'in': 32, 'out': 128}), ('gru', {'input': 128, 'hidden': 32}), ('activation', {'type': 'LeakyReLU'})]"
     }
   ]
 }

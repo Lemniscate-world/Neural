@@ -272,13 +272,34 @@ def fuzz_one(seed=None):
         random.seed(seed)
         torch.manual_seed(seed)
 
+    # Try a few specs until one builds successfully (skip shape-incompatible archs)
+    spec = None
+    for _ in range(5):
+        try:
+            spec = generate_random_model(max_layers=6)
+            model = build_model_from_spec(spec, input_dim=16, output_dim=2)
+            data_fn = lambda: make_fuzz_data(model)
+            x, y = data_fn()
+            # Dry-run forward to verify shape consistency
+            with torch.no_grad():
+                _ = model(x)
+            break  # valid spec found
+        except Exception as e:
+            spec = None
+            continue
+    if spec is None:
+        return FuzzResult(
+            model_name=f"fuzz_{seed}",
+            layers="?",
+            bug="?",
+            events=0,
+            crashed=True,
+            error="invalid_spec_after_5_retries",
+        )
+
     try:
-        spec = generate_random_model(max_layers=6)
-        model = build_model_from_spec(spec, input_dim=16, output_dim=2)
-        data_fn = lambda: make_fuzz_data(model)
 
         bug_name, bug_fn = random.choice(BUGS)
-        x, y = data_fn()
 
         with NeuralDbg(model) as dbg:
             opt = torch.optim.SGD(model.parameters(), lr=random.uniform(0.001, 0.1))
