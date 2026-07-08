@@ -184,8 +184,10 @@ class NeuralDbg:
             "MLP": 1.0, "CNN": 1.5, "RNN": 0.8, "TF": 1.0, "Hybrid": 1.2,
             "GNN": 1.3, "MoE": 1.0, "Diffusion": 1.0, "FlashAttn": 1.0,
             "NeuralODE": 1.0, "Quantized": 1.2, "RAG": 1.0, "RL": 1.5, "Federated": 1.3,
+            "ResNet": 1.8, "DeepCNN": 1.8, "ViT": 1.5, "LLM": 2.0,
         }
         family_mult = _family_mult.get(family, 1.0)
+        self._family_mult = family_mult  # stash for use in data anomaly checks
 
         if strict_mode:
             # Strict: higher thresholds = fewer FPs, lower sensitivity
@@ -628,23 +630,25 @@ class NeuralDbg:
                         )
                         self.events.append(event)
                 else:
-                    # Capture baseline activation state on first encounter
-                    event = SemanticEvent(
-                        event_type=EventType.ACTIVATION_REGIME_SHIFT,
-                        layer_name=layer_name,
-                        step=self.step,
-                        from_state="NONE",
-                        to_state=current_health.value,
-                        confidence=1.0,
-                        metadata={
-                            **activation_stats,
-                            "resources": resource_snapshot,
-                            "memory_spike": False,
-                            "memory_spike_keys": [],
-                        },
-                    )
-                    self.events.append(event)
+                    # Capture baseline activation state on first encounter.
+                    # Only emit an event if the state is actually anomalous —
+                    # a healthy first encounter is expected and not a regime shift.
                     if current_health != ActivationHealth.NORMAL:
+                        event = SemanticEvent(
+                            event_type=EventType.ACTIVATION_REGIME_SHIFT,
+                            layer_name=layer_name,
+                            step=self.step,
+                            from_state="NONE",
+                            to_state=current_health.value,
+                            confidence=0.85,
+                            metadata={
+                                **activation_stats,
+                                "resources": resource_snapshot,
+                                "memory_spike": False,
+                                "memory_spike_keys": [],
+                            },
+                        )
+                        self.events.append(event)
                         self._track_first_occurrence(
                             f"activation_{current_health.value}", layer_name
                         )
@@ -713,25 +717,27 @@ class NeuralDbg:
                         )
                         self.events.append(event)
                 else:
-                    # Capture baseline gradient state on first encounter
+                    # Capture baseline gradient state on first encounter.
+                    # Only emit an event if the gradient is NOT healthy —
+                    # a healthy first encounter is expected, not a transition.
                     current_health = self._classify_gradient_health(grad_norm)
-                    event = SemanticEvent(
-                        event_type=EventType.GRADIENT_HEALTH_TRANSITION,
-                        layer_name=layer_name,
-                        step=self.step,
-                        from_state="NONE",
-                        to_state=current_health.value,
-                        confidence=1.0,
-                        metadata={
-                            "current_norm": grad_norm,
-                            "transition_type": "baseline",
-                            "resources": resource_snapshot,
-                            "memory_spike": False,
-                            "memory_spike_keys": [],
-                        },
-                    )
-                    self.events.append(event)
                     if current_health != GradientHealth.HEALTHY:
+                        event = SemanticEvent(
+                            event_type=EventType.GRADIENT_HEALTH_TRANSITION,
+                            layer_name=layer_name,
+                            step=self.step,
+                            from_state="NONE",
+                            to_state=current_health.value,
+                            confidence=0.85,
+                            metadata={
+                                "current_norm": grad_norm,
+                                "transition_type": "baseline",
+                                "resources": resource_snapshot,
+                                "memory_spike": False,
+                                "memory_spike_keys": [],
+                            },
+                        )
+                        self.events.append(event)
                         self._track_first_occurrence(
                             f"gradient_{current_health.value}", layer_name
                         )
@@ -1445,7 +1451,13 @@ class NeuralDbg:
                 if prev_std > 1e-9:
                     mean_shift = abs(current_mean - prev.get("mean", 0.0)) / prev_std
                     std_ratio = current_std / prev_std if prev_std > 0 else 1.0
-                    if mean_shift > 3.0 or std_ratio > 5.0 or std_ratio < 0.2:
+                    # Calibrated thresholds: stricter for deep architectures
+                    fm = getattr(self, '_family_mult', 1.0)
+                    sm = 2.0 if getattr(self, 'strict_mode', False) else 1.0
+                    shift_threshold = 4.0 * fm * sm   # base 4σ (was 3σ)
+                    ratio_high = 8.0 * fm * sm        # base 8x (was 5x)
+                    ratio_low = 0.1 / (fm * sm)       # base 0.1 (was 0.2)
+                    if mean_shift > shift_threshold or std_ratio > ratio_high or std_ratio < ratio_low:
                         current_health = DataHealth.DISTRIBUTION_SHIFT
                         health_metadata = {
                             "prev_mean": prev.get("mean", 0.0),
@@ -1462,46 +1474,70 @@ class NeuralDbg:
 
         prev_health = self.previous_data_health.get(layer_name, DataHealth.NORMAL)
 
-        if current_health != prev_health:
-            if current_health != DataHealth.NORMAL:
-                self._track_first_occurrence(f"data_{current_health.value}", layer_name)
-                if current_health in (
-                    DataHealth.NAN_DETECTED,
-                    DataHealth.INF_DETECTED,
-                    DataHealth.DISTRIBUTION_SHIFT,
-                ):
-                    cache_path = self.disk_cache.save(
-                        tensor, prefix=f"anomaly_{layer_name}"
-                    )
-                    health_metadata["tensor_cache_path"] = cache_path
+        # Anti-oscillation debounce: track consecutive steps in the same state.
+        # Only emit a transition when the new state has persisted for >= 2 checks.
+        if not hasattr(self, '_data_health_streak'):
+            self._data_health_streak = {}  # {layer: (state_value, streak_count)}
 
-            confidence = 1.0
-            if current_health == DataHealth.DISTRIBUTION_SHIFT:
-                mean_shift_val = health_metadata.get("mean_shift_sigma", 3.0)
-                confidence = min(mean_shift_val * 0.2, 1.0)
+        layer_streak = self._data_health_streak.get(layer_name)
+        if layer_streak and layer_streak[0] == current_health.value:
+            # Same state as before — increment streak
+            new_streak = layer_streak[1] + 1
+        else:
+            # State changed — reset streak
+            new_streak = 1
+        self._data_health_streak[layer_name] = (current_health.value, new_streak)
 
-            # Sample resources once per step
-            resource_snapshot, resource_baseline = self._get_step_resource_snapshot(
-                tensor.device
+        should_emit = (current_health != prev_health) and (new_streak >= 2)
+
+        if should_emit:
+            # In non-strict mode, suppress distribution_shift on classifier heads —
+            # the final layer naturally has high input variance on random/early data.
+            is_classifier_noise = (
+                current_health == DataHealth.DISTRIBUTION_SHIFT
+                and not getattr(self, 'strict_mode', False)
+                and any(kw in layer_name.lower() for kw in ('fc', 'head', 'classifier'))
             )
-            is_spike, spike_keys = self._is_memory_spike(
-                resource_snapshot, resource_baseline
-            )
-            health_metadata["resources"] = resource_snapshot
-            health_metadata["memory_spike"] = is_spike
-            health_metadata["memory_spike_keys"] = spike_keys
+            if not is_classifier_noise:
+                if current_health != DataHealth.NORMAL:
+                    self._track_first_occurrence(f"data_{current_health.value}", layer_name)
+                    if current_health in (
+                        DataHealth.NAN_DETECTED,
+                        DataHealth.INF_DETECTED,
+                        DataHealth.DISTRIBUTION_SHIFT,
+                    ):
+                        cache_path = self.disk_cache.save(
+                            tensor, prefix=f"anomaly_{layer_name}"
+                        )
+                        health_metadata["tensor_cache_path"] = cache_path
 
-            self.events.append(
-                SemanticEvent(
-                    event_type=EventType.DATA_ANOMALY,
-                    layer_name=layer_name,
-                    step=self.step,
-                    from_state=prev_health.value,
-                    to_state=current_health.value,
-                    confidence=confidence,
-                    metadata=health_metadata,
+                confidence = 1.0
+                if current_health == DataHealth.DISTRIBUTION_SHIFT:
+                    mean_shift_val = health_metadata.get("mean_shift_sigma", 3.0)
+                    confidence = min(mean_shift_val * 0.2, 1.0)
+
+                # Sample resources once per step
+                resource_snapshot, resource_baseline = self._get_step_resource_snapshot(
+                    tensor.device
                 )
-            )
+                is_spike, spike_keys = self._is_memory_spike(
+                    resource_snapshot, resource_baseline
+                )
+                health_metadata["resources"] = resource_snapshot
+                health_metadata["memory_spike"] = is_spike
+                health_metadata["memory_spike_keys"] = spike_keys
+
+                self.events.append(
+                    SemanticEvent(
+                        event_type=EventType.DATA_ANOMALY,
+                        layer_name=layer_name,
+                        step=self.step,
+                        from_state=prev_health.value,
+                        to_state=current_health.value,
+                        confidence=confidence,
+                        metadata=health_metadata,
+                    )
+                )
             self.previous_data_health[layer_name] = current_health
 
     def _explain_optimizer_instability(self) -> List[CausalHypothesis]:

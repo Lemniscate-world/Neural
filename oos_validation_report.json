@@ -5,7 +5,7 @@
   "device": "cpu",
   "date": "2026-07-08",
   "neuraldbg_version": "1.5.0",
-  "elapsed_seconds": 86.54150533676147,
+  "elapsed_seconds": 76.56707572937012,
   "detection_rate": "6/6",
   "results": [
     {
@@ -16,20 +16,16 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 142,
-      "anomaly_events": 142,
+      "total_events": 5,
+      "anomaly_events": 5,
       "event_types": [
-        "activation_regime_shift",
-        "data_anomaly",
-        "gradient_health_transition"
+        "activation_regime_shift"
       ],
       "anomaly_types": [
-        "activation_regime_shift",
-        "data_anomaly",
-        "gradient_health_transition"
+        "activation_regime_shift"
       ],
-      "chains": 30,
-      "top_chain": "data_anomaly(Linear_fc)[distribution_shift] -> gradient_health_transition(root)[healthy] -> data_anomaly(Linear_fc)[distribution_shift]",
+      "chains": 0,
+      "top_chain": "N/A",
       "final_loss": 3.2919836044311523,
       "crashed": false,
       "crash_error": ""
@@ -42,8 +38,8 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 405,
-      "anomaly_events": 405,
+      "total_events": 245,
+      "anomaly_events": 245,
       "event_types": [
         "activation_regime_shift",
         "data_anomaly",
@@ -57,7 +53,7 @@
         "optimizer_instability"
       ],
       "chains": 30,
-      "top_chain": "data_anomaly(BatchNorm2d_bn1)[distribution_shift] -> optimizer_instability(optimizer)[loss_spike] -> activation_regime_shift(BatchNorm2d_bn1)[saturate",
+      "top_chain": "data_anomaly(BatchNorm2d_layer1.0.bn1)[distribution_shift] -> optimizer_instability(optimizer)[loss_spike] -> activation_regime_shift(BatchNorm2d_bn1)",
       "final_loss": 830.8057861328125,
       "crashed": false,
       "crash_error": ""
@@ -70,20 +66,16 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 170,
-      "anomaly_events": 170,
+      "total_events": 7,
+      "anomaly_events": 7,
       "event_types": [
-        "activation_regime_shift",
-        "data_anomaly",
-        "gradient_health_transition"
+        "activation_regime_shift"
       ],
       "anomaly_types": [
-        "activation_regime_shift",
-        "data_anomaly",
-        "gradient_health_transition"
+        "activation_regime_shift"
       ],
-      "chains": 30,
-      "top_chain": "data_anomaly(Conv2d_layer4.0.downsample.0)[distribution_shift] -> gradient_health_transition(Linear_fc)[healthy] -> data_anomaly(AdaptiveAvgPool2d_avg",
+      "chains": 0,
+      "top_chain": "N/A",
       "final_loss": 3.0325891971588135,
       "crashed": false,
       "crash_error": ""
@@ -96,18 +88,14 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 225,
-      "anomaly_events": 225,
+      "total_events": 54,
+      "anomaly_events": 54,
       "event_types": [
-        "activation_regime_shift",
         "data_anomaly",
-        "gradient_health_transition",
         "optimizer_instability"
       ],
       "anomaly_types": [
-        "activation_regime_shift",
         "data_anomaly",
-        "gradient_health_transition",
         "optimizer_instability"
       ],
       "chains": 30,
@@ -124,8 +112,8 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 262,
-      "anomaly_events": 262,
+      "total_events": 103,
+      "anomaly_events": 103,
       "event_types": [
         "activation_regime_shift",
         "data_anomaly",
@@ -137,7 +125,7 @@
         "gradient_health_transition"
       ],
       "chains": 30,
-      "top_chain": "data_anomaly(Conv2d_layer4.0.conv1)[distribution_shift] -> gradient_health_transition(BatchNorm2d_layer4.1.bn2)[vanishing] -> data_anomaly(Conv2d_laye",
+      "top_chain": "activation_regime_shift(Conv2d_layer1.1.conv1)[saturated] -> gradient_health_transition(BatchNorm2d_layer4.1.bn2)[vanishing] -> activation_regime_shif",
       "final_loss": 2.3020901679992676,
       "crashed": false,
       "crash_error": ""
@@ -150,8 +138,8 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 649,
-      "anomaly_events": 649,
+      "total_events": 352,
+      "anomaly_events": 352,
       "event_types": [
         "activation_regime_shift",
         "data_anomaly",
@@ -165,7 +153,7 @@
         "optimizer_instability"
       ],
       "chains": 30,
-      "top_chain": "data_anomaly(ReLU_relu)[distribution_shift] -> optimizer_instability(optimizer)[loss_spike] -> gradient_health_transition(ReLU_layer1.1.relu)[vanishin",
+      "top_chain": "data_anomaly(Conv2d_conv1)[distribution_shift] -> optimizer_instability(optimizer)[loss_spike] -> gradient_health_transition(ReLU_layer1.1.relu)[vanis",
       "final_loss": NaN,
       "crashed": false,
       "crash_error": ""
