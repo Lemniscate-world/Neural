@@ -190,7 +190,32 @@ We integrated NeuralDBG with a rule-based remediator (Neural-Agent) that adjusts
 
 ### 4.8 GPU-Accelerated Diagnosis
 
-We fine-tuned Qwen2-0.5B with LoRA (r=8, fp16) on 538 training examples across 5 architecture families. The model achieves 92.3% classification accuracy and has been validated end-to-end for diagnostic inference, correctly categorizing "Le gradient explose, loss=NaN" as `exploding_gradients`.
+We fine-tuned Qwen2-0.5B with LoRA (r=8, fp16). v4 (538 examples, 5 families) achieved 92.3% accuracy. v5 (108 targeted examples, 6 families: MLP/CNN/RNN/GNN/MoE/Diffusion) achieves **93.7% accuracy in 37 minutes** (6.7× faster). The model correctly categorizes French diagnostic prompts ("Le gradient explose, loss=NaN" → `exploding_gradients`).
+
+### 4.9 Tier 3 — Predictive Anomaly Detection
+
+We built a zero-config black-swan detector that learns "normal" training dynamics from 30 healthy architecture profiles across 5 families (MLP/CNN/RNN/Transformer/Hybrid). For any new training run, it computes per-family z-scores on:
+- Event count (anomalous if z > 2.5σ)
+- Mean gradient norm (z > 2.5σ)
+- Max gradient norm (z > 4.0σ)
+- Activation saturation (z > 2.5σ)
+
+Family-aware profiling is critical: global profiles are too broad to detect anomalies (z < 1.0 for all metrics on an exploding LR test), while family-specific profiles detect 3 anomalies (event_count z=3.4, grad_norm_mean z=117.8, grad_norm_max z=4363.6).
+
+### 4.10 Tier 4 — RAG and Reinforcement Learning
+
+We extended validation to two additional architecture families:
+
+| Family | Detection | Key Finding |
+|--------|:---------:|-------------|
+| **RAG** (Retrieval-Augmented Generation) | **100%** (36/36) | Cross-attention over retrieved documents generates rich gradient signals |
+| **RL** (REINFORCE Policy Gradient) | **0%** (0/36) | `log_softmax * reward` structure masks gradient anomalies |
+
+The RL result is a documented blind spot: policy gradient methods create gradient dynamics that do not trigger NeuralDBG's detection thresholds. This represents a genuine limitation of hook-based monitoring for reinforcement learning architectures.
+
+### 4.11 Colab Notebook
+
+A self-contained 5-cell Colab notebook (`notebooks/quickstart.ipynb`) demonstrates the full workflow: build a buggy model (Sigmoid saturation), train with NeuralDBG monitoring, visualize vanishing events and causal chains, apply the fix (ReLU), and verify elimination. Works entirely on CPU, free Colab tier. [Open in Colab](https://colab.research.google.com/github/LambdaSection/NeuralDBG/blob/main/notebooks/quickstart.ipynb).
 
 ---
 
