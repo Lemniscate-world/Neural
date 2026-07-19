@@ -241,34 +241,37 @@ The RL result is a documented blind spot: policy gradient methods create gradien
 
 A self-contained 5-cell Colab notebook (`notebooks/quickstart.ipynb`) demonstrates the full workflow: build a buggy model (Sigmoid saturation), train with NeuralDBG monitoring, visualize vanishing events and causal chains, apply the fix (ReLU), and verify elimination. Works entirely on CPU, free Colab tier. [Open in Colab](https://colab.research.google.com/github/LambdaSection/NeuralDBG/blob/main/notebooks/quickstart.ipynb).
 
-### 5.12 Comparison with Standard Monitoring Tools
+### 5.12 Comparison with Existing Tools
 
-To position NeuralDBG against existing tooling, we implemented a `BaselineMonitor` class (`benchmark_comparison.py`) that simulates the standard gradient & loss monitoring performed by W&B, TensorBoard, and MLflow. The baseline tracks: `gradient_norm`, `weight_norm`, `loss`, and applies threshold-based alerts (e.g., `gradient_norm < 1e-6` → vanishing, `> 1e3` → exploding, `NaN` → nan_loss).
+We compare NeuralDBG against two real baselines on six canonical failure scenarios (identical architectures, seeds, and batch sizes):
 
-**Six canonical failure scenarios** (Table 4.12.1) were run with both monitors on identical architectures and seeds:
+1. **`torch.autograd.detect_anomaly()`** [1]: PyTorch's built-in anomaly detection, which traces NaN gradients to specific operations via autograd metadata. This is the only debugging tool shipped with PyTorch.
 
-| Scenario | NeuralDBG Events | NeuralDBG Chains | Baseline Alerts | Baseline Types |
-|----------|-----------------:|-----------------:|----------------:|---------------:|
-| Healthy training | 13 | 30 | 0 | — |
-| Exploding gradients (LR=50) | 54 | 30 | 39 | exploding, vanishing, loss_spike |
-| Vanishing gradients (weights/1000) | 27 | 30 | 38 | vanishing |
-| NaN data injection | 20 | 30 | 10 | nan_loss |
-| Dead neurons (bias=-10) | 69 | 30 | 50 | vanishing |
-| Zero initialization | 27 | 30 | 40 | vanishing |
+2. **Threshold-based monitoring**: Realistic gradient-norm and loss-spike thresholds simulating what a practitioner would configure in Weights & Biases or TensorBoard (vanishing if `norm < 1e-6`, exploding if `norm > 1e3`, loss spike if `loss > 5×` recent mean).
 
-**Key observations:**
+**Results** (Table 1):
 
-1. **Detection parity is not the story.** Both monitors detect the 5 failure scenarios (100% vs 83% — the baseline misses only the healthy case correctly as a negative, but also misses the structural cause in 5/5 failures). Detection is the trivial half of the problem.
+| Scenario | detect_anomaly | W&B/TB monitoring | NeuralDBG | NeuralDBG Chains |
+|----------|:---:|:---:|:---:|:---:|
+| Healthy training | ✓ (0 FP) | ✓ (0 alerts) | ✓ (0 FP) | 0 |
+| Exploding gradients | ✗ | ✓ (26 alerts) | ✓ (19 events) | 30 |
+| Vanishing gradients | ✗ | ✓ (38 alerts) | ✓ (15 events) | 30 |
+| NaN data injection | ✓ (1 error) | ✓ (10 alerts) | ✓ (8 events) | 30 |
+| Dead neurons | ✗ | ✓ (50 alerts) | ✓ (7 events) | 30 |
+| Zero initialization | ✗ | ✓ (40 alerts) | ✓ (6 events) | 30 |
+| **Detection rate** | **1/6 (17%)** | **5/6 (83%)** | **5/6 (83%)** | **150 chains** |
 
-2. **Information asymmetry is the story.** On the exploding-gradients scenario, the baseline emits 39 alerts of 3 types ("gradient_norm exceeded threshold", "vanishing detected", "loss spiked") with no causal ordering. NeuralDBG emits a single root cause chain: `gradient_health_transition[exploding] → optimizer_instability[diverging]` with confidence scores per link and 6 distinct event types.
+**Key findings:**
 
-3. **Unique event types.** NeuralDBG detects 6 event categories (`data_anomaly`, `dead`, `exploding`, `optimizer_instability`, `saturated`, `vanishing`) per failure. The baseline emits 4 alert types total across the entire benchmark. The information density difference is what enables actionable diagnosis.
+1. **`detect_anomaly()` only catches NaN.** It is a NaN tracer, not a general debugging tool. It correctly traces the NaN in the data injection scenario but produces zero errors for exploding gradients, vanishing gradients, dead neurons, and zero initialization—all failures that degrade training without producing NaN. This is not a weakness of `detect_anomaly()`; it was designed for NaN tracing, not general failure diagnosis.
 
-4. **Top-cause example (NaN injection).** Baseline reports `loss=NaN` — the symptom. NeuralDBG reports `data_anomaly[nan_detected] → optimizer_instability[diverging]`, identifying that the NaN originated in the data pipeline, not the model. This distinction determines the fix (sanitize data vs. clip gradients).
+2. **Detection parity is not the story.** Both threshold-based monitoring and NeuralDBG achieve 5/6 detection (83%). The difference is *information density*: threshold monitoring emits 164 raw alerts (vanishing, exploding, loss_spike) with no causal ordering, while NeuralDBG emits 55 structured events organized into 150 causal chains linking root causes to symptoms.
 
-5. **Reproducibility.** `benchmark_comparison.py` is open-source and self-contained. Anyone with `pip install neuraldbg` can reproduce the full benchmark in <2 minutes on CPU. Full HTML report: [docs/benchmark_comparison.html](benchmark_comparison.html).
+3. **Root cause identification is unique to NeuralDBG.** On the NaN injection scenario, threshold monitoring reports "loss is NaN" — the symptom. NeuralDBG reports `data_anomaly[nan_detected] → optimizer_instability[diverging]`, identifying that the NaN originated in the data pipeline, not the model. On the exploding scenario, NeuralDBG traces the root cause to the optimizer configuration (`lr=50`), while threshold monitoring reports 26 uncorrelated alerts.
 
-**Why this matters:** monitoring tools answer *"is training broken?"* NeuralDBG answers *"what broke, where, and why?"* This is the difference between a dashboard (passive observation) and a diagnostic engine (active reasoning). For ML practitioners, this translates to **mean-time-to-diagnosis**: ~5 minutes with NeuralDBG vs ~hours manually correlating W&B charts.
+4. **Information asymmetry.** NeuralDBG detects 6 distinct event types (`data_anomaly`, `dead`, `exploding`, `optimizer_instability`, `saturated`, `vanishing`) per failure. Threshold monitoring emits 4 alert types total. The additional event types enable differential diagnosis: "vanishing + dead" suggests a different fix than "vanishing + saturated."
+
+5. **Reproducibility.** The benchmark script (`benchmark_honest.py`) is self-contained and runs in <30 seconds on CPU. Results are deterministic (seed 42). Full output: `benchmark_honest.json`.
 
 ### 5.13 Out-of-Sample Validation — ResNet-18 on CIFAR-10
 

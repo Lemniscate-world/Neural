@@ -1,0 +1,186 @@
+{
+  "date": "2026-07-19",
+  "scenarios": 6,
+  "detect_anomaly_detection": "1/6",
+  "wandb_detection": "5/6",
+  "neuraldbg_detection": "5/6",
+  "neuraldbg_causal_chains": 150,
+  "neuraldbg_advantage": "+0 detection, +150 chains",
+  "results": [
+    {
+      "scenario": "Healthy training",
+      "detect_anomaly": {
+        "errors_detected": 0,
+        "error_details": [],
+        "final_loss": 2.383249282836914,
+        "crashed": false
+      },
+      "wandb_monitoring": {
+        "total_alerts": 0,
+        "alert_types": [],
+        "has_root_cause": false,
+        "time_to_diagnose_est": "hours (manual correlation of charts)"
+      },
+      "neuraldbg": {
+        "total_events": 0,
+        "anomaly_events": 0,
+        "causal_chains": 0,
+        "anomaly_types": [],
+        "root_cause": "none",
+        "hypotheses": 0
+      }
+    },
+    {
+      "scenario": "Exploding gradients",
+      "detect_anomaly": {
+        "errors_detected": 0,
+        "error_details": [],
+        "final_loss": 19.33588218688965,
+        "crashed": false
+      },
+      "wandb_monitoring": {
+        "total_alerts": 26,
+        "alert_types": [
+          "exploding_gradient",
+          "nan_loss",
+          "loss_spike"
+        ],
+        "has_root_cause": false,
+        "time_to_diagnose_est": "hours (manual correlation of charts)"
+      },
+      "neuraldbg": {
+        "total_events": 29,
+        "anomaly_events": 19,
+        "causal_chains": 30,
+        "anomaly_types": [
+          "data_anomaly",
+          "exploding",
+          "optimizer_instability",
+          "saturated"
+        ],
+        "root_cause": "gradient_health_transition[exploding]",
+        "hypotheses": 6
+      }
+    },
+    {
+      "scenario": "Vanishing gradients",
+      "detect_anomaly": {
+        "errors_detected": 0,
+        "error_details": [],
+        "final_loss": 2.300274133682251,
+        "crashed": false
+      },
+      "wandb_monitoring": {
+        "total_alerts": 38,
+        "alert_types": [
+          "vanishing_gradient"
+        ],
+        "has_root_cause": false,
+        "time_to_diagnose_est": "hours (manual correlation of charts)"
+      },
+      "neuraldbg": {
+        "total_events": 15,
+        "anomaly_events": 15,
+        "causal_chains": 30,
+        "anomaly_types": [
+          "data_anomaly",
+          "vanishing"
+        ],
+        "root_cause": "gradient_health_transition[vanishing]",
+        "hypotheses": 3
+      }
+    },
+    {
+      "scenario": "NaN data injection",
+      "detect_anomaly": {
+        "errors_detected": 1,
+        "error_details": [
+          {
+            "step": 5,
+            "error": "Function 'LogSoftmaxBackward0' returned nan values in its 0th output."
+          }
+        ],
+        "final_loss": 2.3524298667907715,
+        "crashed": true
+      },
+      "wandb_monitoring": {
+        "total_alerts": 10,
+        "alert_types": [
+          "nan_loss"
+        ],
+        "has_root_cause": false,
+        "time_to_diagnose_est": "hours (manual correlation of charts)"
+      },
+      "neuraldbg": {
+        "total_events": 8,
+        "anomaly_events": 8,
+        "causal_chains": 30,
+        "anomaly_types": [
+          "data_anomaly",
+          "optimizer_instability"
+        ],
+        "root_cause": "data_anomaly[nan_detected]",
+        "hypotheses": 3
+      }
+    },
+    {
+      "scenario": "Dead neurons (bias=-10)",
+      "detect_anomaly": {
+        "errors_detected": 0,
+        "error_details": [],
+        "final_loss": 2.3025853633880615,
+        "crashed": false
+      },
+      "wandb_monitoring": {
+        "total_alerts": 50,
+        "alert_types": [
+          "vanishing_gradient"
+        ],
+        "has_root_cause": false,
+        "time_to_diagnose_est": "hours (manual correlation of charts)"
+      },
+      "neuraldbg": {
+        "total_events": 13,
+        "anomaly_events": 7,
+        "causal_chains": 30,
+        "anomaly_types": [
+          "data_anomaly",
+          "dead",
+          "optimizer_instability",
+          "saturated",
+          "vanishing"
+        ],
+        "root_cause": "gradient_health_transition[vanishing]",
+        "hypotheses": 7
+      }
+    },
+    {
+      "scenario": "Zero initialization",
+      "detect_anomaly": {
+        "errors_detected": 0,
+        "error_details": [],
+        "final_loss": 2.315777063369751,
+        "crashed": false
+      },
+      "wandb_monitoring": {
+        "total_alerts": 40,
+        "alert_types": [
+          "vanishing_gradient"
+        ],
+        "has_root_cause": false,
+        "time_to_diagnose_est": "hours (manual correlation of charts)"
+      },
+      "neuraldbg": {
+        "total_events": 6,
+        "anomaly_events": 6,
+        "causal_chains": 30,
+        "anomaly_types": [
+          "data_anomaly",
+          "vanishing"
+        ],
+        "root_cause": "gradient_health_transition[vanishing]",
+        "hypotheses": 3
+      }
+    }
+  ]
+}
