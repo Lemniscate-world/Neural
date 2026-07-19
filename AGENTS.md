@@ -53,3 +53,4 @@ To read a rule, use your 'view_file' tool on the corresponding file in the maste
 - **rule_98_prelaunch_verification**: RULE 98: Pre-Launch MVP Verification Protocol
 - **rule_99_acquisition_tracker**: RULE 99: Acquisition Tracker â€” MÃ©moire des Posts Marketing
 - **rule_107_upstream_pr_strategy**: RULE 107: Upstream PR Strategy - Credibility Through Merged Contributions
+- **rule_108_validation_pipeline**: RULE 108: Validation Pipeline — Progressive Gates (Fuzzer→Stress→Combinatorial→OOS→Benchmark) 🔴 MANDATORY

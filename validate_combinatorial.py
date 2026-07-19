@@ -355,6 +355,208 @@ def make_hybrid_data(batch=16, width=64):
     return torch.randn(batch, 16, width), torch.randint(0, 10, (batch,))
 
 
+# --- BlackSwan family (Tier 1-4 architectures: GNN, MoE, Diffusion, RL, etc.) ---
+def blackswan_configs(n=30):
+    """Black-swan architectures from Tiers 1-4: GNN, MoE, Diffusion, RL, RAG, FlashAttn, etc."""
+    configs = []
+    subtypes = [
+        ("GNN", 5), ("MoE", 5), ("Diffusion", 5), ("RL", 5),
+        ("RAG", 3), ("FlashAttn", 3), ("NeuralODE", 2), ("Federated", 2),
+    ]
+    widths = [32, 64, 128]
+    depths = [2, 3]
+    idx = 0
+    for subtype, count in subtypes:
+        for w in widths:
+            for d in depths:
+                if idx >= n:
+                    return configs
+                configs.append(ArchConfig(
+                    family="BlackSwan", name=f"BS_{subtype}_d{d}_w{w}",
+                    depth=d, width=w, activation="relu", norm="layernorm",
+                    skip=True, dropout=0.0,
+                    extra={"subtype": subtype}))
+                idx += 1
+                if idx >= count * len(widths) * len(depths):
+                    break
+    return configs
+
+
+def build_blackswan(cfg: ArchConfig) -> nn.Module:
+    """Build a simplified black-swan architecture for combinatorial testing."""
+    subtype = cfg.extra.get("subtype", "MLP")
+    w = cfg.width
+    d = cfg.depth
+
+    if subtype == "GNN":
+        # Simple message-passing: linear → "aggregate" → linear
+        class GNNCell(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.msg = nn.Linear(w, w)
+                self.update = nn.Linear(w, w)
+            def forward(self, x, adj=None):
+                m = self.msg(x)
+                if adj is not None:
+                    m = m + adj @ m  # simplified aggregation
+                return torch.relu(self.update(m))
+        class GNNModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cells = nn.ModuleList([GNNCell() for _ in range(d)])
+                self.fc = nn.Linear(w, 10)
+            def forward(self, x):
+                if isinstance(x, tuple):
+                    x, adj = x
+                else:
+                    adj = None
+                for cell in self.cells:
+                    x = cell(x, adj)
+                return self.fc(x.mean(dim=0) if x.dim() == 3 else self.fc(x))
+        return GNNModel()
+
+    elif subtype == "MoE":
+        class MoELayer(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.experts = nn.ModuleList([nn.Linear(w, w) for _ in range(4)])
+                self.gate = nn.Linear(w, 4)
+            def forward(self, x):
+                gate = torch.softmax(self.gate(x), dim=-1)
+                out = sum(gate[..., i:i+1] * expert(x) for i, expert in enumerate(self.experts))
+                return out
+        class MoEModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.layers = nn.ModuleList([MoELayer() for _ in range(d)])
+                self.fc = nn.Linear(w, 10)
+            def forward(self, x):
+                for layer in self.layers:
+                    x = layer(x)
+                return self.fc(x)
+        return MoEModel()
+
+    elif subtype == "Diffusion":
+        class DiffusionBlock(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.t_embed = nn.Linear(1, w)
+                self.net = nn.Sequential(nn.Linear(w, w), nn.SiLU(), nn.Linear(w, w))
+            def forward(self, x, t=0.5):
+                te = self.t_embed(torch.tensor([[t]]).float().to(x.device))
+                return x + self.net(x + te)
+        class DiffusionModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.blocks = nn.ModuleList([DiffusionBlock() for _ in range(d)])
+                self.fc = nn.Linear(w, 10)
+            def forward(self, x):
+                for block in self.blocks:
+                    x = block(x)
+                return self.fc(x)
+        return DiffusionModel()
+
+    elif subtype == "RL":
+        class PolicyNet(nn.Module):
+            def __init__(self):
+                super().__init__()
+                layers = []
+                in_dim = w
+                for _ in range(d):
+                    layers.extend([nn.Linear(in_dim, w), nn.ReLU()])
+                    in_dim = w
+                self.net = nn.Sequential(*layers)
+                self.head = nn.Linear(w, 10)
+            def forward(self, x):
+                return self.head(self.net(x))
+        return PolicyNet()
+
+    elif subtype == "RAG":
+        class RAGBlock(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.query = nn.Linear(w, w)
+                self.key = nn.Linear(w, w)
+                self.value = nn.Linear(w, w)
+                self.out = nn.Linear(w, w)
+            def forward(self, x, retrieved=None):
+                q = self.query(x)
+                k = self.key(retrieved if retrieved is not None else x)
+                v = self.value(retrieved if retrieved is not None else x)
+                attn = torch.softmax(q @ k.transpose(-2, -1) / (w ** 0.5), dim=-1)
+                return self.out(attn @ v)
+        class RAGModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.blocks = nn.ModuleList([RAGBlock() for _ in range(d)])
+                self.fc = nn.Linear(w, 10)
+            def forward(self, x):
+                for block in self.blocks:
+                    x = block(x)
+                return self.fc(x)
+        return RAGModel()
+
+    elif subtype == "FlashAttn":
+        class FlashAttnModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.attn = nn.MultiheadAttention(w, 4, batch_first=True)
+                self.fc = nn.Linear(w, 10)
+            def forward(self, x):
+                if x.dim() == 2:
+                    x = x.unsqueeze(1)
+                a, _ = self.attn(x, x, x)
+                return self.fc(a.mean(dim=1))
+        return FlashAttnModel()
+
+    elif subtype == "NeuralODE":
+        class ODEFunc(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.net = nn.Sequential(nn.Linear(w, w), nn.Tanh(), nn.Linear(w, w))
+            def forward(self, t, x):
+                return self.net(x)
+        class ODEModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.func = ODEFunc()
+                self.fc = nn.Linear(w, 10)
+            def forward(self, x):
+                # Euler-step ODE simulation (simplified)
+                for _ in range(3):
+                    x = x + 0.1 * self.func.net(x)
+                return self.fc(x)
+        return ODEModel()
+
+    elif subtype == "Federated":
+        class FedAvgModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                layers = []
+                for _ in range(d):
+                    layers.extend([nn.Linear(w, w), nn.ReLU()])
+                self.net = nn.Sequential(*layers)
+                self.fc = nn.Linear(w, 10)
+            def forward(self, x):
+                # Simulate client averaging: add slight noise
+                if self.training:
+                    x = x + torch.randn_like(x) * 0.01
+                return self.fc(self.net(x))
+        return FedAvgModel()
+
+    # Default: simple MLP
+    layers = []
+    for _ in range(d):
+        layers.extend([nn.Linear(w, w), nn.ReLU()])
+    layers.append(nn.Linear(w, 10))
+    return nn.Sequential(*layers)
+
+
+def make_blackswan_data(batch=16, width=64):
+    """Black-swan data: some subtypes need special shapes."""
+    return torch.randn(batch, width), torch.randint(0, 10, (batch,))
+
+
 # ============================================================
 # Unified builder + data dispatch
 # ============================================================
@@ -363,7 +565,8 @@ BUILDERS = {"MLP": (build_mlp, make_mlp_data),
             "CNN": (build_cnn, make_cnn_data),
             "RNN": (build_rnn, make_rnn_data),
             "Transformer": (build_transformer, make_tf_data),
-            "Hybrid": (build_hybrid, make_hybrid_data)}
+            "Hybrid": (build_hybrid, make_hybrid_data),
+            "BlackSwan": (build_blackswan, make_blackswan_data)}
 
 
 def build_model(cfg: ArchConfig) -> nn.Module:
@@ -588,14 +791,15 @@ def evaluate_config(cfg: ArchConfig) -> dict:
 # ============================================================
 
 def generate_configs(n=100):
-    """Generate n configs distributed across families."""
-    per_family = n // 5
+    """Generate n configs distributed across 6 families (including BlackSwan)."""
+    per_family = n // 6
     configs = []
     configs.extend(mlp_configs(per_family))
     configs.extend(cnn_configs(per_family))
     configs.extend(rnn_configs(per_family))
     configs.extend(transformer_configs(per_family))
     configs.extend(hybrid_configs(per_family))
+    configs.extend(blackswan_configs(per_family))
     # Fill remaining with random from largest families
     while len(configs) < n:
         configs.extend(mlp_configs(n - len(configs)))

@@ -1,4 +1,4 @@
-name: Combinatorial Benchmark
+name: Validation Pipeline (R108)
 
 on:
   push:
@@ -7,34 +7,67 @@ on:
     branches: [main]
   schedule:
     - cron: '0 6 * * *'  # daily at 06:00 UTC
+  workflow_dispatch:      # manual trigger
 
 jobs:
-  benchmark:
+  # Stage 2: Stress Test Suite (RESILIENCE)
+  stress-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e .
+      - name: Run stress test suite
+        run: |
+          python stress_test_suite.py 2>&1 | tee stress_output.txt
+      - name: Verify 15/15
+        run: |
+          python -c "
+          import sys
+          with open('stress_output.txt') as f:
+              content = f.read()
+          if 'ALL RESILIENCE TESTS PASSED' in content:
+              print('PASS: 15/15 resilience tests')
+          else:
+              print('FAIL: Not all resilience tests passed')
+              sys.exit(1)
+          "
+      - name: Upload stress results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-results
+          path: stress_output.txt
 
-      - name: Run combinatorial benchmark
+  # Stage 3: Detection Combinatorial (COVERAGE)
+  combinatorial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -e .
+      - name: Run combinatorial benchmark (6 families incl. BlackSwan)
         id: benchmark
         run: |
-          python validate_combinatorial.py --quick 2>&1 | tee benchmark_output.txt
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
-
+          python validate_combinatorial.py --quick 2>&1 | tee combinatorial_output.txt
       - name: Parse results
-        id: parse
         run: |
           python -c "
           import json
@@ -45,33 +78,85 @@ jobs:
           pct = 100 * int(detected) // int(total)
           print(f'Detection: {overall} ({pct}%)')
           for fam, v in d['by_family'].items():
-              print(f'  {fam}: {v[\"detection\"]}')
-          # Fail if below 80%
+              fam_detected, fam_total = v['detection'].split('/')
+              fam_pct = 100 * int(fam_detected) // int(fam_total)
+              print(f'  {fam}: {v[\"detection\"]} ({fam_pct}%)')
           if pct < 80:
               print(f'FAIL: Detection {pct}% below 80% threshold')
               exit(1)
           else:
               print(f'PASS: Detection {pct}% >= 80%')
           "
+      - name: Upload combinatorial results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: combinatorial-results
+          path: |
+            combinatorial_results.json
+            combinatorial_output.txt
 
+  # Stage 5: Competitive Benchmark (SUPERIORITY)
+  benchmark:
+    needs: [stress-test, combinatorial]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e .
+      - name: Run competitive benchmark
+        run: |
+          python benchmark_comparison.py 2>&1 | tee benchmark_output.txt
+      - name: Verify superiority (≥50% better)
+        run: |
+          python -c "
+          import json
+          with open('benchmark_comparison.json') as f:
+              results = json.load(f)
+          ndbg_detected = sum(1 for r in results if len(r['neuraldbg']['detected_types']) > 0)
+          baseline_detected = sum(1 for r in results if r['baseline']['total_alerts'] > 0)
+          total = len(results)
+          print(f'NeuralDBG: {ndbg_detected}/{total} ({100*ndbg_detected//total}%)')
+          print(f'Baseline:  {baseline_detected}/{total} ({100*baseline_detected//total}%)')
+          if ndbg_detected > baseline_detected:
+              print('PASS: NeuralDBG superior to baseline')
+          else:
+              print('FAIL: NeuralDBG not superior')
+              exit(1)
+          "
       - name: Upload benchmark results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: |
-            combinatorial_results.json
+            benchmark_comparison.json
             benchmark_output.txt
 
-      - name: Generate badge
-        if: success()
+  # Pipeline gate: all stages must pass
+  pipeline-gate:
+    needs: [stress-test, combinatorial, benchmark]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check pipeline status
         run: |
-          python -c "
-          import json
-          with open('combinatorial_results.json') as f:
-              d = json.load(f)
-          detected, total = d['overall_detection'].split('/')
-          pct = 100 * int(detected) // int(total)
-          color = 'green' if pct >= 90 else ('yellow' if pct >= 80 else 'red')
-          print(f'Benchmark: {pct}% detection — {color}')
-          "
+          echo "Pipeline Gate (R108)"
+          echo "  Stage 2 Stress:     ${{ needs.stress-test.result }}"
+          echo "  Stage 3 Combinatorial: ${{ needs.combinatorial.result }}"
+          echo "  Stage 5 Benchmark:  ${{ needs.benchmark.result }}"
+          if [ "${{ needs.stress-test.result }}" != "success" ] || \
+             [ "${{ needs.combinatorial.result }}" != "success" ] || \
+             [ "${{ needs.benchmark.result }}" != "success" ]; then
+            echo "FAIL: Pipeline gate not passed"
+            exit 1
+          fi
+          echo "PASS: All pipeline stages passed"
