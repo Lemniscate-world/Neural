@@ -254,7 +254,7 @@ def bug_vanishing_sigmoid(model):
             for p in parts[:-1]:
                 parent = getattr(parent, p)
             setattr(parent, parts[-1], nn.Sigmoid())
-    print("  [bug] Replaced ReLU→Sigmoid in layer3")
+    print("  [bug] Replaced ReLU->Sigmoid in layer3")
 
 def bug_nan_data(x):
     """Inject NaN into one sample of the batch."""
