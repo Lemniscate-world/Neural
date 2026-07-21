@@ -391,50 +391,56 @@ def build_blackswan(cfg: ArchConfig) -> nn.Module:
     if subtype == "GNN":
         # Simple message-passing: linear → "aggregate" → linear
         class GNNCell(nn.Module):
-            def __init__(self):
+            def __init__(self, dim):
                 super().__init__()
-                self.msg = nn.Linear(w, w)
-                self.update = nn.Linear(w, w)
-            def forward(self, x, adj=None):
+                self.msg = nn.Linear(dim, dim)
+                self.update = nn.Linear(dim, dim)
+            def forward(self, x):
+                # x: (batch, dim) — treat batch as nodes, create identity adj
+                adj = torch.eye(x.size(0), device=x.device)
                 m = self.msg(x)
-                if adj is not None:
-                    m = m + adj @ m  # simplified aggregation
+                m = m + adj @ m
                 return torch.relu(self.update(m))
         class GNNModel(nn.Module):
-            def __init__(self):
+            def __init__(self, dim, depth):
                 super().__init__()
-                self.cells = nn.ModuleList([GNNCell() for _ in range(d)])
-                self.fc = nn.Linear(w, 10)
+                self.cells = nn.ModuleList([GNNCell(dim) for _ in range(depth)])
+                self.fc = nn.Linear(dim, 10)
             def forward(self, x):
-                if isinstance(x, tuple):
-                    x, adj = x
-                else:
-                    adj = None
+                # Handle 2D input: (batch, dim) — treat as nodes
+                if x.dim() == 2:
+                    for cell in self.cells:
+                        x = cell(x)
+                    return self.fc(x.mean(dim=0, keepdim=True).expand(x.size(0), -1))
+                # 3D input: (batch, nodes, dim)
+                B, N, D = x.shape
+                x = x.view(B * N, D)
                 for cell in self.cells:
-                    x = cell(x, adj)
-                return self.fc(x.mean(dim=0) if x.dim() == 3 else self.fc(x))
-        return GNNModel()
+                    x = cell(x)
+                x = x.view(B, N, -1).mean(dim=1)
+                return self.fc(x)
+        return GNNModel(w, d)
 
     elif subtype == "MoE":
         class MoELayer(nn.Module):
-            def __init__(self):
+            def __init__(self, dim):
                 super().__init__()
-                self.experts = nn.ModuleList([nn.Linear(w, w) for _ in range(4)])
-                self.gate = nn.Linear(w, 4)
+                self.experts = nn.ModuleList([nn.Linear(dim, dim) for _ in range(4)])
+                self.gate = nn.Linear(dim, 4)
             def forward(self, x):
                 gate = torch.softmax(self.gate(x), dim=-1)
                 out = sum(gate[..., i:i+1] * expert(x) for i, expert in enumerate(self.experts))
                 return out
         class MoEModel(nn.Module):
-            def __init__(self):
+            def __init__(self, dim, depth):
                 super().__init__()
-                self.layers = nn.ModuleList([MoELayer() for _ in range(d)])
-                self.fc = nn.Linear(w, 10)
+                self.layers = nn.ModuleList([MoELayer(dim) for _ in range(depth)])
+                self.fc = nn.Linear(dim, 10)
             def forward(self, x):
                 for layer in self.layers:
                     x = layer(x)
                 return self.fc(x)
-        return MoEModel()
+        return MoEModel(w, d)
 
     elif subtype == "Diffusion":
         class DiffusionBlock(nn.Module):
@@ -553,7 +559,7 @@ def build_blackswan(cfg: ArchConfig) -> nn.Module:
 
 
 def make_blackswan_data(batch=16, width=64):
-    """Black-swan data: some subtypes need special shapes."""
+    """Black-swan data: returns 3D tensor for seq-aware models, 2D for others."""
     return torch.randn(batch, width), torch.randint(0, 10, (batch,))
 
 
