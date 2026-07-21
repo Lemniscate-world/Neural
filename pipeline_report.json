@@ -1,0 +1,177 @@
+{
+  "date": "2026-07-21T02:04:07.989695",
+  "runs": 1,
+  "converged": false,
+  "all_passed": false,
+  "best_metrics": {
+    "fuzzer": {
+      "stage": "fuzzer",
+      "crash_rate": 20,
+      "crashes": 4,
+      "total": 20
+    },
+    "combinatorial": {
+      "stage": "combinatorial",
+      "detection_pct": 95,
+      "detected": 286,
+      "total": 300,
+      "by_family": {
+        "MLP": {
+          "configs": 10,
+          "detection": "60/60",
+          "errors": 0
+        },
+        "CNN": {
+          "configs": 8,
+          "detection": "46/48",
+          "errors": 0
+        },
+        "RNN": {
+          "configs": 8,
+          "detection": "36/48",
+          "errors": 0
+        },
+        "Transformer": {
+          "configs": 8,
+          "detection": "48/48",
+          "errors": 0
+        },
+        "Hybrid": {
+          "configs": 8,
+          "detection": "48/48",
+          "errors": 0
+        },
+        "BlackSwan": {
+          "configs": 8,
+          "detection": "48/48",
+          "errors": 0
+        }
+      },
+      "by_bug": {
+        "exploding": {
+          "detected": 50,
+          "total": 50
+        },
+        "vanishing": {
+          "detected": 50,
+          "total": 50
+        },
+        "zero_init": {
+          "detected": 43,
+          "total": 50
+        },
+        "nan_data": {
+          "detected": 45,
+          "total": 50
+        },
+        "dead_bias": {
+          "detected": 48,
+          "total": 50
+        },
+        "divergence": {
+          "detected": 50,
+          "total": 50
+        }
+      }
+    },
+    "oos": {
+      "stage": "oos",
+      "detection_rate": 100,
+      "detected": 6,
+      "total": 6,
+      "architectures": []
+    }
+  },
+  "history": [
+    {
+      "fuzzer": {
+        "stage": "fuzzer",
+        "crash_rate": 20,
+        "crashes": 4,
+        "total": 20
+      },
+      "stress": {
+        "stage": "stress",
+        "pass_rate": 0
+      },
+      "combinatorial": {
+        "stage": "combinatorial",
+        "detection_pct": 95,
+        "detected": 286,
+        "total": 300,
+        "by_family": {
+          "MLP": {
+            "configs": 10,
+            "detection": "60/60",
+            "errors": 0
+          },
+          "CNN": {
+            "configs": 8,
+            "detection": "46/48",
+            "errors": 0
+          },
+          "RNN": {
+            "configs": 8,
+            "detection": "36/48",
+            "errors": 0
+          },
+          "Transformer": {
+            "configs": 8,
+            "detection": "48/48",
+            "errors": 0
+          },
+          "Hybrid": {
+            "configs": 8,
+            "detection": "48/48",
+            "errors": 0
+          },
+          "BlackSwan": {
+            "configs": 8,
+            "detection": "48/48",
+            "errors": 0
+          }
+        },
+        "by_bug": {
+          "exploding": {
+            "detected": 50,
+            "total": 50
+          },
+          "vanishing": {
+            "detected": 50,
+            "total": 50
+          },
+          "zero_init": {
+            "detected": 43,
+            "total": 50
+          },
+          "nan_data": {
+            "detected": 45,
+            "total": 50
+          },
+          "dead_bias": {
+            "detected": 48,
+            "total": 50
+          },
+          "divergence": {
+            "detected": 50,
+            "total": 50
+          }
+        }
+      },
+      "oos": {
+        "stage": "oos",
+        "detection_rate": 100,
+        "detected": 6,
+        "total": 6,
+        "architectures": []
+      },
+      "benchmark": {
+        "stage": "benchmark",
+        "neuraldbg_detection": 83,
+        "wandb_detection": 83,
+        "advantage": 0,
+        "causal_chains": 150
+      }
+    }
+  ]
+}

@@ -1,10 +1,10 @@
 {
   "runs": 20,
   "seed": 42,
-  "elapsed": 2,
+  "elapsed": 1,
   "crashes": 4,
-  "detected": 16,
-  "ok": 0,
+  "detected": 13,
+  "ok": 3,
   "bug_stats": {
     "?": {
       "total": 4,
@@ -19,7 +19,7 @@
     "mixed_precision": {
       "total": 2,
       "crashed": 0,
-      "detected": 2
+      "detected": 1
     },
     "dead_bias": {
       "total": 4,
@@ -29,7 +29,7 @@
     "zero_init": {
       "total": 2,
       "crashed": 0,
-      "detected": 2
+      "detected": 1
     },
     "exploding": {
       "total": 2,
@@ -39,7 +39,7 @@
     "vanishing": {
       "total": 1,
       "crashed": 0,
-      "detected": 1
+      "detected": 0
     },
     "divergence": {
       "total": 2,

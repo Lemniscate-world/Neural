@@ -1,8 +1,8 @@
 {
   "configs": 50,
   "total_evaluations": 300,
-  "overall_detection": "250/300",
-  "elapsed_seconds": 51,
+  "overall_detection": "286/300",
+  "elapsed_seconds": 56,
   "by_family": {
     "MLP": {
       "configs": 10,
@@ -31,33 +31,33 @@
     },
     "BlackSwan": {
       "configs": 8,
-      "detection": "12/48",
+      "detection": "48/48",
       "errors": 0
     }
   },
   "by_bug": {
     "exploding": {
-      "detected": 44,
+      "detected": 50,
       "total": 50
     },
     "vanishing": {
-      "detected": 44,
+      "detected": 50,
       "total": 50
     },
     "zero_init": {
-      "detected": 37,
+      "detected": 43,
       "total": 50
     },
     "nan_data": {
-      "detected": 39,
+      "detected": 45,
       "total": 50
     },
     "dead_bias": {
-      "detected": 42,
+      "detected": 48,
       "total": 50
     },
     "divergence": {
-      "detected": 44,
+      "detected": 50,
       "total": 50
     }
   },
@@ -1916,36 +1916,36 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 20,
+          "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 16,
+          "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 6,
+          "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 8,
+          "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 14,
+          "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 20,
+          "detected": true
         }
       ],
-      "detected": 0,
+      "detected": 6,
       "total": 6
     },
     {
@@ -1962,36 +1962,36 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 29,
+          "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 24,
+          "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 9,
+          "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 9,
+          "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 17,
+          "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 29,
+          "detected": true
         }
       ],
-      "detected": 0,
+      "detected": 6,
       "total": 6
     },
     {
@@ -2008,7 +2008,7 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 24,
+          "anomalies": 20,
           "detected": true
         },
         {
@@ -2018,22 +2018,22 @@
         },
         {
           "bug": "zero_init",
-          "anomalies": 8,
+          "anomalies": 6,
           "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 8,
+          "anomalies": 7,
           "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 16,
+          "anomalies": 23,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 20,
+          "anomalies": 21,
           "detected": true
         }
       ],
@@ -2049,17 +2049,17 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 1,
+      "threshold": 4,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 30,
+          "anomalies": 35,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 15,
+          "anomalies": 27,
           "detected": true
         },
         {
@@ -2074,12 +2074,12 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 11,
+          "anomalies": 15,
           "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 27,
+          "anomalies": 26,
           "detected": true
         }
       ],
@@ -2095,41 +2095,41 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 1,
+      "threshold": 4,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 20,
+          "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 17,
+          "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 6,
+          "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 8,
+          "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 12,
+          "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 20,
+          "detected": true
         }
       ],
-      "detected": 0,
+      "detected": 6,
       "total": 6
     },
     {
@@ -2141,41 +2141,41 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 1,
+      "threshold": 4,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 30,
+          "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 27,
+          "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 8,
+          "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 10,
+          "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 15,
+          "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 27,
+          "detected": true
         }
       ],
-      "detected": 0,
+      "detected": 6,
       "total": 6
     },
     {
@@ -2192,36 +2192,36 @@
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 38,
+          "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 50,
+          "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 14,
+          "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 14,
+          "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 33,
+          "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 39,
+          "detected": true
         }
       ],
-      "detected": 0,
+      "detected": 6,
       "total": 6
     },
     {
@@ -2233,41 +2233,41 @@
       "norm": "layernorm",
       "skip": true,
       "dropout": 0.0,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 2,
+      "threshold": 5,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 55,
+          "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 62,
+          "detected": true
         },
         {
           "bug": "zero_init",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 22,
+          "detected": true
         },
         {
           "bug": "nan_data",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 19,
+          "detected": true
         },
         {
           "bug": "dead_bias",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 39,
+          "detected": true
         },
         {
           "bug": "divergence",
-          "anomalies": 0,
-          "detected": false
+          "anomalies": 60,
+          "detected": true
         }
       ],
-      "detected": 0,
+      "detected": 6,
       "total": 6
     },
     {
@@ -2279,17 +2279,17 @@
       "norm": "None",
       "skip": false,
       "dropout": 0.0,
-      "baseline": 0,
-      "threshold": 3,
+      "baseline": 1,
+      "threshold": 4,
       "results": [
         {
           "bug": "exploding",
-          "anomalies": 20,
+          "anomalies": 13,
           "detected": true
         },
         {
           "bug": "vanishing",
-          "anomalies": 8,
+          "anomalies": 12,
           "detected": true
         },
         {
@@ -2304,7 +2304,7 @@
         },
         {
           "bug": "dead_bias",
-          "anomalies": 13,
+          "anomalies": 15,
           "detected": true
         },
         {
@@ -2335,27 +2335,27 @@
         },
         {
           "bug": "vanishing",
-          "anomalies": 19,
-          "detected": true
-        },
-        {
-          "bug": "zero_init",
-          "anomalies": 7,
-          "detected": true
-        },
-        {
-          "bug": "nan_data",
-          "anomalies": 9,
-          "detected": true
-        },
-        {
-          "bug": "dead_bias",
           "anomalies": 17,
           "detected": true
         },
         {
+          "bug": "zero_init",
+          "anomalies": 9,
+          "detected": true
+        },
+        {
+          "bug": "nan_data",
+          "anomalies": 10,
+          "detected": true
+        },
+        {
+          "bug": "dead_bias",
+          "anomalies": 15,
+          "detected": true
+        },
+        {
           "bug": "divergence",
-          "anomalies": 23,
+          "anomalies": 22,
           "detected": true
         }
       ],
