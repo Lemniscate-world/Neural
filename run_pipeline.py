@@ -319,9 +319,9 @@ def retrain_neural_agent() -> bool:
     )
     success = result.returncode == 0
     if success:
-        print(f"  ✅ Neural-Agent retrained successfully")
+        print(f"  [OK] Neural-Agent retrained successfully")
     else:
-        print(f"  ❌ Retrain failed: {result.stderr[-200:] if result.stderr else 'unknown'}")
+        print(f"  [FAIL] Retrain failed: {result.stderr[-200:] if result.stderr else 'unknown'}")
     return success
 
 
@@ -359,7 +359,7 @@ def run_full_pipeline(stages: list = None, max_loops: int = 5) -> dict:
 
             # Check gate
             passed, detail = check_gate(stage_name, metrics)
-            status = "✅ PASS" if passed else "❌ FAIL"
+            status = "[OK] PASS" if passed else "[FAIL] FAIL"
             print(f"  Gate {stage_name}: {status} — {detail}")
 
             if not passed:
@@ -406,7 +406,7 @@ def run_full_pipeline(stages: list = None, max_loops: int = 5) -> dict:
             break
 
         if all_passed:
-            print(f"\n  ✅ ALL GATES PASSED — Pipeline complete!")
+            print(f"\n  [OK] ALL GATES PASSED — Pipeline complete!")
             break
 
     # Final report

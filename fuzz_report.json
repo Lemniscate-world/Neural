@@ -1,7 +1,7 @@
 {
   "runs": 20,
   "seed": 42,
-  "elapsed": 1,
+  "elapsed": 2,
   "crashes": 4,
   "detected": 13,
   "ok": 3,
