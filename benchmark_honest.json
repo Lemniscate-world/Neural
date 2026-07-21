@@ -41,9 +41,9 @@
       "wandb_monitoring": {
         "total_alerts": 26,
         "alert_types": [
+          "loss_spike",
           "exploding_gradient",
-          "nan_loss",
-          "loss_spike"
+          "nan_loss"
         ],
         "has_root_cause": false,
         "time_to_diagnose_est": "hours (manual correlation of charts)"

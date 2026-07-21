@@ -103,41 +103,28 @@ def build_resnet18():
 
 def build_vit_tiny():
     """Vision Transformer (ViT-Tiny) — patch-based, no convolutions."""
-    try:
-        from torchvision.models import vit_b_16
-        model = vit_b_16(num_classes=10, image_size=32)
-        # ViT expects 224x224, but we can force patch_size=4 for 32x32
-        model.conv_proj = nn.Conv2d(3, 768, kernel_size=4, stride=4, padding=0)
-        model.class_token = nn.Parameter(torch.randn(1, 1, 768))
-        # Adjust positional embedding
-        num_patches = (32 // 4) ** 2
-        model.encoder.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, 768) * 0.02)
-        return model.to(DEVICE)
-    except Exception:
-        # Fallback: custom tiny ViT
-        class TinyViT(nn.Module):
-            def __init__(self, patch_size=4, dim=128, depth=4, heads=4, num_classes=10):
-                super().__init__()
-                self.patch_size = patch_size
-                self.proj = nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size)
-                num_patches = (32 // patch_size) ** 2
-                self.pos_embed = nn.Parameter(torch.randn(1, num_patches + 1, dim) * 0.02)
-                self.cls_token = nn.Parameter(torch.zeros(1, 1, dim))
-                self.blocks = nn.Sequential(*[
-                    nn.TransformerEncoderLayer(dim, heads, dim * 4, dropout=0.1, batch_first=True)
-                    for _ in range(depth)
-                ])
-                self.norm = nn.LayerNorm(dim)
-                self.head = nn.Linear(dim, num_classes)
-            def forward(self, x):
-                B = x.shape[0]
-                x = self.proj(x).flatten(2).transpose(1, 2)  # B, N, D
-                cls = self.cls_token.expand(B, -1, -1)
-                x = torch.cat([cls, x], dim=1)
-                x = x + self.pos_embed
-                x = self.blocks(x)
-                return self.head(self.norm(x[:, 0]))
-        return TinyViT().to(DEVICE)
+    # Custom tiny ViT (avoids torchvision version compatibility issues)
+    class TinyViT(nn.Module):
+        def __init__(self, patch_size=4, dim=128, depth=4, heads=4, num_classes=10):
+            super().__init__()
+            self.patch_size = patch_size
+            self.proj = nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size)
+            num_patches = (32 // patch_size) ** 2
+            self.pos_embed = nn.Parameter(torch.randn(1, num_patches + 1, dim) * 0.02)
+            self.cls_token = nn.Parameter(torch.zeros(1, 1, dim))
+            encoder_layer = nn.TransformerEncoderLayer(dim, heads, dim * 4, dropout=0.1, batch_first=True)
+            self.blocks = nn.Sequential(*[encoder_layer for _ in range(depth)])
+            self.norm = nn.LayerNorm(dim)
+            self.head = nn.Linear(dim, num_classes)
+        def forward(self, x):
+            B = x.shape[0]
+            x = self.proj(x).flatten(2).transpose(1, 2)  # B, N, dim
+            cls = self.cls_token.expand(B, -1, -1)
+            x = torch.cat([cls, x], dim=1)
+            x = x + self.pos_embed
+            x = self.blocks(x)
+            return self.head(self.norm(x[:, 0]))
+    return TinyViT().to(DEVICE)
 
 
 def build_efficientnet_b0():
@@ -221,14 +208,16 @@ def build_mamba_mini():
     class MambaMini(nn.Module):
         def __init__(self, dim=64, depth=3, num_classes=10):
             super().__init__()
-            self.embed = nn.Linear(64, dim)  # input: flattened 8x8 patches
+            # CIFAR: 3x32x32 → 4x4 patches = 8x8 grid, each patch is 3*16=48 features
+            patch_dim = 3 * 16  # 3 channels × 4×4 patch = 48
+            self.embed = nn.Linear(patch_dim, dim)
             self.blocks = nn.Sequential(*[SSMBlock(dim) for _ in range(depth)])
             self.norm = nn.LayerNorm(dim)
             self.head = nn.Linear(dim, num_classes)
         def forward(self, x):
             if x.dim() == 4:
                 B, C, H, W = x.shape
-                # Patchify: 4x4 patches = 8x8 grid
+                # Patchify: 4x4 patches → 8x8 grid
                 x = x.unfold(2, 4, 4).unfold(3, 4, 4)
                 x = x.contiguous().view(B, C, -1, 4*4).permute(0, 2, 1, 3).contiguous()
                 x = x.view(B, -1, C * 16)
