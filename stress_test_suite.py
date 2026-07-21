@@ -357,22 +357,25 @@ test("Gradient clipping (extreme)", test_grad_clip, target="detect")
 
 
 # ============================================================
-# Test 14: Weight decay + AdamW interaction
+# Test 14: Extreme LR schedule (cosine decay to 0)
 # ============================================================
-def test_adamw_weight_decay():
+def test_extreme_lr_schedule():
+    """LR drops from 1.0 to 1e-6 in 1 step — should trigger gradient regime change."""
     model = simple_model()
     with NeuralDbg(model) as dbg:
-        for s in range(3):
+        for s in range(10):
             x = torch.randn(4, 16)
             y = torch.randint(0, 2, (4,))
-            opt = torch.optim.AdamW(model.parameters(), lr=0.01, weight_decay=1.0)  # extreme decay
+            lr = 1.0 if s == 0 else 1e-6  # drastic drop after step 0
+            opt = torch.optim.SGD(model.parameters(), lr=lr)
             loss = nn.CrossEntropyLoss()(model(x), y)
             loss.backward()
             dbg.step_iteration()
+            dbg.record_loss(loss.item())
             opt.step()
         return count_events(dbg.dump_events()) > 0
 
-test("AdamW + extreme weight decay", test_adamw_weight_decay, target="detect")
+test("Extreme LR schedule drop", test_extreme_lr_schedule, target="detect")
 
 
 # ============================================================
