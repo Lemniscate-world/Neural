@@ -379,7 +379,7 @@ def run_scenario(name, model_builder, bug_fn, bug_type, inject_at_step=5):
         "crash_error": crash_error,
     }
 
-    print(f"\n  ── RESULT ──")
+    print(f"\n  -- RESULT --")
     print(f"  Detected:  {detected}")
     print(f"  Events:    {len(all_events)} total, {len(anomaly_events)} anomalies")
     print(f"  Types:     {event_types}")

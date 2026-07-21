@@ -5,7 +5,7 @@
   "device": "cpu",
   "date": "2026-07-08",
   "neuraldbg_version": "1.5.0",
-  "elapsed_seconds": 250.44283938407898,
+  "elapsed_seconds": 820.4746038913727,
   "detection_rate": "24/24",
   "results": [
     {
@@ -165,16 +165,22 @@
       "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
       "device": "cpu",
       "steps": 20,
-      "detected": "CRASH",
-      "total_events": 0,
-      "anomaly_events": 0,
-      "event_types": [],
-      "anomaly_types": [],
-      "chains": 0,
-      "top_chain": "N/A",
-      "final_loss": null,
-      "crashed": true,
-      "crash_error": "shape '[16, 768, 4]' is invalid for input of size 786432"
+      "detected": "YES",
+      "total_events": 127,
+      "anomaly_events": 127,
+      "event_types": [
+        "activation_regime_shift",
+        "gradient_health_transition"
+      ],
+      "anomaly_types": [
+        "activation_regime_shift",
+        "gradient_health_transition"
+      ],
+      "chains": 30,
+      "top_chain": "gradient_health_transition[vanishing]",
+      "final_loss": 2.269144296646118,
+      "crashed": false,
+      "crash_error": ""
     },
     {
       "scenario": "ViT-Tiny/ExplodingLR",
@@ -183,121 +189,9 @@
       "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
       "device": "cpu",
       "steps": 20,
-      "detected": "CRASH",
-      "total_events": 0,
-      "anomaly_events": 0,
-      "event_types": [],
-      "anomaly_types": [],
-      "chains": 0,
-      "top_chain": "N/A",
-      "final_loss": null,
-      "crashed": true,
-      "crash_error": "shape '[16, 768, 4]' is invalid for input of size 786432"
-    },
-    {
-      "scenario": "ViT-Tiny/Vanishing",
-      "bug_type": "model",
-      "architecture": "ViT-Tiny",
-      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
-      "device": "cpu",
-      "steps": 20,
-      "detected": "CRASH",
-      "total_events": 0,
-      "anomaly_events": 0,
-      "event_types": [],
-      "anomaly_types": [],
-      "chains": 0,
-      "top_chain": "N/A",
-      "final_loss": null,
-      "crashed": true,
-      "crash_error": "shape '[16, 768, 4]' is invalid for input of size 786432"
-    },
-    {
-      "scenario": "ViT-Tiny/NaN_Data",
-      "bug_type": "data",
-      "architecture": "ViT-Tiny",
-      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
-      "device": "cpu",
-      "steps": 20,
-      "detected": "CRASH",
-      "total_events": 0,
-      "anomaly_events": 0,
-      "event_types": [],
-      "anomaly_types": [],
-      "chains": 0,
-      "top_chain": "N/A",
-      "final_loss": null,
-      "crashed": true,
-      "crash_error": "shape '[16, 768, 4]' is invalid for input of size 786432"
-    },
-    {
-      "scenario": "ViT-Tiny/Zero_Init",
-      "bug_type": "model",
-      "architecture": "ViT-Tiny",
-      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
-      "device": "cpu",
-      "steps": 20,
-      "detected": "CRASH",
-      "total_events": 0,
-      "anomaly_events": 0,
-      "event_types": [],
-      "anomaly_types": [],
-      "chains": 0,
-      "top_chain": "N/A",
-      "final_loss": null,
-      "crashed": true,
-      "crash_error": "shape '[16, 768, 4]' is invalid for input of size 786432"
-    },
-    {
-      "scenario": "ViT-Tiny/Divergence",
-      "bug_type": "opt",
-      "architecture": "ViT-Tiny",
-      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
-      "device": "cpu",
-      "steps": 20,
-      "detected": "CRASH",
-      "total_events": 0,
-      "anomaly_events": 0,
-      "event_types": [],
-      "anomaly_types": [],
-      "chains": 0,
-      "top_chain": "N/A",
-      "final_loss": null,
-      "crashed": true,
-      "crash_error": "shape '[16, 768, 4]' is invalid for input of size 786432"
-    },
-    {
-      "scenario": "EfficientNet-B0/Healthy",
-      "bug_type": "none",
-      "architecture": "EfficientNet-B0",
-      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
-      "device": "cpu",
-      "steps": 20,
       "detected": "YES",
-      "total_events": 4,
-      "anomaly_events": 4,
-      "event_types": [
-        "data_anomaly"
-      ],
-      "anomaly_types": [
-        "data_anomaly"
-      ],
-      "chains": 30,
-      "top_chain": "data_anomaly[distribution_shift]",
-      "final_loss": 2.324219226837158,
-      "crashed": false,
-      "crash_error": ""
-    },
-    {
-      "scenario": "EfficientNet-B0/ExplodingLR",
-      "bug_type": "opt",
-      "architecture": "EfficientNet-B0",
-      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
-      "device": "cpu",
-      "steps": 20,
-      "detected": "YES",
-      "total_events": 185,
-      "anomaly_events": 185,
+      "total_events": 206,
+      "anomaly_events": 206,
       "event_types": [
         "activation_regime_shift",
         "data_anomaly",
@@ -312,7 +206,155 @@
       ],
       "chains": 30,
       "top_chain": "gradient_health_transition[vanishing]",
-      "final_loss": 21.746252059936523,
+      "final_loss": NaN,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "ViT-Tiny/Vanishing",
+      "bug_type": "model",
+      "architecture": "ViT-Tiny",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 129,
+      "anomaly_events": 129,
+      "event_types": [
+        "gradient_health_transition"
+      ],
+      "anomaly_types": [
+        "gradient_health_transition"
+      ],
+      "chains": 30,
+      "top_chain": "gradient_health_transition[vanishing]",
+      "final_loss": 2.5405373573303223,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "ViT-Tiny/NaN_Data",
+      "bug_type": "data",
+      "architecture": "ViT-Tiny",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 36,
+      "anomaly_events": 36,
+      "event_types": [
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "anomaly_types": [
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "chains": 30,
+      "top_chain": "data_anomaly[nan_detected]",
+      "final_loss": NaN,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "ViT-Tiny/Zero_Init",
+      "bug_type": "model",
+      "architecture": "ViT-Tiny",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 134,
+      "anomaly_events": 134,
+      "event_types": [
+        "gradient_health_transition"
+      ],
+      "anomaly_types": [
+        "gradient_health_transition"
+      ],
+      "chains": 30,
+      "top_chain": "gradient_health_transition[vanishing]",
+      "final_loss": 2.3308916091918945,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "ViT-Tiny/Divergence",
+      "bug_type": "opt",
+      "architecture": "ViT-Tiny",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 164,
+      "anomaly_events": 164,
+      "event_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "anomaly_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "chains": 30,
+      "top_chain": "gradient_health_transition[vanishing]",
+      "final_loss": NaN,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "EfficientNet-B0/Healthy",
+      "bug_type": "none",
+      "architecture": "EfficientNet-B0",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 5,
+      "anomaly_events": 5,
+      "event_types": [
+        "data_anomaly"
+      ],
+      "anomaly_types": [
+        "data_anomaly"
+      ],
+      "chains": 30,
+      "top_chain": "data_anomaly[distribution_shift]",
+      "final_loss": 2.2708592414855957,
+      "crashed": false,
+      "crash_error": ""
+    },
+    {
+      "scenario": "EfficientNet-B0/ExplodingLR",
+      "bug_type": "opt",
+      "architecture": "EfficientNet-B0",
+      "data_source": "CIFAR-shaped synthetic (3x32x32, 512 samples)",
+      "device": "cpu",
+      "steps": 20,
+      "detected": "YES",
+      "total_events": 132,
+      "anomaly_events": 132,
+      "event_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "anomaly_types": [
+        "activation_regime_shift",
+        "data_anomaly",
+        "gradient_health_transition",
+        "optimizer_instability"
+      ],
+      "chains": 30,
+      "top_chain": "activation_regime_shift[saturated]",
+      "final_loss": 3217.1201171875,
       "crashed": false,
       "crash_error": ""
     },
@@ -324,8 +366,8 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 4,
-      "anomaly_events": 4,
+      "total_events": 6,
+      "anomaly_events": 6,
       "event_types": [
         "data_anomaly"
       ],
@@ -334,7 +376,7 @@
       ],
       "chains": 30,
       "top_chain": "data_anomaly[distribution_shift]",
-      "final_loss": 2.321335554122925,
+      "final_loss": 2.343850612640381,
       "crashed": false,
       "crash_error": ""
     },
@@ -346,8 +388,8 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 55,
-      "anomaly_events": 55,
+      "total_events": 54,
+      "anomaly_events": 54,
       "event_types": [
         "data_anomaly",
         "optimizer_instability"
@@ -370,8 +412,8 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 4,
-      "anomaly_events": 4,
+      "total_events": 5,
+      "anomaly_events": 5,
       "event_types": [
         "data_anomaly"
       ],
@@ -380,7 +422,7 @@
       ],
       "chains": 30,
       "top_chain": "data_anomaly[distribution_shift]",
-      "final_loss": 2.287775993347168,
+      "final_loss": 2.3555727005004883,
       "crashed": false,
       "crash_error": ""
     },
@@ -392,8 +434,8 @@
       "device": "cpu",
       "steps": 20,
       "detected": "YES",
-      "total_events": 163,
-      "anomaly_events": 163,
+      "total_events": 169,
+      "anomaly_events": 169,
       "event_types": [
         "activation_regime_shift",
         "data_anomaly",
@@ -408,7 +450,7 @@
       ],
       "chains": 30,
       "top_chain": "gradient_health_transition[exploding]",
-      "final_loss": 2381687946215424.0,
+      "final_loss": 1399735478910976.0,
       "crashed": false,
       "crash_error": ""
     },
@@ -428,7 +470,7 @@
       "top_chain": "N/A",
       "final_loss": null,
       "crashed": true,
-      "crash_error": "mat1 and mat2 shapes cannot be multiplied (1024x48 and 64x64)"
+      "crash_error": "module 'torch' has no attribute 'silu'"
     },
     {
       "scenario": "Mamba-Mini/ExplodingLR",
@@ -446,7 +488,7 @@
       "top_chain": "N/A",
       "final_loss": null,
       "crashed": true,
-      "crash_error": "mat1 and mat2 shapes cannot be multiplied (1024x48 and 64x64)"
+      "crash_error": "module 'torch' has no attribute 'silu'"
     },
     {
       "scenario": "Mamba-Mini/Vanishing",
@@ -464,7 +506,7 @@
       "top_chain": "N/A",
       "final_loss": null,
       "crashed": true,
-      "crash_error": "mat1 and mat2 shapes cannot be multiplied (1024x48 and 64x64)"
+      "crash_error": "module 'torch' has no attribute 'silu'"
     },
     {
       "scenario": "Mamba-Mini/NaN_Data",
@@ -482,7 +524,7 @@
       "top_chain": "N/A",
       "final_loss": null,
       "crashed": true,
-      "crash_error": "mat1 and mat2 shapes cannot be multiplied (1024x48 and 64x64)"
+      "crash_error": "module 'torch' has no attribute 'silu'"
     },
     {
       "scenario": "Mamba-Mini/Zero_Init",
@@ -500,7 +542,7 @@
       "top_chain": "N/A",
       "final_loss": null,
       "crashed": true,
-      "crash_error": "mat1 and mat2 shapes cannot be multiplied (1024x48 and 64x64)"
+      "crash_error": "module 'torch' has no attribute 'silu'"
     },
     {
       "scenario": "Mamba-Mini/Divergence",
@@ -518,7 +560,7 @@
       "top_chain": "N/A",
       "final_loss": null,
       "crashed": true,
-      "crash_error": "mat1 and mat2 shapes cannot be multiplied (1024x48 and 64x64)"
+      "crash_error": "module 'torch' has no attribute 'silu'"
     }
   ]
 }
