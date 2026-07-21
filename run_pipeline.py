@@ -188,7 +188,7 @@ def check_gate(stage_name: str, metrics: dict) -> tuple:
     value = metrics.get(metric_key, 0)
     passed = value >= gate["min"]
 
-    detail = f"{metric_key}={value} (gate: ≥{gate['min']})"
+    detail = f"{metric_key}={value} (gate: >={gate['min']})"
     return passed, detail
 
 
@@ -430,7 +430,7 @@ def run_full_pipeline(stages: list = None, max_loops: int = 5) -> dict:
         key = gate.get("metric", "")
         value = best_metrics.get(stage_name, {}).get(key, "N/A")
         gate_val = gate.get("min", "N/A")
-        print(f"  {stage_name:<20} {key:<20} {str(value):<10} ≥{gate_val}")
+        print(f"  {stage_name:<20} {key:<20} {str(value):<10} >={gate_val}")
 
     return report
 
@@ -457,6 +457,6 @@ if __name__ == "__main__":
         print("🔄 Pipeline Loop Mode — running until convergence...")
         run_full_pipeline(max_loops=args.max_loops)
     else:
-        print("▶️  Single Pipeline Run")
+        print(">>> Single Pipeline Run")
         stages = ["fuzzer", "stress", "combinatorial", "oos", "benchmark"]
         run_full_pipeline(stages=stages, max_loops=1)

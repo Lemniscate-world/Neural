@@ -586,7 +586,7 @@ def make_data_for(cfg: ArchConfig, batch=16):
         return data_fn(batch=batch)
     elif cfg.family == "Transformer":
         kwargs["d_model"] = cfg.width
-    elif cfg.family in ("MLP", "RNN", "Hybrid"):
+    elif cfg.family in ("MLP", "RNN", "Hybrid", "BlackSwan"):
         kwargs["width"] = cfg.width
     return data_fn(**kwargs)
 
