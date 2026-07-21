@@ -79,7 +79,7 @@ def run_stage(stage_name: str, extra_args: list = None) -> dict:
     t0 = time.time()
     try:
         result = subprocess.run(
-            args, capture_output=True, text=True, timeout=600,
+            args, capture_output=False, text=True, timeout=600,
             cwd=str(BASE),
         )
         elapsed = time.time() - t0
@@ -128,7 +128,7 @@ def parse_results(stage_name: str) -> dict:
                 else:
                     # Count PASS lines
                     import re
-                    passes = len(re.findall(r'PASS', content))
+                    passes = len(re.findall(r'\bPASS\b', content))
                     metrics["pass_rate"] = round(100 * passes / 15)
                     metrics["passed"] = passes
             else:
@@ -314,7 +314,7 @@ def retrain_neural_agent() -> bool:
     print(f"\n  Retraining Neural-Agent...")
     result = subprocess.run(
         [str(VENV_PYTHON), str(train_script), "--steps", "100"],
-        capture_output=True, text=True, timeout=600,
+        capture_output=False, text=True, timeout=600,
         cwd=str(AGENT_DIR),
     )
     success = result.returncode == 0
