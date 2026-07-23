@@ -79,9 +79,13 @@ def run_stage(stage_name: str, extra_args: list = None) -> dict:
     t0 = time.time()
     try:
         result = subprocess.run(
-            args, capture_output=False, text=True, timeout=600,
+            args, capture_output=True, text=True, timeout=600,
             cwd=str(BASE),
         )
+        # Save stdout for parsing
+        if result.stdout:
+            out_file = BASE / f"{stage_name}_output.txt"
+            out_file.write_text(result.stdout, encoding="utf-8")
         elapsed = time.time() - t0
         print(f"  Completed in {elapsed:.0f}s (exit={result.returncode})")
         if result.stdout:
@@ -120,19 +124,19 @@ def parse_results(stage_name: str) -> dict:
     elif stage_name == "stress":
         try:
             output_file = BASE / "stress_output.txt"
+            content = ""
             if output_file.exists():
-                content = output_file.read_text()
-                if "ALL RESILIENCE TESTS PASSED" in content:
-                    metrics["pass_rate"] = 100
-                    metrics["passed"] = 15
-                else:
-                    # Count PASS lines
-                    import re
-                    passes = len(re.findall(r'\bPASS\b', content))
-                    metrics["pass_rate"] = round(100 * passes / 15)
-                    metrics["passed"] = passes
-            else:
+                content = output_file.read_text(encoding="utf-8")
+            if not content:
                 metrics["pass_rate"] = 0
+            elif "ALL RESILIENCE TESTS PASSED" in content:
+                metrics["pass_rate"] = 100
+                metrics["passed"] = 15
+            else:
+                import re
+                passes = len(re.findall(r'\bPASS\b', content))
+                metrics["pass_rate"] = round(100 * min(passes, 15) / 15)
+                metrics["passed"] = passes
         except Exception:
             metrics["pass_rate"] = 0
 

@@ -185,10 +185,9 @@ def build_mamba_mini():
             inner = dim * expand
             self.in_proj = nn.Linear(dim, inner * 2)
             self.conv1d = nn.Conv1d(inner, inner, 3, padding=1, groups=inner)
-            self.ssm = nn.Linear(inner, d_state * 2)  # A, B matrices
+            self.ssm_proj = nn.Linear(inner, inner)  # project back to inner dim
             self.out_proj = nn.Linear(inner, dim)
             self.norm = nn.LayerNorm(dim)
-            self.d_state = d_state
         def forward(self, x):
             residual = x
             x = self.norm(x)
@@ -198,11 +197,9 @@ def build_mamba_mini():
             x_ssm = x_ssm.transpose(1, 2)
             x_ssm = self.conv1d(x_ssm)
             x_ssm = x_ssm.transpose(1, 2)
-            # SSM (simplified: just a linear projection)
-            ssm_out = self.ssm(x_ssm)
-            A, B = ssm_out.chunk(2, dim=-1)
-            h = torch.tanh(A) * B  # simplified state update
-            out = torch.silu(gate) * h
+            # SSM (simplified: linear + gate)
+            ssm_out = self.ssm_proj(x_ssm)
+            out = torch.silu(gate) * ssm_out
             return residual + self.out_proj(out)
 
     class MambaMini(nn.Module):
