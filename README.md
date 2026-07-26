@@ -9,6 +9,8 @@ Training failed? NeuralDBG tells you **why**. It hooks into your PyTorch trainin
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/LambdaSection/NeuralDBG/blob/main/notebooks/quickstart.ipynb)
 [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://lambdasection.github.io/NeuralDBG/)
+[![Lightning](https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white)](https://lightning.ai)
+[![W&B](https://img.shields.io/badge/-W%26B-FFCC00?logo=weightsandbiases&logoColor=black)](https://wandb.ai)
 
 <p align="center">
   <img src="outputs/neuraldbg_workflow.gif" alt="NeuralDBG Workflow" width="800"/>

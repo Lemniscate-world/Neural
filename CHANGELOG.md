@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Ecosystem integrations**: PyTorch Lightning callback (`NeuralDBGLightningCallback`) and W&B callback (`NeuralDBGCallback`) with full docs + tests.
+- **PyTorch Ecosystem Landscape**: Application submitted to pytorch-fdn/ecosystem#80.
+- **Community posts**: Drafts for W&B Community and Lightning Ecosystem blog posts.
+- **README badges**: Lightning + Weights & Biases ecosystem badges.
+- **W&B Report script**: `scripts/create_wandb_report.py` for Fully Connected blog submission.
+
 ## [1.5.0] — 2026-07-08
 
 ### Added
