@@ -82,9 +82,9 @@ Latest results: [benchmark_public/results.json](benchmark_public/results.json)
 - **Stress test suite** — 15/15 tests pass: 10x gradients, NaN/Inf, fp16, 100-layer depth, 1K token attention
 - **GPU v4 model** — Qwen2-0.5B + LoRA trained on 538 examples across 5 architecture families, 92.3% accuracy
 - **Aquarium web dashboard** — Zero-dependency HTML causal viewer. [Open Aquarium](https://lambdasection.github.io/NeuralDBG/docs/aquarium.html)
-- **4 upstream PyTorch PRs** — svdvals NaN, F.normalize zero-input, gradient health tests, varlen_attn NaN fix
+- **2 upstream diagnostic test PRs** — svdvals NaN (#188053) + gradient health tests (#188923); F.normalize retiré (comportement voulu confirmé par albanD)
 - **100% detection** on DeepMLP (6/6 bugs) | **96% Tier 1** black-swans | **94% Tier 2** black-swans
-- **4 upstream PRs** submitted to PyTorch | **CI benchmark workflow** on GitHub Actions
+- **2 upstream PRs** (open) to PyTorch | **CI benchmark workflow** on GitHub Actions
 - **E2E RNN pipeline** — detect→diagnose→fix→validate on LSTM. 2/4 bugs auto-fixed.
 
 ## Key Features
