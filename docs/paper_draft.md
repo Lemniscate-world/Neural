@@ -324,17 +324,16 @@ NeuralPrune piggybacks on NeuralDBG's forward/backward hooks to collect per-laye
 
 ### 7.1 Bugs Found and Diagnosed
 
-Using NeuralDBG during development, we discovered and diagnosed 7 real PyTorch bugs:
+Using NeuralDBG during development, we discovered and diagnosed 6 real PyTorch bugs (plus several reported to upstream; two have open upstream test PRs):
 
 | # | Bug | PyTorch Issue | PR | Causal Chain |
 |---|-----|--------------|-----|-------------|
-| 1 | `svdvals()` silently swallows NaN | #187759 | #188053 | data_anomaly → silent_corruption |
-| 2 | `F.normalize()` returns 0 instead of NaN at zero | #184575 | #188066 | gradient_health_transition → optimizer_instability |
-| 3 | MPS gradient corruption (100x-100Kx) | #177116 | #188923 | gradient_health_transition[exploding] |
-| 4 | `varlen_attn()` silent NaN with padding | #176793 | #188933 | data_anomaly → gradient_health_transition → nan_detected |
-| 5 | LSTM sample independence violation | #173334 | — | sample_independence_violation |
-| 6 | MHA fully-masked row NaN (BUG-001) | #41508 | — | activation_regime_shift → nan_detected |
-| 7 | Causal softmax silent correctness (BUG-007) | #186799 | — | silent_corruption |
+| 1 | `svdvals()` silently swallows NaN | #187759 | [#188053](https://github.com/pytorch/pytorch/pull/188053) (open) | data_anomaly → silent_corruption |
+| 2 | MPS gradient corruption (100x-100Kx) | #177116 | [#188923](https://github.com/pytorch/pytorch/pull/188923) (open) | gradient_health_transition[exploding] |
+| 3 | `varlen_attn()` silent NaN with padding | #176793 | [#188933](https://github.com/pytorch/pytorch/pull/188933) (closed) | data_anomaly → gradient_health_transition → nan_detected |
+| 4 | LSTM sample independence violation | #173334 | — | sample_independence_violation |
+| 5 | MHA fully-masked row NaN (BUG-001) | #41508 | — | activation_regime_shift → nan_detected |
+| 6 | Causal softmax silent correctness (BUG-007) | #186799 | — | silent_corruption |
 
 ### 7.2 Post-Mortem Example: svdvals NaN (#187759)
 
@@ -401,14 +400,14 @@ After these fixes, the healthy ResNet-18 baseline produces only 5 events (all mi
 
 1. **Out-of-sample validation**: ✅ ResNet-18 (11M params, torchvision) achieves 6/6 detection. ⚠ Data remains synthetic (CIFAR-shaped random tensors; CIFAR-10 download blocked by network). Real-data validation is the next priority.
 2. **Causal chain quality**: Root cause identification sometimes misattributes when multiple failures occur simultaneously. GPU model integration (v5, 8 families) could improve this.
-3. **Upstream integration**: We have submitted 4 PRs to PyTorch fixing bugs discovered during development. 0 have been merged as of publication. Long-term, a standardized training diagnostic hook API would benefit the entire ecosystem.
+3. **Upstream integration**: We have submitted diagnostic test PRs to PyTorch (#188053, #188923) for bugs discovered during development; none merged as of publication. Our process lesson (per maintainer feedback) is to discuss on the issue and obtain the *actionable* label before opening a PR. Long-term, a standardized training diagnostic hook API would benefit the entire ecosystem.
 4. **Self-evolution**: A 7-step daily pipeline (Scrape→Fuzz→Test→Train→Retrain→Heal→Report) has been deployed but not yet run over multiple days to demonstrate continuous improvement.
 
 ---
 
 ## 10. Conclusion
 
-NeuralDBG demonstrates that causal debugging of deep learning training is feasible and practical. By hooking into PyTorch's autograd and extracting semantic events, we construct causal chains linking root causes to symptoms across 212 architecture configurations and 8 families. Our detection rates — 96% on Tier 1 black-swans, 94% on Tier 2, 100% on stress tests — show that the approach generalizes beyond standard architectures. NeuralPrune extends the diagnostic paradigm to model optimization, identifying redundant parameters without weight modification. Seven real PyTorch bugs were discovered and diagnosed, with four upstream PRs submitted. The system is open-source (MIT), non-invasive (single context manager), and ready for production use.
+NeuralDBG demonstrates that causal debugging of deep learning training is feasible and practical. By hooking into PyTorch's autograd and extracting semantic events, we construct causal chains linking root causes to symptoms across 212 architecture configurations and 8 families. Our detection rates — 96% on Tier 1 black-swans, 94% on Tier 2, 100% on stress tests — show that the approach generalizes beyond standard architectures. NeuralPrune extends the diagnostic paradigm to model optimization, identifying redundant parameters without weight modification. Seven PyTorch bugs were diagnosed during development, with upstream PRs submitted for the strongest candidates. The system is open-source (MIT), non-invasive (single context manager), and ready for production use.
 
 ---
 

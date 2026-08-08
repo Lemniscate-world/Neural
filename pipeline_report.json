@@ -1,14 +1,19 @@
 {
-  "date": "2026-07-21T02:04:07.989695",
+  "date": "2026-07-23T08:47:24.144135",
   "runs": 1,
   "converged": false,
-  "all_passed": false,
+  "all_passed": true,
   "best_metrics": {
     "fuzzer": {
       "stage": "fuzzer",
       "crash_rate": 20,
       "crashes": 4,
       "total": 20
+    },
+    "stress": {
+      "stage": "stress",
+      "pass_rate": 100,
+      "passed": 15
     },
     "combinatorial": {
       "stage": "combinatorial",
@@ -77,8 +82,8 @@
     "oos": {
       "stage": "oos",
       "detection_rate": 100,
-      "detected": 6,
-      "total": 6,
+      "detected": 24,
+      "total": 24,
       "architectures": []
     }
   },
@@ -92,7 +97,8 @@
       },
       "stress": {
         "stage": "stress",
-        "pass_rate": 0
+        "pass_rate": 100,
+        "passed": 15
       },
       "combinatorial": {
         "stage": "combinatorial",
@@ -161,8 +167,8 @@
       "oos": {
         "stage": "oos",
         "detection_rate": 100,
-        "detected": 6,
-        "total": 6,
+        "detected": 24,
+        "total": 24,
         "architectures": []
       },
       "benchmark": {

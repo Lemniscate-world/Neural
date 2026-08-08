@@ -2,7 +2,7 @@
   "configs": 50,
   "total_evaluations": 300,
   "overall_detection": "286/300",
-  "elapsed_seconds": 55,
+  "elapsed_seconds": 131,
   "by_family": {
     "MLP": {
       "configs": 10,

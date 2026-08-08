@@ -43,9 +43,11 @@ Non-destructive redundancy diagnostic:
 ## Upcoming
 
 - [ ] v5 GPU training (8 families: +GNN, MoE, Diffusion)
-- [ ] Community launch (Reddit, Discord, HN)
-- [ ] Paper submission (arXiv)
+- [ ] **Community launch (posts Reddit/Discord/X) — Janvier 2027** (plan décidé 08/08)
+- [ ] **Paper arXiv — Décembre 2026** (retirer les claims PRs morts avant soumission; coordination avec écosystème PyTorch #80)
 - [ ] Real-world beta testing (3+ users)
+
+> 📅 **Calendrier de distribution (décidé 08/08/2026)**: papier arXiv → Décembre 2026 · posts communauté → Janvier 2027 · objectif court terme = faire accepter l'écosystème PyTorch (#80, hogepodge volontaire).
 
 model = nn.Sequential(nn.Linear(10, 64), nn.Sigmoid(), nn.Linear(64, 2))
 
@@ -91,11 +93,13 @@ print(dbg.explain_failure())
 | BUG-005 | pytorch/pytorch#173334 | Repro posted, issue closed (awaiting reopen) | - |
 | BUG-006 | pytorch/pytorch#187759 | **PR #188053 OPEN** — relance posted 3 Jul | - |
 | BUG-007 | pytorch/pytorch#186799 | Cataloged (reported by @ezyang) | - |
-| BUG-008 | pytorch/pytorch#184575 | **PR #188066 OPEN** — relance posted 3 Jul | - |
+| BUG-008 | pytorch/pytorch#184575 | **PR #188066 CLOSED 08/08** — prémisse réfutée par albanD (grad 1e12 = Jacobien correct de x/eps). PR retirée proprement. | - |
 | BUG-009 | pytorch/pytorch#187227 | Cataloged (SDPA int32 overflow) | - |
 | BUG-010 | pytorch/pytorch#185543 | Cataloged (quantile gradient mismatch) | - |
 
-**PRs submitted**: 7 | **Active**: 4 (#188933 fix, #188923 test, #188053 test, #188066 test) | **Merged**: 0
+**PRs submitted**: 7 | **Actives**: 2 (#188923 test, #188053 test) | **Clos/retirées**: 2 (#188933 fix, #188066 test réfutée) | **Merged**: 0
+
+> 🔎 **Leçon (08/08)**: le process PyTorch exige de discuter sur l'issue et d'obtenir le label *actionable* AVANT d'ouvrir une PR (retour albanD). On arrête les pings sur les PRs ouvertes; on capitalise sur l'**écosystème PyTorch #80** (hogepodge s'est porté volontaire le 07/08 → réponse envoyée).
 
 ### v1.4.5 — Catalog Expansion (July-August 2026)
 - [x] 10/10 real bugs cataloged ✅ M2 OBJECTIVE REA- [x] 10/10 post-mortems published on GitHub Pages ✅
@@ -113,8 +117,8 @@ print(dbg.explain_failure())
 - [x] 10+ bugs cataloged ✅ | 10+ post-mortems published ✅ (10/10)
 - [ ] Versioned benchmark with CI regression gates
 - [x] Neural-Agent autonomous: closed loop on DeepMLP (E2E pipeline proven) ✅
-- [ ] 1+ upstream PR merged (external validation) — **0/5 merged, critical gap** 🔴
-- [ ] Research paper draft on causal ML diagnostics
+- [ ] 1+ upstream PR merged (external validation) — **0/5 merged, critical gap** 🔴 — 2 PRs retirées/closes (analyse 08/08)
+- [ ] Research paper draft on causal ML diagnostics — **déféré à Décembre 2026** (plan décidé 08/08)
 - [x] **Real model testing** — ResNet + Transformer: 90% detection, 0% FP ✅
 
 ### v1.5.5 — Combinatorial Validation (4 July 2026)
