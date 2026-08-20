@@ -36,7 +36,7 @@ KNOWN_FIXES = {
 
 def run(cmd, **kw):
     try:
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=ROOT, **kw)
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=ROOT, **kw)  # nosec B602 - intentional local gh/pytest invocation
         return r.returncode, r.stdout + r.stderr
     except Exception as e:
         return 1, str(e)
