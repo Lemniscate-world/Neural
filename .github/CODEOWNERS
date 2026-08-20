@@ -1,0 +1,10 @@
+# CODEOWNERS — Ecosystem WG requires ≥2 core maintainers with formal ownership
+*       @Lemniscate-world @P3niel
+
+# Docs and governance require both maintainers
+/docs/              @Lemniscate-world @P3niel
+*.md                @Lemniscate-world @P3niel
+.github/            @Lemniscate-world @P3niel
+
+# Core engine — lead maintainer primary
+/neuraldbg/         @Lemniscate-world @P3niel

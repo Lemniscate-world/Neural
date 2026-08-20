@@ -75,10 +75,10 @@ class TestNeuralDbgCore:
         # Test exploding gradient
         assert dbg._classify_gradient_health(1e4) == GradientHealth.EXPLODING
 
-        # Test saturated gradient (Small but > vanishing)
+        # Test small-but-not-vanishing gradient is HEALTHY (P2b: saturated is activation concept)
         assert (
             dbg._classify_gradient_health(dbg.threshold_vanishing * 10)
-            == GradientHealth.SATURATED
+            == GradientHealth.HEALTHY
         )
 
     def test_activation_stats_computation(self):

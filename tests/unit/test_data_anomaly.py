@@ -67,10 +67,14 @@ class TestCheckDataAnomaly:
 
         events_before = len(dbg.events)
 
-        # Second call with wildly different statistics
+        # Distribution shift requires debounce ≥2 steps (see engine/data.py:98)
+        # Need increasing shift so second step still detects shift vs first shifted stats
         dbg.step = 1
         shifted_tensor = torch.randn(32, 10) * 100 + 500
         dbg._check_data_anomaly(shifted_tensor, "layer1")
+        dbg.step = 2
+        shifted_tensor2 = torch.randn(32, 10) * 100 + 1000
+        dbg._check_data_anomaly(shifted_tensor2, "layer1")
 
         shift_events = [
             e
@@ -153,12 +157,14 @@ class TestCheckDataAnomaly:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        # Step 1: NaN detected (NORMAL -> NAN_DETECTED)
+        # Step 1: NaN detected (NORMAL -> NAN_DETECTED) — hard anomaly bypasses debounce
         dbg.step = 1
         dbg._check_data_anomaly(torch.tensor([[float("nan")]]), "layer1")
 
-        # Step 2: Normal data (NAN_DETECTED -> NORMAL)
+        # Recovery to NORMAL requires debounce ≥2 (see data.py:98)
         dbg.step = 2
+        dbg._check_data_anomaly(torch.randn(1, 10), "layer1")
+        dbg.step = 3
         dbg._check_data_anomaly(torch.randn(1, 10), "layer1")
 
         anomaly_events = [
@@ -175,11 +181,11 @@ class TestCheckDataAnomaly:
         model = nn.Linear(10, 5)
         dbg = NeuralDbg(model)
 
-        # Step 1: NaN (NORMAL -> NAN_DETECTED)
+        # Step 1: NaN (NORMAL -> NAN_DETECTED) — hard anomaly emits immediately
         dbg.step = 1
         dbg._check_data_anomaly(torch.tensor([[float("nan")]]), "layer1")
 
-        # Step 2: Inf (NAN_DETECTED -> INF_DETECTED)
+        # Step 2: Inf (NAN_DETECTED -> INF_DETECTED) — hard anomaly bypasses debounce
         dbg.step = 2
         dbg._check_data_anomaly(torch.tensor([[float("inf")]]), "layer1")
 
@@ -207,14 +213,17 @@ class TestCheckDataAnomaly:
         baseline = torch.randn(32, 10)
         dbg._check_data_anomaly(baseline, "layer1")
 
-        # Step 1: NaN episode (should NOT update previous_input_stats)
+        # Step 1: NaN episode (should NOT update previous_input_stats) — hard anomaly
         dbg.step = 1
         dbg._check_data_anomaly(torch.full((32, 10), float("nan")), "layer1")
 
-        # Step 2: Recovery with wildly shifted distribution
+        # Step 2-3: Recovery with wildly shifted distribution (requires 2 steps for shift debounce)
         dbg.step = 2
         shifted = torch.randn(32, 10) * 100 + 500
         dbg._check_data_anomaly(shifted, "layer1")
+        dbg.step = 3
+        shifted2 = torch.randn(32, 10) * 100 + 1000
+        dbg._check_data_anomaly(shifted2, "layer1")
 
         anomaly_events = [
             e for e in dbg.events if e.event_type == EventType.DATA_ANOMALY

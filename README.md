@@ -75,12 +75,12 @@ Latest results: [benchmark_public/results.json](benchmark_public/results.json)
 
 - **Tier 1 Black-Swan detection: 96%** — GNN 88%, MoE 100%, Diffusion 100% (104/108 bugs detected)
 - **Tier 2 Black-Swan detection: 94%** — FlashAttention 100%, Neural ODE 100%, Quantized 83% (102/108)
-- **200-architecture validation** — 79% global detection across 5 families (MLP/CNN/RNN/Transformer/Hybrid)
+- **200-architecture validation** — 99.4% detection (1,193/1,200 bug injections) across 6 families (MLP/CNN/RNN/Transformer/Hybrid/Black-Swan); canonical numbers in [paper_number_audit.md](docs/paper_number_audit.md)
 - **NeuralPrune v0.1** — Non-destructive redundancy diagnostic: dead neurons, low-rank weights, quantization opportunities
 - **LSTM/GRU support** — Forward hooks unwrap RNN output tuples. Per-gate gradient tracking (input/forget/cell/output)
-- **Architecture fuzzer** — 94% crash rate across 50 randomly generated architectures
+- **Architecture fuzzer** — 0 crashes, 19/20 injected bugs detected (1 documented asymptomatic: LayerNorm neutralizes fp16 overflow); deterministic (seed 42, audit §2.2)
 - **Stress test suite** — 15/15 tests pass: 10x gradients, NaN/Inf, fp16, 100-layer depth, 1K token attention
-- **GPU v4 model** — Qwen2-0.5B + LoRA trained on 538 examples across 5 architecture families, 92.3% accuracy
+- **GPU classifier** — Qwen2-0.5B + LoRA (v5, 108 examples, 6 families); changelog "93.7% accuracy" **withdrawn** — re-verification scored 13.9% (15/108) with category collapse ([audit §2.7](docs/paper_number_audit.md))
 - **Aquarium web dashboard** — Zero-dependency HTML causal viewer. [Open Aquarium](https://lambdasection.github.io/NeuralDBG/docs/aquarium.html)
 - **2 upstream diagnostic test PRs** — svdvals NaN (#188053) + gradient health tests (#188923); F.normalize retiré (comportement voulu confirmé par albanD)
 - **100% detection** on DeepMLP (6/6 bugs) | **96% Tier 1** black-swans | **94% Tier 2** black-swans
@@ -186,39 +186,36 @@ for h in hypotheses:
 
 ## Supported Architectures
 
-Validated on **200 architectures, 1200 bug injections** — the most comprehensive ML debugging tool validation to date.
-
-### Feed-Forward Architectures — **91% detection** (782/852)
+Validated on **200 architectures, 1,200 bug injections** (combinatorial sweep, 2026-08-13 run; canonical, artifact-verifiable figures per [paper_number_audit.md](docs/paper_number_audit.md)) plus 4 out-of-sample production architectures.
 
 | Family | Configs | Detection | Status |
 |--------|:-------:|:---------:|:------:|
-| MLP (deep, residual, bottleneck) | 50 | **93%** (280/300) | ✅ |
-| CNN (Conv2d, varying kernel/depth/norm) | 40 | **91%** (219/240) | ✅ |
-| Transformer (encoder, varying heads/depth) | 40 | **92%** (221/240) | ✅ |
-| Hybrid non-RNN (CNN+MLP, Attention+MLP) | 12 | **86%** (62/72) | ✅ |
-| **Feed-Forward Total** | **142** | **91%** | ✅ |
+| MLP (deep, residual, bottleneck) | 38 | **100%** (228/228) | ✅ |
+| CNN (Conv2d, varying kernel/depth/norm) | 33 | **99.5%** (197/198) | ✅ |
+| Transformer (encoder, varying heads/depth) | 33 | **100%** (198/198) | ✅ |
+| RNN (LSTM/GRU, varying depth/width/bidir) | 33 | **100%** (198/198) | ✅ |
+| Hybrid | 30 | **100%** (180/180) | ✅ |
+| Black-Swan (GNN, MoE, Diffusion, RL, RAG, FlashAttn, NeuralODE) | 33 | **97%** (192/198) | ✅ |
+| **Overall** | **200** | **99.4% (1,193/1,200)** | |
 
-### Recurrent Architectures — **49% detection** (178/360)
-
-⚠️ Known limitation: NeuralDBG's per-step gradient hooks are less effective on RNNs due to weight sharing across timesteps. This is inherent to the hook-based approach and affects LSTM, GRU, and RNN-containing hybrids equally.
-
-| Family | Configs | Detection | Status |
-|--------|:-------:|:---------:|:------:|
-| RNN (LSTM/GRU, varying depth/width/bidir) | 40 | **49%** (117/240) | ⚠️ |
-| Hybrid with RNN | 18 | **10%** (18/180) | ⚠️ |
+RNN reached 100% (2026-08-13) after fixing a builder artifact: `out[:, -1, :]` zeroed the reverse-direction `W_hh` gradient on bidirectional LSTM (last reverse step = first step from h0=0), so healthy bi-LSTMs looked "vanishing" (baseline 40 events) and pushed buggy runs under threshold. Fix: temporal mean pooling + family-adaptive thresholds (audit §2.1d). Remaining 7/1200: 1 CNN gelu zero_init and 6 FlashAttn zero_init/nan_data, masked by the engine's absolute-bound saturation heuristic (`|x|>0.95`) firing on unbounded Linear outputs — a documented engine limitation (P2b, audit §2.1d item 4). FlashAttn improved 9/18 → 12/18 via `register_composite_hook` on `nn.MultiheadAttention`. Hybrid reached 100% after fixing a generator bug: the 18 RNN-composite configs crashed at step 0 (LSTM shape misuse) and were previously counted as undetected — not a detection limit (paper §5.2 note i, audit §2.1b).
 
 ### By Bug Type (200 configs each)
 
 | Bug | Detection | Difficulty |
 |-----|:---------:|:----------:|
-| Exploding gradients | **91%** | Easy |
-| Optimizer divergence | **91%** | Easy |
-| NaN in data | **83%** | Moderate |
-| Dead activations (bias) | **71%** | Moderate |
-| Zero initialization | **71%** | Moderate |
-| Vanishing gradients (sigmoid) | **44%** | Hard |
+| Optimizer divergence | **100%** | Easy |
+| Vanishing gradients | **97.5%** | Easy |
+| Exploding gradients | **96.5%** | Easy |
+| Dead activations (bias) | **94.5%** | Moderate |
+| NaN in data | **90.5%** | Moderate |
+| Zero initialization | **80%** | Moderate |
 
-Reproduce: `python validate_combinatorial.py --full` (200 configs, ~10 min on CPU).
+### Out-of-Sample (4 production architectures, never seen in calibration)
+
+ResNet-18 **6/6** · ViT-Tiny **6/6** · EfficientNet-B0 **6/6** · Mamba-Mini **6/6** (all 6 bugs genuinely injected via arch-agnostic injectors; 0 crashes, 0 false positives — healthy baselines: 1/2/0/0 events). Overall **24/24 (100%)** — `python validate_oos.py`. History: an initial "Mamba 0/6 crash" verdict was a builder bug (`torch.silu`, removed in torch ≥2.13), fixed and re-run; the 21/24 run used ResNet-only injectors that were no-ops on the other architectures; see [paper_number_audit.md](docs/paper_number_audit.md) §2.5b–2.5c.
+
+Reproduce: `python validate_combinatorial.py --full` (200 configs, ~4 min on CPU).
 
 Detailed results: [combinatorial_results.json](combinatorial_results.json) |
 
@@ -287,6 +284,14 @@ source .venv/bin/activate  # Linux/macOS
 # or
 .venv\Scripts\activate     # Windows
 ```
+
+## Release Methodology
+
+**Versioning**: SemVer (`MAJOR.MINOR.PATCH`). Changelog in `CHANGELOG.md` (Keep a Changelog).
+**Cadence**: Monthly minor releases; patches as needed for fixes/security.
+**Process**: `git tag vX.Y.Z` → `.github/workflows/publish.yml` → PyPI (`neuraldbg`) + GitHub Release.
+**Support**: latest minor (`1.5.x`) actively maintained; see `SECURITY.md` and `GOVERNANCE.md`.
+**Governance**: `GOVERNANCE.md` (2 maintainers), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `.github/CODEOWNERS`.
 
 ## License
 
