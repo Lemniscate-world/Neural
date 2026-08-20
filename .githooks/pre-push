@@ -1,0 +1,22 @@
+#!/bin/sh
+# Pre-push hook — reproduit le gate CI local avant chaque push
+# Install: cp .githooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+# Bypass: git push --no-verify
+
+echo "🔍 [pre-push] Vérification CI locale (pytest --cov-fail-under=75)..."
+
+python -m pytest tests/unit -q --tb=line --cov=neuraldbg --cov-fail-under=75 2>&1 | tail -n 30
+
+STATUS=${PIPESTATUS[0]:-$?}
+
+if [ $STATUS -ne 0 ]; then
+    echo ""
+    echo "❌ BLOCKED: CI locale en échec (coverage <75% ou tests FAILED)"
+    echo "   → Corrige: python scripts/ci_agent.py --fix"
+    echo "   → Ou relance: python -m pytest tests/unit -q --cov=neuraldbg"
+    echo "   → Bypass (déconseillé): git push --no-verify"
+    exit 1
+fi
+
+echo "✅ [pre-push] CI locale PASS — push autorisé"
+exit 0

@@ -1207,13 +1207,11 @@ class NeuralDbg:
         """Classify gradient health — delegates to engine."""
         if self._causal_engine is not None:
             return self._engine.gradient.classify_health(norm)
-        # Fallback heuristic when engine is not available
+        # Fallback heuristic when engine is not available (P2b: SATURATED removed)
         if norm < self.threshold_vanishing:
             return GradientHealth.VANISHING
         elif norm > self.threshold_exploding:
             return GradientHealth.EXPLODING
-        elif norm < (self.threshold_vanishing * 100):
-            return GradientHealth.SATURATED
         else:
             return GradientHealth.HEALTHY
 
@@ -1476,11 +1474,15 @@ class NeuralDbg:
 
         # Anti-oscillation debounce: track consecutive steps in the same state.
         # Only emit a transition when the new state has persisted for >= 2 checks.
+        # Hard anomalies (NaN/Inf) bypass debounce (hard errors)
         if not hasattr(self, '_data_health_streak'):
             self._data_health_streak = {}  # {layer: (state_value, streak_count)}
 
+        hard_anomaly = current_health in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED)
         layer_streak = self._data_health_streak.get(layer_name)
-        if layer_streak and layer_streak[0] == current_health.value:
+        if hard_anomaly:
+            new_streak = 2
+        elif layer_streak and layer_streak[0] == current_health.value:
             # Same state as before — increment streak
             new_streak = layer_streak[1] + 1
         else:

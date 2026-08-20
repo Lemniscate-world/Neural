@@ -17,9 +17,10 @@ class GradientAnalyzer:
             return GradientHealth.VANISHING
         elif norm > self.dbg.threshold_exploding:
             return GradientHealth.EXPLODING
-        elif norm < (self.dbg.threshold_vanishing * 100):
-            return GradientHealth.SATURATED
         else:
+            # P2b: the former SATURATED band [threshold_vanishing,
+            # threshold_vanishing * 100) mislabelled healthy small gradients
+            # as saturated (saturation is an activation-regime concept)
             return GradientHealth.HEALTHY
 
     def detect_transition(

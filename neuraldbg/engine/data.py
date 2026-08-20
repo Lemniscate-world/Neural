@@ -30,9 +30,10 @@ class DataAnalyzer:
 
         return DataHealth.NORMAL, {}
 
-    def check_anomaly(self, tensor: torch.Tensor, layer_name: str):
+    def check_anomaly(self, tensor: torch.Tensor, layer_name: str, stats_key: str = None):
         from neuraldbg import DataHealth, SemanticEvent, EventType
 
+        stats_key = stats_key or layer_name
         current_health, health_metadata = self.classify_health(tensor)
 
         if current_health not in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED):
@@ -40,8 +41,8 @@ class DataAnalyzer:
             current_mean = t.mean().item() if t.numel() > 0 else 0.0
             current_std = t.std().item() if t.numel() > 1 else 0.0
 
-            if layer_name in self.dbg.previous_input_stats:
-                prev = self.dbg.previous_input_stats[layer_name]
+            if stats_key in self.dbg.previous_input_stats:
+                prev = self.dbg.previous_input_stats[stats_key]
                 prev_std = prev.get("std", 1.0)
                 if prev_std > 1e-9:
                     mean_shift = abs(current_mean - prev.get("mean", 0.0)) / prev_std
@@ -61,14 +62,17 @@ class DataAnalyzer:
                             "mean_shift_sigma": mean_shift,
                         }
 
-            self.dbg.previous_input_stats[layer_name] = {
+            self.dbg.previous_input_stats[stats_key] = {
                 "mean": current_mean,
                 "std": current_std,
             }
 
         prev_health = self.dbg.previous_data_health.get(layer_name, DataHealth.NORMAL)
 
-        # Anti-oscillation debounce + per-step gate
+        # Anti-oscillation debounce + per-step gate.
+        # The streak advances only across DISTINCT training steps, so the
+        # two checks per step (module input + output) cannot inflate it.
+        # NaN/INF are hard errors and bypass the debounce entirely.
         if not hasattr(self.dbg, '_data_health_streak'):
             self.dbg._data_health_streak = {}
         if not hasattr(self.dbg, '_data_emitted_this_step'):
@@ -80,12 +84,17 @@ class DataAnalyzer:
             self.dbg._data_emitted_this_step.clear()
             self._last_data_step = current_step
 
+        hard_anomaly = current_health in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED)
         layer_streak = self.dbg._data_health_streak.get(layer_name)
-        if layer_streak and layer_streak[0] == current_health.value:
-            new_streak = layer_streak[1] + 1
+        if hard_anomaly:
+            new_streak = 2
+        elif layer_streak and layer_streak[0] == current_health.value and layer_streak[1] == current_step - 1:
+            new_streak = layer_streak[2] + 1
+        elif layer_streak and layer_streak[0] == current_health.value and layer_streak[1] == current_step:
+            new_streak = layer_streak[2]
         else:
             new_streak = 1
-        self.dbg._data_health_streak[layer_name] = (current_health.value, new_streak)
+        self.dbg._data_health_streak[layer_name] = (current_health.value, current_step, new_streak)
         should_emit = (current_health != prev_health) and (new_streak >= 2)
         already_emitted = layer_name in self.dbg._data_emitted_this_step
 
