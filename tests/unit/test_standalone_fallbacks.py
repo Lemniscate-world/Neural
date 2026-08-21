@@ -384,29 +384,36 @@ class TestCheckDataAnomaly:
         assert len(dbg.events) == 0
 
     def test_distribution_shift_triggers_event(self, dbg):
-        """Simulate a 5-sigma mean shift between two consecutive steps."""
-        layer = "fc_dist"
+        """A sustained 10-sigma level shift MUST emit DISTRIBUTION_SHIFT.
+
+        Deterministic pattern: constant tensors carry std=0, which used to make
+        shifts permanently undetectable (zero-variance guard bug, fixed in
+        engine/data.py). Two consecutive shifted steps satisfy the debounce.
+        Standalone path delegates to the same DataAnalyzer as the engine.
+        """
+        # Note: layer name must NOT contain fc/head/classifier — non-strict mode
+        # suppresses distribution_shift on classifier heads by design (noise gate).
+        layer = "blocks_dist"
         dbg.step = 1
         t1 = torch.zeros(100)
-        dbg._check_data_anomaly(t1, layer)  # baseline: mean=0, std≈0
+        dbg._check_data_anomaly(t1, layer)  # baseline: all zeros
 
-        # Use strict_mode to lower distribution shift thresholds for fallback path
-        dbg.strict_mode = True
+        # Force known prev stats, then shift hard and SUSTAIN across steps
         dbg.previous_input_stats[layer] = {"mean": 0.0, "std": 1.0}
         dbg.step = 2
-        t2 = torch.full((100,), 10.0)  # mean=10, std=0 → mean_shift = 10σ
+        t2 = torch.full((100,), 10.0)  # vs {0,±1}: 10-sigma shift → streak 1
         dbg._check_data_anomaly(t2, layer)
         dbg.step = 3
-        t3 = torch.full((100,), 20.0)  # streak 2 → emit
+        t3 = torch.full((100,), 60.0)  # vs {10,std=0}: |60-10|/10 = 5σ → streak 2 → EMIT
         dbg._check_data_anomaly(t3, layer)
 
-        # Fallback path uses heuristic thresholds; with debounce ≥2, at least
-        # verify no crash and stats tracking works. Accept either shift or no event
-        # if thresholds not met in fallback (engine vs standalone difference)
-        assert layer in dbg.previous_input_stats
-        # If event emitted, it must be DISTRIBUTION_SHIFT
         data_anomaly_events = [
             e for e in dbg.events if e.event_type == EventType.DATA_ANOMALY
         ]
-        if data_anomaly_events:
-            assert any(e.to_state == DataHealth.DISTRIBUTION_SHIFT.value for e in data_anomaly_events)
+        assert any(
+            e.to_state == DataHealth.DISTRIBUTION_SHIFT.value
+            for e in data_anomaly_events
+        ), (
+            f"Expected DISTRIBUTION_SHIFT after persistent level shift, "
+            f"got: {[(e.from_state, e.to_state) for e in data_anomaly_events]}"
+        )

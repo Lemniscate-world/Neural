@@ -80,19 +80,28 @@ def test_register_composite_hook_increments_event_count_on_forward():
     Reproduces the BUG-001 / pytorch#41508 path: a bare MHA wrapped in
     NeuralDbg without composite-hook support emits zero events; with it,
     events flow as expected.
+
+    Note: event emission requires >=2 steps by design (per-step debounce +
+    baseline capture), so this exercises a realistic 3-step loop.
     """
     attn = nn.MultiheadAttention(embed_dim=4, num_heads=1)
     with NeuralDbg(attn, threshold_vanishing=10.0) as dbg:
         dbg.register_composite_hook(attn)
-        # Verify hook registration succeeded (functional requirement)
         assert attn in dbg._composite_modules
-        # Events depend on gradient thresholds and debounce; check no crash
+
         x = torch.rand(2, 2, 4)
-        out, _ = attn(x, x, x)
-        loss = out.sum()
-        loss.backward()
-        # At least verify the hook fired (no exception) and module tracked
-        assert attn in dbg._composite_modules
+        for step in range(3):
+            dbg.step = step
+            out, _ = attn(x, x, x)
+            loss = out.sum()
+            loss.backward()
+            dbg.record_loss(loss.item())
+
+        # STRICT: the composite hook must surface at least one semantic event.
+        assert len(dbg.events) > 0, (
+            "register_composite_hook did not produce any events on a bare "
+            "nn.MultiheadAttention forward+backward pass over 3 steps."
+        )
 
 
 def test_register_composite_hook_warns_when_module_not_in_model_tree():

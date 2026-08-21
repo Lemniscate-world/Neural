@@ -189,3 +189,27 @@ Pour chaque bug, AVANT de marquer comme "done" :
 **Créé** : 2026-06-08
 **Trigger** : 4 bugs documentés, 1 seul a amélioré NeuralDBG (BUG-001), 0 résolus, 0 PRs soumises
 **Enforcement** : OBLIGATOIRE
+
+---
+
+## R��gle D9 : QUALIT�� AVANT PUBLICIT�� (r��gle CEO, permanente)
+
+**D��claration CEO (2026-08-21)** : Je privil��gie TOUJOURS la qualit�� avant tout.
+L'agent DOIT toujours appliquer cela AVANT de penser �� la publicit��.
+
+**En pratique** :
+1. Aucune action marketing/distribution (posts, HN, Reddit, awesome-lists)
+   tant que les gates qualit�� ne sont pas verts.
+2. Toute faiblesse produit d��couverte pendant une pr��paration de
+   communication = priorit�� absolue sur la com.
+3. Les chiffres publics doivent ��tre artifact-verifiable
+   (voir docs/paper_number_audit.md). Z��ro claim non reproduit.
+4. Pas de stars/communaut�� artificielles : croissance = produit qui marche.
+
+**Gates qualit�� minimum avant toute campagne** :
+- [ ] CI verte (coverage ���75% strict + bandit clean + pytorch-compat)
+- [ ] Tests des features ADVERTISED r��els (wandb/lightning callbacks pas juste smoke-mocks)
+- [ ] README quickstart ex��cut�� tel quel (Colab + local) et fonctionnel
+- [ ] Un seul chemin de v��rit�� engine/fallback (pas de logique dupliqu��e divergente)
+- [ ] Audit claims vs artifacts �� jour
+

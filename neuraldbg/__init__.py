@@ -1168,52 +1168,39 @@ class NeuralDbg:
                 )
                 self.events.append(event)
 
-    def _classify_activation_health(self, stats: Dict[str, float]) -> ActivationHealth:
-        """Classify activation regime — delegates to engine when available."""
-        if self._causal_engine is not None:
-            return self._engine.activation.classify_health(stats)
-        # Fallback heuristic when engine is not available
-        dead_ratio = stats.get("dead_ratio", 0.0)
-        sat_ratio = stats.get("saturation_ratio", 0.0)
-        has_nan = stats.get("has_nan", False)
-        has_inf = stats.get("has_inf", False)
+    def _bundled(self):
+        """Lazily create the bundled analyzers — single source of truth for heuristics.
 
-        if has_nan or has_inf:
-            return ActivationHealth.ANOMALOUS
-        if dead_ratio > 0.9:
-            return ActivationHealth.DEAD
-        if sat_ratio > 0.5:
-            return ActivationHealth.SATURATED
-        return ActivationHealth.NORMAL
+        The engine is bundled inside the core package (v1.5), so there is exactly
+        ONE implementation of each heuristic (gradient/activation/data). Both the
+        engine path and the standalone path MUST go through these analyzers;
+        duplicated inline heuristics are forbidden (they drift — see audit 2026-08-21).
+        """
+        if not hasattr(self, "_bundled_analyzers"):
+            from .engine.activation import ActivationAnalyzer
+            from .engine.data import DataAnalyzer
+            from .engine.gradient import GradientAnalyzer
+
+            self._bundled_analyzers = {
+                "gradient": GradientAnalyzer(self),
+                "activation": ActivationAnalyzer(self),
+                "data": DataAnalyzer(self),
+            }
+        return self._bundled_analyzers
+
+    def _classify_activation_health(self, stats: Dict[str, float]) -> ActivationHealth:
+        """Classify activation regime — single source: engine.activation."""
+        return self._bundled()["activation"].classify_health(stats)
 
     def _detect_activation_shift(
         self, prev_stats: Dict[str, float], current_stats: Dict[str, float]
     ) -> Optional[Dict[str, Any]]:
-        """Detect activation shifts — delegates to engine."""
-        if self._causal_engine is not None:
-            return self._engine.activation.detect_shift(prev_stats, current_stats)
-
-        # Fallback heuristic when engine is not available
-        prev_health = self._classify_activation_health(prev_stats)
-        current_health = self._classify_activation_health(current_stats)
-        if prev_health != current_health:
-            return {
-                "type": f"{prev_health.value}_to_{current_health.value}",
-                "confidence": 0.9,
-            }
-        return None
+        """Detect activation shifts — single source: engine.activation."""
+        return self._bundled()["activation"].detect_shift(prev_stats, current_stats)
 
     def _classify_gradient_health(self, norm: float) -> GradientHealth:
-        """Classify gradient health — delegates to engine."""
-        if self._causal_engine is not None:
-            return self._engine.gradient.classify_health(norm)
-        # Fallback heuristic when engine is not available (P2b: SATURATED removed)
-        if norm < self.threshold_vanishing:
-            return GradientHealth.VANISHING
-        elif norm > self.threshold_exploding:
-            return GradientHealth.EXPLODING
-        else:
-            return GradientHealth.HEALTHY
+        """Classify gradient health — single source: engine.gradient (P2b semantics)."""
+        return self._bundled()["gradient"].classify_health(norm)
 
     def _track_first_occurrence(self, failure_type: str, layer_name: str):
         """Track the first layer that encountered a specific failure."""
@@ -1224,25 +1211,8 @@ class NeuralDbg:
     def _detect_gradient_transition(
         self, prev_norm: float, current_norm: float
     ) -> Optional[Dict[str, Any]]:
-        """Detect transitions in gradient health — delegates to engine."""
-        if self._causal_engine is not None:
-            return self._engine.gradient.detect_transition(prev_norm, current_norm)
-
-        # Fallback heuristic when engine is not available
-        prev_health = self._classify_gradient_health(prev_norm)
-        current_health = self._classify_gradient_health(current_norm)
-
-        if prev_health != current_health:
-            if prev_norm > 0:
-                ratio = abs(current_norm - prev_norm) / prev_norm
-            else:
-                ratio = abs(current_norm)
-            confidence = min(ratio * 0.1, 1.0)
-            return {
-                "type": f"{prev_health.value}_to_{current_health.value}",
-                "confidence": confidence,
-            }
-        return None
+        """Detect transitions in gradient health — single source: engine.gradient."""
+        return self._bundled()["gradient"].detect_transition(prev_norm, current_norm)
 
     def explain_failure(
         self, failure_type: str = "vanishing_gradients"
@@ -1407,140 +1377,18 @@ class NeuralDbg:
     def _classify_data_health(
         self, tensor: torch.Tensor
     ) -> Tuple[DataHealth, Dict[str, Any]]:
-        """Classify data health — delegates to engine."""
-        if self._causal_engine is not None:
-            return self._engine.data.classify_health(tensor)
-        t = tensor.detach().float()
-        has_nan = torch.isnan(t).any().item()
-        if has_nan:
-            return DataHealth.NAN_DETECTED, {
-                "nan_count": int(torch.isnan(t).sum().item())
-            }
-        has_inf = torch.isinf(t).any().item()
-        if has_inf:
-            return DataHealth.INF_DETECTED, {
-                "inf_count": int(torch.isinf(t).sum().item())
-            }
-        return DataHealth.NORMAL, {}
+        """Classify data health — single source: engine.data."""
+        return self._bundled()["data"].classify_health(tensor)
 
     def _check_data_anomaly(self, tensor: torch.Tensor, layer_name: str):
-        """Detect data anomalies — delegates to engine."""
-        if self._causal_engine is not None:
-            return self._engine.data.check_anomaly(tensor, layer_name)
+        """Detect data anomalies — single source: engine.data (debounce + hard-error bypass).
 
-        # Fallback implementation
-        if not torch.is_floating_point(tensor):
-            return
-
-        current_health, health_metadata = self._classify_data_health(tensor)
-
-        if current_health not in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED):
-            t = tensor.detach().float()
-            if t.numel() == 0:
-                current_mean = 0.0
-                current_std = 0.0
-            else:
-                current_mean = t.mean().item()
-                current_std = t.std().item() if t.numel() > 1 else 0.0
-
-            if layer_name in self.previous_input_stats:
-                prev = self.previous_input_stats[layer_name]
-                prev_std = prev.get("std", 1.0)
-                if prev_std > 1e-9:
-                    mean_shift = abs(current_mean - prev.get("mean", 0.0)) / prev_std
-                    std_ratio = current_std / prev_std if prev_std > 0 else 1.0
-                    # Calibrated thresholds: stricter for deep architectures
-                    fm = getattr(self, '_family_mult', 1.0)
-                    sm = 2.0 if getattr(self, 'strict_mode', False) else 1.0
-                    shift_threshold = 4.0 * fm * sm   # base 4σ (was 3σ)
-                    ratio_high = 8.0 * fm * sm        # base 8x (was 5x)
-                    ratio_low = 0.1 / (fm * sm)       # base 0.1 (was 0.2)
-                    if mean_shift > shift_threshold or std_ratio > ratio_high or std_ratio < ratio_low:
-                        current_health = DataHealth.DISTRIBUTION_SHIFT
-                        health_metadata = {
-                            "prev_mean": prev.get("mean", 0.0),
-                            "current_mean": current_mean,
-                            "prev_std": prev_std,
-                            "current_std": current_std,
-                            "mean_shift_sigma": mean_shift,
-                        }
-
-            self.previous_input_stats[layer_name] = {
-                "mean": current_mean,
-                "std": current_std,
-            }
-
-        prev_health = self.previous_data_health.get(layer_name, DataHealth.NORMAL)
-
-        # Anti-oscillation debounce: track consecutive steps in the same state.
-        # Only emit a transition when the new state has persisted for >= 2 checks.
-        # Hard anomalies (NaN/Inf) bypass debounce (hard errors)
-        if not hasattr(self, '_data_health_streak'):
-            self._data_health_streak = {}  # {layer: (state_value, streak_count)}
-
-        hard_anomaly = current_health in (DataHealth.NAN_DETECTED, DataHealth.INF_DETECTED)
-        layer_streak = self._data_health_streak.get(layer_name)
-        if hard_anomaly:
-            new_streak = 2
-        elif layer_streak and layer_streak[0] == current_health.value:
-            # Same state as before — increment streak
-            new_streak = layer_streak[1] + 1
-        else:
-            # State changed — reset streak
-            new_streak = 1
-        self._data_health_streak[layer_name] = (current_health.value, new_streak)
-
-        should_emit = (current_health != prev_health) and (new_streak >= 2)
-
-        if should_emit:
-            # In non-strict mode, suppress distribution_shift on classifier heads —
-            # the final layer naturally has high input variance on random/early data.
-            is_classifier_noise = (
-                current_health == DataHealth.DISTRIBUTION_SHIFT
-                and not getattr(self, 'strict_mode', False)
-                and any(kw in layer_name.lower() for kw in ('fc', 'head', 'classifier'))
-            )
-            if not is_classifier_noise:
-                if current_health != DataHealth.NORMAL:
-                    self._track_first_occurrence(f"data_{current_health.value}", layer_name)
-                    if current_health in (
-                        DataHealth.NAN_DETECTED,
-                        DataHealth.INF_DETECTED,
-                        DataHealth.DISTRIBUTION_SHIFT,
-                    ):
-                        cache_path = self.disk_cache.save(
-                            tensor, prefix=f"anomaly_{layer_name}"
-                        )
-                        health_metadata["tensor_cache_path"] = cache_path
-
-                confidence = 1.0
-                if current_health == DataHealth.DISTRIBUTION_SHIFT:
-                    mean_shift_val = health_metadata.get("mean_shift_sigma", 3.0)
-                    confidence = min(mean_shift_val * 0.2, 1.0)
-
-                # Sample resources once per step
-                resource_snapshot, resource_baseline = self._get_step_resource_snapshot(
-                    tensor.device
-                )
-                is_spike, spike_keys = self._is_memory_spike(
-                    resource_snapshot, resource_baseline
-                )
-                health_metadata["resources"] = resource_snapshot
-                health_metadata["memory_spike"] = is_spike
-                health_metadata["memory_spike_keys"] = spike_keys
-
-                self.events.append(
-                    SemanticEvent(
-                        event_type=EventType.DATA_ANOMALY,
-                        layer_name=layer_name,
-                        step=self.step,
-                        from_state=prev_health.value,
-                        to_state=current_health.value,
-                        confidence=confidence,
-                        metadata=health_metadata,
-                    )
-                )
-            self.previous_data_health[layer_name] = current_health
+        History: this used to be a duplicated inline heuristic that drifted from
+        engine/data.py (different debounce semantics), causing 16 CI test failures
+        (audit 2026-08-21). The fallback body was deleted; both paths now run the
+        same DataAnalyzer.
+        """
+        self._bundled()["data"].check_anomaly(tensor, layer_name)
 
     def _explain_optimizer_instability(self) -> List[CausalHypothesis]:
         """Generate hypotheses for optimizer instability — delegates to engine."""

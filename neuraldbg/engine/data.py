@@ -43,9 +43,15 @@ class DataAnalyzer:
 
             if stats_key in self.dbg.previous_input_stats:
                 prev = self.dbg.previous_input_stats[stats_key]
+                prev_mean_val = prev.get("mean", 0.0)
                 prev_std = prev.get("std", 1.0)
+                # Zero-variance history made shifts permanently undetectable
+                # (guard skipped everything). Fall back to mean magnitude so a
+                # constant pipeline changing level is still flagged.
+                if prev_std <= 1e-9:
+                    prev_std = max(abs(prev_mean_val), 1e-6)
                 if prev_std > 1e-9:
-                    mean_shift = abs(current_mean - prev.get("mean", 0.0)) / prev_std
+                    mean_shift = abs(current_mean - prev_mean_val) / prev_std
                     std_ratio = current_std / prev_std if prev_std > 0 else 1.0
                     # Calibrated thresholds: family-aware + strict mode
                     fm = getattr(self.dbg, '_family_mult', 1.0)
@@ -138,4 +144,7 @@ class DataAnalyzer:
                     )
                 )
                 self.dbg._data_emitted_this_step.add(layer_name)
+            # previous_data_health = last CONFIRMED (emitted-threshold-reached)
+            # state. Deliberately NOT updated on debounce-blocked calls: pending
+            # transitions must survive until their streak completes.
             self.dbg.previous_data_health[layer_name] = current_health
