@@ -9,7 +9,7 @@ description = "Causal inference engine for deep learning training dynamics"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE.md"]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 authors = [
     {name = "SENOUVO Jacques-Charles Gad", email = "neuraldbg@lemniscate.ai"},
 ]
@@ -27,11 +27,8 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Debuggers",
     "Typing :: Typed",

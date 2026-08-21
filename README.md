@@ -3,7 +3,7 @@
 Training failed? NeuralDBG tells you **why**. It hooks into your PyTorch training loop, detects what went wrong (vanishing gradients, exploding gradients, data anomalies), and pinpoints the exact layer and step — so you fix it in seconds, not hours.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI](https://img.shields.io/pypi/v/neuraldbg.svg)](https://pypi.org/project/neuraldbg/)
 [![CI](https://github.com/LambdaSection/NeuralDBG/actions/workflows/ci.yml/badge.svg)](https://github.com/LambdaSection/NeuralDBG/actions/workflows/ci.yml)
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
@@ -131,9 +131,12 @@ with NeuralDbg(model) as dbg:
         dbg.record_loss(loss.item())
         optimizer.step()
 
-# After training failure, query for explanations
+# After training failure (or anytime), query for explanations
 explanations = dbg.explain_failure()
-print(explanations[0])  # "Gradient vanishing originated in layer 'linear1' at step 234..."
+if explanations:
+    print(explanations[0])  # "Gradient vanishing originated in layer 'linear1' at step 234..."
+else:
+    print("No failure detected — training looks healthy.")
 ```
 
 ### Inference API
