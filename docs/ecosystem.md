@@ -119,3 +119,27 @@ Environment: `AQUARIUM_EXPORTS_DIR` or `NEURALDBG_EXPORTS_DIR` for custom export
 | M1 (June) | v1.3.2 tag, benchmark | MHA rule wired | Reads BUG-001 JSON |
 | M2 (July) | 5+ scenarios benchmark | Published PyPI, 10 rules | Dashboard bugs catalog |
 | M3 (August) | 20+ bugs catalog | 25 rules, autonomous | Visual bug catalog |
+
+## PyTorch Ecosystem #80 — Re-submission Criteria Tracker (2026-08-21)
+
+Review by @hogepodge 2026-08-20: "too early for inclusion". All governance criteria now resolved:
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Working CI | ✅ Pass | run 32474998638 green, coverage 76.9% strict, bandit clean, pytorch 2.0→2.6 matrix |
+| GOVERNANCE.md | ✅ | 2 maintainers documented |
+| CONTRIBUTING.md | ✅ | workflow + release process |
+| CODEOWNERS | ✅ | @Lemniscate-world @P3niel |
+| CODE_OF_CONDUCT.md | ✅ | Contributor Covenant v2.1 |
+| README release cadence | ✅ | Release Methodology section |
+| Documentation (Aquarium) | ✅ | issue body edited — public artifact docs/aquarium.html; private IDE repo out of scope |
+| Functional Testing | ✅ | CI green confirms tests pass |
+| Ongoing Maintenance | ✅ | 2 maintainers formalized |
+
+**Remaining community metrics (time-gated, not actionable directly):**
+- Stars ≥200 : 24 → plan arXiv Dec 2026 + W&B/Lightning posts Jan 2027
+- Contributors ≥5 in 90d : recruiting via HF Spaces demo
+- Core Maintainers commits : P3niel next substantive contribution
+
+**Re-engagement trigger**: stars ≥100 OR 5 contributors active → comment on #80 requesting re-review.
+
