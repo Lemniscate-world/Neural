@@ -57,6 +57,8 @@ jobs:
       - name: Install QA tools
         run: |
           python -m pip install numpy "pytest>=9.0.3" pytest-cov coverage bandit safety
+          # Real-integration deps for advertised callbacks (test_integrations_real.py)
+          python -m pip install wandb pytorch-lightning
 
       - name: Install project in editable mode
         run: |

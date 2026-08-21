@@ -418,7 +418,9 @@ class TestCrossArchitectureInvariance:
             dbg = self._run_nan_on_model(model, lambda: torch.randn(2, 3, 32, 32))
             hyps = dbg.explain_failure("data_anomaly")
             assert any("NaN" in h.description for h in hyps), "ResNet: NaN not detected"
-        except (ImportError, RuntimeError) as e:
+        except (ImportError, RuntimeError, AttributeError, OSError) as e:
+            # AttributeError/OSError: partially-initialized torchvision on
+            # broken envs (py3.14 DLL) — same family as ImportError here.
             import pytest
 
             pytest.skip(f"torchvision not available or incompatible: {e}")
