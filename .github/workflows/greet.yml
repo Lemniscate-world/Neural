@@ -1,0 +1,36 @@
+name: Community — greet first-time contributors
+
+on:
+  pull_request_target:
+    types: [opened]
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            Thanks for opening your first issue on NeuralDBG! 🎉
+
+            A maintainer will triage it shortly. To speed things up:
+            - If this is a false positive on a healthy run, the `false_positive` template helps a lot (thresholds + family matter).
+            - If you can, include the minimal model/loop snippet that reproduces it.
+
+            Good entry points if you want to contribute code: issues labeled `good first issue`, and CONTRIBUTING.md for setup (`make bootstrap`).
+          pr-message: |
+            Thanks for your first pull request on NeuralDBG! 🎉
+
+            Checklist before review:
+            - `pytest tests/unit --cov=neuraldbg --cov-fail-under=75 -q` passes locally
+            - `CHANGELOG.md` updated under `[Unreleased]`
+            - New behavior covered by a test
+
+            CI runs the full multi-OS + PyTorch 2.0→2.6 matrix automatically.

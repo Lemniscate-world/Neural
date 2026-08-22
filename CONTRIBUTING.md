@@ -71,6 +71,12 @@ Tested against PyTorch 2.0.1 → 2.11.0+ (see `.github/workflows/ci.yml` matrix)
 
 Releases follow SemVer (`CHANGELOG.md`). Cadence: monthly minor, patch as needed for fixes. See `GOVERNANCE.md` for decision process.
 
+**Contributor credit**: at release time, run `python scripts/contributors_credits.py` and paste the generated section into the GitHub Release notes — every human contributor since the previous tag is credited.
+
+## Good First Issues
+
+Issues labeled [`good first issue`](https://github.com/LambdaSection/NeuralDBG/labels/good%20first%20issue) are scoped for a first contribution: small surface, clear acceptance criteria, pointers to the exact files. Ask questions directly in the issue — no need to ask permission to start.
+
 ## Questions?
 
 Open a discussion or contact `neuraldbg@lemniscate.ai`.

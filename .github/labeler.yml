@@ -1,0 +1,24 @@
+# PR auto-labeling by touched paths (actions/labeler v5 syntax)
+docs:
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "*.md"]
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: "tests/**"
+
+engine:
+  - changed-files:
+      - any-glob-to-any-file: "neuraldbg/engine/**"
+
+integrations:
+  - changed-files:
+      - any-glob-to-any-file: "neuraldbg/integrations/**"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+
+examples:
+  - changed-files:
+      - any-glob-to-any-file: ["examples/**", "notebooks/**"]
