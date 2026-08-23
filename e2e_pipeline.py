@@ -520,9 +520,9 @@ for bug_id, category, make_healthy, make_bug, make_fix in [
         print("  [3/4] Neural-Agent diagnosis...")
         if agent_model:
             event_lines = []
-            for e in b_ev[-6:]:
+            for ev in b_ev[-6:]:
                 event_lines.append(
-                    f"- {e.get('event_type','?')} at {e.get('layer_name','?')} step {e.get('step',0)}: {e.get('to_state', e.get('from_state','?'))}"
+                    f"- {ev.get('event_type','?')} at {ev.get('layer_name','?')} step {ev.get('step',0)}: {ev.get('to_state', ev.get('from_state','?'))}"
                 )
             chain_text = (
                 f"{b_ch[0].root_cause} -> {b_ch[0].final_symptom}" if b_ch else "none"
@@ -614,8 +614,8 @@ print(f"\n{'='*70}")
 print("PIPELINE REPORT")
 print(f"{'='*70}")
 passed = sum(1 for r in results if r.get("status") == "PASS")
-detected = sum(1 for r in results if r.get("detected"))
-resolved = sum(1 for r in results if r.get("resolved"))
+n_detected = sum(1 for r in results if r.get("detected"))
+n_resolved = sum(1 for r in results if r.get("resolved"))
 for r in results:
     if "error" in r:
         print(f"  {r['bug_id']}: FAIL ({r['error'][:60]})")
@@ -625,5 +625,5 @@ for r in results:
         )
 
 print(f"\n  Passed: {passed}/{len(results)}")
-print(f"  Detected: {detected}/{len(results)}")
-print(f"  Resolved: {resolved}/{len(results)}")
+print(f"  Detected: {n_detected}/{len(results)}")
+print(f"  Resolved: {n_resolved}/{len(results)}")

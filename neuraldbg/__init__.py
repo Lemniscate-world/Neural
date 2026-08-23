@@ -34,6 +34,7 @@ except ImportError:
 # Import the causal engine (now bundled in neuraldbg/engine/)
 try:
     from .engine import CausalEngine
+
     _HAS_ENGINE = True
 except ImportError:
     CausalEngine = None  # type: ignore
@@ -163,7 +164,7 @@ class NeuralDbg:
         threshold_vanishing: float = 1e-6,
         threshold_exploding: float = 1e3,
         strict_mode: bool = False,
-        family: str = None,
+        family: str | None = None,
     ):
         """
         Initialize the causal inference engine.
@@ -181,18 +182,36 @@ class NeuralDbg:
 
         # Per-family calibration multipliers (from healthy profile analysis)
         _family_mult = {
-            "MLP": 1.0, "CNN": 1.5, "RNN": 0.8, "TF": 1.0, "Hybrid": 1.2,
-            "GNN": 1.3, "MoE": 1.0, "Diffusion": 1.0, "FlashAttn": 1.0,
-            "NeuralODE": 1.0, "Quantized": 1.2, "RAG": 1.0, "RL": 1.5, "Federated": 1.3,
-            "ResNet": 1.8, "DeepCNN": 1.8, "ViT": 1.5, "LLM": 2.0,
+            "MLP": 1.0,
+            "CNN": 1.5,
+            "RNN": 0.8,
+            "TF": 1.0,
+            "Hybrid": 1.2,
+            "GNN": 1.3,
+            "MoE": 1.0,
+            "Diffusion": 1.0,
+            "FlashAttn": 1.0,
+            "NeuralODE": 1.0,
+            "Quantized": 1.2,
+            "RAG": 1.0,
+            "RL": 1.5,
+            "Federated": 1.3,
+            "ResNet": 1.8,
+            "DeepCNN": 1.8,
+            "ViT": 1.5,
+            "LLM": 2.0,
         }
         family_mult = _family_mult.get(family, 1.0)
         self._family_mult = family_mult  # stash for use in data anomaly checks
 
         if strict_mode:
             # Strict: higher thresholds = fewer FPs, lower sensitivity
-            self.threshold_vanishing = threshold_vanishing * 0.1 * family_mult  # 10x stricter
-            self.threshold_exploding = threshold_exploding * 10.0 * family_mult  # 10x stricter
+            self.threshold_vanishing = (
+                threshold_vanishing * 0.1 * family_mult
+            )  # 10x stricter
+            self.threshold_exploding = (
+                threshold_exploding * 10.0 * family_mult
+            )  # 10x stricter
         else:
             self.threshold_vanishing = threshold_vanishing * family_mult
             self.threshold_exploding = threshold_exploding / family_mult
@@ -575,7 +594,11 @@ class NeuralDbg:
             # Unwrap RNN output tuples (LSTM/GRU return (output, (h_n, c_n)))
             _output = output
             _rnn_hidden = None
-            if isinstance(output, tuple) and len(output) >= 1 and isinstance(output[0], torch.Tensor):
+            if (
+                isinstance(output, tuple)
+                and len(output) >= 1
+                and isinstance(output[0], torch.Tensor)
+            ):
                 _output = output[0]  # the sequence output tensor
                 if len(output) >= 2:
                     _rnn_hidden = output[1]  # (h_n, c_n) for LSTM or h_n for GRU
@@ -746,8 +769,8 @@ class NeuralDbg:
 
                 # --- Trend-based vanishing detection ---
                 # Track gradient norm history per layer (last 5 steps)
-                if not hasattr(self, '_grad_norm_history'):
-                    self._grad_norm_history = {}
+                if not hasattr(self, "_grad_norm_history"):
+                    self._grad_norm_history: dict = {}
                 if layer_name not in self._grad_norm_history:
                     self._grad_norm_history[layer_name] = []
                 history = self._grad_norm_history[layer_name]
@@ -758,10 +781,12 @@ class NeuralDbg:
                 # Detect vanishing trend: norms consistently decreasing
                 if len(history) >= 4:
                     recent = history[-4:]
-                    if all(recent[i] > recent[i+1] for i in range(len(recent)-1)):
+                    if all(recent[i] > recent[i + 1] for i in range(len(recent) - 1)):
                         drop_ratio = recent[-1] / max(recent[0], 1e-12)
                         # 50%+ drop with absolute norm < 0.1, OR 80%+ drop (any norm)
-                        is_vanishing = (drop_ratio < 0.5 and recent[-1] < 0.1) or (drop_ratio < 0.2)
+                        is_vanishing = (drop_ratio < 0.5 and recent[-1] < 0.1) or (
+                            drop_ratio < 0.2
+                        )
                         if is_vanishing:
                             event = SemanticEvent(
                                 event_type=EventType.GRADIENT_HEALTH_TRANSITION,
@@ -1021,7 +1046,12 @@ class NeuralDbg:
             "saturation_ratio": saturation_ratio,
         }
 
-    def _track_rnn_gate_gradients(self, module: nn.Module = None, layer_name: str = None, grad_tensor: torch.Tensor = None):
+    def _track_rnn_gate_gradients(
+        self,
+        module: nn.Module | None = None,
+        layer_name: str | None = None,
+        grad_tensor: torch.Tensor | None = None,
+    ):
         """Track per-gate gradient norms for LSTM/GRU using parameter .grad attributes.
 
         Called from step_iteration() after backward() populates .grad on parameters.
@@ -1045,8 +1075,11 @@ class NeuralDbg:
 
             is_lstm = isinstance(mod, nn.LSTM)
             num_gates = 4 if is_lstm else 3
-            gate_names = (["input", "forget", "cell", "output"] if is_lstm
-                          else ["reset", "update", "new"])
+            gate_names = (
+                ["input", "forget", "cell", "output"]
+                if is_lstm
+                else ["reset", "update", "new"]
+            )
 
             all_gate_norms = {}
             for layer_idx in range(mod.num_layers):
@@ -1068,7 +1101,7 @@ class NeuralDbg:
 
                         for i in range(num_gates):
                             gname = f"{gate_names[i]}_{weight_key}"
-                            gate_slice = grad[i * gate_size : (i+1) * gate_size]
+                            gate_slice = grad[i * gate_size : (i + 1) * gate_size]
                             all_gate_norms[gname] = gate_slice.norm().item()
 
             if not all_gate_norms:
@@ -1137,14 +1170,16 @@ class NeuralDbg:
 
         # Track gate saturation over time (BPTT gradient health)
         if not hasattr(self, "_rnn_hidden_history"):
-            self._rnn_hidden_history = {}
+            self._rnn_hidden_history: dict = {}
         if layer_name not in self._rnn_hidden_history:
             self._rnn_hidden_history[layer_name] = []
-        self._rnn_hidden_history[layer_name].append({
-            "step": self.step,
-            "hidden_norm": hidden_stats["norm"],
-            "saturation_ratio": sat_ratio,
-        })
+        self._rnn_hidden_history[layer_name].append(
+            {
+                "step": self.step,
+                "hidden_norm": hidden_stats["norm"],
+                "saturation_ratio": sat_ratio,
+            }
+        )
         # Keep only last 10 entries
         if len(self._rnn_hidden_history[layer_name]) > 10:
             self._rnn_hidden_history[layer_name].pop(0)
@@ -1251,6 +1286,7 @@ class NeuralDbg:
             List of CausalChain objects, ranked by confidence * length.
         """
         from neuraldbg.causal_chain import explain_causal as _explain
+
         events = self.dump_events()
         return _explain(events)
 

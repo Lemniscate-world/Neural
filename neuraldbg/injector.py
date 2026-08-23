@@ -21,7 +21,7 @@ from typing import List, Optional
 # ── AST Helpers ──────────────────────────────────────────────────────────────
 
 
-def _is_model_assign(node: ast.stmt) -> Optional[str]:
+def _is_model_assign(node: ast.AST) -> Optional[str]:
     """Return model variable name if this stmt is a model instantiation."""
     if not isinstance(node, ast.Assign):
         return None
@@ -66,7 +66,7 @@ def _is_optimizer_step(node: ast.stmt) -> bool:
     return False
 
 
-def _is_loss_assign(node: ast.stmt) -> Optional[str]:
+def _is_loss_assign(node: ast.AST) -> Optional[str]:
     """Return loss variable name if this stmt assigns to a variable named 'loss'."""
     if not isinstance(node, ast.Assign):
         return None

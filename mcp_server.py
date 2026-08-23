@@ -181,7 +181,7 @@ def _run_diagnosis(model_code: str, steps: int, family: str) -> dict:
 
         events_list = []
         chains_list = []
-        losses = []
+        losses: list = []
 
         with NeuralDbg(model, family=family) as dbg:
             opt = torch.optim.SGD(model.parameters(), lr=0.01)

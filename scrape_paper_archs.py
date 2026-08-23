@@ -872,8 +872,8 @@ if __name__ == "__main__":
     print(f"  Generated test file: {out_py}")
 
     # Summary by family
-    by_family = defaultdict(int)
-    by_type = defaultdict(int)
+    by_family: dict[str, int] = defaultdict(int)
+    by_type: dict[str, int] = defaultdict(int)
     for cfg in configs:
         by_family[cfg["family"]] += 1
         by_type[cfg["extra"].get("type", "unknown")] += 1
