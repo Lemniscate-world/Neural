@@ -3,7 +3,6 @@ Data anomaly detection — proprietary heuristics.
 Copyright (c) 2026 NeuralDBG. All rights reserved.
 """
 
-from typing import Dict, Tuple
 
 import torch
 
@@ -152,9 +151,10 @@ class DataAnalyzer:
                     mean_shift_val = health_metadata.get("mean_shift_sigma", 3.0)
                     confidence = min(mean_shift_val * 0.2, 1.0)
 
-                resource_snapshot, resource_baseline = (
-                    self.dbg._get_step_resource_snapshot(tensor.device)
-                )
+                (
+                    resource_snapshot,
+                    resource_baseline,
+                ) = self.dbg._get_step_resource_snapshot(tensor.device)
                 is_spike, spike_keys = self.dbg._is_memory_spike(
                     resource_snapshot, resource_baseline
                 )

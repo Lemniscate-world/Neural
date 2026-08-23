@@ -1,4 +1,4 @@
-﻿"""
+"""
 v5 GPU Training â€” Qwen2-0.5B + LoRA on 8 architecture families
 
 Trains on v5_training_data.json (108 examples, 6 families + 2 pending).
@@ -11,11 +11,9 @@ Usage:
 from __future__ import annotations
 
 import json
-import os
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
 import torch
 from datasets import Dataset
@@ -77,7 +75,8 @@ class V5Config:
 def load_v5_data(data_path: str) -> Dataset:
     """Load v5 training data and convert to HuggingFace Dataset.
 
-    v5 format: [{"messages": [{"role": "system", ...}, {"role": "user", ...}, {"role": "assistant", ...}]}]
+    # v5 format: [{"messages": [{"role": "system", ...}, {"role": "user", ...},
+    # {"role": "assistant", ...}]}]
     """
     with open(data_path, "r", encoding="utf-8") as f:
         data = json.load(f)

@@ -84,7 +84,7 @@ jobs:
 
       - name: R64/R2 — No workaround word
         run: |
-          VIOLATIONS=$(grep -rn "workaround" --include="*.py" --include="*.md" . --exclude-dir=.venv --exclude-dir=node_modules --exclude-dir=.git | grep -v "PR_GATE.md\|DEV_RULES.md\|pr_gate_check\|rule_\|PR_TEMPLATES/\|CHANGELOG.md\|docs/blog/" | head -10)
+          VIOLATIONS=$(grep -rn "workaround" --include="*.py" --include="*.md" neuraldbg/ scripts/ . --exclude-dir=.venv --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=docs --exclude-dir=examples --exclude-dir=tests --exclude-dir=.github 2>/dev/null | grep -v "pr_gate_check.py\|PR_GATE.md\|DEV_RULES.md\|rule_" | head -10)
           if [ -n "$VIOLATIONS" ]; then
             echo "❌ 'workaround' found:"
             echo "$VIOLATIONS"

@@ -38,7 +38,7 @@ from neuraldbg import NeuralDbg
 
 try:
     import mcp.types as types
-    from mcp.server import NotificationOptions, Server
+    from mcp.server import Server
     from mcp.server.models import InitializationCapabilities
     from mcp.server.stdio import stdio_server
 
@@ -205,7 +205,7 @@ def _run_diagnosis(model_code: str, steps: int, family: str) -> dict:
                     )
                     opt.step()
                     losses.append(float(loss) if hasattr(loss, "item") else float(loss))
-                except Exception as e:
+                except Exception:
                     losses.append(None)
 
             events_list = dbg.dump_events()
@@ -257,9 +257,14 @@ def _run_diagnosis(model_code: str, steps: int, family: str) -> dict:
 
 def _run_benchmark(scenarios: int) -> dict:
     """Run simplified competitive benchmark."""
-    from benchmark_comparison import (bug_dead, bug_exploding, bug_nan,
-                                      bug_vanishing, bug_zero, build_model,
-                                      run_scenario)
+    from benchmark_comparison import (
+        bug_dead,
+        bug_exploding,
+        bug_nan,
+        bug_vanishing,
+        bug_zero,
+        run_scenario,
+    )
 
     scenarios_list = [
         ("Healthy", None),
@@ -328,7 +333,9 @@ def _explain_failure(failure_type: str) -> dict:
                 "Mixed precision without loss scaling",
             ],
             "neuraldbg_detection": "optimizer_instability event. Links to gradient health and loss trend.",
-            "remediation": "Reduce LR, use cosine schedule, ensure loss scaling for fp16.",
+            "remediation": (
+                "Reduce LR, use cosine schedule, ensure loss scaling for fp16."
+            ),
         },
         "data_anomaly": {
             "root_cause": "NaN or extreme values in input data",
@@ -349,7 +356,9 @@ def _explain_failure(failure_type: str) -> dict:
                 "fp16 overflow",
             ],
             "neuraldbg_detection": "nan_detected event with step-by-step NaN propagation trace.",
-            "remediation": "Check loss function domain, add epsilon to log/sqrt, use fp32 for critical ops.",
+            "remediation": (
+                "Check loss function domain, add epsilon to log/sqrt, use fp32 for critical ops."
+            ),
         },
     }
 

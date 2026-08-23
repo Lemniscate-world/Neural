@@ -1,0 +1,9 @@
+# Dette de lint historique : ces fichiers de diagnostic/generation de code
+# contiennent des chaines longues preexistantes. Les nouveaux fichiers restent
+# stricts (max-line-length=100 passe en argument du hook pre-commit).
+[flake8]
+per-file-ignores =
+    e2e_pipeline.py:E501,E402,E722,E731,F541,E231,F811
+    mcp_server.py:E501,E402
+    scrape_paper_archs.py:E501
+    neuraldbg/injector.py:E501

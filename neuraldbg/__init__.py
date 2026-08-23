@@ -201,7 +201,7 @@ class NeuralDbg:
             "ViT": 1.5,
             "LLM": 2.0,
         }
-        family_mult = _family_mult.get(family, 1.0)
+        family_mult = _family_mult.get(family or "", 1.0)
         self._family_mult = family_mult  # stash for use in data anomaly checks
 
         if strict_mode:
@@ -1069,7 +1069,7 @@ class NeuralDbg:
 
         for mod, lname in target_modules:
             try:
-                hidden_size = mod.hidden_size
+                mod.hidden_size
             except AttributeError:
                 continue
 
@@ -1136,9 +1136,9 @@ class NeuralDbg:
                 c_n shape: (num_layers * num_directions, batch, hidden_size)
         """
         if isinstance(hidden, tuple):
-            h_n, c_n = hidden[0], hidden[1] if len(hidden) > 1 else None
+            h_n = hidden[0]
         else:
-            h_n, c_n = hidden, None
+            h_n = hidden
 
         if not isinstance(h_n, torch.Tensor):
             return
@@ -1148,7 +1148,6 @@ class NeuralDbg:
 
         # Check for saturated gates (RNN internal activations are sigmoid/tanh)
         sat_ratio = hidden_stats.get("saturation_ratio", 0.0)
-        dead_ratio = hidden_stats.get("dead_ratio", 0.0)
 
         # Generate events for problematic hidden states
         if sat_ratio > 0.7:

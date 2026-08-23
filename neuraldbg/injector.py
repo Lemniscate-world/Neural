@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import ast
 import copy
-from pathlib import Path
 from typing import List, Optional
 
 # ── AST Helpers ──────────────────────────────────────────────────────────────
@@ -248,7 +247,11 @@ _EPILOG_TEMPLATE = """\
 import json as _nd_json
 from pathlib import Path as _nd_Path
 _nd_events = getattr(dbg, 'dump_events', lambda: [])()
-_nd_path = _nd_Path(__file__).parent / "_neuraldbg_{script_name}.events.json" if '__file__' in dir() else _nd_Path("_neuraldbg_{script_name}.events.json")
+_nd_path = (
+    _nd_Path(__file__).parent / "_neuraldbg_{script_name}.events.json"
+    if '__file__' in dir()
+    else _nd_Path("_neuraldbg_{script_name}.events.json")
+)
 with open(str(_nd_path), 'w', encoding='utf-8') as _nd_f:
     _nd_json.dump({{"version": "1.3.2", "events": _nd_events}}, _nd_f, default=str)
 """

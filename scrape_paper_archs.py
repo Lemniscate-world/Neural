@@ -14,9 +14,7 @@ Usage: python scrape_paper_archs.py [--source arxiv] [--max-papers 50]
 """
 
 import json
-import re
 import sys
-import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -619,7 +617,6 @@ def classify_family(name, extra):
 def generate_model_builder(config: dict) -> str:
     """Generate Python code to build a model from a paper architecture config."""
     name = config["name"]
-    family = config["family"]
     depth = config["depth"]
     width = config["width"]
     act = config["activation"]
@@ -677,7 +674,8 @@ class {name}(nn.Module):
             for _ in range({depth})
         ])
         self.experts = nn.ModuleList([
-            nn.Sequential(nn.Linear({width}, {width}*4), nn.{act.upper()}(), nn.Linear({width}*4, {width}))
+            nn.Sequential(nn.Linear({width}, {width}*4), nn.{act.upper()}(),
+            nn.Linear({width}*4, {width}))
             for _ in range({depth} * {extra.get("num_experts", 4)})
         ])
         self.norms = nn.ModuleList([nn.LayerNorm({width}) for _ in range({depth} * 2)])
@@ -731,7 +729,7 @@ def scrape_architectures(max_papers=50, include_arxiv=False):
 
     # 2. arXiv API (optional â€” slow)
     if include_arxiv:
-        print(f"[2/3] Searching arXiv for novel architectures...")
+        print("[2/3] Searching arXiv for novel architectures...")
         papers = search_arxiv(max_results=max_papers)
         # Heuristic extraction from paper titles
         for p in papers:
@@ -769,7 +767,7 @@ def scrape_architectures(max_papers=50, include_arxiv=False):
                 )
 
     # 3. Generate variants (depth/width sweeps for each novel arch)
-    print(f"[3/3] Generating depth/width variants...")
+    print("[3/3] Generating depth/width variants...")
     base_configs = list(configs)
     for base in base_configs:
         etype = base["extra"].get("type", "")
@@ -833,7 +831,7 @@ def generate_test_file(configs, output_path="paper_archs_test.py"):
             "    return nn.Sequential(*layers)",
             "",
             'if __name__ == "__main__":',
-            f'    print(f"{{len(PAPER_ARCH_CONFIGS)}} paper architectures loaded")',
+            '    print(f"{len(PAPER_ARCH_CONFIGS)} paper architectures loaded")',
             "    for cfg in PAPER_ARCH_CONFIGS[:5]:",
             "        print(f\"  {cfg['name']} ({cfg['source']})\")",
         ]
@@ -856,7 +854,7 @@ if __name__ == "__main__":
 
     # Auto-scrape arxiv for black-swan papers if requested
     if include_arxiv:
-        print(f"\n[arXiv] Searching black-swan queries...")
+        print("\n[arXiv] Searching black-swan queries...")
         papers = search_arxiv_black_swan(max_results=5)
         for p in papers[:10]:
             print(f"  {p['arxiv_id']}: {p['title'][:80]}")
@@ -878,10 +876,10 @@ if __name__ == "__main__":
         by_family[cfg["family"]] += 1
         by_type[cfg["extra"].get("type", "unknown")] += 1
 
-    print(f"\n  By family:")
+    print("\n  By family:")
     for fam, count in sorted(by_family.items()):
         print(f"    {fam}: {count}")
-    print(f"\n  By type:")
+    print("\n  By type:")
     for etype, count in sorted(by_type.items(), key=lambda x: -x[1]):
         print(f"    {etype}: {count}")
 

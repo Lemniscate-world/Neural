@@ -4,7 +4,6 @@ Proves the full NeuralSuite value proposition on real bugs.
 Usage: python e2e_pipeline.py
 """
 
-import json
 import re
 import sys
 
@@ -12,7 +11,6 @@ sys.path.insert(0, r"C:\Users\Utilisateur\Documents\NeuralDBG")
 sys.path.insert(0, r"C:\Users\Utilisateur\Documents\Neural-Agent")
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from neuraldbg import NeuralDbg
 
@@ -77,7 +75,7 @@ def agent_diagnose(events, hypotheses, chains):
             [gpu_python, bridge, prompt], capture_output=True, text=True, timeout=120
         )
         return json.loads(result.stdout).get("category", "unknown")
-    except Exception as e:
+    except Exception:
         return "unknown"
 
 
@@ -325,8 +323,6 @@ def make_bug006():
                     r.append(torch.tensor([float("nan")] * 3))
             return self.lin(torch.stack(r))
 
-    model = M()
-    opt = torch.optim.SGD(model.parameters(), lr=0.001)
     target = torch.randn(1, 2)
     healthy_fn = lambda s: (
         torch.tensor([[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]]),
@@ -522,7 +518,8 @@ for bug_id, category, make_healthy, make_bug, make_fix in [
             event_lines = []
             for ev in b_ev[-6:]:
                 event_lines.append(
-                    f"- {ev.get('event_type','?')} at {ev.get('layer_name','?')} step {ev.get('step',0)}: {ev.get('to_state', ev.get('from_state','?'))}"
+                    f"- {ev.get('event_type','?')} at {ev.get('layer_name','?')}"
+                    f" step {ev.get('step',0)}: {ev.get('to_state', ev.get('from_state','?'))}"
                 )
             chain_text = (
                 f"{b_ch[0].root_cause} -> {b_ch[0].final_symptom}" if b_ch else "none"
