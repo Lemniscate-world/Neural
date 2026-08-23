@@ -1,4 +1,5 @@
-﻿import urllib.request, json
+﻿import json
+import urllib.request
 
 queries = [
     ("gradient+explosion+created:>2026-05-01", "Gradient explosion"),
@@ -13,12 +14,16 @@ for q, label in queries:
         f"&sort=created&order=desc&per_page=4"
     )
     try:
-        req = urllib.request.Request(url, headers={"Accept": "application/vnd.github.v3+json"})
+        req = urllib.request.Request(
+            url, headers={"Accept": "application/vnd.github.v3+json"}
+        )
         data = json.loads(urllib.request.urlopen(req).read())  # nosec B310
         print(f"\n--- {label} ({data.get('total_count',0)}) ---")
         for item in data.get("items", [])[:4]:
             labels = [l["name"] for l in item.get("labels", [])]
             print(f"  #{item['number']} {item['title'][:90]}")
-            print(f"    {item['created_at'][:10]} | {item.get('comments',0)}c | {', '.join(labels[:3])}")
+            print(
+                f"    {item['created_at'][:10]} | {item.get('comments',0)}c | {', '.join(labels[:3])}"
+            )
     except Exception as e:
         print(f"  Error: {e}")

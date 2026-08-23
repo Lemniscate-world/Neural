@@ -29,18 +29,19 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import torch
 import torch.nn as nn
-from neuraldbg import NeuralDbg
 
+from neuraldbg import NeuralDbg
 
 # ============================================================
 # MCP Server Definition
 # ============================================================
 
 try:
-    from mcp.server import Server, NotificationOptions
+    import mcp.types as types
+    from mcp.server import NotificationOptions, Server
     from mcp.server.models import InitializationCapabilities
     from mcp.server.stdio import stdio_server
-    import mcp.types as types
+
     HAS_MCP = True
 except ImportError:
     HAS_MCP = False
@@ -72,7 +73,15 @@ if HAS_MCP:
                         "family": {
                             "type": "string",
                             "description": "Architecture family for calibrated thresholds: MLP, CNN, RNN, Transformer, Hybrid, BlackSwan, RL",
-                            "enum": ["MLP", "CNN", "RNN", "Transformer", "Hybrid", "BlackSwan", "RL"],
+                            "enum": [
+                                "MLP",
+                                "CNN",
+                                "RNN",
+                                "Transformer",
+                                "Hybrid",
+                                "BlackSwan",
+                                "RL",
+                            ],
                         },
                     },
                     "required": ["model_code"],
@@ -101,7 +110,13 @@ if HAS_MCP:
                         "failure_type": {
                             "type": "string",
                             "description": "Type of failure to explain: vanishing_gradients, exploding_gradients, optimizer_instability, data_anomaly, nan_detected",
-                            "enum": ["vanishing_gradients", "exploding_gradients", "optimizer_instability", "data_anomaly", "nan_detected"],
+                            "enum": [
+                                "vanishing_gradients",
+                                "exploding_gradients",
+                                "optimizer_instability",
+                                "data_anomaly",
+                                "nan_detected",
+                            ],
                         },
                         "events_json": {
                             "type": "string",
@@ -113,29 +128,27 @@ if HAS_MCP:
         ]
 
     @server.call_tool()
-    async def handle_call_tool(
-        name: str, arguments: dict
-    ) -> list[types.TextContent]:
+    async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
         """Handle tool calls from MCP clients."""
-        
+
         if name == "neuraldbg_diagnose":
             model_code = arguments.get("model_code", "")
             steps = arguments.get("steps", 10)
             family = arguments.get("family", "MLP")
-            
+
             result = _run_diagnosis(model_code, steps, family)
             return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-        
+
         elif name == "neuraldbg_benchmark":
             scenarios = arguments.get("scenarios", 6)
             result = _run_benchmark(scenarios)
             return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-        
+
         elif name == "neuraldbg_explain":
             failure_type = arguments.get("failure_type", "vanishing_gradients")
             result = _explain_failure(failure_type)
             return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-        
+
         else:
             raise ValueError(f"Unknown tool: {name}")
 
@@ -143,6 +156,7 @@ if HAS_MCP:
 # ============================================================
 # Tool Implementations
 # ============================================================
+
 
 def _run_diagnosis(model_code: str, steps: int, family: str) -> dict:
     """Execute model code under NeuralDBG supervision."""
@@ -154,60 +168,75 @@ def _run_diagnosis(model_code: str, steps: int, family: str) -> dict:
             "nn": nn,
             "NeuralDbg": NeuralDbg,
         }
-        
+
         # Wrap in a function that creates model + training loop
         # The user code should define: def make_model(): ...; def train_step(model, opt): ...
         # Execution intentionnelle du code fourni par l'appelant : fonctionnalite centrale du serveur MCP
         exec(model_code, namespace)  # nosec B102
-        
+
         if "make_model" not in namespace:
             return {"error": "model_code must define make_model() function"}
-        
+
         model = namespace["make_model"]()
-        
+
         events_list = []
         chains_list = []
         losses = []
-        
+
         with NeuralDbg(model, family=family) as dbg:
             opt = torch.optim.SGD(model.parameters(), lr=0.01)
-            
+
             for s in range(steps):
                 opt.zero_grad()
                 try:
                     if "train_step" in namespace:
                         loss = namespace["train_step"](model, opt)
                     else:
-                        x = torch.randn(8, model.fc1.in_features if hasattr(model, 'fc1') else 16)
+                        x = torch.randn(
+                            8, model.fc1.in_features if hasattr(model, "fc1") else 16
+                        )
                         out = model(x)
                         loss = out.sum()
                         loss.backward()
-                    
+
                     dbg.step_iteration()
-                    dbg.record_loss(loss.item() if hasattr(loss, 'item') else float(loss))
+                    dbg.record_loss(
+                        loss.item() if hasattr(loss, "item") else float(loss)
+                    )
                     opt.step()
-                    losses.append(float(loss) if hasattr(loss, 'item') else float(loss))
+                    losses.append(float(loss) if hasattr(loss, "item") else float(loss))
                 except Exception as e:
                     losses.append(None)
-            
+
             events_list = dbg.dump_events()
             try:
                 chains = dbg.explain_causal()
                 chains_list = [str(c) for c in chains]
             except Exception:
                 chains_list = []
-            
+
             try:
                 hyps = dbg.explain_failure()
-                hypotheses = [h.description[:200] if hasattr(h, 'description') else str(h) for h in hyps]
+                hypotheses = [
+                    h.description[:200] if hasattr(h, "description") else str(h)
+                    for h in hyps
+                ]
             except Exception:
                 hypotheses = []
-        
+
         # Count anomalies
-        anomaly_events = [e for e in events_list 
-                         if e.get("event_type") in ("gradient_health_transition", "activation_regime_shift",
-                                                     "optimizer_instability", "data_anomaly")]
-        
+        anomaly_events = [
+            e
+            for e in events_list
+            if e.get("event_type")
+            in (
+                "gradient_health_transition",
+                "activation_regime_shift",
+                "optimizer_instability",
+                "data_anomaly",
+            )
+        ]
+
         return {
             "status": "success",
             "steps": steps,
@@ -221,15 +250,17 @@ def _run_diagnosis(model_code: str, steps: int, family: str) -> dict:
             "final_loss": losses[-1] if losses else None,
             "loss_trend": losses,
         }
-    
+
     except Exception as e:
         return {"status": "error", "error": str(e)[:300]}
 
 
 def _run_benchmark(scenarios: int) -> dict:
     """Run simplified competitive benchmark."""
-    from benchmark_comparison import run_scenario, build_model, bug_exploding, bug_vanishing, bug_nan, bug_dead, bug_zero
-    
+    from benchmark_comparison import (bug_dead, bug_exploding, bug_nan,
+                                      bug_vanishing, bug_zero, build_model,
+                                      run_scenario)
+
     scenarios_list = [
         ("Healthy", None),
         ("Exploding", bug_exploding),
@@ -238,20 +269,22 @@ def _run_benchmark(scenarios: int) -> dict:
         ("Dead Bias", bug_dead),
         ("Zero Init", bug_zero),
     ][:scenarios]
-    
+
     results = []
     for name, bug_fn in scenarios_list:
         r = run_scenario(name, bug_fn, steps=10)
-        results.append({
-            "scenario": r["scenario"],
-            "neuraldbg_events": r["neuraldbg"]["events"],
-            "neuraldbg_chains": r["neuraldbg"]["chains"],
-            "baseline_alerts": r["baseline"]["total_alerts"],
-        })
-    
+        results.append(
+            {
+                "scenario": r["scenario"],
+                "neuraldbg_events": r["neuraldbg"]["events"],
+                "neuraldbg_chains": r["neuraldbg"]["chains"],
+                "baseline_alerts": r["baseline"]["total_alerts"],
+            }
+        )
+
     ndbg_detected = sum(1 for r in results if r["neuraldbg_events"] > 0)
     baseline_detected = sum(1 for r in results if r["baseline_alerts"] > 0)
-    
+
     return {
         "status": "success",
         "scenarios": len(results),
@@ -267,37 +300,62 @@ def _explain_failure(failure_type: str) -> dict:
     explanations = {
         "vanishing_gradients": {
             "root_cause": "Gradients < 1e-4 persistent across layers",
-            "common_triggers": ["Sigmoid saturation", "Deep networks without skip connections", "Learning rate too low", "Poor weight initialization"],
+            "common_triggers": [
+                "Sigmoid saturation",
+                "Deep networks without skip connections",
+                "Learning rate too low",
+                "Poor weight initialization",
+            ],
             "neuraldbg_detection": "gradient_health_transition â†’ vanishing. Trend-based detection catches slow decays over 5+ steps.",
             "remediation": "Increase LR 10Ã—, add BatchNorm, use ReLU/GeLU instead of Sigmoid, add residual connections.",
         },
         "exploding_gradients": {
             "root_cause": "Gradients > 1e3 in at least one layer",
-            "common_triggers": ["Learning rate too high", "No gradient clipping", "Unstable loss function", "RNN with long sequences"],
+            "common_triggers": [
+                "Learning rate too high",
+                "No gradient clipping",
+                "Unstable loss function",
+                "RNN with long sequences",
+            ],
             "neuraldbg_detection": "gradient_health_transition â†’ exploding. Detected at first occurrence with layer name.",
             "remediation": "Reduce LR 10Ã—, add gradient clipping (max_norm=1.0), use LayerNorm in RNNs.",
         },
         "optimizer_instability": {
             "root_cause": "Loss oscillates or diverges without clear gradient anomaly",
-            "common_triggers": ["Adam Î² parameters wrong", "Learning rate schedule too aggressive", "Mixed precision without loss scaling"],
+            "common_triggers": [
+                "Adam Î² parameters wrong",
+                "Learning rate schedule too aggressive",
+                "Mixed precision without loss scaling",
+            ],
             "neuraldbg_detection": "optimizer_instability event. Links to gradient health and loss trend.",
             "remediation": "Reduce LR, use cosine schedule, ensure loss scaling for fp16.",
         },
         "data_anomaly": {
             "root_cause": "NaN or extreme values in input data",
-            "common_triggers": ["Corrupted dataset", "Missing normalization", "Integer overflow in preprocessing"],
+            "common_triggers": [
+                "Corrupted dataset",
+                "Missing normalization",
+                "Integer overflow in preprocessing",
+            ],
             "neuraldbg_detection": "data_anomaly event with distribution shift detection.",
             "remediation": "Add input validation, normalize data, check for NaN in dataloader.",
         },
         "nan_detected": {
             "root_cause": "NaN appeared in loss or gradients",
-            "common_triggers": ["Division by zero", "log(0)", "sqrt(negative)", "fp16 overflow"],
+            "common_triggers": [
+                "Division by zero",
+                "log(0)",
+                "sqrt(negative)",
+                "fp16 overflow",
+            ],
             "neuraldbg_detection": "nan_detected event with step-by-step NaN propagation trace.",
             "remediation": "Check loss function domain, add epsilon to log/sqrt, use fp32 for critical ops.",
         },
     }
-    
-    explanation = explanations.get(failure_type, {"error": f"Unknown failure type: {failure_type}"})
+
+    explanation = explanations.get(
+        failure_type, {"error": f"Unknown failure type: {failure_type}"}
+    )
     explanation["failure_type"] = failure_type
     explanation["status"] = "success"
     return explanation
@@ -307,12 +365,13 @@ def _explain_failure(failure_type: str) -> dict:
 # Entry Point
 # ============================================================
 
+
 async def main():
     """Run the MCP server."""
     if not HAS_MCP:
         print("[NeuralDBG-MCP] Error: mcp package required. Run: pip install mcp")
         return
-    
+
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
@@ -327,4 +386,5 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())

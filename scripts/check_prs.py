@@ -1,9 +1,16 @@
-﻿import urllib.request, json
+﻿import json
+import urllib.request
+
 
 def get(url):
-    req = urllib.request.Request(url, headers={"Accept": "application/vnd.github.v3+json"})
-    try: return json.loads(urllib.request.urlopen(req).read())  # nosec B310
-    except: return {}
+    req = urllib.request.Request(
+        url, headers={"Accept": "application/vnd.github.v3+json"}
+    )
+    try:
+        return json.loads(urllib.request.urlopen(req).read())  # nosec B310
+    except:
+        return {}
+
 
 for num in [188053, 188066]:
     pr = get(f"https://api.github.com/repos/pytorch/pytorch/pulls/{num}")
@@ -11,7 +18,9 @@ for num in [188053, 188066]:
     merged = pr.get("merged", "?")
     draft = pr.get("draft", "?")
     created = pr.get("created_at", "?")[:10]
-    print(f"PR #{num}: state={state}, merged={merged}, draft={draft}, created={created}")
+    print(
+        f"PR #{num}: state={state}, merged={merged}, draft={draft}, created={created}"
+    )
     comments = pr.get("comments") if isinstance(pr.get("comments"), list) else []
     for c in comments[-3:]:
         user = c.get("user", {}).get("login", "?")

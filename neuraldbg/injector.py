@@ -18,7 +18,6 @@ import copy
 from pathlib import Path
 from typing import List, Optional
 
-
 # ── AST Helpers ──────────────────────────────────────────────────────────────
 
 
@@ -37,7 +36,13 @@ def _is_model_assign(node: ast.stmt) -> Optional[str]:
         func = value.func
         if isinstance(func, ast.Attribute):
             # e.g. nn.Linear, AutoModel.from_pretrained
-            import_keywords = {"nn", "models", "AutoModel", "AutoModelForCausalLM", "transformers"}
+            import_keywords = {
+                "nn",
+                "models",
+                "AutoModel",
+                "AutoModelForCausalLM",
+                "transformers",
+            }
             if isinstance(func.value, ast.Name) and func.value.id in import_keywords:
                 return target.id
             if isinstance(func.value, ast.Attribute):
@@ -146,7 +151,11 @@ def inject_neuraldbg_wrapper(source: str, script_name: str = "training") -> str:
     new_body: List[ast.stmt] = []
 
     for stmt in tree.body:
-        if not loop_found and _is_training_loop(stmt) and isinstance(stmt, (ast.For, ast.While)):
+        if (
+            not loop_found
+            and _is_training_loop(stmt)
+            and isinstance(stmt, (ast.For, ast.While))
+        ):
             loop_found = True
             # Wrap the loop body with NeuralDbg context
             wrapped = _wrap_loop_body(stmt, model_var, loss_var)
@@ -196,9 +205,7 @@ def _wrap_loop_body(
             injected_body.append(stmt)
             lv = _is_loss_assign(stmt)
             if lv and lv == loss_var:
-                injected_body.append(
-                    _make_stmt(f"dbg.record_loss({loss_var}.item())")
-                )
+                injected_body.append(_make_stmt(f"dbg.record_loss({loss_var}.item())"))
         body = injected_body
 
     # Inject step_iteration after optimizer.step()
@@ -222,7 +229,7 @@ def _wrap_loop_body(
 
     # Create a new For/While with the injected body
     wrapped_loop = copy.deepcopy(loop)
-    if hasattr(wrapped_loop, 'body'):
+    if hasattr(wrapped_loop, "body"):
         wrapped_loop.body = body  # type: ignore
 
     with_stmt = ast.With(
@@ -252,7 +259,7 @@ with open(str(_nd_path), 'w', encoding='utf-8') as _nd_f:
 
 def test_inject_neuraldbg():
     """Verify injection on a simple training script."""
-    sample = '''\
+    sample = """\
 import torch
 import torch.nn as nn
 
@@ -267,7 +274,7 @@ for epoch in range(10):
     loss = loss_fn(out, y)
     loss.backward()
     optimizer.step()
-'''
+"""
 
     injected = inject_neuraldbg_wrapper(sample, "test_script")
     print("=== Injected Source ===")
