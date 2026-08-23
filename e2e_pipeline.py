@@ -1,4 +1,4 @@
-"""End-to-end pipeline: NeuralDBG → Causal Chain → Neural-Agent → Fix → Validate.
+﻿"""End-to-end pipeline: NeuralDBG â†’ Causal Chain â†’ Neural-Agent â†’ Fix â†’ Validate.
 
 Proves the full NeuralSuite value proposition on real bugs.
 Usage: python e2e_pipeline.py
@@ -24,12 +24,14 @@ def load_agent():
     adapter = r"C:\Users\Utilisateur\Documents\Neural-Agent\artifacts\model_gpu_qwen"
     base = "Qwen/Qwen2-0.5B"
 
-    tokenizer = AutoTokenizer.from_pretrained(base, trust_remote_code=True)
+    # Modele fige en dur dans le script, environnement d'entrainement controle
+    tokenizer = AutoTokenizer.from_pretrained(base, trust_remote_code=True)  # nosec B615
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    # Modele fige en dur dans le script, environnement d'entrainement controle
     model = AutoModelForCausalLM.from_pretrained(
-        base, device_map="auto", trust_remote_code=True, torch_dtype=torch.float16,
+        base, device_map="auto", trust_remote_code=True, torch_dtype=torch.float16,  # nosec B615
     )
     model = PeftModel.from_pretrained(model, adapter)
     model.eval()
@@ -221,7 +223,7 @@ def run_pipeline(bug_id, make_model_fn, category, steps=5):
 
 
 # ============================================================
-# Bug definitions (simplified, no DeepMLP — use real bugs)
+# Bug definitions (simplified, no DeepMLP â€” use real bugs)
 # ============================================================
 
 def make_bug006():

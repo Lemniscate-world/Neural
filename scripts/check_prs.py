@@ -1,8 +1,8 @@
-import urllib.request, json
+﻿import urllib.request, json
 
 def get(url):
     req = urllib.request.Request(url, headers={"Accept": "application/vnd.github.v3+json"})
-    try: return json.loads(urllib.request.urlopen(req).read())
+    try: return json.loads(urllib.request.urlopen(req).read())  # nosec B310
     except: return {}
 
 for num in [188053, 188066]:

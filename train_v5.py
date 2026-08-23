@@ -1,8 +1,8 @@
-"""
-v5 GPU Training — Qwen2-0.5B + LoRA on 8 architecture families
+﻿"""
+v5 GPU Training â€” Qwen2-0.5B + LoRA on 8 architecture families
 
 Trains on v5_training_data.json (108 examples, 6 families + 2 pending).
-Uses fp16 (no bitsandbytes — Quadro M4000 CUDA 5.2 limitation).
+Uses fp16 (no bitsandbytes â€” Quadro M4000 CUDA 5.2 limitation).
 
 Usage:
     python train_v5.py [--epochs 3] [--output checkpoints_v5/final]
@@ -52,7 +52,7 @@ class V5Config:
     warmup_ratio: float = 0.1
     max_seq_length: int = 1024
     
-    # fp16 (no bitsandbytes — Quadro M4000 limitation)
+    # fp16 (no bitsandbytes â€” Quadro M4000 limitation)
     fp16: bool = True
     bf16: bool = False
     
@@ -113,7 +113,8 @@ def train_v5(config: V5Config):
     
     # Load tokenizer
     print("\n[1/5] Loading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(config.base_model, trust_remote_code=True)
+    # Modele pilote par config locale, environnement d'entrainement controle
+    tokenizer = AutoTokenizer.from_pretrained(config.base_model, trust_remote_code=True)  # nosec B615
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     
@@ -122,7 +123,7 @@ def train_v5(config: V5Config):
     model = AutoModelForCausalLM.from_pretrained(
         config.base_model,
         torch_dtype=torch.float16,
-        device_map="auto",
+        device_map="auto",  # nosec B615
         trust_remote_code=True,
     )
     
@@ -210,7 +211,7 @@ def train_v5(config: V5Config):
             )),
         }, f, indent=2)
     
-    print(f"\n✅ v5 training complete! Model saved to {final_dir}")
+    print(f"\nâœ… v5 training complete! Model saved to {final_dir}")
     
     # Quick eval
     if eval_dataset:

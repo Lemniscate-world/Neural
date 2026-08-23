@@ -274,11 +274,16 @@ for epoch in range(10):
     print(injected)
 
     # Verify key lines exist
-    assert "from neuraldbg import NeuralDbg" in injected, "Missing neuraldbg import"
-    assert "NeuralDbg(model) as dbg" in injected, "Missing NeuralDbg wrapper"
-    assert "dbg.record_loss" in injected, "Missing record_loss"
-    assert "dbg.step_iteration" in injected, "Missing step_iteration"
-    assert "dump_events" in injected, "Missing dump_events epilog"
+    required = (
+        "from neuraldbg import NeuralDbg",
+        "NeuralDbg(model) as dbg",
+        "dbg.record_loss",
+        "dbg.step_iteration",
+        "dump_events",
+    )
+    missing = [token for token in required if token not in injected]
+    if missing:
+        raise SystemExit(f"Injection incomplete, manquant: {missing}")
     print("\\nAll assertions passed!")
 
 

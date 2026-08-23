@@ -1,5 +1,5 @@
-"""
-NeuralDBG MCP Server — Expose NeuralDBG as a tool for AI agents.
+﻿"""
+NeuralDBG MCP Server â€” Expose NeuralDBG as a tool for AI agents.
 
 Model Context Protocol (MCP) server that allows AI agents (Copilot, Claude, etc.)
 to use NeuralDBG's causal diagnostic capabilities.
@@ -56,7 +56,7 @@ if HAS_MCP:
         return [
             types.Tool(
                 name="neuraldbg_diagnose",
-                description="Run NeuralDBG causal diagnostic on a PyTorch model. Detects gradient health issues, activation anomalies, optimizer instability, and data corruption. Returns causal chains showing root cause → symptom propagation.",
+                description="Run NeuralDBG causal diagnostic on a PyTorch model. Detects gradient health issues, activation anomalies, optimizer instability, and data corruption. Returns causal chains showing root cause â†’ symptom propagation.",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -105,7 +105,7 @@ if HAS_MCP:
                         },
                         "events_json": {
                             "type": "string",
-                            "description": "JSON string of NeuralDBG events from a previous run (optional — uses last run if omitted)",
+                            "description": "JSON string of NeuralDBG events from a previous run (optional â€” uses last run if omitted)",
                         },
                     },
                 },
@@ -157,7 +157,8 @@ def _run_diagnosis(model_code: str, steps: int, family: str) -> dict:
         
         # Wrap in a function that creates model + training loop
         # The user code should define: def make_model(): ...; def train_step(model, opt): ...
-        exec(model_code, namespace)
+        # Execution intentionnelle du code fourni par l'appelant : fonctionnalite centrale du serveur MCP
+        exec(model_code, namespace)  # nosec B102
         
         if "make_model" not in namespace:
             return {"error": "model_code must define make_model() function"}
@@ -267,18 +268,18 @@ def _explain_failure(failure_type: str) -> dict:
         "vanishing_gradients": {
             "root_cause": "Gradients < 1e-4 persistent across layers",
             "common_triggers": ["Sigmoid saturation", "Deep networks without skip connections", "Learning rate too low", "Poor weight initialization"],
-            "neuraldbg_detection": "gradient_health_transition → vanishing. Trend-based detection catches slow decays over 5+ steps.",
-            "remediation": "Increase LR 10×, add BatchNorm, use ReLU/GeLU instead of Sigmoid, add residual connections.",
+            "neuraldbg_detection": "gradient_health_transition â†’ vanishing. Trend-based detection catches slow decays over 5+ steps.",
+            "remediation": "Increase LR 10Ã—, add BatchNorm, use ReLU/GeLU instead of Sigmoid, add residual connections.",
         },
         "exploding_gradients": {
             "root_cause": "Gradients > 1e3 in at least one layer",
             "common_triggers": ["Learning rate too high", "No gradient clipping", "Unstable loss function", "RNN with long sequences"],
-            "neuraldbg_detection": "gradient_health_transition → exploding. Detected at first occurrence with layer name.",
-            "remediation": "Reduce LR 10×, add gradient clipping (max_norm=1.0), use LayerNorm in RNNs.",
+            "neuraldbg_detection": "gradient_health_transition â†’ exploding. Detected at first occurrence with layer name.",
+            "remediation": "Reduce LR 10Ã—, add gradient clipping (max_norm=1.0), use LayerNorm in RNNs.",
         },
         "optimizer_instability": {
             "root_cause": "Loss oscillates or diverges without clear gradient anomaly",
-            "common_triggers": ["Adam β parameters wrong", "Learning rate schedule too aggressive", "Mixed precision without loss scaling"],
+            "common_triggers": ["Adam Î² parameters wrong", "Learning rate schedule too aggressive", "Mixed precision without loss scaling"],
             "neuraldbg_detection": "optimizer_instability event. Links to gradient health and loss trend.",
             "remediation": "Reduce LR, use cosine schedule, ensure loss scaling for fp16.",
         },

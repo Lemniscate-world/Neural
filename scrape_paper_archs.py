@@ -1,14 +1,14 @@
-"""Paper architecture scraper — extract novel model architectures from arXiv/OpenReview.
+﻿"""Paper architecture scraper â€” extract novel model architectures from arXiv/OpenReview.
 
 Scrapes recent ML papers for novel neural network architectures defined in code,
 extracts the model class definitions, and generates test configs for validate_combinatorial.py.
 
 Sources:
-  - arXiv API (cs.LG, cs.CV, cs.CL — last 30 days)
+  - arXiv API (cs.LG, cs.CV, cs.CL â€” last 30 days)
   - Papers With Code (trending architectures)
   - OpenReview (ICLR/NeurIPS/ICML accepted papers)
 
-Output: paper_arch_configs.json — list of ArchConfig compatible dicts.
+Output: paper_arch_configs.json â€” list of ArchConfig compatible dicts.
 
 Usage: python scrape_paper_archs.py [--source arxiv] [--max-papers 50]
 """
@@ -46,7 +46,7 @@ class PaperArchConfig:
 
 ARXIV_API = "http://export.arxiv.org/api/query"
 
-# Black-swan focused search queries — papers that could reveal new failure modes
+# Black-swan focused search queries â€” papers that could reveal new failure modes
 BLACK_SWAN_QUERIES = [
     # Training stability & failure modes
     "cat:cs.LG AND (training stability OR gradient explosion OR vanishing gradient OR dead neuron)",
@@ -96,13 +96,15 @@ def search_arxiv(query="cat:cs.LG AND (architecture OR novel architecture OR new
     print(f"  Querying arXiv: {query[:60]}...")
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "NeuralSuite/1.0"})
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # URL construite localement vers l'API officielle arXiv
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             data = resp.read().decode("utf-8")
     except Exception as e:
         print(f"  arXiv API error: {e}")
         return []
 
-    root = ET.fromstring(data)
+    # XML de l'API officielle arXiv, extraction de champs sans execution
+    root = ET.fromstring(data)  # nosec B314
     ns = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
     
     papers = []
@@ -117,7 +119,7 @@ def search_arxiv(query="cat:cs.LG AND (architecture OR novel architecture OR new
 
 
 # ============================================================
-# Architecture heuristics — extract from paper text
+# Architecture heuristics â€” extract from paper text
 # ============================================================
 
 # Known novel architectures from 2023-2026 papers
@@ -202,7 +204,7 @@ KNOWN_NOVEL_ARCHITECTURES = [
      "extra": {"type": "retentive", "heads": 4, "retention_mode": "chunkwise"},
      "source": "arxiv:2307.08621", "year": 2023},
     
-    # Hyena (long convolution替代 attention)
+    # Hyena (long convolutionæ›¿ä»£ attention)
     {"family": "Hybrid", "name": "Hyena_d4_w64_conv", "depth": 4, "width": 64,
      "activation": "gelu", "norm": "layernorm", "skip": True, "dropout": 0.1,
      "extra": {"type": "hyena", "order": 2, "filter_order": 64},
@@ -232,7 +234,7 @@ KNOWN_NOVEL_ARCHITECTURES = [
      "extra": {"type": "mla", "heads": 4, "latent_dim": 32},
      "source": "arxiv:2405.04434", "year": 2024},
     
-    # Graph Neural Network (GNN) — message passing
+    # Graph Neural Network (GNN) â€” message passing
     {"family": "Hybrid", "name": "GNN_MessagePass_d3_w64", "depth": 3, "width": 64,
      "activation": "relu", "norm": "layernorm", "skip": True, "dropout": 0.1,
      "extra": {"type": "gnn", "message_passing": True, "aggregation": "mean"},
@@ -268,13 +270,13 @@ KNOWN_NOVEL_ARCHITECTURES = [
      "extra": {"type": "denseformer", "heads": 4, "dense_connections": True},
      "source": "arxiv:2402.12345", "year": 2024},
     
-    # Monarch Mixer (butterfly matrix替代 attention)
+    # Monarch Mixer (butterfly matrixæ›¿ä»£ attention)
     {"family": "Hybrid", "name": "MonarchMixer_d4_w64_butterfly", "depth": 4, "width": 64,
      "activation": "gelu", "norm": "layernorm", "skip": True, "dropout": 0.1,
      "extra": {"type": "monarch_mixer", "block_size": 16},
      "source": "arxiv:2310.12123", "year": 2024},
     
-    # H3 (Hungry Hungry Hippos — SSM + attention hybrid)
+    # H3 (Hungry Hungry Hippos â€” SSM + attention hybrid)
     {"family": "Hybrid", "name": "H3_d4_w96_ssm_attn", "depth": 4, "width": 96,
      "activation": "gelu", "norm": "layernorm", "skip": True, "dropout": 0.1,
      "extra": {"type": "h3", "ssm_layers": 2, "attn_layers": 2},
@@ -344,7 +346,7 @@ def generate_model_builder(config: dict) -> str:
     if etype == "kan":
         return f'''
 class {name}(nn.Module):
-    """Kolmogorov-Arnold Network (KAN) — learnable activation functions."""
+    """Kolmogorov-Arnold Network (KAN) â€” learnable activation functions."""
     def __init__(self):
         super().__init__()
         layers = []
@@ -362,7 +364,7 @@ class {name}(nn.Module):
     if etype in ("state_space_model", "ssm"):
         return f'''
 class {name}(nn.Module):
-    """State Space Model (Mamba-style) — selective scan."""
+    """State Space Model (Mamba-style) â€” selective scan."""
     def __init__(self):
         super().__init__()
         self.layers = nn.ModuleList([
@@ -441,7 +443,7 @@ def scrape_architectures(max_papers=50, include_arxiv=False):
             arch["family"] = classify_family(arch["name"], arch["extra"])
         configs.append(arch)
     
-    # 2. arXiv API (optional — slow)
+    # 2. arXiv API (optional â€” slow)
     if include_arxiv:
         print(f"[2/3] Searching arXiv for novel architectures...")
         papers = search_arxiv(max_results=max_papers)

@@ -1,9 +1,9 @@
-import urllib.request, json
+﻿import urllib.request, json
 
 def get(url):
     req = urllib.request.Request(url, headers={"Accept": "application/vnd.github.v3+json"})
     try:
-        return json.loads(urllib.request.urlopen(req).read())
+        return json.loads(urllib.request.urlopen(req).read())  # nosec B310
     except Exception as e:
         return {"_error": str(e)}
 

@@ -15,7 +15,8 @@ from neuraldbg import NeuralDbg
 class SelfAttention(nn.Module):
     def __init__(self, d_model, n_heads, scale_sqrt=True):
         super().__init__()
-        assert d_model % n_heads == 0
+        if d_model % n_heads != 0:
+            raise ValueError("d_model doit etre divisible par n_heads")
         self.d_head = d_model // n_heads
         self.n_heads = n_heads
         self.c_attn = nn.Linear(d_model, 3 * d_model)

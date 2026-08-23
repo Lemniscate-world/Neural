@@ -1,4 +1,4 @@
-import urllib.request, json
+﻿import urllib.request, json
 
 queries = [
     ("gradient+explosion+created:>2026-05-01", "Gradient explosion"),
@@ -14,7 +14,7 @@ for q, label in queries:
     )
     try:
         req = urllib.request.Request(url, headers={"Accept": "application/vnd.github.v3+json"})
-        data = json.loads(urllib.request.urlopen(req).read())
+        data = json.loads(urllib.request.urlopen(req).read())  # nosec B310
         print(f"\n--- {label} ({data.get('total_count',0)}) ---")
         for item in data.get("items", [])[:4]:
             labels = [l["name"] for l in item.get("labels", [])]
