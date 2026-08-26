@@ -1,0 +1,76 @@
+# Kuro Rules Compliance — déployé automatiquement par sync-rules.ps1, NE PAS EDITER
+# Force: fraîcheur des règles (R11/R105), fichiers protégés (R76),
+# split PLAN/ROADMAP (R106), nommage de branche (R30).
+name: kuro-rules-compliance
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: R76/R106 - fichiers prives non tracks
+        run: |
+          FAIL=0
+          for f in PLAN.md SESSION_SUMMARY.md acquisition_tracker.md decision-memo.md LAUNCH_POSTS.md .env; do
+            if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+              echo "::error file=$f::Fichier protege tracke (R76): git rm --cached $f"
+              FAIL=1
+            fi
+          done
+          if git ls-files --error-unmatch PLAN.md >/dev/null 2>&1; then
+            echo "::error file=PLAN.md::PLAN.md doit rester PRIVE (R106)"
+            FAIL=1
+          fi
+          exit $FAIL
+
+      - name: Regles AGENTS.md presentes et non alterees (manifest)
+        run: |
+          if [ ! -f AGENTS.md ]; then
+            echo "::error::AGENTS.md absent - lancer sync-rules.ps1 depuis kuro-rules"
+            exit 1
+          fi
+          if [ ! -f .kuro/rules-manifest.json ]; then
+            echo "::warning::Pas de manifest .kuro/rules-manifest.json - synchro ancienne, fraicheur non verifiable"
+            exit 0
+          fi
+          EXPECTED=$(python3 -c "import json;print(json.load(open('.kuro/rules-manifest.json'))['agentsSha256'])")
+          EXPECTED_COUNT=$(python3 -c "import json;print(json.load(open('.kuro/rules-manifest.json'))['ruleCount'])")
+          ACTUAL=$(sha256sum AGENTS.md | cut -d' ' -f1)
+          ACTUAL_COUNT=$(grep -c '^\- \*\*rule_' AGENTS.md || true)
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::AGENTS.md a derive du dernier manifest de synchro (edition locale ou synchro manquee). Relancer sync-rules.ps1."
+            exit 1
+          fi
+          if [ "$ACTUAL_COUNT" != "$EXPECTED_COUNT" ]; then
+            echo "::error::Index de regles incoherent ($ACTUAL_COUNT vs $EXPECTED_COUNT attendues)."
+            exit 1
+          fi
+          echo "OK: $ACTUAL_COUNT regles, hash conforme au manifest."
+
+      - name: R30 - nommage de branche (PR uniquement)
+        if: github.event_name == 'pull_request'
+        run: |
+          BR="${GITHUB_HEAD_REF}"
+          if echo "$BR" | grep -qE '^(main|master|develop|feat/|fix/|infra/|ceo/|sec/|chore/|docs/|test/)'; then
+            echo "OK: branche '$BR' conforme (R30)."
+          else
+            echo "::error title=R30::Branche '$BR' viole la convention. Valides: main, master, develop, feat/*, fix/*, infra/*, ceo/*, sec/*, chore/*, docs/*, test/*"
+            exit 1
+          fi
+
+      - name: R106 - ROADMAP.md public present (avertissement)
+        run: |
+          if [ ! -f ROADMAP.md ]; then
+            echo "::warning::ROADMAP.md absent (R106) - creer un roadmap public."
+          else
+            echo "OK: ROADMAP.md present."
+          fi
